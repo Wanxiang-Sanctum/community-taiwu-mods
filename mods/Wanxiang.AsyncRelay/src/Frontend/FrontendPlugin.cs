@@ -1,4 +1,3 @@
-using System.Reflection;
 using Cysharp.Threading.Tasks;
 using TaiwuModdingLib.Core.Plugin;
 using UnityEngine.LowLevel;
@@ -11,7 +10,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     public override void Initialize()
     {
         UniTaskRuntimeAssemblies.KeepReferenced();
-        UniTaskEnvironment.Inject();
+        UniTaskEnvironment.EnsureInjected();
     }
 
     public override void Dispose()
@@ -37,17 +36,10 @@ internal static class UniTaskRuntimeAssemblies
 
 internal static class UniTaskEnvironment
 {
-    private const string UniTaskInitMethodName = "Init";
-
-    public static void Inject()
+    public static void EnsureInjected()
     {
-        MethodInfo? initMethod = typeof(PlayerLoopHelper).GetMethod(
-            UniTaskInitMethodName,
-            BindingFlags.Static | BindingFlags.NonPublic);
-
-        if (initMethod is not null)
+        if (PlayerLoopHelper.IsInjectedUniTaskPlayerLoop())
         {
-            _ = initMethod.Invoke(null, null);
             return;
         }
 

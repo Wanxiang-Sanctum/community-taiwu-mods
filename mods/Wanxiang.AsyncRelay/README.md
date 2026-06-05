@@ -9,9 +9,9 @@
 - `UniTask.TextMeshPro.dll`
 - `UniTask.Addressables.dll`
 
-同时它会手动触发 UniTask 的 Unity 环境初始化，补上动态加载 mod 时不会自动执行的
-`RuntimeInitializeOnLoadMethod` 流程。其他需要 UniTask 的前端 mod 可以将本 mod 设为依赖，
-然后只保留编译期引用，不再重复部署 UniTask 运行时 DLL，也不需要自己初始化 `PlayerLoopHelper`。
+本 mod 会在 UniTask PlayerLoop 尚未注入时，通过 UniTask 公开 API 注入当前 Unity PlayerLoop；
+如果已经注入，则不重复处理。其他需要 UniTask 的前端 mod 可以将本 mod 设为依赖，然后只保留编译期
+引用，不再重复部署 UniTask 运行时 DLL。
 
 下游前端 mod 引用 UniTask 时建议排除 runtime 资产：
 
