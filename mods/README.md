@@ -61,14 +61,16 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 </PropertyGroup>
 ```
 
-## 依赖内部化
+## 依赖合并和内部化
 
-插件项目默认使用 `ILRepack.Lib.MSBuild.Task` 把 runtime/copy-local DLL 合并进插件主 DLL，并对
-这些输入程序集做内部化和重命名，降低不同 mod 携带同名依赖时的冲突风险。被合并的 DLL 会从插件
-输出目录中移除；默认打包结果只需要插件主 DLL。
+插件项目默认使用 `ILRepack.Lib.MSBuild.Task` 合并运行时依赖。构建前端或后端插件时，会以插件
+主 DLL 为入口，收集插件项目自身需要复制到输出目录的 runtime/copy-local DLL；如果插件项目引用
+内部项目，也会收集这些引用项目需要随输出复制的 runtime DLL。这些输入程序集会被合并进插件主 DLL，
+并默认内部化和重命名，降低不同 mod 携带同名依赖时的冲突风险。
 
-进入 NuGet `ref/` 目录的编译期引用，以及标记为 `CopyLocal=false` 的引用，保持为编译输入。
-太吾游戏引用包因此会保留为外部游戏依赖。
+进入 NuGet `ref/` 目录的编译期引用，以及标记为 `CopyLocal=false` 的引用，保持为编译输入，不会
+被合并。太吾游戏引用包因此会保留为外部游戏依赖。被合并的 DLL 会从插件输出目录中移除；默认打包
+结果只需要插件主 DLL。
 
 ```xml
 <PropertyGroup>
@@ -76,8 +78,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 </PropertyGroup>
 ```
 
-上面的配置可以关闭默认内部化。如果某个 runtime/copy-local DLL 需要保持为独立文件并随插件部署，
-在 `Taiwu.Mod.props` 中排除对应程序集文件名，不带 `.dll`：
+上面的配置可以关闭默认合并和内部化。如果某个 runtime/copy-local DLL 需要保持为独立文件并随
+插件部署，在 `Taiwu.Mod.props` 中排除对应程序集文件名，不带 `.dll`：
 
 ```xml
 <ItemGroup>

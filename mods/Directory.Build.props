@@ -1,4 +1,4 @@
-<Project InitialTargets="ValidateTaiwuModSide">
+<Project>
   <Import
     Project="$([MSBuild]::GetPathOfFileAbove('Taiwu.Mods.Paths.props', '$(MSBuildThisFileDirectory)'))"
   />
@@ -37,17 +37,6 @@
     <ILRepackTargetsFile Condition="'$(ILRepackTargetsFile)' == ''"
     >$(TaiwuModsModsDir)Taiwu.Mod.ILRepack.targets</ILRepackTargetsFile>
   </PropertyGroup>
-
-  <Target Name="ValidateTaiwuModSide">
-    <Error
-      Condition="'$(TaiwuModSide)' == ''"
-      Text="TaiwuModSide must be Frontend or Backend. Set it in Taiwu.Mod.props."
-    />
-    <Error
-      Condition="'$(TaiwuModSide)' != 'Frontend' And '$(TaiwuModSide)' != 'Backend'"
-      Text="Unsupported TaiwuModSide '$(TaiwuModSide)'. Use Frontend or Backend."
-    />
-  </Target>
 
   <ItemGroup
     Condition="'$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend'"

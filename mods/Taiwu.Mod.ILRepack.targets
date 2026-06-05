@@ -24,7 +24,6 @@
         Condition="
           '%(ReferenceCopyLocalPaths.Filename)' != ''
           And '%(ReferenceCopyLocalPaths.Extension)' == '.dll'
-          And '%(ReferenceCopyLocalPaths.NuGetPackageId)' == ''
           And '%(ReferenceCopyLocalPaths.CopyLocal)' != 'false'
         "
       >
