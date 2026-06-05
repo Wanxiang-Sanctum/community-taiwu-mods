@@ -6,6 +6,11 @@
     <Project
       Path="mods/Wanxiang.AsyncRelay/src/Frontend/Wanxiang.AsyncRelay.Frontend.csproj"
     />
+    <Project Path="mods/Xiangshu/src/Backend/Xiangshu.Backend.csproj" />
+    <Project
+      Path="mods/Xiangshu/src/BackendAgentTools/Xiangshu.BackendAgentTools.csproj"
+    />
+    <Project Path="mods/Xiangshu/src/Frontend/Xiangshu.Frontend.csproj" />
   </Folder>
   <Folder Name="/shared/" />
   <Folder Name="/tools/">

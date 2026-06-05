@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <MSBuildWarningsAsMessages
+    >$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="../BackendAgentTools/Xiangshu.BackendAgentTools.csproj"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

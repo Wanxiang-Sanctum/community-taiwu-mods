@@ -1,0 +1,25 @@
+return {
+  Title = "相枢",
+  Source = 0,
+  FileId = 0,
+  Version = "0.1.0",
+  GameVersion = "0.84.46-test",
+  Author = "Wanxiang Sanctum",
+  Description = "一个混沌的愿望回应 mod。当前仅铺设前端与后端 MCP server，供后续聊天 agent 按需调用。",
+  WorkshopCover = nil,
+  Visibility = 0,
+  DefaultSettings = {},
+  UpdateLogList = {},
+  ChangeConfig = false,
+  HasArchive = false,
+  NeedRestartWhenSettingChanged = false,
+  BackendPlugins = {
+    "Xiangshu.Backend.dll",
+  },
+  BackendPatches = {},
+  FrontendPlugins = {
+    "Xiangshu.Frontend.dll",
+  },
+  FrontendPatches = {},
+  EventPackages = {},
+}
