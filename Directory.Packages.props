@@ -25,6 +25,10 @@
       Version="$(TaiwuModKitReferencesVersion)"
     />
     <PackageVersion
+      Include="Taiwu.ModKit.Dependencies.UniTask"
+      Version="2.5.11-unity2022.3.62f2"
+    />
+    <PackageVersion
       Include="Taiwu.ModKit.References.Shared"
       Version="$(TaiwuModKitReferencesVersion)"
     />
