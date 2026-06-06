@@ -3,6 +3,22 @@
     <TaiwuModSide>Backend</TaiwuModSide>
   </PropertyGroup>
 
+  <ItemGroup>
+    <TaiwuModMergeDependency Include="Xiangshu.Mcp.dll" />
+    <TaiwuModMergeDependency Include="ModelContextProtocol.Core.dll" />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.AI.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.Logging.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency Include="System.IO.Pipelines.dll" />
+    <TaiwuModMergeDependency Include="System.Net.ServerSentEvents.dll" />
+  </ItemGroup>
+
   <!--
   <ItemGroup>
     <Publicize
@@ -11,11 +27,5 @@
       IncludeVirtualMembers="false"
     />
   </ItemGroup>
-  -->
-
-  <!--
-  <PropertyGroup>
-    <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-  </PropertyGroup>
   -->
 </Project>

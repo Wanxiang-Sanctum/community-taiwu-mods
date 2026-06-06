@@ -3,6 +3,30 @@
     <TaiwuModSide>Frontend</TaiwuModSide>
   </PropertyGroup>
 
+  <ItemGroup>
+    <TaiwuModMergeDependency Include="Xiangshu.Mcp.dll" />
+    <TaiwuModMergeDependency Include="ModelContextProtocol.Core.dll" />
+    <TaiwuModMergeDependency Include="Microsoft.Bcl.AsyncInterfaces.dll" />
+    <TaiwuModMergeDependency Include="Microsoft.Bcl.Memory.dll" />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.AI.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency
+      Include="Microsoft.Extensions.Logging.Abstractions.dll"
+    />
+    <TaiwuModMergeDependency
+      Include="System.Diagnostics.DiagnosticSource.dll"
+    />
+    <TaiwuModMergeDependency Include="System.IO.Pipelines.dll" />
+    <TaiwuModMergeDependency Include="System.Net.ServerSentEvents.dll" />
+    <TaiwuModMergeDependency Include="System.Text.Encodings.Web.dll" />
+    <TaiwuModMergeDependency Include="System.Text.Json.dll" />
+    <TaiwuModMergeDependency Include="System.Threading.Channels.dll" />
+  </ItemGroup>
+
   <!--
   <ItemGroup>
     <Publicize
@@ -11,11 +35,5 @@
       IncludeVirtualMembers="false"
     />
   </ItemGroup>
-  -->
-
-  <!--
-  <PropertyGroup>
-    <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-  </PropertyGroup>
   -->
 </Project>

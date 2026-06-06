@@ -6,8 +6,7 @@
 
   <ItemGroup>
     <ProjectReference
-      Include="../BackendAgentTools/Xiangshu.BackendAgentTools.csproj"
-      PrivateAssets="all"
+      Include="$(TaiwuModsModsDir)Xiangshu/src/Mcp/Xiangshu.Mcp.csproj"
     />
   </ItemGroup>
 </Project>

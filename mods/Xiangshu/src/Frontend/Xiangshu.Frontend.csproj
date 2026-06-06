@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference
-      Include="Microsoft.Extensions.Hosting"
-      PrivateAssets="all"
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Xiangshu/src/Mcp/Xiangshu.Mcp.csproj"
     />
-    <PackageReference Include="ModelContextProtocol" PrivateAssets="all" />
   </ItemGroup>
 </Project>
