@@ -29,7 +29,7 @@ internal sealed class ModPacker(
         CopyPackageFiles(modRoot, packageRoot);
         foreach (string projectPath in projectPaths)
         {
-            PackManifest manifest = await ReadProjectPackManifestAsync(projectPath, cancellationToken).ConfigureAwait(false);
+            PackManifest manifest = await GenerateProjectPackManifestAsync(projectPath, cancellationToken).ConfigureAwait(false);
             await CopyPackManifestOutputsAsync(manifest, packageRoot, cancellationToken).ConfigureAwait(false);
         }
 
@@ -63,9 +63,15 @@ internal sealed class ModPacker(
             || fileName is ".gitignore" or ".gitkeep" or "README.md";
     }
 
-    private async Task<PackManifest> ReadProjectPackManifestAsync(string projectPath, CancellationToken cancellationToken)
+    private async Task<PackManifest> GenerateProjectPackManifestAsync(string projectPath, CancellationToken cancellationToken)
     {
         string manifestPath = await GetProjectPackManifestPathAsync(projectPath, cancellationToken).ConfigureAwait(false);
+        await ProcessRunner.RunAsync(
+            "dotnet",
+            repoRoot,
+            ["msbuild", projectPath, "-t:GenerateTaiwuModPackManifest", $"-p:Configuration={configuration}"],
+            cancellationToken).ConfigureAwait(false);
+
         return ReadPackManifest(manifestPath);
     }
 

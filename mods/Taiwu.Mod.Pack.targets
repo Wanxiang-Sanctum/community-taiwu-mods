@@ -2,6 +2,15 @@
   <PropertyGroup>
     <TaiwuModPackManifestFile Condition="'$(TaiwuModPackManifestFile)' == ''"
     >$(IntermediateOutputPath)TaiwuModPackManifest.txt</TaiwuModPackManifestFile>
+    <InternalizeRepackedDependencies
+      Condition="'$(InternalizeRepackedDependencies)' == ''"
+    >true</InternalizeRepackedDependencies>
+    <RenameInternalizedDependencies
+      Condition="'$(RenameInternalizedDependencies)' == ''"
+    >true</RenameInternalizedDependencies>
+    <AllowDuplicateInternalizedResources
+      Condition="'$(AllowDuplicateInternalizedResources)' == ''"
+    >false</AllowDuplicateInternalizedResources>
   </PropertyGroup>
 
   <Target
@@ -128,7 +137,6 @@
 
   <Target
     Name="GenerateTaiwuModPackManifest"
-    AfterTargets="Build"
     DependsOnTargets="ResolveTaiwuModPackManifestAssets"
   >
     <ItemGroup>

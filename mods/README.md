@@ -23,15 +23,17 @@ mods/MyMod/
 `netstandard2.1`，后端项目默认目标框架为 `net8.0`；这两个默认值由
 `mods/Directory.Build.props` 根据端侧设置。
 
+构建插件项目时可以直接使用 `dotnet build`。普通构建只负责 SDK 默认的 `bin/` 和 `obj/` 输出，
+不生成打包清单、不组装 `artifacts/mods/`，也不执行依赖合并。
+
 打包可部署目录：
 
 ```powershell
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 ```
 
-`pack-mod` 默认使用 `Release` 构建前后端项目，并把 `Config.Lua`、插件入口 DLL 和显式声明的
-随包依赖组装到 `artifacts/mods/MyMod/`。普通 `dotnet build` 使用 SDK 默认的 `bin/` 和 `obj/`
-输出目录，不会合并或复制部署依赖。
+`pack-mod` 默认使用 `Release` 构建前后端项目，再把 `Config.Lua`、插件入口 DLL 和显式声明的
+随包依赖组装到 `artifacts/mods/MyMod/`。
 
 ## Taiwu 引用和 Publicizer
 
@@ -68,8 +70,19 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 目录按文件名加载这些插件入口 DLL。独立依赖 DLL 可以同样放在 `Plugins/` 下，但不应该写进
 `FrontendPlugins` 或 `BackendPlugins`；它们不是插件入口。
 
-`pack-mod` 总是部署 `Config.Lua` 中声明的插件入口 DLL。其他依赖 DLL 默认不合并、不随包复制；
-需要把某个 DLL 合并到入口插件时，在项目旁的 `Taiwu.Mod.props` 或项目文件中显式声明：
+`pack-mod` 会把 `Config.Lua` 中声明的插件入口 DLL 部署到 `Plugins/`。其他依赖 DLL 默认不合并、
+不随包复制；需要随包部署的依赖必须在插件项目旁的 `Taiwu.Mod.props` 或项目文件中显式声明。
+这些声明只在 `pack-mod` 生成打包清单时解析，普通 `dotnet build` 不会使用它们生成或校验打包输出。
+
+如果某个 DLL 需要作为独立文件随 mod 部署，声明：
+
+```xml
+<ItemGroup>
+  <TaiwuModPackDependency Include="Other.Assembly.dll" />
+</ItemGroup>
+```
+
+如果某个 DLL 需要合并到入口插件，声明：
 
 ```xml
 <ItemGroup>
@@ -84,14 +97,6 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 <PropertyGroup>
   <InternalizeRepackedDependencies>false</InternalizeRepackedDependencies>
 </PropertyGroup>
-```
-
-如果某个 DLL 需要作为独立文件随 mod 部署，在同一配置入口声明：
-
-```xml
-<ItemGroup>
-  <TaiwuModPackDependency Include="Other.Assembly.dll" />
-</ItemGroup>
 ```
 
 一个依赖要么合并进入口插件，要么作为独立 DLL 随包复制；不要把同一个 DLL 同时写进

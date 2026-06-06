@@ -68,8 +68,9 @@ dotnet build Taiwu.Mods.slnx
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 ```
 
-`pack-mod` 默认使用 `Release` 构建前后端项目，并把 `Config.Lua`、插件入口 DLL 和显式声明的
-随包依赖组装到 `artifacts/mods/MyMod/`。这个目录可直接替换游戏内对应 mod 目录。
+`pack-mod` 默认使用 `Release` 构建前后端项目，再把 `Config.Lua`、插件入口 DLL 和显式声明的
+随包依赖组装到 `artifacts/mods/MyMod/`。这个目录可直接替换游戏内对应 mod 目录；插件入口和
+依赖部署约定见 `mods/README.md`。
 
 发布到 GitHub Release：
 

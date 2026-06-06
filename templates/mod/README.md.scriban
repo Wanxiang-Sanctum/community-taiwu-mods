@@ -20,7 +20,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 `pack-mod` 会把 `Config.Lua`、插件入口 DLL 和显式声明的随包依赖组装到仓库根目录的
 `artifacts/mods/{{ mod.name }}/`。
 
-插件项目的本地构建设置和依赖部署声明写在对应项目的 `Taiwu.Mod.props`。
+插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。需要随包部署的依赖也在这里声明，并只由
+`pack-mod` 使用。
 
 ## 项目结构
 

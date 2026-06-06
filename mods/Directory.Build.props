@@ -19,21 +19,11 @@
     >$(MSBuildProjectName)</AssemblyName>
     <RootNamespace Condition="'$(RootNamespace)' == ''"
     >$(MSBuildProjectName)</RootNamespace>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDependencyFile Condition="'$(GenerateDependencyFile)' == ''"
     >false</GenerateDependencyFile>
     <UsePublicizer
       Condition="'$(UsePublicizer)' == '' And ('$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend')"
     >true</UsePublicizer>
-    <InternalizeRepackedDependencies
-      Condition="'$(InternalizeRepackedDependencies)' == ''"
-    >true</InternalizeRepackedDependencies>
-    <RenameInternalizedDependencies
-      Condition="'$(RenameInternalizedDependencies)' == ''"
-    >true</RenameInternalizedDependencies>
-    <AllowDuplicateInternalizedResources
-      Condition="'$(AllowDuplicateInternalizedResources)' == ''"
-    >false</AllowDuplicateInternalizedResources>
   </PropertyGroup>
 
   <ItemGroup
