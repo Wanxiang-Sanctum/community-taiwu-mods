@@ -17,10 +17,10 @@ dotnet build mods/{{ mod.name }}/src/Backend/{{ mod.name }}.Backend.csproj
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 ```
 
-`pack-mod` 会把 `Config.Lua` 和插件 DLL 组装到仓库根目录的
+`pack-mod` 会把 `Config.Lua`、插件入口 DLL 和显式声明的随包依赖组装到仓库根目录的
 `artifacts/mods/{{ mod.name }}/`。
 
-插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。
+插件项目的本地构建设置和依赖部署声明写在对应项目的 `Taiwu.Mod.props`。
 
 ## 项目结构
 

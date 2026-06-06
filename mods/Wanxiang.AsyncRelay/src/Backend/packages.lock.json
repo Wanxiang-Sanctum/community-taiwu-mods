@@ -2,12 +2,6 @@
   "version": 2,
   "dependencies": {
     "net8.0": {
-      "ILRepack.Lib.MSBuild.Task": {
-        "type": "Direct",
-        "requested": "[2.0.45, )",
-        "resolved": "2.0.45",
-        "contentHash": "SWGkzp5rT48gGK1ZR0GenOHh9CWaFwxI+NsHl3Cp/+N9G1NtVjpfk3Bxl5D8Uy+ciR7Q8P//CUvFZX1tsJQnQA=="
-      },
       "Roslynator.Analyzers": {
         "type": "Direct",
         "requested": "[4.15.0, )",

@@ -14,8 +14,9 @@
   -->
 
   <!--
-  <PropertyGroup>
-    <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-  </PropertyGroup>
+  <ItemGroup>
+    <TaiwuModRepackDependency Include="Your.Assembly.dll" />
+    <TaiwuModPackDependency Include="Other.Assembly.dll" />
+  </ItemGroup>
   -->
 </Project>

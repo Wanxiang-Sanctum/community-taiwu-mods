@@ -1,0 +1,177 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModPackManifestFile Condition="'$(TaiwuModPackManifestFile)' == ''"
+    >$(IntermediateOutputPath)TaiwuModPackManifest.txt</TaiwuModPackManifestFile>
+  </PropertyGroup>
+
+  <Target
+    Name="ResolveTaiwuModPackManifestAssets"
+    DependsOnTargets="ResolvePackageAssets;ResolveReferences"
+  >
+    <ItemGroup>
+      <_TaiwuModDependencyCandidate
+        Include="@(RuntimeCopyLocalItems)"
+        Condition="'%(RuntimeCopyLocalItems.Extension)' == '.dll'"
+      >
+        <AssemblyFileName
+        >%(RuntimeCopyLocalItems.Filename)%(RuntimeCopyLocalItems.Extension)</AssemblyFileName>
+        <AssemblyFileNameKey
+        >$([System.String]::Copy('%(RuntimeCopyLocalItems.Filename)%(RuntimeCopyLocalItems.Extension)').ToLowerInvariant())</AssemblyFileNameKey>
+      </_TaiwuModDependencyCandidate>
+      <_TaiwuModDependencyCandidate
+        Include="@(ReferenceCopyLocalPaths)"
+        Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'"
+      >
+        <AssemblyFileName
+        >%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)</AssemblyFileName>
+        <AssemblyFileNameKey
+        >$([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)').ToLowerInvariant())</AssemblyFileNameKey>
+      </_TaiwuModDependencyCandidate>
+
+      <_TaiwuModRepackDependencyRequest Include="@(TaiwuModRepackDependency)">
+        <AssemblyFileName
+        >%(TaiwuModRepackDependency.Identity)</AssemblyFileName>
+        <AssemblyFileNameKey
+        >$([System.String]::Copy('%(TaiwuModRepackDependency.Identity)').ToLowerInvariant())</AssemblyFileNameKey>
+      </_TaiwuModRepackDependencyRequest>
+      <_TaiwuModPackDependencyRequest Include="@(TaiwuModPackDependency)">
+        <AssemblyFileName>%(TaiwuModPackDependency.Identity)</AssemblyFileName>
+        <AssemblyFileNameKey
+        >$([System.String]::Copy('%(TaiwuModPackDependency.Identity)').ToLowerInvariant())</AssemblyFileNameKey>
+      </_TaiwuModPackDependencyRequest>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_TaiwuModDependencyCandidateKeys
+      >;@(_TaiwuModDependencyCandidate->'%(AssemblyFileNameKey)',
+        ';');</_TaiwuModDependencyCandidateKeys>
+      <_TaiwuModRepackDependencyKeys
+      >;@(_TaiwuModRepackDependencyRequest->'%(AssemblyFileNameKey)',
+        ';');</_TaiwuModRepackDependencyKeys>
+      <_TaiwuModPackDependencyKeys
+      >;@(_TaiwuModPackDependencyRequest->'%(AssemblyFileNameKey)',
+        ';');</_TaiwuModPackDependencyKeys>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_TaiwuModConflictingDependency
+        Include="@(_TaiwuModRepackDependencyRequest)"
+        Condition="$([System.String]::Copy('$(_TaiwuModPackDependencyKeys)').Contains(';%(_TaiwuModRepackDependencyRequest.AssemblyFileNameKey);'))"
+      />
+
+      <_TaiwuModResolvedRepackDependency
+        Include="@(_TaiwuModDependencyCandidate)"
+        Condition="$([System.String]::Copy('$(_TaiwuModRepackDependencyKeys)').Contains(';%(_TaiwuModDependencyCandidate.AssemblyFileNameKey);'))"
+      />
+      <_TaiwuModResolvedPackDependency
+        Include="@(_TaiwuModDependencyCandidate)"
+        Condition="$([System.String]::Copy('$(_TaiwuModPackDependencyKeys)').Contains(';%(_TaiwuModDependencyCandidate.AssemblyFileNameKey);'))"
+      />
+
+      <_TaiwuModResolvedRepackDependencyRequest
+        Include="@(_TaiwuModRepackDependencyRequest)"
+        Condition="$([System.String]::Copy('$(_TaiwuModDependencyCandidateKeys)').Contains(';%(_TaiwuModRepackDependencyRequest.AssemblyFileNameKey);'))"
+      />
+      <_TaiwuModResolvedPackDependencyRequest
+        Include="@(_TaiwuModPackDependencyRequest)"
+        Condition="$([System.String]::Copy('$(_TaiwuModDependencyCandidateKeys)').Contains(';%(_TaiwuModPackDependencyRequest.AssemblyFileNameKey);'))"
+      />
+
+      <_TaiwuModUnresolvedRepackDependency
+        Include="@(_TaiwuModRepackDependencyRequest)"
+      />
+      <_TaiwuModUnresolvedPackDependency
+        Include="@(_TaiwuModPackDependencyRequest)"
+      />
+      <_TaiwuModUnresolvedRepackDependency
+        Remove="@(_TaiwuModResolvedRepackDependencyRequest)"
+        MatchOnMetadata="AssemblyFileNameKey"
+      />
+      <_TaiwuModUnresolvedPackDependency
+        Remove="@(_TaiwuModResolvedPackDependencyRequest)"
+        MatchOnMetadata="AssemblyFileNameKey"
+      />
+
+      <_TaiwuModUniqueResolvedRepackDependency
+        Include="@(_TaiwuModResolvedRepackDependency)"
+        KeepDuplicates="false"
+      />
+      <_TaiwuModUniqueResolvedPackDependency
+        Include="@(_TaiwuModResolvedPackDependency)"
+        KeepDuplicates="false"
+      />
+      <_TaiwuModPackLibraryPath
+        Include="@(ReferencePath->'%(RootDir)%(Directory)')"
+      />
+      <_TaiwuModPackLibraryPath
+        Include="@(_TaiwuModDependencyCandidate->'%(RootDir)%(Directory)')"
+      />
+      <_TaiwuModUniquePackLibraryPath
+        Include="@(_TaiwuModPackLibraryPath)"
+        KeepDuplicates="false"
+      />
+    </ItemGroup>
+
+    <Error
+      Condition="'@(_TaiwuModConflictingDependency)' != ''"
+      Text="A dependency cannot be both repacked and copied as a separate DLL: @(_TaiwuModConflictingDependency->'%(AssemblyFileName)', ', ')"
+    />
+    <Error
+      Condition="'@(_TaiwuModUnresolvedRepackDependency)' != ''"
+      Text="TaiwuModRepackDependency was not found in runtime or copy-local references: @(_TaiwuModUnresolvedRepackDependency->'%(AssemblyFileName)', ', ')"
+    />
+    <Error
+      Condition="'@(_TaiwuModUnresolvedPackDependency)' != ''"
+      Text="TaiwuModPackDependency was not found in runtime or copy-local references: @(_TaiwuModUnresolvedPackDependency->'%(AssemblyFileName)', ', ')"
+    />
+  </Target>
+
+  <Target
+    Name="GenerateTaiwuModPackManifest"
+    AfterTargets="Build"
+    DependsOnTargets="ResolveTaiwuModPackManifestAssets"
+  >
+    <ItemGroup>
+      <_TaiwuModPackManifestLine
+        Include="option|InternalizeRepackedDependencies|$(InternalizeRepackedDependencies)"
+      />
+      <_TaiwuModPackManifestLine
+        Include="option|RenameInternalizedDependencies|$(RenameInternalizedDependencies)"
+      />
+      <_TaiwuModPackManifestLine
+        Include="option|AllowDuplicateInternalizedResources|$(AllowDuplicateInternalizedResources)"
+      />
+      <_TaiwuModKeyFile Include="$(KeyFile)" Condition="'$(KeyFile)' != ''" />
+      <_TaiwuModPackManifestLine
+        Include="@(_TaiwuModKeyFile->'option|KeyFile|%(FullPath)')"
+      />
+
+      <_TaiwuModPackManifestLine
+        Include="entry|$(TargetPath)|Plugins/$(TargetFileName)"
+      />
+      <_TaiwuModPackManifestLine
+        Include="@(_TaiwuModUniqueResolvedRepackDependency->'repack|%(FullPath)|%(Filename)%(Extension)')"
+      />
+      <_TaiwuModPackManifestLine
+        Include="@(_TaiwuModUniqueResolvedPackDependency->'pack|%(FullPath)|Plugins/%(Filename)%(Extension)')"
+      />
+      <_TaiwuModPackManifestLine
+        Include="@(_TaiwuModUniquePackLibraryPath->'library|%(FullPath)|')"
+      />
+    </ItemGroup>
+
+    <MakeDir
+      Directories="$([System.IO.Path]::GetDirectoryName('$(TaiwuModPackManifestFile)'))"
+    />
+    <WriteLinesToFile
+      File="$(TaiwuModPackManifestFile)"
+      Lines="@(_TaiwuModPackManifestLine)"
+      Overwrite="true"
+      Encoding="UTF-8"
+    />
+    <Message
+      Importance="Low"
+      Text="Generated Taiwu mod pack manifest: $(TaiwuModPackManifestFile)"
+    />
+  </Target>
+</Project>

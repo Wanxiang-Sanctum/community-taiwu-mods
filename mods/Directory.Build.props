@@ -25,28 +25,20 @@
     <UsePublicizer
       Condition="'$(UsePublicizer)' == '' And ('$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend')"
     >true</UsePublicizer>
-    <InternalizeRuntimeDependencies
-      Condition="'$(InternalizeRuntimeDependencies)' == ''"
-    >true</InternalizeRuntimeDependencies>
+    <InternalizeRepackedDependencies
+      Condition="'$(InternalizeRepackedDependencies)' == ''"
+    >true</InternalizeRepackedDependencies>
     <RenameInternalizedDependencies
       Condition="'$(RenameInternalizedDependencies)' == ''"
     >true</RenameInternalizedDependencies>
     <AllowDuplicateInternalizedResources
       Condition="'$(AllowDuplicateInternalizedResources)' == ''"
     >false</AllowDuplicateInternalizedResources>
-    <ILRepackTargetsFile Condition="'$(ILRepackTargetsFile)' == ''"
-    >$(TaiwuModsModsDir)Taiwu.Mod.ILRepack.targets</ILRepackTargetsFile>
   </PropertyGroup>
 
   <ItemGroup
     Condition="'$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend'"
   >
-    <PackageReference
-      Include="ILRepack.Lib.MSBuild.Task"
-      PrivateAssets="all"
-      ExcludeAssets="runtime"
-      Condition="'$(InternalizeRuntimeDependencies)' != 'false'"
-    />
     <PackageReference
       Include="Krafs.Publicizer"
       PrivateAssets="all"

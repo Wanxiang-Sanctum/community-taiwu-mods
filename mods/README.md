@@ -29,8 +29,9 @@ mods/MyMod/
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 ```
 
-`pack-mod` 默认使用 `Release` 构建前后端项目，并把 `Config.Lua` 和插件 DLL 组装到
-`artifacts/mods/MyMod/`。普通 `dotnet build` 使用 SDK 默认的 `bin/` 和 `obj/` 输出目录。
+`pack-mod` 默认使用 `Release` 构建前后端项目，并把 `Config.Lua`、插件入口 DLL 和显式声明的
+随包依赖组装到 `artifacts/mods/MyMod/`。普通 `dotnet build` 使用 SDK 默认的 `bin/` 和 `obj/`
+输出目录，不会合并或复制部署依赖。
 
 ## Taiwu 引用和 Publicizer
 
@@ -61,28 +62,42 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 </PropertyGroup>
 ```
 
-## 依赖合并和内部化
+## 插件入口和依赖部署
 
-插件项目默认使用 `ILRepack.Lib.MSBuild.Task` 合并运行时依赖。构建前端或后端插件时，会以插件
-主 DLL 为入口，收集插件项目自身需要复制到输出目录的 runtime/copy-local DLL；如果插件项目引用
-内部项目，也会收集这些引用项目需要随输出复制的 runtime DLL。这些输入程序集会被合并进插件主 DLL，
-并默认内部化和重命名，降低不同 mod 携带同名依赖时的冲突风险。
+太吾读取 `Config.Lua` 中的 `FrontendPlugins` 和 `BackendPlugins`，并从 mod 的 `Plugins/`
+目录按文件名加载这些插件入口 DLL。独立依赖 DLL 可以同样放在 `Plugins/` 下，但不应该写进
+`FrontendPlugins` 或 `BackendPlugins`；它们不是插件入口。
 
-进入 NuGet `ref/` 目录的编译期引用，以及标记为 `CopyLocal=false` 的引用，保持为编译输入，不会
-被合并。太吾游戏引用包因此会保留为外部游戏依赖。被合并的 DLL 会从插件输出目录中移除；默认打包
-结果只需要插件主 DLL。
-
-```xml
-<PropertyGroup>
-  <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-</PropertyGroup>
-```
-
-上面的配置可以关闭默认合并和内部化。如果某个 runtime/copy-local DLL 需要保持为独立文件并随
-插件部署，在 `Taiwu.Mod.props` 中排除对应程序集文件名，不带 `.dll`：
+`pack-mod` 总是部署 `Config.Lua` 中声明的插件入口 DLL。其他依赖 DLL 默认不合并、不随包复制；
+需要把某个 DLL 合并到入口插件时，在项目旁的 `Taiwu.Mod.props` 或项目文件中显式声明：
 
 ```xml
 <ItemGroup>
-  <KeepDependencySeparate Include="Your.Dependency.AssemblyName" />
+  <TaiwuModRepackDependency Include="Your.Assembly.dll" />
 </ItemGroup>
 ```
+
+被合并的依赖默认内部化并重命名，降低不同 mod 携带同名依赖时的冲突风险。需要调整内部化策略时，
+在项目中设置：
+
+```xml
+<PropertyGroup>
+  <InternalizeRepackedDependencies>false</InternalizeRepackedDependencies>
+</PropertyGroup>
+```
+
+如果某个 DLL 需要作为独立文件随 mod 部署，在同一配置入口声明：
+
+```xml
+<ItemGroup>
+  <TaiwuModPackDependency Include="Other.Assembly.dll" />
+</ItemGroup>
+```
+
+一个依赖要么合并进入口插件，要么作为独立 DLL 随包复制；不要把同一个 DLL 同时写进
+`TaiwuModRepackDependency` 和 `TaiwuModPackDependency`。
+
+这两个 item 都按 DLL 文件名匹配当前项目已解析的 NuGet runtime 资产和 copy-local 引用；只写
+DLL 文件名，不写 NuGet 包路径或输出目录路径。
+`TaiwuModPackDependency` 默认打到
+`Plugins/<DLL 文件名>`。
