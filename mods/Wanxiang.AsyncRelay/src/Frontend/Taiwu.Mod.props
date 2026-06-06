@@ -4,6 +4,13 @@
     <UsePublicizer>false</UsePublicizer>
   </PropertyGroup>
 
+  <ItemGroup>
+    <TaiwuModPackDependency Include="UniTask.dll" />
+    <TaiwuModPackDependency Include="UniTask.Linq.dll" />
+    <TaiwuModPackDependency Include="UniTask.TextMeshPro.dll" />
+    <TaiwuModPackDependency Include="UniTask.Addressables.dll" />
+  </ItemGroup>
+
   <!--
   <ItemGroup>
     <Publicize
@@ -12,11 +19,5 @@
       IncludeVirtualMembers="false"
     />
   </ItemGroup>
-  -->
-
-  <!--
-  <PropertyGroup>
-    <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-  </PropertyGroup>
   -->
 </Project>

@@ -13,10 +13,4 @@
     />
   </ItemGroup>
   -->
-
-  <!--
-  <PropertyGroup>
-    <InternalizeRuntimeDependencies>false</InternalizeRuntimeDependencies>
-  </PropertyGroup>
-  -->
 </Project>

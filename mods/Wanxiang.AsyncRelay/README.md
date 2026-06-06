@@ -41,10 +41,11 @@ dotnet build mods/Wanxiang.AsyncRelay/src/Backend/Wanxiang.AsyncRelay.Backend.cs
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.AsyncRelay
 ```
 
-`pack-mod` 会把 `Config.Lua` 和插件 DLL 组装到仓库根目录的
+`pack-mod` 会把 `Config.Lua`、插件入口 DLL 和显式声明的 UniTask 运行时 DLL 组装到仓库根目录的
 `artifacts/mods/Wanxiang.AsyncRelay/`。
 
-插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。
+插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。前端项目在这里声明需要随包部署的
+UniTask 运行时 DLL；这些部署声明只由 `pack-mod` 使用。
 
 ## 项目结构
 

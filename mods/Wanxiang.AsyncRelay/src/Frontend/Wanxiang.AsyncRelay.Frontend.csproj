@@ -1,8 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference
       Include="Taiwu.ModKit.Dependencies.UniTask"
@@ -12,9 +8,5 @@
       Include="Taiwu.ModKit.References.Frontend"
       PrivateAssets="all"
     />
-    <KeepDependencySeparate Include="UniTask" />
-    <KeepDependencySeparate Include="UniTask.Linq" />
-    <KeepDependencySeparate Include="UniTask.TextMeshPro" />
-    <KeepDependencySeparate Include="UniTask.Addressables" />
   </ItemGroup>
 </Project>
