@@ -5,10 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TaiwuModPackDependency Include="UniTask.dll" />
-    <TaiwuModPackDependency Include="UniTask.Linq.dll" />
-    <TaiwuModPackDependency Include="UniTask.TextMeshPro.dll" />
-    <TaiwuModPackDependency Include="UniTask.Addressables.dll" />
+    <TaiwuModCopyDependency Include="UniTask.dll" />
+    <TaiwuModCopyDependency Include="UniTask.Linq.dll" />
+    <TaiwuModCopyDependency Include="UniTask.TextMeshPro.dll" />
+    <TaiwuModCopyDependency Include="UniTask.Addressables.dll" />
   </ItemGroup>
 
   <!--

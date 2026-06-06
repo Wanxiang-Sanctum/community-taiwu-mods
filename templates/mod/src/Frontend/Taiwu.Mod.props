@@ -15,8 +15,8 @@
 
   <!--
   <ItemGroup>
-    <TaiwuModRepackDependency Include="Your.Assembly.dll" />
-    <TaiwuModPackDependency Include="Other.Assembly.dll" />
+    <TaiwuModMergeDependency Include="Your.Assembly.dll" />
+    <TaiwuModCopyDependency Include="Other.Assembly.dll" />
   </ItemGroup>
   -->
 </Project>

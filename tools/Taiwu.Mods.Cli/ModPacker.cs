@@ -30,7 +30,7 @@ internal sealed class ModPacker(
         foreach (string projectPath in projectPaths)
         {
             PackManifest manifest = await GenerateProjectPackManifestAsync(projectPath, cancellationToken).ConfigureAwait(false);
-            await CopyPackManifestOutputsAsync(manifest, packageRoot, cancellationToken).ConfigureAwait(false);
+            await WritePackManifestOutputsAsync(manifest, packageRoot, cancellationToken).ConfigureAwait(false);
         }
 
         Console.WriteLine($"已打包 mod '{modName}'：{packageRoot}");
@@ -100,27 +100,27 @@ internal sealed class ModPacker(
         return builder.Build();
     }
 
-    private async Task CopyPackManifestOutputsAsync(
+    private async Task WritePackManifestOutputsAsync(
         PackManifest manifest,
         string packageRoot,
         CancellationToken cancellationToken)
     {
-        if (manifest.RepackDependencies.Count == 0)
+        if (manifest.MergeDependencies.Count == 0)
         {
             CopyManifestFile(manifest.Entry, packageRoot);
         }
         else
         {
-            await RepackEntryAssemblyAsync(manifest, packageRoot, cancellationToken).ConfigureAwait(false);
+            await MergeEntryAssemblyAsync(manifest, packageRoot, cancellationToken).ConfigureAwait(false);
         }
 
-        foreach (PackManifestFile dependency in manifest.PackDependencies)
+        foreach (PackManifestFile dependency in manifest.CopyDependencies)
         {
             CopyManifestFile(dependency, packageRoot);
         }
     }
 
-    private async Task RepackEntryAssemblyAsync(
+    private async Task MergeEntryAssemblyAsync(
         PackManifest manifest,
         string packageRoot,
         CancellationToken cancellationToken)
@@ -140,7 +140,7 @@ internal sealed class ModPacker(
             $"/out:{outputPath}",
         ];
 
-        if (manifest.Options.InternalizeRepackedDependencies)
+        if (manifest.Options.InternalizeMergedDependencies)
         {
             arguments.Add("/internalize");
             if (manifest.Options.RenameInternalizedDependencies)
@@ -165,7 +165,7 @@ internal sealed class ModPacker(
         }
 
         arguments.Add(manifest.Entry.SourcePath);
-        arguments.AddRange(manifest.RepackDependencies.Select(static dependency => dependency.SourcePath));
+        arguments.AddRange(manifest.MergeDependencies.Select(static dependency => dependency.SourcePath));
 
         await ProcessRunner.RunAsync("dotnet", repoRoot, arguments, cancellationToken).ConfigureAwait(false);
     }
@@ -212,8 +212,8 @@ internal sealed class ModPacker(
 
     private sealed class PackManifestBuilder(string manifestPath)
     {
-        private readonly List<PackManifestFile> _repackDependencies = [];
-        private readonly List<PackManifestFile> _packDependencies = [];
+        private readonly List<PackManifestFile> _mergeDependencies = [];
+        private readonly List<PackManifestFile> _copyDependencies = [];
         private readonly List<string> _libraryPaths = [];
         private readonly Dictionary<string, string> _options = new(StringComparer.OrdinalIgnoreCase);
         private PackManifestFile? _entry;
@@ -226,12 +226,12 @@ internal sealed class ModPacker(
                     SetEntry(firstValue, secondValue, lineNumber);
                     break;
 
-                case "repack":
-                    _repackDependencies.Add(CreateFile(firstValue, string.Empty, lineNumber));
+                case "merge":
+                    _mergeDependencies.Add(CreateFile(firstValue, string.Empty, lineNumber));
                     break;
 
-                case "pack":
-                    _packDependencies.Add(CreateFile(firstValue, secondValue, lineNumber));
+                case "copy":
+                    _copyDependencies.Add(CreateFile(firstValue, secondValue, lineNumber));
                     break;
 
                 case "library":
@@ -252,7 +252,7 @@ internal sealed class ModPacker(
             PackManifestFile entry = _entry
                 ?? throw new InvalidOperationException($"pack manifest 缺少 entry 记录：{manifestPath}");
 
-            return new PackManifest(entry, _repackDependencies, _packDependencies, [.. _libraryPaths.Distinct(StringComparer.OrdinalIgnoreCase)], CreateOptions());
+            return new PackManifest(entry, _mergeDependencies, _copyDependencies, [.. _libraryPaths.Distinct(StringComparer.OrdinalIgnoreCase)], CreateOptions());
         }
 
         private void SetEntry(string sourcePath, string packagePath, int lineNumber)
@@ -277,7 +277,7 @@ internal sealed class ModPacker(
         private PackManifestOptions CreateOptions()
         {
             return new PackManifestOptions(
-                bool.Parse(_options["InternalizeRepackedDependencies"]),
+                bool.Parse(_options["InternalizeMergedDependencies"]),
                 bool.Parse(_options["RenameInternalizedDependencies"]),
                 bool.Parse(_options["AllowDuplicateInternalizedResources"]),
                 _options.GetValueOrDefault("KeyFile"));
@@ -286,8 +286,8 @@ internal sealed class ModPacker(
 
     private sealed record PackManifest(
         PackManifestFile Entry,
-        IReadOnlyList<PackManifestFile> RepackDependencies,
-        IReadOnlyList<PackManifestFile> PackDependencies,
+        IReadOnlyList<PackManifestFile> MergeDependencies,
+        IReadOnlyList<PackManifestFile> CopyDependencies,
         IReadOnlyList<string> LibraryPaths,
         PackManifestOptions Options);
 
@@ -298,7 +298,7 @@ internal sealed class ModPacker(
         int LineNumber);
 
     private sealed record PackManifestOptions(
-        bool InternalizeRepackedDependencies,
+        bool InternalizeMergedDependencies,
         bool RenameInternalizedDependencies,
         bool AllowDuplicateInternalizedResources,
         string? KeyFile);
