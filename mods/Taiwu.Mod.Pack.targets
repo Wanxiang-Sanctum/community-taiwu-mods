@@ -15,21 +15,12 @@
 
   <Target
     Name="ResolveTaiwuModPackManifestAssets"
-    DependsOnTargets="ResolvePackageAssets;ResolveReferences"
+    DependsOnTargets="ResolveReferences"
   >
     <ItemGroup>
       <_TaiwuModDependencyCandidate
-        Include="@(RuntimeCopyLocalItems)"
-        Condition="'%(RuntimeCopyLocalItems.Extension)' == '.dll'"
-      >
-        <AssemblyFileName
-        >%(RuntimeCopyLocalItems.Filename)%(RuntimeCopyLocalItems.Extension)</AssemblyFileName>
-        <AssemblyFileNameKey
-        >$([System.String]::Copy('%(RuntimeCopyLocalItems.Filename)%(RuntimeCopyLocalItems.Extension)').ToLowerInvariant())</AssemblyFileNameKey>
-      </_TaiwuModDependencyCandidate>
-      <_TaiwuModDependencyCandidate
-        Include="@(ReferenceCopyLocalPaths)"
-        Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'"
+        Include="$(TargetDir)%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)"
+        Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll' And Exists('$(TargetDir)%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)')"
       >
         <AssemblyFileName
         >%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)</AssemblyFileName>
@@ -129,11 +120,11 @@
     />
     <Error
       Condition="'@(_TaiwuModUnresolvedMergeDependency)' != ''"
-      Text="TaiwuModMergeDependency was not found in runtime or copy-local references: @(_TaiwuModUnresolvedMergeDependency->'%(AssemblyFileName)', ', ')"
+      Text="TaiwuModMergeDependency was not found in copy-local references: @(_TaiwuModUnresolvedMergeDependency->'%(AssemblyFileName)', ', ')"
     />
     <Error
       Condition="'@(_TaiwuModUnresolvedCopyDependency)' != ''"
-      Text="TaiwuModCopyDependency was not found in runtime or copy-local references: @(_TaiwuModUnresolvedCopyDependency->'%(AssemblyFileName)', ', ')"
+      Text="TaiwuModCopyDependency was not found in copy-local references: @(_TaiwuModUnresolvedCopyDependency->'%(AssemblyFileName)', ', ')"
     />
   </Target>
 
