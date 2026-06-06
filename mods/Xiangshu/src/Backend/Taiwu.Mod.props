@@ -15,8 +15,8 @@
     <TaiwuModMergeDependency
       Include="Microsoft.Extensions.Logging.Abstractions.dll"
     />
-    <TaiwuModMergeDependency Include="System.IO.Pipelines.dll" />
-    <TaiwuModMergeDependency Include="System.Net.ServerSentEvents.dll" />
+    <TaiwuModCopyDependency Include="System.IO.Pipelines.dll" />
+    <TaiwuModCopyDependency Include="System.Net.ServerSentEvents.dll" />
   </ItemGroup>
 
   <!--

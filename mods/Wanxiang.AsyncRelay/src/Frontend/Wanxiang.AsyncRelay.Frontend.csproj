@@ -4,10 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference
-      Include="Taiwu.ModKit.Dependencies.UniTask"
-      PrivateAssets="all"
-    />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.UniTask" />
     <PackageReference
       Include="Taiwu.ModKit.References.Frontend"
       PrivateAssets="all"
