@@ -1,14 +1,14 @@
 using System.Diagnostics;
-using System.Text.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Xiangshu.Ipc;
 
 public static class XiangshuIpcEndpointRegistry
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
     };
 
     public static string GetManifestPath()
@@ -76,7 +76,7 @@ public static class XiangshuIpcEndpointRegistry
         manifest.Version = 1;
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        string json = JsonSerializer.Serialize(manifest, JsonOptions);
+        string json = JsonConvert.SerializeObject(manifest, Formatting.Indented, JsonSettings);
         File.WriteAllText(manifestPath, json + Environment.NewLine);
     }
 
@@ -111,7 +111,7 @@ public static class XiangshuIpcEndpointRegistry
             return new XiangshuIpcManifest();
         }
 
-        return JsonSerializer.Deserialize<XiangshuIpcManifest>(json, JsonOptions)
+        return JsonConvert.DeserializeObject<XiangshuIpcManifest>(json, JsonSettings)
             ?? throw new InvalidDataException($"IPC endpoint manifest is not a JSON object: {manifestPath}");
     }
 

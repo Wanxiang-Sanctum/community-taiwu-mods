@@ -26,7 +26,6 @@
     />
     <PackageVersion Include="Scriban" Version="7.2.3" />
     <PackageVersion Include="System.CommandLine" Version="2.0.8" />
-    <PackageVersion Include="System.Text.Json" Version="10.0.7" />
     <PackageVersion
       Include="Taiwu.ModKit.References.Plugin"
       Version="$(TaiwuModKitReferencesVersion)"

@@ -4,20 +4,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
-    <TaiwuModCopyDependency Include="MessagePack.dll" />
-    <TaiwuModCopyDependency Include="MessagePipe.dll" />
-    <TaiwuModCopyDependency Include="MessagePipe.Interprocess.dll" />
-    <TaiwuModCopyDependency
+    <TaiwuModMergeDependency Include="MessagePack.Annotations.dll" />
+    <TaiwuModMergeDependency Include="MessagePack.dll" />
+    <TaiwuModMergeDependency Include="MessagePipe.dll" />
+    <TaiwuModMergeDependency Include="MessagePipe.Interprocess.dll" />
+    <TaiwuModMergeDependency
       Include="Microsoft.Extensions.DependencyInjection.dll"
     />
+    <TaiwuModMergeDependency Include="Microsoft.NET.StringTools.dll" />
     <TaiwuModCopyDependency
       Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
     />
-    <TaiwuModCopyDependency Include="Microsoft.NET.StringTools.dll" />
-    <TaiwuModCopyDependency Include="System.IO.Pipelines.dll" />
-    <TaiwuModCopyDependency Include="System.Text.Encodings.Web.dll" />
-    <TaiwuModCopyDependency Include="System.Text.Json.dll" />
     <TaiwuModCopyDependency Include="Xiangshu.Ipc.dll" />
   </ItemGroup>
 

@@ -4,6 +4,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Shared"
+      PrivateAssets="all"
+    />
   </ItemGroup>
 </Project>
