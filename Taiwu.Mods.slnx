@@ -8,7 +8,7 @@
     />
     <Project Path="mods/Xiangshu/src/Backend/Xiangshu.Backend.csproj" />
     <Project Path="mods/Xiangshu/src/Frontend/Xiangshu.Frontend.csproj" />
-    <Project Path="mods/Xiangshu/src/Mcp/Xiangshu.Mcp.csproj" />
+    <Project Path="mods/Xiangshu/src/Ipc/Xiangshu.Ipc.csproj" />
   </Folder>
   <Folder Name="/shared/" />
   <Folder Name="/tools/">

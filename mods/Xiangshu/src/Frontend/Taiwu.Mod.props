@@ -4,25 +4,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TaiwuModMergeDependency Include="Xiangshu.Mcp.dll" />
-    <TaiwuModMergeDependency Include="ModelContextProtocol.Core.dll" />
-    <TaiwuModMergeDependency
-      Include="Microsoft.Extensions.AI.Abstractions.dll"
-    />
-    <TaiwuModMergeDependency
-      Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
-    />
-    <TaiwuModMergeDependency
-      Include="Microsoft.Extensions.Logging.Abstractions.dll"
-    />
+    <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
+    <TaiwuModCopyDependency Include="MessagePack.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.Interprocess.dll" />
     <TaiwuModCopyDependency Include="Microsoft.Bcl.AsyncInterfaces.dll" />
-    <TaiwuModCopyDependency Include="Microsoft.Bcl.Memory.dll" />
-    <TaiwuModCopyDependency Include="System.Diagnostics.DiagnosticSource.dll" />
+    <TaiwuModCopyDependency Include="System.Collections.Immutable.dll" />
     <TaiwuModCopyDependency Include="System.IO.Pipelines.dll" />
-    <TaiwuModCopyDependency Include="System.Net.ServerSentEvents.dll" />
+    <TaiwuModCopyDependency
+      Include="System.Runtime.CompilerServices.Unsafe.dll"
+    />
     <TaiwuModCopyDependency Include="System.Text.Encodings.Web.dll" />
     <TaiwuModCopyDependency Include="System.Text.Json.dll" />
-    <TaiwuModCopyDependency Include="System.Threading.Channels.dll" />
+    <TaiwuModCopyDependency Include="UniTask.dll" />
+    <TaiwuModCopyDependency Include="VContainer.dll" />
+    <TaiwuModCopyDependency Include="Xiangshu.Ipc.dll" />
   </ItemGroup>
 
   <!--

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
 
-namespace Xiangshu.Mcp;
+namespace Xiangshu.Ipc;
 
-internal static class XiangshuMcpEndpointRegistry
+public static class XiangshuIpcEndpointRegistry
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -11,7 +11,19 @@ internal static class XiangshuMcpEndpointRegistry
         WriteIndented = true,
     };
 
-    public static XiangshuMcpEndpointRegistration Register(XiangshuMcpEndpoint endpoint)
+    public static string GetManifestPath()
+    {
+        string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            throw new InvalidOperationException("LocalApplicationData path is not available.");
+        }
+
+        return Path.Combine(root, "Taiwu", "Xiangshu", "ipc-endpoints.json");
+    }
+
+    public static XiangshuIpcEndpointRegistration Register(XiangshuIpcEndpoint endpoint)
     {
         if (endpoint is null)
         {
@@ -33,10 +45,10 @@ internal static class XiangshuMcpEndpointRegistry
                 manifest.Endpoints.Add(endpoint);
             });
 
-        return new XiangshuMcpEndpointRegistration(manifestPath, endpoint);
+        return new XiangshuIpcEndpointRegistration(manifestPath, endpoint);
     }
 
-    internal static void Unregister(string manifestPath, XiangshuMcpEndpoint endpoint)
+    internal static void Unregister(string manifestPath, XiangshuIpcEndpoint endpoint)
     {
         UpdateManifest(
             manifestPath,
@@ -51,25 +63,13 @@ internal static class XiangshuMcpEndpointRegistry
             });
     }
 
-    private static string GetManifestPath()
-    {
-        string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            throw new InvalidOperationException("LocalApplicationData path is not available.");
-        }
-
-        return Path.Combine(root, "Taiwu", "Xiangshu", "mcp-endpoints.json");
-    }
-
-    private static void UpdateManifest(string manifestPath, Action<XiangshuMcpManifest> update)
+    private static void UpdateManifest(string manifestPath, Action<XiangshuIpcManifest> update)
     {
         string directory = Path.GetDirectoryName(manifestPath) ?? ".";
         _ = Directory.CreateDirectory(directory);
 
         using FileStream lockFile = OpenLockFile(manifestPath + ".lock");
-        XiangshuMcpManifest manifest = ReadManifest(manifestPath);
+        XiangshuIpcManifest manifest = ReadManifest(manifestPath);
 
         update(manifest);
 
@@ -97,31 +97,31 @@ internal static class XiangshuMcpEndpointRegistry
         return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
     }
 
-    private static XiangshuMcpManifest ReadManifest(string manifestPath)
+    private static XiangshuIpcManifest ReadManifest(string manifestPath)
     {
         if (!File.Exists(manifestPath))
         {
-            return new XiangshuMcpManifest();
+            return new XiangshuIpcManifest();
         }
 
         string json = File.ReadAllText(manifestPath);
 
         if (string.IsNullOrWhiteSpace(json))
         {
-            return new XiangshuMcpManifest();
+            return new XiangshuIpcManifest();
         }
 
-        return JsonSerializer.Deserialize<XiangshuMcpManifest>(json, JsonOptions)
-            ?? throw new InvalidDataException($"MCP endpoint manifest is not a JSON object: {manifestPath}");
+        return JsonSerializer.Deserialize<XiangshuIpcManifest>(json, JsonOptions)
+            ?? throw new InvalidDataException($"IPC endpoint manifest is not a JSON object: {manifestPath}");
     }
 
-    private static bool IsSameEndpointSlot(XiangshuMcpEndpoint left, XiangshuMcpEndpoint right)
+    private static bool IsSameEndpointSlot(XiangshuIpcEndpoint left, XiangshuIpcEndpoint right)
     {
         return left.ProcessId == right.ProcessId
             && string.Equals(left.Side, right.Side, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsLiveEndpoint(XiangshuMcpEndpoint endpoint)
+    private static bool IsLiveEndpoint(XiangshuIpcEndpoint endpoint)
     {
         try
         {
@@ -139,12 +139,12 @@ internal static class XiangshuMcpEndpointRegistry
     }
 }
 
-internal sealed class XiangshuMcpEndpointRegistration(
+public sealed class XiangshuIpcEndpointRegistration(
     string manifestPath,
-    XiangshuMcpEndpoint endpoint) : IDisposable
+    XiangshuIpcEndpoint endpoint) : IDisposable
 {
     private readonly string _manifestPath = manifestPath;
-    private readonly XiangshuMcpEndpoint _endpoint = endpoint;
+    private readonly XiangshuIpcEndpoint _endpoint = endpoint;
     private bool _disposed;
 
     public void Dispose()
@@ -155,34 +155,28 @@ internal sealed class XiangshuMcpEndpointRegistration(
         }
 
         _disposed = true;
-        XiangshuMcpEndpointRegistry.Unregister(_manifestPath, _endpoint);
+        XiangshuIpcEndpointRegistry.Unregister(_manifestPath, _endpoint);
     }
 }
 
-internal sealed class XiangshuMcpManifest
+internal sealed class XiangshuIpcManifest
 {
     public int Version { get; set; } = 1;
 
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
-    public List<XiangshuMcpEndpoint> Endpoints { get; set; } = [];
+    public List<XiangshuIpcEndpoint> Endpoints { get; set; } = [];
 }
 
-internal sealed class XiangshuMcpEndpoint
+public sealed class XiangshuIpcEndpoint
 {
     public string Side { get; set; } = string.Empty;
 
-    public string ServerName { get; set; } = string.Empty;
-
-    public string ServerTitle { get; set; } = string.Empty;
-
-    public string ServerVersion { get; set; } = string.Empty;
-
     public string Transport { get; set; } = string.Empty;
 
-    public string Url { get; set; } = string.Empty;
+    public string Host { get; set; } = string.Empty;
 
-    public string AuthorizationHeader { get; set; } = string.Empty;
+    public int Port { get; set; }
 
     public int ProcessId { get; set; }
 

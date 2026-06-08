@@ -5,7 +5,20 @@
 
   <ItemGroup>
     <ProjectReference
-      Include="$(TaiwuModsModsDir)Xiangshu/src/Mcp/Xiangshu.Mcp.csproj"
+      Include="$(TaiwuModsModsDir)Xiangshu/src/Ipc/Xiangshu.Ipc.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
+    <PackageReference
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
+    />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.UniTask" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.VContainer" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Unity"
+      PrivateAssets="all"
     />
   </ItemGroup>
 </Project>
