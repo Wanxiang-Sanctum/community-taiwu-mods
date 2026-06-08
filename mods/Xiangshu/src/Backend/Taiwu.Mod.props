@@ -14,6 +14,7 @@
     <TaiwuModCopyDependency
       Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
     />
+    <TaiwuModCopyDependency Include="Microsoft.NET.StringTools.dll" />
     <TaiwuModCopyDependency Include="System.IO.Pipelines.dll" />
     <TaiwuModCopyDependency Include="System.Text.Encodings.Web.dll" />
     <TaiwuModCopyDependency Include="System.Text.Json.dll" />

@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer" />
     <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
     />

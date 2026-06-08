@@ -7,8 +7,10 @@
     <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
     <TaiwuModCopyDependency Include="MessagePack.dll" />
     <TaiwuModCopyDependency Include="MessagePipe.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.VContainer.dll" />
     <TaiwuModCopyDependency Include="MessagePipe.Interprocess.dll" />
     <TaiwuModCopyDependency Include="Microsoft.Bcl.AsyncInterfaces.dll" />
+    <TaiwuModCopyDependency Include="Microsoft.NET.StringTools.dll" />
     <TaiwuModCopyDependency Include="System.Collections.Immutable.dll" />
     <TaiwuModCopyDependency Include="System.IO.Pipelines.dll" />
     <TaiwuModCopyDependency

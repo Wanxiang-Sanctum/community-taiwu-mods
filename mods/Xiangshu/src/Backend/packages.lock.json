@@ -10,21 +10,21 @@
       },
       "MessagePipe": {
         "type": "Direct",
-        "requested": "[1.8.1, )",
-        "resolved": "1.8.1",
-        "contentHash": "64I7OIgKt+ITfD7XAyEiSQcN2izS6kFiipS/risls9NHNaOmonkumt7I2xmLawfFMqBPVSoa171EoDEaJVyJQg==",
+        "requested": "[1.8.2, )",
+        "resolved": "1.8.2",
+        "contentHash": "ZTQERiwXB0ev/3TWDsKmzXOkxQ1a0fwcTljghSRZQq2hLUJ16SNw/gcjEjvyeKOX90DPkbV2sSv86aGb+2ryxQ==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0"
         }
       },
       "MessagePipe.Interprocess": {
         "type": "Direct",
-        "requested": "[1.8.1, )",
-        "resolved": "1.8.1",
-        "contentHash": "cf+KowKA4RX1iFw7nSSKnFlVh8TYPiNZTfv5APj8zH9wTASkhezTdlQiMiXdv9AT8M2VkTzp5setRcchbZqINg==",
+        "requested": "[1.8.2, )",
+        "resolved": "1.8.2",
+        "contentHash": "70pxlvR+fNoYRdyD/XzpmPO/RhqdaTPftlVKma17/QAHpmS8EyN8B7wgadJtfKEv6c+S0GBW9ycgBOWd+ZKMbQ==",
         "dependencies": {
-          "MessagePack": "2.3.85",
-          "MessagePipe": "1.8.1",
+          "MessagePack": "3.1.4",
+          "MessagePipe": "1.8.2",
           "System.IO.Pipelines": "6.0.3"
         }
       },
@@ -57,21 +57,33 @@
       },
       "MessagePack": {
         "type": "Transitive",
-        "resolved": "2.3.85",
-        "contentHash": "wOabnqkrXp7oeEYLY4Kd0m0eT4falJQukqvErfz5Y4FKKo9mSQQ1+rMxx9mapF2el+P0XQxiZOBKFm+oCvu0aw==",
+        "resolved": "3.1.4",
+        "contentHash": "BH0wlHWmVoZpbAPyyt2Awbq30C+ZsS3eHSkYdnyUAbqVJ22fAJDzn2xTieBeoT5QlcBzp61vHcv878YJGfi3mg==",
         "dependencies": {
-          "MessagePack.Annotations": "2.3.85"
+          "MessagePack.Annotations": "3.1.4",
+          "MessagePackAnalyzer": "3.1.4",
+          "Microsoft.NET.StringTools": "17.11.4"
         }
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
-        "resolved": "2.3.85",
-        "contentHash": "2GCYZ9qgNS5Og0tiqfhWRhcfDZI/iRi8t07R0fNic1HthMMRfWxWOKDIBhtMA1RwZM4BuRsmJXUgk3evyisb1w=="
+        "resolved": "3.1.4",
+        "contentHash": "aVWrDAkCdqxwQsz/q0ldPh2EFn48M99YUzE9OvZjMq2RNLKz4o2z88iGFvSvbMqOWRweRvKPHBJZe22PRqzslQ=="
+      },
+      "MessagePackAnalyzer": {
+        "type": "Transitive",
+        "resolved": "3.1.4",
+        "contentHash": "CTaSsN/liJ7MhLCAB7Z4ZLBNuVGCq9lt2BT/cbrc9vzGv89yK3CqIA+z9T19a11eQYl9etZHL6MQJgCqECRVpg=="
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.7",
         "contentHash": "Z6mfFEaFcwCfSboxJwOLfu7/31npCY9q70WUamHW/vRQhDvBKOT4Vf9YkZj5J6hLvJpb0oDEYfHunQZj0xxvKw=="
+      },
+      "Microsoft.NET.StringTools": {
+        "type": "Transitive",
+        "resolved": "17.11.4",
+        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
       },
       "System.IO.Pipelines": {
         "type": "Transitive",

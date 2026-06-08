@@ -5,20 +5,16 @@ using Cysharp.Threading.Tasks;
 using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
+using VContainer;
 using Xiangshu.Ipc;
 
 namespace Xiangshu.Frontend;
 
-[SuppressMessage(
-    "Performance",
-    "CA1812:Avoid uninstantiated internal classes",
-    Justification = "VContainer constructs this server through DI.")]
 internal sealed class FrontendIpcServer : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
-    private IServiceProvider? _provider;
-    private IDisposable? _worker;
+    private IDisposable? _containerScope;
     private XiangshuIpcEndpointRegistration? _registration;
     private bool _disposed;
 
@@ -26,7 +22,7 @@ internal sealed class FrontendIpcServer : IDisposable
     {
         ThrowIfDisposed();
 
-        if (_provider is not null)
+        if (_containerScope is not null)
         {
             return;
         }
@@ -65,19 +61,54 @@ internal sealed class FrontendIpcServer : IDisposable
         _disposed = true;
         _registration?.Dispose();
         _registration = null;
-        _worker?.Dispose();
-        _worker = null;
-        _provider = null;
+        _containerScope?.Dispose();
+        _containerScope = null;
     }
 
     private void StartOnPort(int port)
     {
-        BuiltinContainerBuilder builder = new();
-        _ = builder
-            .AddMessagePipe()
-            .AddAsyncRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse, FrontendIpcPingHandler>();
+        ContainerBuilder builder = new();
+        ConfigureContainer(builder, port);
+        IObjectResolver container = builder.Build();
+        bool started = false;
 
-        IMessagePipeBuilder messagePipeBuilder = new MessagePipeBuilder(builder);
+        try
+        {
+            _ = container.Resolve<TcpWorker>();
+            _registration = XiangshuIpcEndpointRegistry.Register(
+                new XiangshuIpcEndpoint
+                {
+                    Side = XiangshuIpcRuntime.FrontendSide,
+                    Transport = XiangshuIpcRuntime.TransportName,
+                    Host = XiangshuIpcRuntime.LoopbackHost,
+                    Port = port,
+                    ProcessId = Process.GetCurrentProcess().Id,
+                    StartedAtUtc = DateTimeOffset.UtcNow,
+                });
+            _containerScope = container;
+            started = true;
+        }
+        finally
+        {
+            if (!started)
+            {
+                container.Dispose();
+            }
+        }
+    }
+
+    private static void ConfigureContainer(IContainerBuilder builder, int port)
+    {
+        MessagePipeOptions options = builder.RegisterMessagePipe(
+            options =>
+            {
+                options.InstanceLifetime = InstanceLifetime.Singleton;
+                options.RequestHandlerLifetime = InstanceLifetime.Singleton;
+            });
+        _ = builder.RegisterAsyncRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse, FrontendIpcPingHandler>(
+            options);
+
+        IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
         MessagePipeInterprocessOptions tcpOptions = messagePipeBuilder.AddTcpInterprocess(
             XiangshuIpcRuntime.LoopbackHost,
             port,
@@ -88,25 +119,6 @@ internal sealed class FrontendIpcServer : IDisposable
             });
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse>(
             tcpOptions);
-
-        IServiceProvider provider = builder.BuildServiceProvider();
-        IDisposable worker = (IDisposable)(provider.GetService(typeof(TcpWorker))
-            ?? throw new InvalidOperationException("MessagePipe TCP worker was not registered."));
-
-        XiangshuIpcEndpointRegistration registration = XiangshuIpcEndpointRegistry.Register(
-            new XiangshuIpcEndpoint
-            {
-                Side = XiangshuIpcRuntime.FrontendSide,
-                Transport = XiangshuIpcRuntime.TransportName,
-                Host = XiangshuIpcRuntime.LoopbackHost,
-                Port = port,
-                ProcessId = Process.GetCurrentProcess().Id,
-                StartedAtUtc = DateTimeOffset.UtcNow,
-            });
-
-        _provider = provider;
-        _worker = worker;
-        _registration = registration;
     }
 
     private void ThrowIfDisposed()

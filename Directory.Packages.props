@@ -9,8 +9,8 @@
     <PackageVersion Include="CliWrap" Version="3.10.2" />
     <PackageVersion Include="ILRepack" Version="2.0.45" />
     <PackageVersion Include="Krafs.Publicizer" Version="2.3.0" />
-    <PackageVersion Include="MessagePipe" Version="1.8.1" />
-    <PackageVersion Include="MessagePipe.Interprocess" Version="1.8.1" />
+    <PackageVersion Include="MessagePipe" Version="1.8.2" />
+    <PackageVersion Include="MessagePipe.Interprocess" Version="1.8.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
     <PackageVersion
       Include="Microsoft.Extensions.DependencyInjection"
@@ -37,11 +37,15 @@
     />
     <PackageVersion
       Include="Taiwu.ModKit.Dependencies.MessagePipe"
-      Version="1.8.1-unity2022.3.62f2"
+      Version="1.8.2-unity2022.3.62f2"
+    />
+    <PackageVersion
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"
+      Version="1.8.2-unity2022.3.62f2"
     />
     <PackageVersion
       Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
-      Version="1.8.1-unity2022.3.62f2"
+      Version="1.8.2-unity2022.3.62f2"
     />
     <PackageVersion
       Include="Taiwu.ModKit.Dependencies.VContainer"
