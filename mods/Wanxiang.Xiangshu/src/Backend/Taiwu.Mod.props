@@ -12,10 +12,10 @@
       Include="Microsoft.Extensions.DependencyInjection.dll"
     />
     <TaiwuModMergeDependency Include="Microsoft.NET.StringTools.dll" />
-    <TaiwuModCopyDependency
+    <TaiwuModMergeDependency
       Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
     />
-    <TaiwuModCopyDependency Include="Xiangshu.Ipc.dll" />
+    <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
   </ItemGroup>
 
   <!--

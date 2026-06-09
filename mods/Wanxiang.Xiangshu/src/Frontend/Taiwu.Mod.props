@@ -4,7 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TaiwuModCopyDependency Include="Xiangshu.Ipc.dll" />
+    <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
   </ItemGroup>
 
   <!--

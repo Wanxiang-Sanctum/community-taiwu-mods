@@ -6,16 +6,16 @@ using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
-using Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Ipc;
 
-namespace Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend;
 
 internal sealed class FrontendIpcServer : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
     private IDisposable? _containerScope;
-    private XiangshuIpcEndpointRegistration? _registration;
+    private WanxiangXiangshuIpcEndpointRegistration? _registration;
     private bool _disposed;
 
     public void Start()
@@ -31,7 +31,7 @@ internal sealed class FrontendIpcServer : IDisposable
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
         {
-            int port = XiangshuIpcRuntime.ReserveLoopbackPort();
+            int port = WanxiangXiangshuIpcRuntime.ReserveLoopbackPort();
 
             try
             {
@@ -48,7 +48,7 @@ internal sealed class FrontendIpcServer : IDisposable
             }
         }
 
-        throw new InvalidOperationException("Failed to start Xiangshu frontend IPC server.", lastException);
+        throw new InvalidOperationException("Failed to start Wanxiang.Xiangshu frontend IPC server.", lastException);
     }
 
     public void Dispose()
@@ -75,12 +75,12 @@ internal sealed class FrontendIpcServer : IDisposable
         try
         {
             _ = container.Resolve<TcpWorker>();
-            _registration = XiangshuIpcEndpointRegistry.Register(
-                new XiangshuIpcEndpoint
+            _registration = WanxiangXiangshuIpcEndpointRegistry.Register(
+                new WanxiangXiangshuIpcEndpoint
                 {
-                    Side = XiangshuIpcRuntime.FrontendSide,
-                    Transport = XiangshuIpcRuntime.TransportName,
-                    Host = XiangshuIpcRuntime.LoopbackHost,
+                    Side = WanxiangXiangshuIpcRuntime.FrontendSide,
+                    Transport = WanxiangXiangshuIpcRuntime.TransportName,
+                    Host = WanxiangXiangshuIpcRuntime.LoopbackHost,
                     Port = port,
                     ProcessId = Process.GetCurrentProcess().Id,
                     StartedAtUtc = DateTimeOffset.UtcNow,
@@ -105,19 +105,19 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        _ = builder.RegisterAsyncRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse, FrontendIpcPingHandler>(
+        _ = builder.RegisterAsyncRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse, FrontendIpcPingHandler>(
             options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
         MessagePipeInterprocessOptions tcpOptions = messagePipeBuilder.AddTcpInterprocess(
-            XiangshuIpcRuntime.LoopbackHost,
+            WanxiangXiangshuIpcRuntime.LoopbackHost,
             port,
             options =>
             {
                 options.HostAsServer = true;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
             });
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse>(
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse>(
             tcpOptions);
     }
 
@@ -134,16 +134,16 @@ internal sealed class FrontendIpcServer : IDisposable
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<XiangshuIpcPingRequest, XiangshuIpcPingResponse>
+internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse>
 {
-    public UniTask<XiangshuIpcPingResponse> InvokeAsync(
-        XiangshuIpcPingRequest request,
+    public UniTask<WanxiangXiangshuIpcPingResponse> InvokeAsync(
+        WanxiangXiangshuIpcPingRequest request,
         CancellationToken cancellationToken = default)
     {
         return UniTask.FromResult(
-            new XiangshuIpcPingResponse
+            new WanxiangXiangshuIpcPingResponse
             {
-                Side = XiangshuIpcRuntime.FrontendSide,
+                Side = WanxiangXiangshuIpcRuntime.FrontendSide,
                 Message = $"frontend pong: {request.Message}",
             });
     }

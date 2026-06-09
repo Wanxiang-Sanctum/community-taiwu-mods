@@ -1,13 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using TaiwuModdingLib.Core.Plugin;
 
-namespace Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend;
 
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
     Justification = "TaiwuRemakePlugin exposes Dispose as the plugin lifecycle hook.")]
-[PluginConfig("Xiangshu.Frontend", "WanxiangSanctum", "0.1.0")]
+[PluginConfig("Wanxiang.Xiangshu.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     private FrontendIpcServer? _ipcServer;

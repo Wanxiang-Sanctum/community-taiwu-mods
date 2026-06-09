@@ -6,9 +6,15 @@
     <Project
       Path="mods/Wanxiang.FrontendRuntime/src/Frontend/Wanxiang.FrontendRuntime.Frontend.csproj"
     />
-    <Project Path="mods/Xiangshu/src/Backend/Xiangshu.Backend.csproj" />
-    <Project Path="mods/Xiangshu/src/Frontend/Xiangshu.Frontend.csproj" />
-    <Project Path="mods/Xiangshu/src/Ipc/Xiangshu.Ipc.csproj" />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Backend/Wanxiang.Xiangshu.Backend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Frontend/Wanxiang.Xiangshu.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
+    />
   </Folder>
   <Folder Name="/shared/" />
   <Folder Name="/tools/">

@@ -14,11 +14,11 @@ return {
   HasArchive = false,
   NeedRestartWhenSettingChanged = false,
   BackendPlugins = {
-    "Xiangshu.Backend.dll",
+    "Wanxiang.Xiangshu.Backend.dll",
   },
   BackendPatches = {},
   FrontendPlugins = {
-    "Xiangshu.Frontend.dll",
+    "Wanxiang.Xiangshu.Frontend.dll",
   },
   FrontendPatches = {},
   EventPackages = {},

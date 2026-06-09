@@ -5,7 +5,7 @@
 
   <ItemGroup>
     <ProjectReference
-      Include="$(TaiwuModsModsDir)Xiangshu/src/Ipc/Xiangshu.Ipc.csproj"
+      Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
     />
   </ItemGroup>
 

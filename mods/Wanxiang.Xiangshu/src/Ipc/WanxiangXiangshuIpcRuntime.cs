@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Xiangshu.Ipc;
+namespace Wanxiang.Xiangshu.Ipc;
 
-public static class XiangshuIpcRuntime
+public static class WanxiangXiangshuIpcRuntime
 {
     public const string FrontendSide = "frontend";
 

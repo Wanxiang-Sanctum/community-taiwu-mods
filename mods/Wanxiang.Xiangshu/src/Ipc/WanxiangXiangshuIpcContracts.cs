@@ -1,11 +1,11 @@
-namespace Xiangshu.Ipc;
+namespace Wanxiang.Xiangshu.Ipc;
 
-public sealed class XiangshuIpcPingRequest
+public sealed class WanxiangXiangshuIpcPingRequest
 {
     public string Message { get; set; } = string.Empty;
 }
 
-public sealed class XiangshuIpcPingResponse
+public sealed class WanxiangXiangshuIpcPingResponse
 {
     public string Side { get; set; } = string.Empty;
 
