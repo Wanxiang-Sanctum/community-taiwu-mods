@@ -15,6 +15,9 @@
     <Project
       Path="mods/Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
     />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
+    />
   </Folder>
   <Folder Name="/shared/" />
   <Folder Name="/tools/">

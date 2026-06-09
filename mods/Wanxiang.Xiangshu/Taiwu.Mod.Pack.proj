@@ -12,5 +12,8 @@
     <TaiwuModPackProject
       Include="src/Backend/Wanxiang.Xiangshu.Backend.csproj"
     />
+    <TaiwuModPackProject
+      Include="src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
+    />
   </ItemGroup>
 </Project>

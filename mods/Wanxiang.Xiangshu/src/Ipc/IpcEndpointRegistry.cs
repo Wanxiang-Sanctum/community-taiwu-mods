@@ -4,7 +4,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace Wanxiang.Xiangshu.Ipc;
 
-public static class WanxiangXiangshuIpcEndpointRegistry
+public static class IpcEndpointRegistry
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -23,7 +23,40 @@ public static class WanxiangXiangshuIpcEndpointRegistry
         return Path.Combine(root, "Taiwu", "Wanxiang.Xiangshu", "ipc-endpoints.json");
     }
 
-    public static WanxiangXiangshuIpcEndpointRegistration Register(WanxiangXiangshuIpcEndpoint endpoint)
+    public static IReadOnlyList<IpcEndpoint> GetLiveEndpoints()
+    {
+        string manifestPath = GetManifestPath();
+
+        if (!File.Exists(manifestPath))
+        {
+            return [];
+        }
+
+        using FileStream lockFile = OpenLockFile(manifestPath + ".lock");
+        IpcEndpointManifest manifest = ReadManifest(manifestPath);
+
+        return
+        [
+            .. manifest.Endpoints
+                .Where(IsLiveEndpoint)
+                .Select(CloneEndpoint),
+        ];
+    }
+
+    public static IpcEndpoint? TryGetLiveEndpoint(string side)
+    {
+        if (string.IsNullOrWhiteSpace(side))
+        {
+            throw new ArgumentException("Endpoint side is required.", nameof(side));
+        }
+
+        return GetLiveEndpoints()
+            .Where(endpoint => string.Equals(endpoint.Side, side, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(endpoint => endpoint.StartedAtUtc)
+            .FirstOrDefault();
+    }
+
+    public static IpcEndpointRegistration Register(IpcEndpoint endpoint)
     {
         if (endpoint is null)
         {
@@ -45,10 +78,10 @@ public static class WanxiangXiangshuIpcEndpointRegistry
                 manifest.Endpoints.Add(endpoint);
             });
 
-        return new WanxiangXiangshuIpcEndpointRegistration(manifestPath, endpoint);
+        return new IpcEndpointRegistration(manifestPath, endpoint);
     }
 
-    internal static void Unregister(string manifestPath, WanxiangXiangshuIpcEndpoint endpoint)
+    internal static void Unregister(string manifestPath, IpcEndpoint endpoint)
     {
         UpdateManifest(
             manifestPath,
@@ -63,13 +96,13 @@ public static class WanxiangXiangshuIpcEndpointRegistry
             });
     }
 
-    private static void UpdateManifest(string manifestPath, Action<WanxiangXiangshuIpcManifest> update)
+    private static void UpdateManifest(string manifestPath, Action<IpcEndpointManifest> update)
     {
         string directory = Path.GetDirectoryName(manifestPath) ?? ".";
         _ = Directory.CreateDirectory(directory);
 
         using FileStream lockFile = OpenLockFile(manifestPath + ".lock");
-        WanxiangXiangshuIpcManifest manifest = ReadManifest(manifestPath);
+        IpcEndpointManifest manifest = ReadManifest(manifestPath);
 
         update(manifest);
 
@@ -97,31 +130,45 @@ public static class WanxiangXiangshuIpcEndpointRegistry
         return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
     }
 
-    private static WanxiangXiangshuIpcManifest ReadManifest(string manifestPath)
+    private static IpcEndpointManifest ReadManifest(string manifestPath)
     {
         if (!File.Exists(manifestPath))
         {
-            return new WanxiangXiangshuIpcManifest();
+            return new IpcEndpointManifest();
         }
 
         string json = File.ReadAllText(manifestPath);
 
         if (string.IsNullOrWhiteSpace(json))
         {
-            return new WanxiangXiangshuIpcManifest();
+            return new IpcEndpointManifest();
         }
 
-        return JsonConvert.DeserializeObject<WanxiangXiangshuIpcManifest>(json, JsonSettings)
+        return JsonConvert.DeserializeObject<IpcEndpointManifest>(json, JsonSettings)
             ?? throw new InvalidDataException($"IPC endpoint manifest is not a JSON object: {manifestPath}");
     }
 
-    private static bool IsSameEndpointSlot(WanxiangXiangshuIpcEndpoint left, WanxiangXiangshuIpcEndpoint right)
+    private static bool IsSameEndpointSlot(IpcEndpoint left, IpcEndpoint right)
     {
         return left.ProcessId == right.ProcessId
             && string.Equals(left.Side, right.Side, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsLiveEndpoint(WanxiangXiangshuIpcEndpoint endpoint)
+    private static IpcEndpoint CloneEndpoint(IpcEndpoint endpoint)
+    {
+        return new IpcEndpoint
+        {
+            Side = endpoint.Side,
+            Transport = endpoint.Transport,
+            Host = endpoint.Host,
+            Path = endpoint.Path,
+            Port = endpoint.Port,
+            ProcessId = endpoint.ProcessId,
+            StartedAtUtc = endpoint.StartedAtUtc,
+        };
+    }
+
+    private static bool IsLiveEndpoint(IpcEndpoint endpoint)
     {
         try
         {
@@ -139,12 +186,12 @@ public static class WanxiangXiangshuIpcEndpointRegistry
     }
 }
 
-public sealed class WanxiangXiangshuIpcEndpointRegistration(
+public sealed class IpcEndpointRegistration(
     string manifestPath,
-    WanxiangXiangshuIpcEndpoint endpoint) : IDisposable
+    IpcEndpoint endpoint) : IDisposable
 {
     private readonly string _manifestPath = manifestPath;
-    private readonly WanxiangXiangshuIpcEndpoint _endpoint = endpoint;
+    private readonly IpcEndpoint _endpoint = endpoint;
     private bool _disposed;
 
     public void Dispose()
@@ -155,26 +202,28 @@ public sealed class WanxiangXiangshuIpcEndpointRegistration(
         }
 
         _disposed = true;
-        WanxiangXiangshuIpcEndpointRegistry.Unregister(_manifestPath, _endpoint);
+        IpcEndpointRegistry.Unregister(_manifestPath, _endpoint);
     }
 }
 
-internal sealed class WanxiangXiangshuIpcManifest
+internal sealed class IpcEndpointManifest
 {
     public int Version { get; set; } = 1;
 
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
-    public List<WanxiangXiangshuIpcEndpoint> Endpoints { get; set; } = [];
+    public List<IpcEndpoint> Endpoints { get; set; } = [];
 }
 
-public sealed class WanxiangXiangshuIpcEndpoint
+public sealed class IpcEndpoint
 {
     public string Side { get; set; } = string.Empty;
 
     public string Transport { get; set; } = string.Empty;
 
     public string Host { get; set; } = string.Empty;
+
+    public string Path { get; set; } = string.Empty;
 
     public int Port { get; set; }
 

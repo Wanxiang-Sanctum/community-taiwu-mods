@@ -15,7 +15,7 @@ internal sealed class FrontendIpcServer : IDisposable
     private const int MaxStartAttempts = 8;
 
     private IDisposable? _containerScope;
-    private WanxiangXiangshuIpcEndpointRegistration? _registration;
+    private IpcEndpointRegistration? _registration;
     private bool _disposed;
 
     public void Start()
@@ -31,7 +31,7 @@ internal sealed class FrontendIpcServer : IDisposable
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
         {
-            int port = WanxiangXiangshuIpcRuntime.ReserveLoopbackPort();
+            int port = IpcRuntime.ReserveLoopbackPort();
 
             try
             {
@@ -75,12 +75,12 @@ internal sealed class FrontendIpcServer : IDisposable
         try
         {
             _ = container.Resolve<TcpWorker>();
-            _registration = WanxiangXiangshuIpcEndpointRegistry.Register(
-                new WanxiangXiangshuIpcEndpoint
+            _registration = IpcEndpointRegistry.Register(
+                new IpcEndpoint
                 {
-                    Side = WanxiangXiangshuIpcRuntime.FrontendSide,
-                    Transport = WanxiangXiangshuIpcRuntime.TransportName,
-                    Host = WanxiangXiangshuIpcRuntime.LoopbackHost,
+                    Side = IpcRuntime.FrontendSide,
+                    Transport = IpcRuntime.TransportName,
+                    Host = IpcRuntime.LoopbackHost,
                     Port = port,
                     ProcessId = Process.GetCurrentProcess().Id,
                     StartedAtUtc = DateTimeOffset.UtcNow,
@@ -105,19 +105,19 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        _ = builder.RegisterAsyncRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse, FrontendIpcPingHandler>(
+        _ = builder.RegisterAsyncRequestHandler<IpcPingRequest, IpcPingResponse, FrontendIpcPingHandler>(
             options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
         MessagePipeInterprocessOptions tcpOptions = messagePipeBuilder.AddTcpInterprocess(
-            WanxiangXiangshuIpcRuntime.LoopbackHost,
+            IpcRuntime.LoopbackHost,
             port,
             options =>
             {
                 options.HostAsServer = true;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
             });
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse>(
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
             tcpOptions);
     }
 
@@ -134,16 +134,16 @@ internal sealed class FrontendIpcServer : IDisposable
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse>
+internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>
 {
-    public UniTask<WanxiangXiangshuIpcPingResponse> InvokeAsync(
-        WanxiangXiangshuIpcPingRequest request,
+    public UniTask<IpcPingResponse> InvokeAsync(
+        IpcPingRequest request,
         CancellationToken cancellationToken = default)
     {
         return UniTask.FromResult(
-            new WanxiangXiangshuIpcPingResponse
+            new IpcPingResponse
             {
-                Side = WanxiangXiangshuIpcRuntime.FrontendSide,
+                Side = IpcRuntime.FrontendSide,
                 Message = $"frontend pong: {request.Message}",
             });
     }

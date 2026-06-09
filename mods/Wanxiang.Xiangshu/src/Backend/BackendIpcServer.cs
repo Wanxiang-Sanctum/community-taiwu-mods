@@ -12,7 +12,7 @@ internal sealed class BackendIpcServer : IDisposable
     private const int MaxStartAttempts = 8;
 
     private ServiceProvider? _provider;
-    private WanxiangXiangshuIpcEndpointRegistration? _registration;
+    private IpcEndpointRegistration? _registration;
     private bool _disposed;
 
     public void Start()
@@ -28,7 +28,7 @@ internal sealed class BackendIpcServer : IDisposable
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
         {
-            int port = WanxiangXiangshuIpcRuntime.ReserveLoopbackPort();
+            int port = IpcRuntime.ReserveLoopbackPort();
 
             try
             {
@@ -75,7 +75,7 @@ internal sealed class BackendIpcServer : IDisposable
                     options.RequestHandlerLifetime = InstanceLifetime.Singleton;
                 })
             .AddTcpInterprocess(
-                WanxiangXiangshuIpcRuntime.LoopbackHost,
+                IpcRuntime.LoopbackHost,
                 port,
                 options =>
                 {
@@ -86,12 +86,12 @@ internal sealed class BackendIpcServer : IDisposable
         ServiceProvider provider = services.BuildServiceProvider();
         _ = provider.GetRequiredService<TcpWorker>();
 
-        WanxiangXiangshuIpcEndpointRegistration registration = WanxiangXiangshuIpcEndpointRegistry.Register(
-            new WanxiangXiangshuIpcEndpoint
+        IpcEndpointRegistration registration = IpcEndpointRegistry.Register(
+            new IpcEndpoint
             {
-                Side = WanxiangXiangshuIpcRuntime.BackendSide,
-                Transport = WanxiangXiangshuIpcRuntime.TransportName,
-                Host = WanxiangXiangshuIpcRuntime.LoopbackHost,
+                Side = IpcRuntime.BackendSide,
+                Transport = IpcRuntime.TransportName,
+                Host = IpcRuntime.LoopbackHost,
                 Port = port,
                 ProcessId = Environment.ProcessId,
                 StartedAtUtc = DateTimeOffset.UtcNow,
@@ -111,16 +111,16 @@ internal sealed class BackendIpcServer : IDisposable
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class BackendIpcPingHandler : IAsyncRequestHandler<WanxiangXiangshuIpcPingRequest, WanxiangXiangshuIpcPingResponse>
+internal sealed class BackendIpcPingHandler : IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>
 {
-    public ValueTask<WanxiangXiangshuIpcPingResponse> InvokeAsync(
-        WanxiangXiangshuIpcPingRequest request,
+    public ValueTask<IpcPingResponse> InvokeAsync(
+        IpcPingRequest request,
         CancellationToken cancellationToken = default)
     {
         return ValueTask.FromResult(
-            new WanxiangXiangshuIpcPingResponse
+            new IpcPingResponse
             {
-                Side = WanxiangXiangshuIpcRuntime.BackendSide,
+                Side = IpcRuntime.BackendSide,
                 Message = $"backend pong: {request.Message}",
             });
     }

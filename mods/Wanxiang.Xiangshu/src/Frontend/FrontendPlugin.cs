@@ -11,15 +11,21 @@ namespace Wanxiang.Xiangshu.Frontend;
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     private FrontendIpcServer? _ipcServer;
+    private McpSidecarProcess? _mcpServerProcess;
 
     public override void Initialize()
     {
         _ipcServer = new FrontendIpcServer();
         _ipcServer.Start();
+
+        _mcpServerProcess = new McpSidecarProcess();
+        _mcpServerProcess.Start();
     }
 
     public override void Dispose()
     {
+        _mcpServerProcess?.Dispose();
+        _mcpServerProcess = null;
         _ipcServer?.Dispose();
         _ipcServer = null;
     }
