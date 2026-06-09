@@ -18,6 +18,18 @@ internal static class PluginTools
     }
 
     [McpServerTool(
+        Name = "xiangshu_check_toolchain",
+        Destructive = false,
+        Idempotent = true,
+        ReadOnly = true)]
+    [Description("Checks whether the Wanxiang.Xiangshu MCP server can discover and ping the frontend and backend IPC endpoints.")]
+    public static Task<string> CheckToolchainAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return PluginIpcProxy.CheckToolchainAsync(cancellationToken);
+    }
+
+    [McpServerTool(
         Name = "xiangshu_ping_plugin",
         Destructive = false,
         Idempotent = true,

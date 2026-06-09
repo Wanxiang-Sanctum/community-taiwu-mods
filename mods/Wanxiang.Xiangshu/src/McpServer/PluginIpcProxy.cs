@@ -8,6 +8,10 @@ namespace Wanxiang.Xiangshu.McpServer;
 
 internal static class PluginIpcProxy
 {
+    private const string ToolchainCheckMessage = "xiangshu toolchain check";
+
+    private static readonly TimeSpan PingTimeout = TimeSpan.FromSeconds(5);
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
@@ -27,6 +31,45 @@ internal static class PluginIpcProxy
             {
                 manifestPath = IpcEndpointRegistry.GetManifestPath(),
                 endpoints,
+            },
+            JsonOptions);
+    }
+
+    public static async Task<string> CheckToolchainAsync(CancellationToken cancellationToken)
+    {
+        IpcEndpoint[] endpoints =
+        [
+            .. IpcEndpointRegistry.GetLiveEndpoints()
+                .OrderBy(endpoint => endpoint.Side, StringComparer.OrdinalIgnoreCase)
+                .ThenByDescending(endpoint => endpoint.StartedAtUtc),
+        ];
+
+        IpcEndpoint? mcpEndpoint = FindLatestEndpoint(endpoints, IpcRuntime.McpServerSide);
+        SideCheckResult frontend = await CheckSideAsync(
+            endpoints,
+            IpcRuntime.FrontendSide,
+            cancellationToken).ConfigureAwait(false);
+        SideCheckResult backend = await CheckSideAsync(
+            endpoints,
+            IpcRuntime.BackendSide,
+            cancellationToken).ConfigureAwait(false);
+
+        return JsonSerializer.Serialize(
+            new
+            {
+                checkedAtUtc = DateTimeOffset.UtcNow,
+                manifestPath = IpcEndpointRegistry.GetManifestPath(),
+                ready = mcpEndpoint is not null
+                    && frontend.PingSucceeded
+                    && backend.PingSucceeded,
+                mcpServer = new
+                {
+                    registered = mcpEndpoint is not null,
+                    endpoint = mcpEndpoint,
+                },
+                endpoints,
+                frontend,
+                backend,
             },
             JsonOptions);
     }
@@ -104,6 +147,69 @@ internal static class PluginIpcProxy
         }
     }
 
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "The diagnostic tool reports per-side IPC failures as structured data instead of failing the whole MCP call.")]
+    private static async Task<SideCheckResult> CheckSideAsync(
+        IReadOnlyList<IpcEndpoint> endpoints,
+        string side,
+        CancellationToken cancellationToken)
+    {
+        IpcEndpoint? endpoint = FindLatestEndpoint(endpoints, side);
+
+        if (endpoint is null)
+        {
+            return new SideCheckResult(
+                side,
+                EndpointFound: false,
+                endpoint,
+                PingSucceeded: false,
+                Response: null,
+                Error: $"No live Wanxiang.Xiangshu {side} IPC endpoint was found.");
+        }
+
+        using CancellationTokenSource timeout =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(PingTimeout);
+
+        try
+        {
+            IpcPingResponse response = await InvokePingAsync(
+                endpoint,
+                ToolchainCheckMessage,
+                timeout.Token).ConfigureAwait(false);
+
+            return new SideCheckResult(
+                side,
+                EndpointFound: true,
+                endpoint,
+                PingSucceeded: true,
+                response,
+                Error: null);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new SideCheckResult(
+                side,
+                EndpointFound: true,
+                endpoint,
+                PingSucceeded: false,
+                Response: null,
+                Error: $"Timed out after {PingTimeout.TotalSeconds} seconds while pinging {side}.");
+        }
+        catch (Exception ex)
+        {
+            return new SideCheckResult(
+                side,
+                EndpointFound: true,
+                endpoint,
+                PingSucceeded: false,
+                Response: null,
+                Error: $"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     private static string NormalizeSide(string side)
     {
         if (string.IsNullOrWhiteSpace(side))
@@ -125,4 +231,22 @@ internal static class PluginIpcProxy
 
         throw new McpException("Side must be either 'frontend' or 'backend'.");
     }
+
+    private static IpcEndpoint? FindLatestEndpoint(
+        IEnumerable<IpcEndpoint> endpoints,
+        string side)
+    {
+        return endpoints
+            .Where(endpoint => string.Equals(endpoint.Side, side, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(endpoint => endpoint.StartedAtUtc)
+            .FirstOrDefault();
+    }
+
+    private sealed record SideCheckResult(
+        string Side,
+        bool EndpointFound,
+        IpcEndpoint? Endpoint,
+        bool PingSucceeded,
+        IpcPingResponse? Response,
+        string? Error);
 }
