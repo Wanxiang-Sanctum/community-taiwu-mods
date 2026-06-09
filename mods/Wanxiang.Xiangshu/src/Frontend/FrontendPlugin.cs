@@ -13,13 +13,21 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private FrontendIpcServer? _ipcServer;
     private McpSidecarProcess? _mcpServerProcess;
 
+    internal AgentSettings? CurrentAgentSettings { get; private set; }
+
     public override void Initialize()
     {
+        CurrentAgentSettings = AgentSettings.Load(ModIdStr);
         _ipcServer = new FrontendIpcServer();
         _ipcServer.Start();
 
         _mcpServerProcess = new McpSidecarProcess();
         _mcpServerProcess.Start();
+    }
+
+    public override void OnModSettingUpdate()
+    {
+        CurrentAgentSettings = AgentSettings.Load(ModIdStr);
     }
 
     public override void Dispose()
@@ -28,5 +36,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _mcpServerProcess = null;
         _ipcServer?.Dispose();
         _ipcServer = null;
+        CurrentAgentSettings = null;
     }
 }
