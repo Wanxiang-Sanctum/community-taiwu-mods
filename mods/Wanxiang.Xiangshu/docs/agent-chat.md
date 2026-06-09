@@ -52,9 +52,11 @@ Agent 的生成约束，不设计前端二次审阅、自动重写或基于 Agen
 当前迭代先铺设太吾 Mod 用户配置和前端侧内部 Agent 设置边界：
 
 - `Config.Lua` 提供本机 Agent 类型、CLI 入口和工作目录设置。
+- `Config.Lua` 提供调试模式开关，用于开发时观察相枢启动的外部进程。
 - 前端插件在初始化和 Mod 设置更新时读取这些设置。
 - CLI 入口留空时，前端按所选 Agent 类型映射默认命令。
 - 相对工作目录会解析到相枢 Mod 目录下，并由前端创建。
+- 调试模式变化时，前端插件会重启 MCP sidecar，使控制台窗口显示策略立即跟随配置。
 
 这些设置目前还没有接入可用对话窗口，也没有实际启动 CLI Agent。MCP server 仍只暴露用于 smoke demo
 的 ping 工具，不提供对话工具，也不修改游戏状态。
@@ -66,6 +68,8 @@ Agent 的生成约束，不设计前端二次审阅、自动重写或基于 Agen
 - `AgentAdapter`：选择 `Codex CLI` 或 `Claude Code`。
 - `AgentCliPath`：本机 Agent CLI 的命令名或可执行文件路径；留空时使用当前 Agent 的默认命令。
 - `AgentWorkingDirectory`：相枢内部 Agent 使用的工作目录，默认 `AgentWorkspace`。
+- `DebugMode`：开发诊断开关。开启后，相枢启动外部辅助进程时尽量显示控制台窗口；后续接入真实 Agent
+  CLI 调用时，也复用这个开关控制 CLI 进程的可见调试行为。
 
 默认命令按 `AgentAdapter` 决定：Codex CLI 使用 `codex`，Claude Code 使用 `claude`。因此切换
 Agent 类型时不需要维护两套路径字段；只有本机 CLI 不在 PATH 或需要固定绝对路径时，才填写
@@ -77,6 +81,10 @@ Agent 类型时不需要维护两套路径字段；只有本机 CLI 不在 PATH 
 ```text
 <Wanxiang.Xiangshu Mod directory>/AgentWorkspace
 ```
+
+调试模式不进入默认玩家对话体验，也不改变 Agent 的无人值守权限策略。需要解析 CLI JSON/stdout 的调用仍应
+保留结构化捕获；如果同时需要人眼观察，优先把原始事件写入开发日志，或在后续适配器中增加专门的
+console/tee 诊断路径。
 
 ## 计划中的异步投递协议
 

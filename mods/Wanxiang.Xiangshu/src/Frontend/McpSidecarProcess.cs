@@ -13,7 +13,7 @@ internal sealed class McpSidecarProcess : IDisposable
     private Process? _process;
     private bool _disposed;
 
-    public void Start()
+    public void Start(bool debugModeEnabled)
     {
         ThrowIfDisposed();
 
@@ -24,14 +24,19 @@ internal sealed class McpSidecarProcess : IDisposable
             {
                 FileName = executablePath,
                 WorkingDirectory = Path.GetDirectoryName(executablePath) ?? Environment.CurrentDirectory,
-                CreateNoWindow = true,
-                UseShellExecute = false,
+                CreateNoWindow = !debugModeEnabled,
+                UseShellExecute = debugModeEnabled,
             },
         };
         process.StartInfo.ArgumentList.Add("--parent-pid");
         process.StartInfo.ArgumentList.Add(Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
 
-        _ = process.Start();
+        if (!process.Start())
+        {
+            process.Dispose();
+            throw new InvalidOperationException("Failed to start Wanxiang.Xiangshu MCP server process.");
+        }
+
         _process = process;
     }
 

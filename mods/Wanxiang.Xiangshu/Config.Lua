@@ -37,9 +37,18 @@ return {
       GroupName = "本机 Agent",
       DefaultValue = "AgentWorkspace",
     },
+    {
+      SettingType = "Toggle",
+      Key = "DebugMode",
+      DisplayName = "调试模式",
+      Description = "开启后，相枢启动外部辅助进程时会尽量显示控制台窗口，方便开发时观察 Agent CLI 调用。",
+      GroupName = "诊断",
+      DefaultValue = false,
+    },
   },
   SettingGroups = {
     "本机 Agent",
+    "诊断",
   },
   UpdateLogList = {},
   ChangeConfig = false,
