@@ -15,7 +15,6 @@
     <TaiwuModMergeDependency
       Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll"
     />
-    <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
   </ItemGroup>
 
   <!--

@@ -202,11 +202,25 @@ internal static class Program
 
     private static string[] GetModProjectFullPaths(string modsRoot, string modName)
     {
+        string modRoot = Path.Combine(modsRoot, modName);
+        if (!Directory.Exists(modRoot))
+        {
+            throw new InvalidOperationException($"Mod 目录不存在：{modRoot}");
+        }
+
         return
         [
-            Path.Combine(modsRoot, modName, "src", "Frontend", $"{modName}.Frontend.csproj"),
-            Path.Combine(modsRoot, modName, "src", "Backend", $"{modName}.Backend.csproj"),
+            .. Directory.EnumerateFiles(modRoot, "*.csproj", SearchOption.AllDirectories)
+                .Where(static projectPath => !IsBuildOutputPath(projectPath))
+                .Order(StringComparer.OrdinalIgnoreCase),
         ];
+    }
+
+    private static bool IsBuildOutputPath(string path)
+    {
+        string normalizedPath = path.Replace(Path.DirectorySeparatorChar, '/');
+        return normalizedPath.Contains("/bin/", StringComparison.Ordinal)
+            || normalizedPath.Contains("/obj/", StringComparison.Ordinal);
     }
 
     private static string GetSharedProjectFullPath(string sharedRoot, string projectName)

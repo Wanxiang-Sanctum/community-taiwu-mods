@@ -64,15 +64,16 @@ dotnet build mods/Wanxiang.FrontendRuntime/src/Backend/Wanxiang.FrontendRuntime.
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.FrontendRuntime
 ```
 
-`pack-mod` 会把 `Config.Lua`、插件入口 DLL 和显式声明的前端运行时 DLL 组装到仓库根目录的
-`artifacts/mods/Wanxiang.FrontendRuntime/`。
+`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、插件入口 DLL 和显式声明的前端运行时
+DLL 组装到仓库根目录的 `artifacts/mods/Wanxiang.FrontendRuntime/`。
 
 插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。前端项目在这里声明需要随包部署的
-共享运行时 DLL；这些部署声明只由 `pack-mod` 使用。后端项目是为了适配仓库当前前后端成对打包约定的
-空入口，不承载共享后端依赖。
+共享运行时 DLL；这些部署声明只由 `pack-mod` 使用。后端项目是当前 mod 的占位后端入口，不承载
+共享后端依赖。
 
 ## 项目结构
 
 - `Config.Lua`：游戏读取的 mod 配置。
+- `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `src/Frontend/`：前端插件项目。
 - `src/Backend/`：后端占位插件项目。
