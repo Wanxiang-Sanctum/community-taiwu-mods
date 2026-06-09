@@ -1,18 +1,17 @@
+using Game.Views.Bottom;
 using HarmonyLib;
 using UnityEngine;
 
 namespace Wanxiang.Xiangshu.Frontend;
 
-#pragma warning disable CS0612 // UI_Bottom is still the current main interface update hook in the decompiled frontend.
-
 internal static class XiangshuHotKeys
 {
-    private const byte LaunchAgentDiagnosticCommandId = 100;
+    private const byte LaunchAgentDiagnosticCommandId = 101;
 
     internal static readonly HotKeyCommand LaunchAgentDiagnostic = new(
         LaunchAgentDiagnosticCommandId,
         LanguageKey.LK_Mod,
-        KeyCode.F10,
+        KeyCode.Backslash,
         KeyCode.LeftControl);
 
     public static void RegisterWithGameCommandKit()
@@ -26,8 +25,9 @@ internal static class XiangshuHotKeys
 
         if (kit.GroupCommand.Any(command => command.Id == LaunchAgentDiagnosticCommandId))
         {
-            throw new InvalidOperationException(
-                $"Cannot register Wanxiang.Xiangshu hotkey command because MapCommandKit command id {LaunchAgentDiagnosticCommandId} is already used.");
+            Debug.LogWarning(
+                $"Wanxiang.Xiangshu cannot register diagnostic hotkey in MapCommandKit because command id {LaunchAgentDiagnosticCommandId} is already used. The default Ctrl+Backslash diagnostic hotkey will still be checked directly.");
+            return;
         }
 
         kit.GroupCommand =
@@ -36,12 +36,21 @@ internal static class XiangshuHotKeys
             LaunchAgentDiagnostic,
         ];
         CommandKitBase.Init();
+        Debug.Log("Wanxiang.Xiangshu diagnostic hotkey registered: Ctrl+Backslash.");
+    }
+
+    public static void PatchViewBottomUpdate(Harmony harmony)
+    {
+        _ = harmony
+            .CreateClassProcessor(typeof(ViewBottomUpdatePatch))
+            .Patch();
     }
 }
 
 internal static class FrontendHotkeyBridge
 {
     private static FrontendPlugin? s_plugin;
+    private static int s_lastHandledFrame = -1;
 
     public static void Attach(FrontendPlugin plugin)
     {
@@ -56,41 +65,62 @@ internal static class FrontendHotkeyBridge
         }
     }
 
-    public static void OnUiBottomUpdate(UI_Bottom uiBottom)
+    public static void OnViewBottomUpdate(ViewBottom viewBottom)
+    {
+        if (!viewBottom.Interactable)
+        {
+            return;
+        }
+
+        CheckAndLaunch();
+    }
+
+    private static void CheckAndLaunch()
     {
         FrontendPlugin? plugin = s_plugin;
-
         if (plugin is null)
         {
             return;
         }
 
-        UIElement element = uiBottom.Element;
-
-        if (element is null)
+        if (!CanTriggerInCurrentUi())
         {
             return;
         }
 
         if (XiangshuHotKeys.LaunchAgentDiagnostic.Check(
-                element,
+                UIElement.Bottom,
                 holdCheck: false,
                 downCheck: false,
                 isIgnoreBlockHotKey: false,
-                fnKeyCheckNone: false))
+                fnKeyCheckNone: false,
+                isIgnoreElement: true))
         {
+            if (s_lastHandledFrame == Time.frameCount)
+            {
+                return;
+            }
+
+            s_lastHandledFrame = Time.frameCount;
+            Debug.Log("Wanxiang.Xiangshu diagnostic hotkey accepted.");
             plugin.LaunchAgentDiagnostic();
         }
     }
-}
 
-[HarmonyPatch(typeof(UI_Bottom), "Update")]
-internal static class UiBottomUpdatePatch
-{
-    public static void Postfix(UI_Bottom __instance)
+    private static bool CanTriggerInCurrentUi()
     {
-        FrontendHotkeyBridge.OnUiBottomUpdate(__instance);
+        UIManager uiManager = UIManager.Instance;
+        return uiManager.IsFocusElement(UIElement.StateMainWorld)
+            || uiManager.IsFocusElement(UIElement.WorldMap)
+            || uiManager.IsFocusElement(UIElement.Bottom);
     }
 }
 
-#pragma warning restore CS0612
+[HarmonyPatch(typeof(ViewBottom), "Update")]
+internal static class ViewBottomUpdatePatch
+{
+    public static void Postfix(ViewBottom __instance)
+    {
+        FrontendHotkeyBridge.OnViewBottomUpdate(__instance);
+    }
+}

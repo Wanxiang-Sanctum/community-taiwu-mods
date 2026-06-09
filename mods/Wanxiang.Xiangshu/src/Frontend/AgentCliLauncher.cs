@@ -20,11 +20,6 @@ internal sealed class AgentCliLauncher : IDisposable
 
     public (bool Started, string Message) TryStartDiagnostic(AgentSettings settings)
     {
-        if (settings is null)
-        {
-            throw new ArgumentNullException(nameof(settings));
-        }
-
         ThrowIfDisposed();
 
         lock (_syncRoot)

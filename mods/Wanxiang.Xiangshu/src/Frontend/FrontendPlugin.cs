@@ -28,6 +28,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         InstallAgentDiagnosticHotkey();
 
         StartMcpServer(CurrentAgentSettings);
+        Debug.Log("Wanxiang.Xiangshu frontend plugin initialized.");
     }
 
     public override void OnModSettingUpdate()
@@ -70,7 +71,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         XiangshuHotKeys.RegisterWithGameCommandKit();
         FrontendHotkeyBridge.Attach(this);
         _harmony = new Harmony("Wanxiang.Xiangshu.Frontend");
-        _harmony.PatchAll(typeof(FrontendPlugin).Assembly);
+        XiangshuHotKeys.PatchViewBottomUpdate(_harmony);
+        Debug.Log("Wanxiang.Xiangshu frontend ViewBottom hotkey patch installed.");
     }
 
     internal void LaunchAgentDiagnostic()
