@@ -61,7 +61,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private void StartMcpServer(AgentSettings settings)
     {
         _mcpServerProcess?.Dispose();
-        _mcpServerProcess = new McpSidecarProcess();
+        _mcpServerProcess = new McpSidecarProcess(settings.ModDirectory);
         _mcpServerProcess.Start(settings.DebugModeEnabled);
     }
 

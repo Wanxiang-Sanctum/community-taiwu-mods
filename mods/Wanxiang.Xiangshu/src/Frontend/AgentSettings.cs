@@ -21,11 +21,13 @@ internal sealed class AgentSettings
     private AgentSettings(
         AgentAdapter adapter,
         string commandPath,
+        string modDirectory,
         string workingDirectory,
         bool debugModeEnabled)
     {
         Adapter = adapter;
         CommandPath = commandPath;
+        ModDirectory = modDirectory;
         WorkingDirectory = workingDirectory;
         DebugModeEnabled = debugModeEnabled;
     }
@@ -34,13 +36,15 @@ internal sealed class AgentSettings
 
     public string CommandPath { get; }
 
+    public string ModDirectory { get; }
+
     public string WorkingDirectory { get; }
 
     public bool DebugModeEnabled { get; }
 
     public static AgentSettings Load(string modIdStr)
     {
-        string modDirectory = GetModDirectory();
+        string modDirectory = GetModDirectory(modIdStr);
         AgentAdapter adapter = ReadAgentAdapter(modIdStr);
         string commandPath = ReadCommandPath(modIdStr, adapter);
         string workingDirectory = ReadWorkingDirectory(modIdStr, modDirectory);
@@ -48,7 +52,7 @@ internal sealed class AgentSettings
 
         _ = Directory.CreateDirectory(workingDirectory);
 
-        return new AgentSettings(adapter, commandPath, workingDirectory, debugModeEnabled);
+        return new AgentSettings(adapter, commandPath, modDirectory, workingDirectory, debugModeEnabled);
     }
 
     private static AgentAdapter ReadAgentAdapter(string modIdStr)
@@ -116,13 +120,9 @@ internal sealed class AgentSettings
         return "codex";
     }
 
-    private static string GetModDirectory()
+    private static string GetModDirectory(string modIdStr)
     {
-        string pluginDirectory = Path.GetDirectoryName(typeof(AgentSettings).Assembly.Location)
-            ?? Environment.CurrentDirectory;
-
-        return Directory.GetParent(pluginDirectory)?.FullName
-            ?? pluginDirectory;
+        return Path.GetFullPath(global::ModManager.GetModInfo(modIdStr).DirectoryName);
     }
 
     private static bool TryGetSetting(

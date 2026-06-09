@@ -1,10 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Reflection;
 
 namespace Wanxiang.Xiangshu.Frontend;
 
-internal sealed class McpSidecarProcess : IDisposable
+internal sealed class McpSidecarProcess(string modDirectory) : IDisposable
 {
     private const string ProcessDirectoryName = "Wanxiang.Xiangshu.McpServer";
 
@@ -17,13 +16,14 @@ internal sealed class McpSidecarProcess : IDisposable
     {
         ThrowIfDisposed();
 
-        string executablePath = GetExecutablePath();
+        string processDirectory = GetProcessDirectory();
+        string executablePath = Path.Combine(processDirectory, ProcessExecutableName);
         Process process = new()
         {
             StartInfo =
             {
                 FileName = executablePath,
-                WorkingDirectory = Path.GetDirectoryName(executablePath) ?? Environment.CurrentDirectory,
+                WorkingDirectory = processDirectory,
                 CreateNoWindow = !debugModeEnabled,
                 UseShellExecute = debugModeEnabled,
             },
@@ -64,18 +64,12 @@ internal sealed class McpSidecarProcess : IDisposable
         process.Dispose();
     }
 
-    private static string GetExecutablePath()
+    private string GetProcessDirectory()
     {
-        string pluginDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-            ?? Environment.CurrentDirectory;
-        string modDirectory = Directory.GetParent(pluginDirectory)?.FullName
-            ?? pluginDirectory;
-
         return Path.Combine(
             modDirectory,
             "Processes",
-            ProcessDirectoryName,
-            ProcessExecutableName);
+            ProcessDirectoryName);
     }
 
     private void ThrowIfDisposed()
