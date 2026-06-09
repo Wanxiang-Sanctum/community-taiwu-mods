@@ -4,22 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TaiwuModMergeDependency Include="MessagePack.Annotations.dll" />
-    <TaiwuModMergeDependency Include="MessagePack.dll" />
-    <TaiwuModMergeDependency Include="MessagePipe.dll" />
-    <TaiwuModMergeDependency Include="MessagePipe.Interprocess.dll" />
-    <TaiwuModMergeDependency Include="MessagePipe.VContainer.dll" />
-    <TaiwuModMergeDependency Include="Microsoft.NET.StringTools.dll" />
-    <TaiwuModCopyDependency Include="System.Buffers.dll" />
-    <TaiwuModCopyDependency Include="System.Collections.Immutable.dll" />
-    <TaiwuModCopyDependency Include="System.Memory.dll" />
-    <TaiwuModCopyDependency Include="System.Numerics.Vectors.dll" />
-    <TaiwuModCopyDependency
-      Include="System.Runtime.CompilerServices.Unsafe.dll"
-    />
-    <TaiwuModCopyDependency Include="UniTask.dll" />
-    <TaiwuModCopyDependency Include="UniTask.Linq.dll" />
-    <TaiwuModCopyDependency Include="VContainer.dll" />
     <TaiwuModCopyDependency Include="Xiangshu.Ipc.dll" />
   </ItemGroup>
 

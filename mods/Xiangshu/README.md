@@ -33,11 +33,14 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Xiangshu
 
 `pack-mod` 会把 `Config.Lua` 和前后端最终入口 DLL 组装到仓库根目录的
 `artifacts/mods/Xiangshu/`。IPC contract DLL 会作为独立依赖复制部署，避免 MessagePipe
-请求类型被合并改名；其他运行时依赖由前端、后端入口项目分别声明复制策略。
+请求类型被合并改名。
 
 插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。`src/Ipc/` 是前后端共用的
-IPC contract、manifest 注册和本机 endpoint 辅助类库；MessagePipe 运行时依赖由前端和后端入口
-项目分别声明。
+IPC contract、manifest 注册和本机 endpoint 辅助类库。
+
+前端运行时依赖由 `Wanxiang.FrontendRuntime` 提供；发布后需要将该前置 mod 的 Steam Workshop
+`FileId` 加入相枢的 `Dependencies`。相枢前端只部署自己的入口 DLL 和 `Xiangshu.Ipc.dll`。
+后端仍按自身 `net8.0` 运行时边界声明并部署 MessagePipe 相关依赖。
 
 ## 项目结构
 

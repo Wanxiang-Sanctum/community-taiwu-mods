@@ -16,6 +16,7 @@
       Include="Microsoft.Extensions.DependencyInjection"
       Version="10.0.7"
     />
+    <PackageVersion Include="Microsoft.NET.StringTools" Version="17.11.4" />
     <PackageVersion
       Include="Roslynator.Analyzers"
       Version="$(RoslynatorVersion)"

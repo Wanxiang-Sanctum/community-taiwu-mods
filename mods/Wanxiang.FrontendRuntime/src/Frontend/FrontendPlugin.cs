@@ -1,15 +1,20 @@
+using System.Collections.Immutable;
 using Cysharp.Threading.Tasks;
+using MessagePack;
+using MessagePipe;
+using Microsoft.NET.StringTools;
 using TaiwuModdingLib.Core.Plugin;
 using UnityEngine.LowLevel;
+using VContainer;
 
-namespace Wanxiang.AsyncRelay.Frontend;
+namespace Wanxiang.FrontendRuntime.Frontend;
 
-[PluginConfig("Wanxiang.AsyncRelay.Frontend", "WanxiangSanctum", "0.1.0")]
+[PluginConfig("Wanxiang.FrontendRuntime.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     public override void Initialize()
     {
-        UniTaskRuntimeAssemblies.KeepReferenced();
+        FrontendRuntimeAssemblies.KeepReferenced();
         UniTaskEnvironment.EnsureInjected();
     }
 
@@ -18,10 +23,18 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     }
 }
 
-internal static class UniTaskRuntimeAssemblies
+internal static class FrontendRuntimeAssemblies
 {
     private static readonly Type[] RuntimeAssemblyMarkers =
     [
+        typeof(ImmutableArray<>),
+        typeof(SpanBasedStringBuilder),
+        typeof(MessagePackObjectAttribute),
+        typeof(MessagePackSerializer),
+        typeof(IAsyncRequestHandler<,>),
+        typeof(MessagePipe.Interprocess.MessagePipeInterprocessOptions),
+        typeof(MessagePipe.ContainerBuilderExtensions),
+        typeof(IContainerBuilder),
         typeof(UniTask),
         typeof(Cysharp.Threading.Tasks.Linq.IAsyncWriter<>),
         typeof(TextMeshProAsyncExtensions),

@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/mods/">
     <Project
-      Path="mods/Wanxiang.AsyncRelay/src/Backend/Wanxiang.AsyncRelay.Backend.csproj"
+      Path="mods/Wanxiang.FrontendRuntime/src/Backend/Wanxiang.FrontendRuntime.Backend.csproj"
     />
     <Project
-      Path="mods/Wanxiang.AsyncRelay/src/Frontend/Wanxiang.AsyncRelay.Frontend.csproj"
+      Path="mods/Wanxiang.FrontendRuntime/src/Frontend/Wanxiang.FrontendRuntime.Frontend.csproj"
     />
     <Project Path="mods/Xiangshu/src/Backend/Xiangshu.Backend.csproj" />
     <Project Path="mods/Xiangshu/src/Frontend/Xiangshu.Frontend.csproj" />

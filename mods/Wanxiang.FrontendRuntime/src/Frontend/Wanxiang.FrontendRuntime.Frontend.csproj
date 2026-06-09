@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.StringTools" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
+    <PackageReference
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
+    />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.UniTask" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.VContainer" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Frontend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>
