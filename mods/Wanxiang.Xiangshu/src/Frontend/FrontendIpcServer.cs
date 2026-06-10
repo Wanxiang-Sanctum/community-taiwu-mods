@@ -16,15 +16,16 @@ internal sealed class FrontendIpcServer : IDisposable
 
     private IDisposable? _containerScope;
     private IpcEndpointRegistration? _registration;
+    private IpcEndpoint? _endpoint;
     private bool _disposed;
 
-    public void Start()
+    public IpcEndpoint Start()
     {
         ThrowIfDisposed();
 
         if (_containerScope is not null)
         {
-            return;
+            return _endpoint!;
         }
 
         Exception? lastException = null;
@@ -35,8 +36,7 @@ internal sealed class FrontendIpcServer : IDisposable
 
             try
             {
-                StartOnPort(port);
-                return;
+                return StartOnPort(port);
             }
             catch (SocketException ex)
             {
@@ -61,11 +61,12 @@ internal sealed class FrontendIpcServer : IDisposable
         _disposed = true;
         _registration?.Dispose();
         _registration = null;
+        _endpoint = null;
         _containerScope?.Dispose();
         _containerScope = null;
     }
 
-    private void StartOnPort(int port)
+    private IpcEndpoint StartOnPort(int port)
     {
         ContainerBuilder builder = new();
         ConfigureContainer(builder, port);
@@ -74,19 +75,22 @@ internal sealed class FrontendIpcServer : IDisposable
 
         try
         {
-            _ = container.Resolve<TcpWorker>();
+            container.Resolve<TcpWorker>().StartReceiver();
+            IpcEndpoint endpoint = new()
+            {
+                Side = IpcRuntime.FrontendSide,
+                Transport = IpcRuntime.TransportName,
+                Host = IpcRuntime.LoopbackHost,
+                Port = port,
+                ProcessId = Process.GetCurrentProcess().Id,
+                StartedAtUtc = DateTimeOffset.UtcNow,
+            };
             _registration = IpcEndpointRegistry.Register(
-                new IpcEndpoint
-                {
-                    Side = IpcRuntime.FrontendSide,
-                    Transport = IpcRuntime.TransportName,
-                    Host = IpcRuntime.LoopbackHost,
-                    Port = port,
-                    ProcessId = Process.GetCurrentProcess().Id,
-                    StartedAtUtc = DateTimeOffset.UtcNow,
-                });
+                endpoint);
+            _endpoint = endpoint;
             _containerScope = container;
             started = true;
+            return endpoint;
         }
         finally
         {

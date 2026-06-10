@@ -13,15 +13,16 @@ internal sealed class BackendIpcServer : IDisposable
 
     private ServiceProvider? _provider;
     private IpcEndpointRegistration? _registration;
+    private IpcEndpoint? _endpoint;
     private bool _disposed;
 
-    public void Start()
+    public IpcEndpoint Start()
     {
         ThrowIfDisposed();
 
         if (_provider is not null)
         {
-            return;
+            return _endpoint!;
         }
 
         Exception? lastException = null;
@@ -32,8 +33,7 @@ internal sealed class BackendIpcServer : IDisposable
 
             try
             {
-                StartOnPort(port);
-                return;
+                return StartOnPort(port);
             }
             catch (SocketException ex)
             {
@@ -58,11 +58,12 @@ internal sealed class BackendIpcServer : IDisposable
         _disposed = true;
         _registration?.Dispose();
         _registration = null;
+        _endpoint = null;
         _provider?.Dispose();
         _provider = null;
     }
 
-    private void StartOnPort(int port)
+    private IpcEndpoint StartOnPort(int port)
     {
         ServiceCollection services = new();
         _ = services
@@ -84,10 +85,12 @@ internal sealed class BackendIpcServer : IDisposable
                 });
 
         ServiceProvider provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<TcpWorker>();
+        bool started = false;
 
-        IpcEndpointRegistration registration = IpcEndpointRegistry.Register(
-            new IpcEndpoint
+        try
+        {
+            provider.GetRequiredService<TcpWorker>().StartReceiver();
+            IpcEndpoint endpoint = new()
             {
                 Side = IpcRuntime.BackendSide,
                 Transport = IpcRuntime.TransportName,
@@ -95,10 +98,22 @@ internal sealed class BackendIpcServer : IDisposable
                 Port = port,
                 ProcessId = Environment.ProcessId,
                 StartedAtUtc = DateTimeOffset.UtcNow,
-            });
+            };
+            IpcEndpointRegistration registration = IpcEndpointRegistry.Register(endpoint);
 
-        _provider = provider;
-        _registration = registration;
+            _provider = provider;
+            _registration = registration;
+            _endpoint = endpoint;
+            started = true;
+            return endpoint;
+        }
+        finally
+        {
+            if (!started)
+            {
+                provider.Dispose();
+            }
+        }
     }
 
     private void ThrowIfDisposed()

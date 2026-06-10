@@ -1,10 +1,19 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using ModelContextProtocol.Server;
 
 namespace Wanxiang.Xiangshu.McpServer;
 
 [McpServerToolType]
-internal static class PluginTools
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "ModelContextProtocol constructs tool instances through its explicit generic tool registration.")]
+[SuppressMessage(
+    "Performance",
+    "CA1822:Mark members as static",
+    Justification = "Instance methods keep ModelContextProtocol generic tool registration trim-friendly.")]
+internal sealed class PluginTools
 {
     [McpServerTool(
         Name = "xiangshu_list_endpoints",
@@ -12,7 +21,7 @@ internal static class PluginTools
         Idempotent = true,
         ReadOnly = true)]
     [Description("Lists live Wanxiang.Xiangshu frontend and backend IPC endpoints discovered from the local manifest.")]
-    public static string ListEndpoints()
+    public string ListEndpoints()
     {
         return PluginIpcProxy.ListEndpoints();
     }
@@ -23,7 +32,7 @@ internal static class PluginTools
         Idempotent = true,
         ReadOnly = true)]
     [Description("Checks whether the Wanxiang.Xiangshu MCP server can discover and ping the frontend and backend IPC endpoints.")]
-    public static Task<string> CheckToolchainAsync(
+    public Task<string> CheckToolchainAsync(
         CancellationToken cancellationToken = default)
     {
         return PluginIpcProxy.CheckToolchainAsync(cancellationToken);
@@ -35,7 +44,7 @@ internal static class PluginTools
         Idempotent = true,
         ReadOnly = true)]
     [Description("Pings the Wanxiang.Xiangshu frontend or backend plugin through its local MessagePipe IPC endpoint.")]
-    public static Task<string> PingPluginAsync(
+    public Task<string> PingPluginAsync(
         [Description("Plugin side to ping. Valid values: frontend, backend.")]
         string side,
         [Description("Message to include in the ping request.")]

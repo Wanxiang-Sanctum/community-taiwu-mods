@@ -1,15 +1,22 @@
 using System.Diagnostics;
+#if NET10_0_OR_GREATER
+using System.Text.Json;
+using System.Text.Json.Serialization;
+#else
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+#endif
 
 namespace Wanxiang.Xiangshu.Ipc;
 
 public static class IpcEndpointRegistry
 {
+#if !NET10_0_OR_GREATER
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
     };
+#endif
 
     public static string GetManifestPath()
     {
@@ -58,10 +65,14 @@ public static class IpcEndpointRegistry
 
     public static IpcEndpointRegistration Register(IpcEndpoint endpoint)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(endpoint);
+#else
         if (endpoint is null)
         {
             throw new ArgumentNullException(nameof(endpoint));
         }
+#endif
 
         string manifestPath = GetManifestPath();
 
@@ -109,7 +120,7 @@ public static class IpcEndpointRegistry
         manifest.Version = 1;
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        string json = JsonConvert.SerializeObject(manifest, Formatting.Indented, JsonSettings);
+        string json = SerializeManifest(manifest);
         File.WriteAllText(manifestPath, json + Environment.NewLine);
     }
 
@@ -144,8 +155,30 @@ public static class IpcEndpointRegistry
             return new IpcEndpointManifest();
         }
 
-        return JsonConvert.DeserializeObject<IpcEndpointManifest>(json, JsonSettings)
+        return DeserializeManifest(json)
             ?? throw new InvalidDataException($"IPC endpoint manifest is not a JSON object: {manifestPath}");
+    }
+
+    private static string SerializeManifest(IpcEndpointManifest manifest)
+    {
+#if NET10_0_OR_GREATER
+        return JsonSerializer.Serialize(
+            manifest,
+            IpcEndpointJsonContext.Default.IpcEndpointManifest);
+#else
+        return JsonConvert.SerializeObject(manifest, Formatting.Indented, JsonSettings);
+#endif
+    }
+
+    private static IpcEndpointManifest? DeserializeManifest(string json)
+    {
+#if NET10_0_OR_GREATER
+        return JsonSerializer.Deserialize(
+            json,
+            IpcEndpointJsonContext.Default.IpcEndpointManifest);
+#else
+        return JsonConvert.DeserializeObject<IpcEndpointManifest>(json, JsonSettings);
+#endif
     }
 
     private static bool IsSameEndpointSlot(IpcEndpoint left, IpcEndpoint right)
@@ -231,3 +264,11 @@ public sealed class IpcEndpoint
 
     public DateTimeOffset StartedAtUtc { get; set; }
 }
+
+#if NET10_0_OR_GREATER
+[JsonSourceGenerationOptions(
+    JsonSerializerDefaults.Web,
+    WriteIndented = true)]
+[JsonSerializable(typeof(IpcEndpointManifest))]
+internal sealed partial class IpcEndpointJsonContext : JsonSerializerContext;
+#endif

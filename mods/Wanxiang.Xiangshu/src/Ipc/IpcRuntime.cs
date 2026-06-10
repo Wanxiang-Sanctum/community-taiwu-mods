@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 
@@ -19,8 +20,35 @@ public static class IpcRuntime
 
     public const string McpPath = "/mcp";
 
+    public static string FormatEndpointAddress(IpcEndpoint endpoint)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(endpoint);
+#else
+        if (endpoint is null)
+        {
+            throw new ArgumentNullException(nameof(endpoint));
+        }
+#endif
+
+        string port = endpoint.Port.ToString(CultureInfo.InvariantCulture);
+
+        if (string.Equals(endpoint.Transport, McpTransportName, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"http://{endpoint.Host}:{port}{endpoint.Path}";
+        }
+
+        return $"{endpoint.Transport}://{endpoint.Host}:{port}";
+    }
+
     public static int ReserveLoopbackPort()
     {
+#if NET10_0_OR_GREATER
+        using TcpListener socket = new(IPAddress.Loopback, port: 0);
+
+        socket.Start();
+        return ((IPEndPoint)socket.LocalEndpoint).Port;
+#else
         TcpListener socket = new(IPAddress.Loopback, port: 0);
 
         try
@@ -32,5 +60,6 @@ public static class IpcRuntime
         {
             socket.Stop();
         }
+#endif
     }
 }

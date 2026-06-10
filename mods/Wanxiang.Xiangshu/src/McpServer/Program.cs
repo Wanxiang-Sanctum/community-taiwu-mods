@@ -1,32 +1,65 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Formatting.Compact;
 using Wanxiang.Xiangshu.Ipc;
+using MsLogger = Microsoft.Extensions.Logging.ILogger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 int parentProcessId = int.Parse(
-    builder.Configuration["parent-pid"]!,
+    builder.Configuration["parent-pid"] ?? throw new InvalidOperationException("--parent-pid is required."),
     CultureInfo.InvariantCulture);
+string logFilePath = builder.Configuration["log-file"]
+    ?? Path.Combine(AppContext.BaseDirectory, "Wanxiang.Xiangshu.McpServer.log");
+string? logDirectory = Path.GetDirectoryName(logFilePath);
+
+if (!string.IsNullOrEmpty(logDirectory))
+{
+    _ = Directory.CreateDirectory(logDirectory);
+}
+
+Serilog.Core.Logger fileLogger = CreateFileLogger(logFilePath);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole();
+builder.Logging.AddSerilog(fileLogger, dispose: false);
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 
 builder.WebHost.ConfigureKestrel(
     options => options.Listen(IPAddress.Loopback, port: 0));
 
-builder.Services
+_ = builder.Services
     .AddMcpServer()
     .WithHttpTransport(options => options.Stateless = true)
-    .WithToolsFromAssembly();
+    .WithTools<Wanxiang.Xiangshu.McpServer.PluginTools>();
 
-WebApplication app = builder.Build();
-app.MapMcp(IpcRuntime.McpPath);
+MsLogger? logger = null;
 
-await app.StartAsync().ConfigureAwait(false);
+try
+{
+    WebApplication app = builder.Build();
+    logger = app.Services
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("Wanxiang.Xiangshu.McpServer");
+    McpServerLog.Starting(
+        logger,
+        Environment.ProcessId,
+        parentProcessId,
+        logFilePath);
+    _ = app.MapMcp(IpcRuntime.McpPath);
 
-Uri address = GetListeningAddress(app);
+    await app.StartAsync().ConfigureAwait(false);
 
-using IpcEndpointRegistration registration = IpcEndpointRegistry.Register(
-    new IpcEndpoint
+    Uri address = GetListeningAddress(app);
+    IpcEndpoint endpoint = new()
     {
         Side = IpcRuntime.McpServerSide,
         Transport = IpcRuntime.McpTransportName,
@@ -35,16 +68,53 @@ using IpcEndpointRegistration registration = IpcEndpointRegistry.Register(
         Port = address.Port,
         ProcessId = Environment.ProcessId,
         StartedAtUtc = DateTimeOffset.UtcNow,
-    });
+    };
 
-IHostApplicationLifetime lifetime = app.Lifetime;
-Task parentWatchTask = StopWhenParentExitsAsync(
-    parentProcessId,
-    lifetime,
-    lifetime.ApplicationStopping);
+    using IpcEndpointRegistration registration = IpcEndpointRegistry.Register(endpoint);
+    if (logger.IsEnabled(LogLevel.Information))
+    {
+        string endpointAddress = IpcRuntime.FormatEndpointAddress(endpoint);
+        string manifestPath = IpcEndpointRegistry.GetManifestPath();
 
-await app.WaitForShutdownAsync().ConfigureAwait(false);
-await parentWatchTask.ConfigureAwait(false);
+        McpServerLog.EndpointRegistered(
+            logger,
+            endpointAddress,
+            endpoint.Port,
+            manifestPath);
+    }
+
+    IHostApplicationLifetime lifetime = app.Lifetime;
+    Task parentWatchTask = StopWhenParentExitsAsync(
+        parentProcessId,
+        lifetime,
+        lifetime.ApplicationStopping,
+        logger);
+
+    await app.WaitForShutdownAsync().ConfigureAwait(false);
+    await parentWatchTask.ConfigureAwait(false);
+    McpServerLog.Stopped(logger);
+}
+catch (Exception ex)
+{
+    if (logger is null)
+    {
+        fileLogger.Fatal(
+            ex,
+            "MCP server failed before the host logger was available; processId={ProcessId}; parentProcessId={ParentProcessId}.",
+            Environment.ProcessId,
+            parentProcessId);
+    }
+    else
+    {
+        McpServerLog.Failed(logger, ex);
+    }
+
+    throw;
+}
+finally
+{
+    await fileLogger.DisposeAsync().ConfigureAwait(false);
+}
 
 static Uri GetListeningAddress(WebApplication app)
 {
@@ -57,7 +127,8 @@ static Uri GetListeningAddress(WebApplication app)
 static async Task StopWhenParentExitsAsync(
     int parentProcessId,
     IHostApplicationLifetime lifetime,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken,
+    MsLogger logger)
 {
     try
     {
@@ -71,6 +142,7 @@ static async Task StopWhenParentExitsAsync(
         return;
     }
 
+    McpServerLog.ParentExited(logger, parentProcessId);
     lifetime.StopApplication();
 }
 
@@ -85,4 +157,61 @@ static bool IsProcessRunning(int processId)
     {
         return false;
     }
+}
+
+static Serilog.Core.Logger CreateFileLogger(string logFilePath)
+{
+    return new LoggerConfiguration()
+        .WriteTo.File(
+            new CompactJsonFormatter(),
+            logFilePath,
+            fileSizeLimitBytes: 1_048_576,
+            rollOnFileSizeLimit: true,
+            retainedFileCountLimit: 4)
+        .CreateLogger();
+}
+
+internal static partial class McpServerLog
+{
+    [LoggerMessage(
+        EventId = 1000,
+        Level = LogLevel.Information,
+        Message = "Starting MCP server; processId={ProcessId}; parentProcessId={ParentProcessId}; logFile={LogFile}.")]
+    public static partial void Starting(
+        MsLogger logger,
+        int processId,
+        int parentProcessId,
+        string logFile);
+
+    [LoggerMessage(
+        EventId = 1001,
+        Level = LogLevel.Information,
+        Message = "MCP endpoint registered; address={Address}; port={Port}; manifest={ManifestPath}.")]
+    public static partial void EndpointRegistered(
+        MsLogger logger,
+        string address,
+        int port,
+        string manifestPath);
+
+    [LoggerMessage(
+        EventId = 1002,
+        Level = LogLevel.Information,
+        Message = "Parent process exited; parentProcessId={ParentProcessId}; stopping MCP server.")]
+    public static partial void ParentExited(
+        MsLogger logger,
+        int parentProcessId);
+
+    [LoggerMessage(
+        EventId = 1003,
+        Level = LogLevel.Information,
+        Message = "MCP server stopped.")]
+    public static partial void Stopped(MsLogger logger);
+
+    [LoggerMessage(
+        EventId = 1004,
+        Level = LogLevel.Critical,
+        Message = "MCP server failed.")]
+    public static partial void Failed(
+        MsLogger logger,
+        Exception exception);
 }

@@ -55,7 +55,7 @@ Agent 的生成约束，不设计前端二次审阅、自动重写或基于 Agen
 - 前端插件在初始化和 Mod 设置更新时读取这些设置。
 - CLI 入口留空时，前端按所选 Agent 类型映射默认命令。
 - 相对工作目录会解析到相枢 Mod 目录下，并由前端创建。
-- 调试模式变化时，前端插件会重启 MCP sidecar，使控制台窗口显示策略立即跟随配置。
+- 调试模式变化时，前端插件会重启 MCP sidecar，使 sidecar 的控制台窗口显示策略立即跟随配置。
 - 前端把诊断命令注册到游戏原生地图热键分组，默认 `Ctrl+Backslash`（`Ctrl+\`）。
 - 诊断热键只在进入存档后的主界面/地图交互中生效。它会启动所选 CLI Agent，注册当前相枢 MCP
   endpoint，并要求 Agent 调用 `xiangshu_check_toolchain`。
@@ -70,7 +70,8 @@ Agent 的生成约束，不设计前端二次审阅、自动重写或基于 Agen
 - `AgentAdapter`：选择 `Codex CLI` 或 `Claude Code`。
 - `AgentCliPath`：本机 Agent CLI 的命令名或可执行文件路径；留空时使用当前 Agent 的默认命令。
 - `AgentWorkingDirectory`：本机 Agent 使用的工作目录，默认 `AgentWorkspace`。
-- `DebugMode`：开发诊断开关。开启后，相枢启动 MCP sidecar 和诊断 CLI 进程时尽量显示控制台窗口。
+- `DebugMode`：开发诊断开关。诊断日志始终写入工作目录；开启后，相枢启动 MCP sidecar 和诊断 CLI
+  进程时尽量额外显示控制台窗口。
 
 默认命令按 `AgentAdapter` 决定：Codex CLI 使用 `codex`，Claude Code 使用 `claude`。因此切换
 Agent 类型时不需要维护两套路径字段；只有本机 CLI 不在 PATH 或需要固定绝对路径时，才填写
