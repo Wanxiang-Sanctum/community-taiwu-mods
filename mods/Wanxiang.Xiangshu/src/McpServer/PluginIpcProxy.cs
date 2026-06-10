@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MessagePipe;
+using MessagePipe.Interprocess;
+using MessagePipe.Interprocess.Workers;
 using ModelContextProtocol;
 using Microsoft.Extensions.DependencyInjection;
 using Wanxiang.Xiangshu.Ipc;
@@ -111,6 +113,20 @@ internal static class PluginIpcProxy
                 endpoint.Host,
                 endpoint.Port,
                 options => options.InstanceLifetime = InstanceLifetime.Singleton);
+        _ = services.AddSingleton<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>(
+            provider => new AsyncMessageBroker<IInterprocessKey, IInterprocessValue>(
+                new AsyncMessageBrokerCore<IInterprocessKey, IInterprocessValue>(
+                    provider.GetRequiredService<MessagePipeDiagnosticsInfo>(),
+                    provider.GetRequiredService<MessagePipeOptions>()),
+                provider.GetRequiredService<FilterAttachedAsyncMessageHandlerFactory>()));
+        _ = services.AddSingleton<TcpWorker>(
+            provider => new TcpWorker(
+                provider,
+                provider.GetRequiredService<MessagePipeInterprocessTcpOptions>(),
+                provider.GetRequiredService<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>()));
+        _ = services.AddSingleton<IRemoteRequestHandler<IpcPingRequest, IpcPingResponse>>(
+            provider => new TcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
+                provider.GetRequiredService<TcpWorker>()));
 
         ServiceProvider? provider = null;
 
@@ -124,7 +140,7 @@ internal static class PluginIpcProxy
                 .InvokeAsync(
                     new IpcPingRequest
                     {
-                        Message = message ?? string.Empty,
+                        Message = message,
                     },
                     cancellationToken);
         }
@@ -196,7 +212,7 @@ internal static class PluginIpcProxy
                 DescribeEndpoint(endpoint),
                 PingSucceeded: false,
                 Response: null,
-                Error: $"{ex.GetType().Name}: {ex.Message}");
+                Error: ex.ToString());
         }
     }
 
