@@ -69,10 +69,11 @@ internal sealed class BackendIpcServer : IDisposable
         IMessagePipeBuilder messagePipeBuilder = services.AddMessagePipe(
             options =>
             {
+                options.EnableAutoRegistration = false;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        _ = messagePipeBuilder.AddAsyncRequestHandler<BackendIpcPingHandler>();
+        RegisterIpcPingHandler(services);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
             port,
@@ -112,6 +113,19 @@ internal sealed class BackendIpcServer : IDisposable
                 provider.Dispose();
             }
         }
+    }
+
+    private static void RegisterIpcPingHandler(IServiceCollection services)
+    {
+        _ = services.AddSingleton<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>, BackendIpcPingHandler>();
+        _ = services.AddSingleton<IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>>(
+            provider => new AsyncRequestHandler<IpcPingRequest, IpcPingResponse>(
+                provider.GetRequiredService<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>>(),
+                provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
+        AsyncRequestHandlerRegistory.Add(
+            typeof(IpcPingRequest),
+            typeof(IpcPingResponse),
+            typeof(BackendIpcPingHandler));
     }
 
     private void ThrowIfDisposed()
