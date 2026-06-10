@@ -56,7 +56,7 @@ try
         logFilePath);
     _ = app.MapMcp(IpcRuntime.McpPath);
 
-    await app.StartAsync().ConfigureAwait(false);
+    await app.StartAsync();
 
     Uri address = GetListeningAddress(app);
     IpcEndpoint endpoint = new()
@@ -90,8 +90,8 @@ try
         lifetime.ApplicationStopping,
         logger);
 
-    await app.WaitForShutdownAsync().ConfigureAwait(false);
-    await parentWatchTask.ConfigureAwait(false);
+    await app.WaitForShutdownAsync();
+    await parentWatchTask;
     McpServerLog.Stopped(logger);
 }
 catch (Exception ex)
@@ -113,7 +113,7 @@ catch (Exception ex)
 }
 finally
 {
-    await fileLogger.DisposeAsync().ConfigureAwait(false);
+    await fileLogger.DisposeAsync();
 }
 
 static Uri GetListeningAddress(WebApplication app)
@@ -134,7 +134,7 @@ static async Task StopWhenParentExitsAsync(
     {
         while (IsProcessRunning(parentProcessId))
         {
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
         }
     }
     catch (OperationCanceledException)

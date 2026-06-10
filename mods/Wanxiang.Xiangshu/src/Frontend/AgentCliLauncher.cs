@@ -84,8 +84,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
         try
         {
-            IpcEndpoint mcpEndpoint = await WaitForMcpEndpointAsync(cancellationToken)
-                .ConfigureAwait(false);
+            IpcEndpoint mcpEndpoint = await WaitForMcpEndpointAsync(cancellationToken);
             string mcpUrl = BuildMcpUrl(mcpEndpoint);
             ProcessStartInfo startInfo = BuildStartInfo(
                 settings,
@@ -111,29 +110,25 @@ internal sealed class AgentCliLauncher : IDisposable
 
             if (settings.Adapter == AgentAdapter.Codex)
             {
-                await process.StandardInput
-                    .WriteAsync(DiagnosticPrompt)
-                    .ConfigureAwait(false);
+                await process.StandardInput.WriteAsync(DiagnosticPrompt);
                 process.StandardInput.Close();
             }
 
             Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
             Task<string> stderrTask = process.StandardError.ReadToEndAsync();
 
-            await Task.Run(process.WaitForExit, cancellationToken).ConfigureAwait(false);
+            await Task.Run(process.WaitForExit, cancellationToken);
 
-            string stdout = await stdoutTask.ConfigureAwait(false);
-            string stderr = await stderrTask.ConfigureAwait(false);
+            string stdout = await stdoutTask;
+            string stderr = await stderrTask;
 
-            await File.WriteAllTextAsync(stdoutPath, stdout, Encoding.UTF8, cancellationToken)
-                .ConfigureAwait(false);
-            await File.WriteAllTextAsync(stderrPath, stderr, Encoding.UTF8, cancellationToken)
-                .ConfigureAwait(false);
+            await File.WriteAllTextAsync(stdoutPath, stdout, Encoding.UTF8, cancellationToken);
+            await File.WriteAllTextAsync(stderrPath, stderr, Encoding.UTF8, cancellationToken);
             await File.WriteAllTextAsync(
                 exitPath,
                 $"ExitCode: {process.ExitCode.ToString(CultureInfo.InvariantCulture)}{Environment.NewLine}McpUrl: {mcpUrl}{Environment.NewLine}",
                 Encoding.UTF8,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -141,7 +136,7 @@ internal sealed class AgentCliLauncher : IDisposable
                 exitPath,
                 $"{ex.GetType().Name}: {ex.Message}{Environment.NewLine}{ex}",
                 Encoding.UTF8,
-                CancellationToken.None).ConfigureAwait(false);
+                CancellationToken.None);
         }
         finally
         {
@@ -249,7 +244,7 @@ internal sealed class AgentCliLauncher : IDisposable
                 return endpoint;
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
         }
 
         throw new InvalidOperationException("No live Wanxiang.Xiangshu MCP endpoint was found.");

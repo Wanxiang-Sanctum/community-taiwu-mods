@@ -45,11 +45,11 @@ internal static class PluginIpcProxy
         SideCheckResult frontend = await CheckSideAsync(
             endpoints,
             IpcRuntime.FrontendSide,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
         SideCheckResult backend = await CheckSideAsync(
             endpoints,
             IpcRuntime.BackendSide,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
         ToolchainCheckResult result = new(
             DateTimeOffset.UtcNow,
             IpcEndpointRegistry.GetManifestPath(),
@@ -82,7 +82,7 @@ internal static class PluginIpcProxy
         IpcPingResponse response = await InvokePingAsync(
             endpoint,
             message,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
         PingResult result = new(DescribeEndpoint(endpoint), response);
 
         return JsonSerializer.Serialize(
@@ -126,14 +126,13 @@ internal static class PluginIpcProxy
                     {
                         Message = message ?? string.Empty,
                     },
-                    cancellationToken)
-                .ConfigureAwait(false);
+                    cancellationToken);
         }
         finally
         {
             if (provider is not null)
             {
-                await provider.DisposeAsync().ConfigureAwait(false);
+                await provider.DisposeAsync();
             }
         }
     }
@@ -169,7 +168,7 @@ internal static class PluginIpcProxy
             IpcPingResponse response = await InvokePingAsync(
                 endpoint,
                 ToolchainCheckMessage,
-                timeout.Token).ConfigureAwait(false);
+                timeout.Token);
 
             return new SideCheckResult(
                 side,

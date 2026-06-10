@@ -22,8 +22,7 @@ internal static class Program
         {
             Command command = CommandLineOptions.CreateCommand(RunAsync);
             return await command.Parse(args)
-                .InvokeAsync(CreateInvocationConfiguration())
-                .ConfigureAwait(false);
+                .InvokeAsync(CreateInvocationConfiguration());
         }
         catch (OperationCanceledException)
         {
@@ -31,7 +30,7 @@ internal static class Program
         }
         catch (Exception ex) when (ShouldReportError(ex))
         {
-            return await ReportErrorAsync(ex).ConfigureAwait(false);
+            return await ReportErrorAsync(ex);
         }
     }
 
@@ -45,7 +44,7 @@ internal static class Program
 
     private static async Task<int> ReportErrorAsync(Exception ex)
     {
-        await Console.Error.WriteLineAsync($"错误：{ex.Message}").ConfigureAwait(false);
+        await Console.Error.WriteLineAsync($"错误：{ex.Message}");
         return 1;
     }
 
@@ -90,8 +89,11 @@ internal static class Program
 
         if (!options.SkipSolution && IsUnderDirectory(modRoot, repoRoot))
         {
-            await AddProjectsToSolutionAsync(repoRoot, ModsSolutionFolderName, GetModProjectFullPaths(modsRoot, options.Name), cancellationToken)
-                .ConfigureAwait(false);
+            await AddProjectsToSolutionAsync(
+                repoRoot,
+                ModsSolutionFolderName,
+                GetModProjectFullPaths(modsRoot, options.Name),
+                cancellationToken);
         }
 
         Console.WriteLine($"已创建 mod '{options.Name}'：{modRoot}");
@@ -116,8 +118,11 @@ internal static class Program
 
         if (!options.SkipSolution && IsUnderDirectory(projectRoot, repoRoot))
         {
-            await AddProjectsToSolutionAsync(repoRoot, SharedSolutionFolderName, [GetSharedProjectFullPath(sharedRoot, options.Name)], cancellationToken)
-                .ConfigureAwait(false);
+            await AddProjectsToSolutionAsync(
+                repoRoot,
+                SharedSolutionFolderName,
+                [GetSharedProjectFullPath(sharedRoot, options.Name)],
+                cancellationToken);
         }
 
         Console.WriteLine($"已创建内部共享项目 '{options.Name}'：{projectRoot}");
@@ -184,8 +189,11 @@ internal static class Program
             .. fullProjectPaths.Select(fullProjectPath => GetRepoRelativePath(repoRoot, fullProjectPath)),
         ];
 
-        await ProcessRunner.RunAsync("dotnet", repoRoot, ["sln", SolutionFileName, "remove", .. projectPaths], cancellationToken)
-            .ConfigureAwait(false);
+        await ProcessRunner.RunAsync(
+            "dotnet",
+            repoRoot,
+            ["sln", SolutionFileName, "remove", .. projectPaths],
+            cancellationToken);
     }
 
     private static async Task PackModAsync(CommandLineOptions options, CancellationToken cancellationToken)
@@ -197,7 +205,7 @@ internal static class Program
         string artifactsRoot = Path.GetFullPath(options.ArtifactsRoot ?? Path.Combine(repoRoot, "artifacts", "mods"));
 
         ModPacker packer = new(repoRoot, modsRoot, artifactsRoot, options.Configuration);
-        await packer.PackAsync(options.Name, cancellationToken).ConfigureAwait(false);
+        await packer.PackAsync(options.Name, cancellationToken);
     }
 
     private static string[] GetModProjectFullPaths(string modsRoot, string modName)

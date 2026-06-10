@@ -22,14 +22,14 @@ internal sealed class ModPacker(
             throw new InvalidOperationException($"未找到 mod 组包入口：{packProjectPath}");
         }
 
-        PackPlan plan = await ResolveModPackAsync(packProjectPath, cancellationToken).ConfigureAwait(false);
+        PackPlan plan = await ResolveModPackAsync(packProjectPath, cancellationToken);
 
         if (Directory.Exists(packageRoot))
         {
             Directory.Delete(packageRoot, recursive: true);
         }
 
-        await WritePackPlanOutputsAsync(plan, packageRoot, cancellationToken).ConfigureAwait(false);
+        await WritePackPlanOutputsAsync(plan, packageRoot, cancellationToken);
 
         Console.WriteLine($"已打包 mod '{modName}'：{packageRoot}");
     }
@@ -39,12 +39,15 @@ internal sealed class ModPacker(
         CancellationToken cancellationToken)
     {
         PackPlanBuilder builder = new();
-        foreach (PackOutput output in await GetPackOutputsAsync(packProjectPath, restore: false, cancellationToken).ConfigureAwait(false))
+        foreach (PackOutput output in await GetPackOutputsAsync(
+            packProjectPath,
+            restore: false,
+            cancellationToken))
         {
             switch (output.Kind)
             {
                 case "Project":
-                    builder.Add(await ResolveProjectPackAsync(output.SourcePath, cancellationToken).ConfigureAwait(false));
+                    builder.Add(await ResolveProjectPackAsync(output.SourcePath, cancellationToken));
                     break;
 
                 case "File":
@@ -73,7 +76,10 @@ internal sealed class ModPacker(
         List<PackFile> mergeDependencies = [];
         List<string> libraryPaths = [];
 
-        foreach (PackOutput output in await GetPackOutputsAsync(projectPath, restore: true, cancellationToken).ConfigureAwait(false))
+        foreach (PackOutput output in await GetPackOutputsAsync(
+            projectPath,
+            restore: true,
+            cancellationToken))
         {
             switch (output.Kind)
             {
@@ -146,7 +152,7 @@ internal sealed class ModPacker(
                 $"-getTargetResult:{ResolvePackOutputsTargetName}",
                 $"-p:Configuration={configuration}",
             ],
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
 
         return ReadPackOutputs(output, projectPath);
     }
@@ -196,7 +202,7 @@ internal sealed class ModPacker(
             }
             else
             {
-                await MergeEntryAssemblyAsync(assembly, packageRoot, cancellationToken).ConfigureAwait(false);
+                await MergeEntryAssemblyAsync(assembly, packageRoot, cancellationToken);
             }
         }
 
@@ -258,7 +264,7 @@ internal sealed class ModPacker(
         arguments.Add(assembly.Entry.SourcePath);
         arguments.AddRange(assembly.MergeDependencies.Select(static dependency => dependency.SourcePath));
 
-        await ProcessRunner.RunAsync("dotnet", repoRoot, arguments, cancellationToken).ConfigureAwait(false);
+        await ProcessRunner.RunAsync("dotnet", repoRoot, arguments, cancellationToken);
     }
 
     private static void CopyPackFile(PackFile file, string packageRoot)
