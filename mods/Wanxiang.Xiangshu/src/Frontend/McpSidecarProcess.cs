@@ -6,7 +6,8 @@ namespace Wanxiang.Xiangshu.Frontend;
 
 internal sealed class McpSidecarProcess(
     string modDirectory,
-    string workingDirectory) : IDisposable
+    string workingDirectory,
+    string manifestPath) : IDisposable
 {
     private const string ProcessDirectoryName = "Wanxiang.Xiangshu.McpServer";
 
@@ -57,6 +58,8 @@ internal sealed class McpSidecarProcess(
         process.StartInfo.ArgumentList.Add(Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
         process.StartInfo.ArgumentList.Add("--log-file");
         process.StartInfo.ArgumentList.Add(eventLogPath);
+        process.StartInfo.ArgumentList.Add("--manifest-file");
+        process.StartInfo.ArgumentList.Add(manifestPath);
 
         try
         {

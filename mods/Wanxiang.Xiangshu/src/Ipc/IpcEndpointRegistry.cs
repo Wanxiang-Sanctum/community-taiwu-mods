@@ -11,6 +11,18 @@ namespace Wanxiang.Xiangshu.Ipc;
 
 public static class IpcEndpointRegistry
 {
+    private const string RuntimeDataDirectoryName = "AgentWorkspace";
+
+    private const string ManifestFileName = "ipc-endpoints.json";
+
+#if NET10_0_OR_GREATER
+    private static readonly Lock ManifestPathSyncRoot = new();
+#else
+    private static readonly object ManifestPathSyncRoot = new();
+#endif
+
+    private static string? ConfiguredManifestPath { get; set; }
+
 #if !NET10_0_OR_GREATER
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -18,21 +30,70 @@ public static class IpcEndpointRegistry
     };
 #endif
 
-    public static string GetManifestPath()
+    public static void ConfigureForModDirectory(string modDirectory)
     {
-        string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-        if (string.IsNullOrWhiteSpace(root))
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(modDirectory);
+#else
+        if (modDirectory is null)
         {
-            throw new InvalidOperationException("LocalApplicationData path is not available.");
+            throw new ArgumentNullException(nameof(modDirectory));
+        }
+#endif
+
+        if (modDirectory.Length == 0)
+        {
+            throw new ArgumentException("Mod directory is required.", nameof(modDirectory));
         }
 
-        return Path.Combine(root, "Taiwu", "Wanxiang.Xiangshu", "ipc-endpoints.json");
+        ConfigureManifestPath(
+            Path.Combine(
+                Path.GetFullPath(modDirectory),
+                RuntimeDataDirectoryName,
+                ManifestFileName));
+    }
+
+    public static void ConfigureManifestPath(string manifestPath)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(manifestPath);
+#else
+        if (manifestPath is null)
+        {
+            throw new ArgumentNullException(nameof(manifestPath));
+        }
+#endif
+
+        if (manifestPath.Length == 0)
+        {
+            throw new ArgumentException("IPC endpoint manifest path is required.", nameof(manifestPath));
+        }
+
+        string fullPath = Path.GetFullPath(
+            Environment.ExpandEnvironmentVariables(manifestPath));
+
+        lock (ManifestPathSyncRoot)
+        {
+            ConfiguredManifestPath = fullPath;
+        }
+    }
+
+    public static string ManifestPath
+    {
+        get
+        {
+            lock (ManifestPathSyncRoot)
+            {
+                return ConfiguredManifestPath
+                    ?? throw new InvalidOperationException(
+                        "Wanxiang.Xiangshu IPC endpoint manifest path has not been configured.");
+            }
+        }
     }
 
     public static IReadOnlyList<IpcEndpoint> GetLiveEndpoints()
     {
-        string manifestPath = GetManifestPath();
+        string manifestPath = ManifestPath;
 
         if (!File.Exists(manifestPath))
         {
@@ -52,11 +113,6 @@ public static class IpcEndpointRegistry
 
     public static IpcEndpoint? TryGetLiveEndpoint(string side)
     {
-        if (string.IsNullOrWhiteSpace(side))
-        {
-            throw new ArgumentException("Endpoint side is required.", nameof(side));
-        }
-
         return GetLiveEndpoints()
             .Where(endpoint => string.Equals(endpoint.Side, side, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(endpoint => endpoint.StartedAtUtc)
@@ -74,7 +130,7 @@ public static class IpcEndpointRegistry
         }
 #endif
 
-        string manifestPath = GetManifestPath();
+        string manifestPath = ManifestPath;
 
         UpdateManifest(
             manifestPath,
@@ -109,7 +165,11 @@ public static class IpcEndpointRegistry
 
     private static void UpdateManifest(string manifestPath, Action<IpcEndpointManifest> update)
     {
-        string directory = Path.GetDirectoryName(manifestPath) ?? ".";
+#if NET10_0_OR_GREATER
+        string directory = Path.GetDirectoryName(manifestPath)!;
+#else
+        string directory = Path.GetDirectoryName(manifestPath);
+#endif
         _ = Directory.CreateDirectory(directory);
 
         using FileStream lockFile = OpenLockFile(manifestPath + ".lock");

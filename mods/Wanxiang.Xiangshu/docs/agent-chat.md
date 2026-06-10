@@ -55,6 +55,8 @@ Agent 的生成约束，不设计前端二次审阅、自动重写或基于 Agen
 - 前端插件在初始化和 Mod 设置更新时读取这些设置。
 - CLI 入口留空时，前端按所选 Agent 类型映射默认命令。
 - 相对工作目录会解析到相枢 Mod 目录下，并由前端创建。
+- IPC endpoint manifest 写入相枢 Mod 目录下的 `AgentWorkspace/ipc-endpoints.json`，不写入用户级
+  AppData 目录。
 - 调试模式变化时，前端插件会重启 MCP sidecar，使 sidecar 的控制台窗口显示策略立即跟随配置。
 - 前端把诊断命令注册到游戏原生地图热键分组，默认 `Ctrl+Backslash`（`Ctrl+\`）。
 - 诊断热键只在进入存档后的主界面/地图交互中生效。它会启动所选 CLI Agent，注册当前相枢 MCP

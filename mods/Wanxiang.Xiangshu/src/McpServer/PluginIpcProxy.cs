@@ -23,7 +23,7 @@ internal static class PluginIpcProxy
                 .ThenByDescending(endpoint => endpoint.StartedAtUtc),
         ];
         EndpointListResult result = new(
-            IpcEndpointRegistry.GetManifestPath(),
+            IpcEndpointRegistry.ManifestPath,
             [.. endpoints.Select(DescribeEndpoint)]);
 
         return JsonSerializer.Serialize(
@@ -52,7 +52,7 @@ internal static class PluginIpcProxy
             cancellationToken);
         ToolchainCheckResult result = new(
             DateTimeOffset.UtcNow,
-            IpcEndpointRegistry.GetManifestPath(),
+            IpcEndpointRegistry.ManifestPath,
             mcpEndpoint is not null
                 && frontend.PingSucceeded
                 && backend.PingSucceeded,

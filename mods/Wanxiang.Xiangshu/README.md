@@ -21,10 +21,10 @@ Agent 的相枢工具服务。设计边界见 `docs/agent-chat.md`。
 都只暴露一个 ping 请求，用来验证游戏外进程能够区分连接前端侧和后端侧。插件启动成功后会在游戏日志中
 记录各自的监听地址、进程 ID 和 manifest 路径。
 
-IPC endpoint 端口在插件启动时分配，并写入用户本地应用数据目录下的 manifest：
+IPC endpoint 端口在插件启动时分配，并写入相枢 Mod 目录下的 manifest：
 
 ```text
-Taiwu/Wanxiang.Xiangshu/ipc-endpoints.json
+<Wanxiang.Xiangshu Mod directory>/AgentWorkspace/ipc-endpoints.json
 ```
 
 manifest 只记录发现本机 endpoint 所需的最小信息：`side`、`transport`、`host`、`path`、

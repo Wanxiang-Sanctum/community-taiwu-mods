@@ -19,12 +19,16 @@ int parentProcessId = int.Parse(
     CultureInfo.InvariantCulture);
 string logFilePath = builder.Configuration["log-file"]
     ?? Path.Combine(AppContext.BaseDirectory, "Wanxiang.Xiangshu.McpServer.log");
+string manifestFilePath = builder.Configuration["manifest-file"]
+    ?? throw new InvalidOperationException("--manifest-file is required.");
 string? logDirectory = Path.GetDirectoryName(logFilePath);
 
 if (!string.IsNullOrEmpty(logDirectory))
 {
     _ = Directory.CreateDirectory(logDirectory);
 }
+
+IpcEndpointRegistry.ConfigureManifestPath(manifestFilePath);
 
 Serilog.Core.Logger fileLogger = CreateFileLogger(logFilePath);
 
@@ -74,7 +78,7 @@ try
     if (logger.IsEnabled(LogLevel.Information))
     {
         string endpointAddress = IpcRuntime.FormatEndpointAddress(endpoint);
-        string manifestPath = IpcEndpointRegistry.GetManifestPath();
+        string manifestPath = IpcEndpointRegistry.ManifestPath;
 
         McpServerLog.EndpointRegistered(
             logger,

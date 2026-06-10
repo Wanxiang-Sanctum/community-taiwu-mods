@@ -15,5 +15,9 @@
     <PackageReference Include="MessagePipe" />
     <PackageReference Include="MessagePipe.Interprocess" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Backend"
+      PrivateAssets="all"
+    />
   </ItemGroup>
 </Project>

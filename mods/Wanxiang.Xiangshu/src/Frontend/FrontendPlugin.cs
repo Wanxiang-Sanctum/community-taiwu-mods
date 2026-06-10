@@ -26,10 +26,11 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         try
         {
             CurrentAgentSettings = AgentSettings.Load(ModIdStr);
+            IpcEndpointRegistry.ConfigureForModDirectory(CurrentAgentSettings.ModDirectory);
             _ipcServer = new FrontendIpcServer();
             IpcEndpoint endpoint = _ipcServer.Start();
             LogInfo(
-                $"frontend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.GetManifestPath()}.");
+                $"frontend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.ManifestPath}.");
             _agentCliLauncher = new AgentCliLauncher();
             InstallAgentDiagnosticHotkey();
 
@@ -77,7 +78,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _mcpServerProcess?.Dispose();
         _mcpServerProcess = new McpSidecarProcess(
             settings.ModDirectory,
-            settings.WorkingDirectory);
+            settings.WorkingDirectory,
+            IpcEndpointRegistry.ManifestPath);
 
         try
         {

@@ -66,23 +66,21 @@ internal sealed class BackendIpcServer : IDisposable
     private IpcEndpoint StartOnPort(int port)
     {
         ServiceCollection services = new();
-        _ = services
-            .AddMessagePipe(
-                options =>
-                {
-                    options.EnableAutoRegistration = true;
-                    options.SetAutoRegistrationSearchTypes(typeof(BackendIpcPingHandler));
-                    options.InstanceLifetime = InstanceLifetime.Singleton;
-                    options.RequestHandlerLifetime = InstanceLifetime.Singleton;
-                })
-            .AddTcpInterprocess(
-                IpcRuntime.LoopbackHost,
-                port,
-                options =>
-                {
-                    options.HostAsServer = true;
-                    options.InstanceLifetime = InstanceLifetime.Singleton;
-                });
+        IMessagePipeBuilder messagePipeBuilder = services.AddMessagePipe(
+            options =>
+            {
+                options.InstanceLifetime = InstanceLifetime.Singleton;
+                options.RequestHandlerLifetime = InstanceLifetime.Singleton;
+            });
+        _ = messagePipeBuilder.AddAsyncRequestHandler<BackendIpcPingHandler>();
+        _ = messagePipeBuilder.AddTcpInterprocess(
+            IpcRuntime.LoopbackHost,
+            port,
+            options =>
+            {
+                options.HostAsServer = true;
+                options.InstanceLifetime = InstanceLifetime.Singleton;
+            });
 
         ServiceProvider provider = services.BuildServiceProvider();
         bool started = false;

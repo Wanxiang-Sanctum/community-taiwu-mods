@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using GameData.Domains;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -17,10 +18,12 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     {
         try
         {
+            IpcEndpointRegistry.ConfigureForModDirectory(
+                DomainManager.Mod.GetModDirectory(ModIdStr));
             _ipcServer = new BackendIpcServer();
             IpcEndpoint endpoint = _ipcServer.Start();
             LogInfo(
-                $"backend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.GetManifestPath()}.");
+                $"backend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.ManifestPath}.");
         }
         catch (Exception ex)
         {

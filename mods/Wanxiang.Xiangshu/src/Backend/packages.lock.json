@@ -49,6 +49,16 @@
         "resolved": "4.15.0",
         "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
       },
+      "Taiwu.ModKit.References.Backend": {
+        "type": "Direct",
+        "requested": "[0.84.46-test, )",
+        "resolved": "0.84.46-test",
+        "contentHash": "0qC+EFtoe5BfNBcsLYH2ovzwQ4t9Zi39KEKAwpktHGAttq9TMQRXqRkiE2bAbj77837mVK6UwNto5xDKjKnc7Q==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[0.84.46-test]",
+          "Taiwu.ModKit.References.Shared": "[0.84.46-test]"
+        }
+      },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
         "requested": "[0.84.46-test, )",
@@ -102,6 +112,15 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "Taiwu.ModKit.References.Shared": {
+        "type": "CentralTransitive",
+        "requested": "[0.84.46-test, )",
+        "resolved": "0.84.46-test",
+        "contentHash": "L2UMAlASZfcdY02RWWXyw94oQfqZoDfY7Hk2tv15F1JybH9sXG5sm78exRqLV0iDQJkiAhTf6dmc4qoY/96lcQ==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[0.84.46-test]"
+        }
       }
     }
   }
