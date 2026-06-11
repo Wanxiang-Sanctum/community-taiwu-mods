@@ -25,7 +25,9 @@ internal sealed class AgentCliLauncher : IDisposable
         }
         """;
 
-    private static readonly TimeSpan McpEndpointWaitTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
+
+    private static readonly TimeSpan McpEndpointPollInterval = TimeSpan.FromMilliseconds(250);
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
@@ -416,7 +418,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static async Task<IpcEndpoint> WaitForMcpEndpointAsync(CancellationToken cancellationToken)
     {
-        DateTimeOffset deadline = DateTimeOffset.UtcNow + McpEndpointWaitTimeout;
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + McpEndpointDiscoveryWindow;
 
         while (DateTimeOffset.UtcNow < deadline)
         {
@@ -427,7 +429,7 @@ internal sealed class AgentCliLauncher : IDisposable
                 return endpoint;
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+            await Task.Delay(McpEndpointPollInterval, cancellationToken);
         }
 
         throw new InvalidOperationException("No live Wanxiang.Xiangshu MCP endpoint was found.");

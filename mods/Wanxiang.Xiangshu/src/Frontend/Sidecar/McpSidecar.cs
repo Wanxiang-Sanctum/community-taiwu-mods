@@ -4,26 +4,26 @@ using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Sidecar;
 
-internal sealed class McpSidecarProcess(
+internal sealed class McpSidecar(
     string modDirectory,
     string workingDirectory,
     string manifestPath) : IDisposable
 {
-    private const string ProcessDirectoryName = "Wanxiang.Xiangshu.McpServer";
+    private const string McpServerBundleName = "Wanxiang.Xiangshu.McpServer";
 
-    private const string ProcessExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
+    private const string McpServerExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
 
-    private const int ProcessExitWaitTimeoutMilliseconds = 5000;
+    private static readonly TimeSpan PostKillExitWait = TimeSpan.FromSeconds(5);
 
     private Process? _process;
     private bool _disposed;
 
-    public McpSidecarStartResult Start()
+    public McpSidecarLaunch Start()
     {
         ThrowIfDisposed();
 
-        string processDirectory = GetProcessDirectory();
-        string executablePath = Path.Combine(processDirectory, ProcessExecutableName);
+        string bundleDirectory = GetMcpServerBundleDirectory();
+        string executablePath = Path.Combine(bundleDirectory, McpServerExecutableName);
         string logDirectory = XiangshuRuntimePaths.GetMcpServerDiagnosticsDirectory(workingDirectory);
 
         if (!File.Exists(executablePath))
@@ -40,7 +40,7 @@ internal sealed class McpSidecarProcess(
             StartInfo =
             {
                 FileName = executablePath,
-                WorkingDirectory = processDirectory,
+                WorkingDirectory = bundleDirectory,
                 CreateNoWindow = true,
                 UseShellExecute = false,
             },
@@ -61,7 +61,7 @@ internal sealed class McpSidecarProcess(
 
             _process = process;
 
-            return new McpSidecarStartResult(
+            return new McpSidecarLaunch(
                 process.Id,
                 logDirectory,
                 eventLogPath);
@@ -89,32 +89,32 @@ internal sealed class McpSidecarProcess(
             if (!process.HasExited)
             {
                 process.Kill();
-                _ = process.WaitForExit(ProcessExitWaitTimeoutMilliseconds);
+                _ = process.WaitForExit((int)PostKillExitWait.TotalMilliseconds);
             }
 
             process.Dispose();
         }
     }
 
-    private string GetProcessDirectory()
+    private string GetMcpServerBundleDirectory()
     {
         return Path.Combine(
             modDirectory,
             "Processes",
-            ProcessDirectoryName);
+            McpServerBundleName);
     }
 
     private void ThrowIfDisposed()
     {
         if (_disposed)
         {
-            throw new ObjectDisposedException(nameof(McpSidecarProcess));
+            throw new ObjectDisposedException(nameof(McpSidecar));
         }
     }
 
 }
 
-internal sealed class McpSidecarStartResult(
+internal sealed class McpSidecarLaunch(
     int processId,
     string logDirectory,
     string eventLogPath)

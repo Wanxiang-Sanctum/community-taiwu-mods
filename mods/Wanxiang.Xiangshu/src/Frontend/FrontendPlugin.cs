@@ -22,7 +22,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private FrontendIpcServer? _ipcServer;
-    private McpSidecarProcess? _mcpServerProcess;
+    private McpSidecar? _mcpSidecar;
     private AgentCliLauncher? _agentCliLauncher;
     private AgentChatSession? _chatSession;
     private XiangshuChatWindow? _chatWindow;
@@ -44,7 +44,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             _chatWindow = XiangshuChatWindow.Create(_chatSession);
             InstallChatHotkey();
 
-            StartMcpServer(CurrentAgentSettings);
+            StartMcpSidecar(CurrentAgentSettings);
             Log.Info(
                 "frontend plugin initialized",
                 new
@@ -76,31 +76,31 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _chatSession = null;
         _agentCliLauncher?.Dispose();
         _agentCliLauncher = null;
-        _mcpServerProcess?.Dispose();
-        _mcpServerProcess = null;
+        _mcpSidecar?.Dispose();
+        _mcpSidecar = null;
         _ipcServer?.Dispose();
         _ipcServer = null;
         CurrentAgentSettings = null;
     }
 
-    private void StartMcpServer(AgentSettings settings)
+    private void StartMcpSidecar(AgentSettings settings)
     {
-        _mcpServerProcess?.Dispose();
-        _mcpServerProcess = new McpSidecarProcess(
+        _mcpSidecar?.Dispose();
+        _mcpSidecar = new McpSidecar(
             settings.ModDirectory,
             settings.WorkingDirectory,
             IpcEndpointRegistry.ManifestPath);
 
         try
         {
-            McpSidecarStartResult result = _mcpServerProcess.Start();
+            McpSidecarLaunch launch = _mcpSidecar.Start();
             Log.Info(
                 "MCP sidecar started",
                 new
                 {
-                    processId = result.ProcessId,
-                    logDirectory = result.LogDirectory,
-                    eventLog = result.EventLogPath,
+                    processId = launch.ProcessId,
+                    logDirectory = launch.LogDirectory,
+                    eventLog = launch.EventLogPath,
                 });
         }
         catch (Exception ex) when (ex is FileNotFoundException
@@ -109,8 +109,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             or IOException
             or UnauthorizedAccessException)
         {
-            _mcpServerProcess.Dispose();
-            _mcpServerProcess = null;
+            _mcpSidecar.Dispose();
+            _mcpSidecar = null;
             Log.Error(ex, "MCP sidecar failed to start");
         }
     }

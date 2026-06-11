@@ -17,11 +17,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const string HeaderIconSprite = "map_icon_xiangshu";
     private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
     private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
-    private const float PanelPreferredWidth = 620f;
-    private const float PanelPreferredHeight = 720f;
-    private const float PanelMinimumWidth = 460f;
-    private const float PanelMinimumHeight = 520f;
-    private const float PanelMargin = 32f;
+    private const float PreferredPanelWidth = 620f;
+    private const float PreferredPanelHeight = 720f;
+    private const float MinimumPanelWidth = 460f;
+    private const float MinimumPanelHeight = 520f;
+    private const float PanelScreenMargin = 32f;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
@@ -276,7 +276,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         StretchToParent(rootRect);
 
         GameObject panel = CreateChild("Panel", transform);
-        EnsureInteractivePanel(panel, uiManager);
+        EnsurePanelEventCanvas(panel, uiManager);
         _panelRect = panel.GetComponent<RectTransform>();
         _panelRect.anchorMin = new Vector2(1f, 0.5f);
         _panelRect.anchorMax = new Vector2(1f, 0.5f);
@@ -485,7 +485,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return true;
     }
 
-    private static void EnsureInteractivePanel(
+    private static void EnsurePanelEventCanvas(
         GameObject panel,
         UIManager uiManager)
     {
@@ -536,21 +536,21 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Vector2 parentSize = transform is RectTransform rootRect
             ? rootRect.rect.size
             : Vector2.zero;
-        float width = GetResponsiveSize(
+        float width = ClampPanelExtent(
             parentSize.x,
-            PanelPreferredWidth,
-            PanelMinimumWidth);
-        float height = GetResponsiveSize(
+            PreferredPanelWidth,
+            MinimumPanelWidth);
+        float height = ClampPanelExtent(
             parentSize.y,
-            PanelPreferredHeight,
-            PanelMinimumHeight);
-        float margin = Mathf.Min(PanelMargin, Mathf.Max(12f, parentSize.x * 0.025f));
+            PreferredPanelHeight,
+            MinimumPanelHeight);
+        float margin = Mathf.Min(PanelScreenMargin, Mathf.Max(12f, parentSize.x * 0.025f));
 
         _panelRect.anchoredPosition = new Vector2(-margin, 0f);
         _panelRect.sizeDelta = new Vector2(width, height);
     }
 
-    private static float GetResponsiveSize(
+    private static float ClampPanelExtent(
         float availableSize,
         float preferredSize,
         float minimumSize)
@@ -560,7 +560,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return preferredSize;
         }
 
-        float maximumSize = Mathf.Max(minimumSize, availableSize - (PanelMargin * 2f));
+        float maximumSize = Mathf.Max(minimumSize, availableSize - (PanelScreenMargin * 2f));
         return Mathf.Clamp(preferredSize, minimumSize, maximumSize);
     }
 
@@ -576,10 +576,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         inputField.Select();
         inputField.ActivateInputField();
-        _ = StartCoroutine(FocusInputFieldAtEndOfFrame());
+        _ = StartCoroutine(RefocusInputNextFrame());
     }
 
-    private IEnumerator FocusInputFieldAtEndOfFrame()
+    private IEnumerator RefocusInputNextFrame()
     {
         yield return null;
 
