@@ -1,11 +1,14 @@
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentCliTempFiles : IDisposable
 {
+    private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
     public const string ChatReplySchemaJson =
         """
         {
@@ -37,11 +40,12 @@ internal sealed class AgentCliTempFiles : IDisposable
 
     public string ChatReplySchemaPath { get; }
 
-    public static AgentCliTempFiles Create()
+    public static AgentCliTempFiles Create(string workingDirectory)
     {
         string directory = Path.Combine(
-            Path.GetTempPath(),
-            "Wanxiang.Xiangshu",
+            XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory),
+            "Temp",
+            "AgentCli",
             Guid.NewGuid().ToString("N"));
         _ = Directory.CreateDirectory(directory);
         return new AgentCliTempFiles(directory);
@@ -61,20 +65,20 @@ internal sealed class AgentCliTempFiles : IDisposable
         File.WriteAllText(
             McpConfigPath,
             config.ToString(Formatting.Indented, []),
-            Encoding.UTF8);
+            Utf8NoBom);
         return McpConfigPath;
     }
 
     public string WriteChatReplySchema()
     {
-        File.WriteAllText(ChatReplySchemaPath, ChatReplySchemaJson, Encoding.UTF8);
+        File.WriteAllText(ChatReplySchemaPath, ChatReplySchemaJson, Utf8NoBom);
         return ChatReplySchemaPath;
     }
 
     public string ReadLastMessage()
     {
         return File.Exists(LastMessagePath)
-            ? File.ReadAllText(LastMessagePath, Encoding.UTF8)
+            ? File.ReadAllText(LastMessagePath, Utf8NoBom)
             : string.Empty;
     }
 

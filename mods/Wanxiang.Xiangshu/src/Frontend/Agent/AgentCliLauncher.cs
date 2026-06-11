@@ -90,7 +90,7 @@ internal sealed class AgentCliLauncher : IDisposable
         try
         {
             string agentInput = AgentChatTurnInputBuilder.Build(turn);
-            using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create();
+            using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
             AgentProcessResult result = await RunInvocationAsync(
                     settings,
                     agentInput,
@@ -164,7 +164,7 @@ internal sealed class AgentCliLauncher : IDisposable
         AgentSettings settings,
         CancellationTokenSource cancellation)
     {
-        using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create();
+        using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
 
         try
         {

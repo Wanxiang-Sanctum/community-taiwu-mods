@@ -69,11 +69,11 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 维护自己的人设、指令、设置和 Agent 技能；配置到其它工作目录时，该目录由用户自行维护。
 
 相枢运行时代码把每轮对话序列化为 `wanxiang.xiangshu.chat-turn.v1` 结构化回合输入，字段包括参与者、
-本批玩家消息和请求输出说话人。前端捕获 CLI 返回的外部会话 id，并在后续批次中恢复同一个本机 Agent
-会话。
+本批玩家消息和请求输出说话人；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
+并在后续批次中恢复同一个本机 Agent 会话。
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest 和 MCP 诊断日志，并为后续聊天
-会话文件预留位置；游戏内仍不增加会话管理界面。
+`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP 诊断日志和前端启动本机
+Agent 时使用的短生命周期协议文件，并为后续聊天会话文件预留位置；游戏内仍不增加会话管理界面。
 
 聊天调用和工具链诊断都使用本次启动时加载的配置。聊天调用会等待相枢 MCP sidecar endpoint 注册，然后
 把当前对话批次交给所选 CLI Agent。
@@ -81,8 +81,9 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 ## 日志边界
 
 游戏进程内的运行信息只进入太吾游戏日志系统；相枢前端和后端插件不另建持久化日志文件。聊天 CLI 调用的
-标准输出和标准错误由前端在内存中捕获，只有摘要和错误进入游戏日志。Codex `--output-last-message`
-和 Claude `--mcp-config` 使用临时协议文件，调用结束后删除。
+标准输出和标准错误由前端在内存中捕获，只有摘要和错误进入游戏日志。Codex `--output-last-message`、
+Codex `--output-schema` 和 Claude `--mcp-config` 使用 `XiangshuRuntime/Temp/AgentCli/` 下的临时协议
+文件，调用结束后删除对应调用子目录。
 
 前端插件和后端插件统一通过 `shared/Wanxiang.Taiwu.Logging` 记录结构化上下文。共享库把上下文序列化为
 单行紧凑 JSON，并交给游戏日志系统；它不接管 MCP server 的独立进程日志。MCP server 是游戏外独立
@@ -106,10 +107,10 @@ CLI：
 - Claude Code：写入临时 `mcp-config` JSON，用 `claude --print` 启动，并用 `--json-schema`
   约束最终回复。
 
-结构化回合输入会带入本批玩家消息和请求输出说话人；历史上下文由恢复后的本机 Agent 会话提供。最终回复
-必须是包含 `reply` 字段的 JSON；前端只提取 `reply` 显示给玩家。触发成功时，游戏日志会出现相枢
-`chat hotkey accepted` 记录。CLI 启动、MCP 注册、调用失败或回复解析失败时，玩家界面显示一条相枢
-固定说明，详细错误通过游戏日志记录。
+结构化回合输入会带入本批玩家消息、当前太吾角色真实姓名和请求输出说话人；历史上下文由恢复后的本机
+Agent 会话提供。最终回复必须是包含 `reply` 字段的 JSON；前端只提取 `reply` 显示给玩家。触发成功时，
+游戏日志会出现相枢 `chat hotkey accepted` 记录。CLI 启动、MCP 注册、调用失败或回复解析失败时，
+玩家界面显示一条相枢固定说明，详细错误通过游戏日志记录。
 
 ## 开发
 

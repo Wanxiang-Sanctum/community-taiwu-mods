@@ -22,6 +22,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MinimumPanelWidth = 460f;
     private const float MinimumPanelHeight = 520f;
     private const float PanelScreenMargin = 32f;
+    private const float MessageRowHorizontalPadding = 14f;
+    private const float MessageBubbleWidthRatio = 0.76f;
+    private const float MinimumMessageBubbleWidth = 220f;
+    private const float PreferredMessageBubbleWidth = 430f;
+    private const float MaximumMessageBubbleWidth = 460f;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
@@ -49,17 +54,23 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private Button? _sendButton;
     private CImage? _sendButtonImage;
     private TextMeshProUGUI? _sendButtonText;
+    private ChatParticipantIdentity? _participants;
+    private readonly List<LayoutElement> _messageBubbleLayouts = [];
+    private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
     private bool _uiBuilt;
     private bool _scrollToBottom;
+    private float _lastMessageBubbleWidth = PreferredMessageBubbleWidth;
 
     public bool IsVisible { get; private set; }
 
-    public static XiangshuChatWindow Create(AgentChatSession session)
+    public static XiangshuChatWindow Create(
+        AgentChatSession session,
+        ChatParticipantIdentity participants)
     {
         GameObject root = new("Wanxiang.Xiangshu.ChatWindow", typeof(RectTransform));
         DontDestroyOnLoad(root);
         XiangshuChatWindow window = root.AddComponent<XiangshuChatWindow>();
-        window.Initialize(session);
+        window.Initialize(session, participants);
         return window;
     }
 
@@ -86,6 +97,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         transform.SetAsLastSibling();
+        _participants?.Refresh();
         DrainSessionEvents();
         _scrollToBottom = true;
         FocusInputField();
@@ -96,9 +108,13 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void Initialize(AgentChatSession session)
+    private void Initialize(
+        AgentChatSession session,
+        ChatParticipantIdentity participants)
     {
         _session = session;
+        _participants = participants;
+        _participants.PlayerNameChanged += UpdatePlayerSpeakerLabels;
         IsVisible = false;
         gameObject.SetActive(false);
     }
@@ -113,6 +129,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Justification = "Unity invokes Update by method name.")]
     private void Update()
     {
+        if (IsVisible)
+        {
+            _participants?.Refresh();
+        }
+
         DrainSessionEvents();
         UpdateSendButtonState();
 
@@ -123,6 +144,26 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         {
             SendCurrentInput();
         }
+    }
+
+    [SuppressMessage(
+        "CodeQuality",
+        "IDE0051:Remove unused private members",
+        Justification = "Unity invokes OnDestroy by method name.")]
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Unity invokes OnDestroy by method name.")]
+    private void OnDestroy()
+    {
+        ChatParticipantIdentity? participants = _participants;
+
+        if (participants is null)
+        {
+            return;
+        }
+
+        participants.PlayerNameChanged -= UpdatePlayerSpeakerLabels;
     }
 
     [SuppressMessage(
@@ -178,8 +219,25 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
+        ChatParticipantIdentity? participants = _participants;
+
+        if (participants is null)
+        {
+            return;
+        }
+
+        participants.Refresh();
+
+        if (!participants.IsPlayerNameReady)
+        {
+            UpdateSendButtonState();
+            return;
+        }
+
         _inputField.SetTextWithoutNotify(string.Empty);
-        _session.SubmitUserMessage(content);
+        _session.SubmitUserMessage(
+            content,
+            participants.PlayerName!);
         UpdateSendButtonState();
         FocusInputField();
     }
@@ -191,7 +249,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        bool canSend = !string.IsNullOrWhiteSpace(_inputField.text);
+        bool canSend = !string.IsNullOrWhiteSpace(_inputField.text)
+            && _participants?.IsPlayerNameReady == true;
         _sendButton.interactable = canSend;
         _sendButtonImage.color = canSend ? ButtonColor : DisabledButtonColor;
 
@@ -210,16 +269,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         HorizontalLayoutGroup rowLayout = row.AddComponent<HorizontalLayoutGroup>();
         rowLayout.childAlignment = isUser ? TextAnchor.UpperRight : TextAnchor.UpperLeft;
         rowLayout.childControlHeight = true;
-        rowLayout.childControlWidth = false;
+        rowLayout.childControlWidth = true;
         rowLayout.childForceExpandHeight = false;
         rowLayout.childForceExpandWidth = false;
-        rowLayout.padding = new RectOffset(14, 14, 6, 6);
+        rowLayout.padding = new RectOffset(
+            (int)MessageRowHorizontalPadding,
+            (int)MessageRowHorizontalPadding,
+            6,
+            6);
         _ = row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        if (!isUser)
-        {
-            BuildMessageIcon(row.transform);
-        }
 
         GameObject bubble = CreateChild(isUser ? "PlayerBubble" : "XiangshuBubble", row.transform);
         CImage bubbleImage = AddImage(
@@ -235,16 +293,23 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         bubbleLayout.padding = new RectOffset(14, 14, 10, 10);
         bubbleLayout.spacing = 5f;
         LayoutElement bubbleLayoutElement = bubble.AddComponent<LayoutElement>();
-        bubbleLayoutElement.preferredWidth = 430f;
+        bubbleLayoutElement.preferredWidth = GetMessageBubbleWidth();
+        bubbleLayoutElement.flexibleWidth = 0f;
+        _messageBubbleLayouts.Add(bubbleLayoutElement);
         _ = bubble.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         TextMeshProUGUI speaker = CreateText(
-            isUser ? "玩家" : "相枢",
+            message.SpeakerName,
             bubble.transform,
             16f,
             isUser ? new Color(0.72f, 0.88f, 0.9f, 1f) : AccentColor,
             FontStyles.Bold);
-        speaker.text = isUser ? "玩家" : "相枢";
+        speaker.text = message.SpeakerName;
+
+        if (isUser)
+        {
+            _playerSpeakerTexts.Add(speaker);
+        }
 
         TextMeshProUGUI body = CreateText(
             "MessageText",
@@ -258,16 +323,95 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _scrollToBottom = true;
     }
 
-    private static void BuildMessageIcon(Transform parent)
+    private void UpdatePlayerSpeakerLabels()
     {
-        GameObject iconObject = CreateChild("XiangshuIcon", parent);
-        CImage icon = AddImage(iconObject, new Color(0.76f, 0.47f, 0.22f, 0.96f), HeaderIconSprite);
-        icon.raycastTarget = false;
-        LayoutElement layout = iconObject.AddComponent<LayoutElement>();
-        layout.preferredWidth = 34f;
-        layout.preferredHeight = 34f;
-        layout.minWidth = 34f;
-        layout.minHeight = 34f;
+        ChatParticipantIdentity? participants = _participants;
+
+        if (participants?.IsPlayerNameReady != true)
+        {
+            return;
+        }
+
+        string playerName = participants.PlayerName!;
+
+        for (int index = _playerSpeakerTexts.Count - 1; index >= 0; index--)
+        {
+            TextMeshProUGUI speaker = _playerSpeakerTexts[index];
+
+            if (speaker == null)
+            {
+                _playerSpeakerTexts.RemoveAt(index);
+                continue;
+            }
+
+            speaker.text = playerName;
+        }
+    }
+
+    private void ReflowMessageBubbles()
+    {
+        float width = GetMessageBubbleWidth();
+
+        if (Mathf.Approximately(_lastMessageBubbleWidth, width))
+        {
+            return;
+        }
+
+        _lastMessageBubbleWidth = width;
+
+        for (int index = _messageBubbleLayouts.Count - 1; index >= 0; index--)
+        {
+            LayoutElement layout = _messageBubbleLayouts[index];
+
+            if (layout == null)
+            {
+                _messageBubbleLayouts.RemoveAt(index);
+                continue;
+            }
+
+            layout.preferredWidth = width;
+        }
+
+        if (_messageContent is not null)
+        {
+            LayoutRebuilder.MarkLayoutForRebuild(_messageContent);
+        }
+    }
+
+    private float GetMessageBubbleWidth()
+    {
+        float contentWidth = 0f;
+
+        if (_messageContent is not null)
+        {
+            contentWidth = _messageContent.rect.width;
+        }
+
+        if (contentWidth <= 0f && _scrollRect?.viewport is not null)
+        {
+            contentWidth = _scrollRect.viewport.rect.width;
+        }
+
+        if (contentWidth <= 0f && _panelRect is not null)
+        {
+            contentWidth = _panelRect.rect.width - 24f;
+        }
+
+        if (contentWidth <= 0f)
+        {
+            return PreferredMessageBubbleWidth;
+        }
+
+        float usableWidth = Mathf.Max(0f, contentWidth - (MessageRowHorizontalPadding * 2f));
+
+        if (usableWidth <= 0f)
+        {
+            return PreferredMessageBubbleWidth;
+        }
+
+        float maximumWidth = Mathf.Min(MaximumMessageBubbleWidth, usableWidth);
+        float minimumWidth = Mathf.Min(MinimumMessageBubbleWidth, maximumWidth);
+        return Mathf.Clamp(usableWidth * MessageBubbleWidthRatio, minimumWidth, maximumWidth);
     }
 
     private void BuildUi()
@@ -422,15 +566,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         textViewportRect.offsetMax = new Vector2(-12f, -8f);
         _ = textViewport.AddComponent<RectMask2D>();
 
-        TextMeshProUGUI placeholder = CreateText(
-            "Placeholder",
-            textViewport.transform,
-            17f,
-            MutedTextColor,
-            FontStyles.Normal);
-        placeholder.text = "与相枢言说";
-        StretchToParent(placeholder.rectTransform);
-
         TextMeshProUGUI inputText = CreateText(
             "Text",
             textViewport.transform,
@@ -442,7 +577,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         _inputField.textViewport = textViewportRect;
         _inputField.textComponent = inputText;
-        _inputField.placeholder = placeholder;
         _inputField.onValueChanged.AddListener(_ => UpdateSendButtonState());
 
         _sendButton = CreateButton("SendButton", inputArea.transform, "送出", 88f, 92f);
@@ -537,35 +671,69 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        Vector2 parentSize = transform is RectTransform rootRect
-            ? rootRect.rect.size
-            : Vector2.zero;
+        Vector2 parentSize = GetRootLayoutSize();
+        float horizontalMargin = GetPanelMargin(parentSize.x);
+        float verticalMargin = GetPanelMargin(parentSize.y);
         float width = ClampPanelExtent(
             parentSize.x,
             PreferredPanelWidth,
-            MinimumPanelWidth);
+            MinimumPanelWidth,
+            horizontalMargin);
         float height = ClampPanelExtent(
             parentSize.y,
             PreferredPanelHeight,
-            MinimumPanelHeight);
-        float margin = Mathf.Min(PanelScreenMargin, Mathf.Max(12f, parentSize.x * 0.025f));
+            MinimumPanelHeight,
+            verticalMargin);
 
-        _panelRect.anchoredPosition = new Vector2(-margin, 0f);
+        _panelRect.anchoredPosition = new Vector2(-horizontalMargin, 0f);
         _panelRect.sizeDelta = new Vector2(width, height);
+        ReflowMessageBubbles();
+    }
+
+    private Vector2 GetRootLayoutSize()
+    {
+        if (transform is RectTransform rootRect
+            && rootRect.rect.width > 0f
+            && rootRect.rect.height > 0f)
+        {
+            return rootRect.rect.size;
+        }
+
+        return transform.parent is RectTransform parentRect
+            ? parentRect.rect.size
+            : Vector2.zero;
+    }
+
+    private static float GetPanelMargin(float availableSize)
+    {
+        if (availableSize <= 0f)
+        {
+            return PanelScreenMargin;
+        }
+
+        return Mathf.Min(PanelScreenMargin, Mathf.Max(12f, availableSize * 0.025f));
     }
 
     private static float ClampPanelExtent(
         float availableSize,
         float preferredSize,
-        float minimumSize)
+        float minimumSize,
+        float margin)
     {
         if (availableSize <= 0f)
         {
             return preferredSize;
         }
 
-        float maximumSize = Mathf.Max(minimumSize, availableSize - (PanelScreenMargin * 2f));
-        return Mathf.Clamp(preferredSize, minimumSize, maximumSize);
+        float maximumSize = Mathf.Max(0f, availableSize - (margin * 2f));
+
+        if (maximumSize <= 0f)
+        {
+            return preferredSize;
+        }
+
+        float effectiveMinimumSize = Mathf.Min(minimumSize, maximumSize);
+        return Mathf.Clamp(preferredSize, effectiveMinimumSize, maximumSize);
     }
 
     private void FocusInputField()
@@ -699,6 +867,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         rectTransform.anchorMin = Vector2.zero;
         rectTransform.anchorMax = Vector2.one;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = Vector2.zero;
         rectTransform.offsetMin = Vector2.zero;
         rectTransform.offsetMax = Vector2.zero;
     }

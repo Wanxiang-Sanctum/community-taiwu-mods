@@ -24,6 +24,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private FrontendIpcServer? _ipcServer;
     private McpSidecar? _mcpSidecar;
     private AgentCliLauncher? _agentCliLauncher;
+    private ChatParticipantIdentity? _chatParticipantIdentity;
     private AgentChatSession? _chatSession;
     private XiangshuChatWindow? _chatWindow;
     private Harmony? _harmony;
@@ -40,8 +41,12 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
             StartFrontendIpcServer();
             _agentCliLauncher = new AgentCliLauncher();
-            _chatSession = new AgentChatSession(_agentCliLauncher, () => CurrentAgentSettings);
-            _chatWindow = XiangshuChatWindow.Create(_chatSession);
+            _chatParticipantIdentity = new ChatParticipantIdentity();
+            _chatSession = new AgentChatSession(
+                _agentCliLauncher,
+                () => CurrentAgentSettings,
+                ChatParticipantIdentity.AssistantName);
+            _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
             InstallChatHotkey();
 
             StartMcpSidecar(CurrentAgentSettings);
@@ -74,6 +79,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _chatWindow = null;
         _chatSession?.Dispose();
         _chatSession = null;
+        _chatParticipantIdentity?.Dispose();
+        _chatParticipantIdentity = null;
         _agentCliLauncher?.Dispose();
         _agentCliLauncher = null;
         _mcpSidecar?.Dispose();

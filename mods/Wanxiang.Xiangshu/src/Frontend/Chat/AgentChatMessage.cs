@@ -3,6 +3,7 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 internal sealed class AgentChatMessage(
     string id,
     AgentChatRole role,
+    string speakerName,
     string content,
     string origin,
     string? batchId)
@@ -10,6 +11,8 @@ internal sealed class AgentChatMessage(
     public string Id { get; } = id;
 
     public AgentChatRole Role { get; } = role;
+
+    public string SpeakerName { get; } = speakerName;
 
     public string Content { get; } = content;
 

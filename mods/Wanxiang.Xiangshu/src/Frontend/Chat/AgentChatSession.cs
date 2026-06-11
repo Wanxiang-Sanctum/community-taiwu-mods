@@ -11,7 +11,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     Justification = "AgentCliLauncher is owned and disposed by FrontendPlugin; the chat session only borrows it.")]
 internal sealed class AgentChatSession(
     AgentCliLauncher agentCliLauncher,
-    Func<AgentSettings?> settingsProvider) : IDisposable
+    Func<AgentSettings?> settingsProvider,
+    string assistantName) : IDisposable
 {
     private const string FailureMessage = "此刻诸机不应，稍后再问。";
 
@@ -19,6 +20,9 @@ internal sealed class AgentChatSession(
 
     private readonly AgentCliLauncher _agentCliLauncher = agentCliLauncher;
     private readonly Func<AgentSettings?> _settingsProvider = settingsProvider;
+    private readonly string _assistantName = string.IsNullOrWhiteSpace(assistantName)
+        ? ChatParticipantIdentity.AssistantName
+        : assistantName.Trim();
     private readonly ConcurrentQueue<AgentChatSessionEvent> _events = new();
     private readonly object _syncRoot = new();
     private readonly List<AgentChatMessage> _visibleMessages = [];
@@ -32,11 +36,14 @@ internal sealed class AgentChatSession(
     private bool _disposed;
     private string? _externalSessionId;
 
-    public void SubmitUserMessage(string content)
+    public void SubmitUserMessage(
+        string content,
+        string speakerName)
     {
         ThrowIfDisposed();
 
         string trimmedContent = content.Trim();
+        string trimmedSpeakerName = speakerName.Trim();
 
         if (string.IsNullOrEmpty(trimmedContent))
         {
@@ -50,6 +57,7 @@ internal sealed class AgentChatSession(
             message = new AgentChatMessage(
                 CreateMessageId(),
                 AgentChatRole.User,
+                trimmedSpeakerName,
                 trimmedContent,
                 "user",
                 batchId: null);
@@ -161,6 +169,8 @@ internal sealed class AgentChatSession(
                 _sessionId,
                 batchId,
                 _externalSessionId,
+                batchMessages[^1].SpeakerName,
+                _assistantName,
                 [.. batchMessages.Select(static message => message.Content)]);
         }
     }
@@ -187,6 +197,7 @@ internal sealed class AgentChatSession(
             message = new AgentChatMessage(
                 CreateMessageId(),
                 AgentChatRole.Assistant,
+                _assistantName,
                 content,
                 origin,
                 batchId);

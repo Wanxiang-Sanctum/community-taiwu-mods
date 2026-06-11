@@ -18,12 +18,12 @@ internal static class AgentChatTurnInputBuilder
                 turn.BatchId,
                 turn.ExternalSessionId),
             participants: new AgentChatTurnParticipants(
-                player: "Player",
-                assistant: "Xiangshu"),
+                player: turn.PlayerName,
+                assistant: turn.AssistantName),
             currentPlayerBatch: turn.PlayerMessages,
             requestedOutput: new AgentChatTurnRequestedOutput(
                 kind: "assistant-message",
-                speaker: "Xiangshu",
+                speaker: turn.AssistantName,
                 respondsTo: "latest-player-message"));
 
         return JsonConvert.SerializeObject(input, Formatting.Indented, JsonSettings);
