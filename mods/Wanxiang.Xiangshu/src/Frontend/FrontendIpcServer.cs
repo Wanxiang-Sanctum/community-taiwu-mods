@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using Cysharp.Threading.Tasks;
+using MessagePack.Resolvers;
 using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
@@ -120,6 +121,7 @@ internal sealed class FrontendIpcServer : IDisposable
             {
                 options.HostAsServer = true;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
+                options.MessagePackSerializerOptions = StandardResolver.Options;
             });
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
             tcpOptions);

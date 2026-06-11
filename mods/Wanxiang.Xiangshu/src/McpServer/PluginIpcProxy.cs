@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MessagePack.Resolvers;
 using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
@@ -112,7 +113,11 @@ internal static class PluginIpcProxy
             .AddTcpInterprocess(
                 endpoint.Host,
                 endpoint.Port,
-                options => options.InstanceLifetime = InstanceLifetime.Singleton);
+                options =>
+                {
+                    options.InstanceLifetime = InstanceLifetime.Singleton;
+                    options.MessagePackSerializerOptions = StandardResolver.Options;
+                });
         _ = services.AddSingleton<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>(
             provider => new AsyncMessageBroker<IInterprocessKey, IInterprocessValue>(
                 new AsyncMessageBrokerCore<IInterprocessKey, IInterprocessValue>(

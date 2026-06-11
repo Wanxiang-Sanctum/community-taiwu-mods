@@ -11,6 +11,11 @@
 
   <ItemGroup>
     <PackageReference
+      Include="MessagePack"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe"
       ExcludeAssets="runtime"
       PrivateAssets="all"

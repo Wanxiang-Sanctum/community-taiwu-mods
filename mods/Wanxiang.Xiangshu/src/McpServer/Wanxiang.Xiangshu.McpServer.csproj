@@ -8,7 +8,7 @@
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
     <TaiwuModPublishPackagePath
     >Processes/Wanxiang.Xiangshu.McpServer</TaiwuModPublishPackagePath>
   </PropertyGroup>
@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePack" />
     <PackageReference Include="MessagePipe" />
     <PackageReference Include="MessagePipe.Interprocess" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />

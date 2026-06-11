@@ -8,6 +8,18 @@
         "resolved": "2.3.0",
         "contentHash": "DjktTgctwxUMhMkWKrRECer3LR1lHzanCOlE4mpinAiY8SfWJq4DG/QitP5h1A+WBjyWHzQSOG+204i3VpO1FA=="
       },
+      "MessagePack": {
+        "type": "Direct",
+        "requested": "[3.1.4, )",
+        "resolved": "3.1.4",
+        "contentHash": "BH0wlHWmVoZpbAPyyt2Awbq30C+ZsS3eHSkYdnyUAbqVJ22fAJDzn2xTieBeoT5QlcBzp61vHcv878YJGfi3mg==",
+        "dependencies": {
+          "MessagePack.Annotations": "3.1.4",
+          "MessagePackAnalyzer": "3.1.4",
+          "Microsoft.NET.StringTools": "17.11.4",
+          "System.Collections.Immutable": "8.0.0"
+        }
+      },
       "Roslynator.Analyzers": {
         "type": "Direct",
         "requested": "[4.15.0, )",
@@ -69,17 +81,6 @@
         "requested": "[0.84.46-test, )",
         "resolved": "0.84.46-test",
         "contentHash": "7qNz5BdFeFJelK4Q0TzWtfe/n/zm5+TqQQa/Jwl2iBl+r6WxZ5wsWD5FIWZuyifyipSwTJFY4LdmpknHA3JEdA=="
-      },
-      "MessagePack": {
-        "type": "Transitive",
-        "resolved": "3.1.4",
-        "contentHash": "BH0wlHWmVoZpbAPyyt2Awbq30C+ZsS3eHSkYdnyUAbqVJ22fAJDzn2xTieBeoT5QlcBzp61vHcv878YJGfi3mg==",
-        "dependencies": {
-          "MessagePack.Annotations": "3.1.4",
-          "MessagePackAnalyzer": "3.1.4",
-          "Microsoft.NET.StringTools": "17.11.4",
-          "System.Collections.Immutable": "8.0.0"
-        }
       },
       "MessagePack.Annotations": {
         "type": "Transitive",

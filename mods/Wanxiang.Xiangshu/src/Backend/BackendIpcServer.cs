@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Diagnostics.CodeAnalysis;
+using MessagePack.Resolvers;
 using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,6 +82,7 @@ internal sealed class BackendIpcServer : IDisposable
             {
                 options.HostAsServer = true;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
+                options.MessagePackSerializerOptions = StandardResolver.Options;
             });
 
         ServiceProvider provider = services.BuildServiceProvider();
