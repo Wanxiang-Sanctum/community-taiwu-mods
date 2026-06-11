@@ -9,7 +9,7 @@ using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Ipc;
 
-namespace Wanxiang.Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer : IDisposable
 {

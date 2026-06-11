@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 
-namespace Wanxiang.Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend.Sidecar;
 
 internal sealed class McpSidecarProcess(
     string modDirectory,
@@ -13,11 +12,7 @@ internal sealed class McpSidecarProcess(
 
     private const string ProcessExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
 
-    private readonly object _logSyncRoot = new();
-
     private Process? _process;
-    private StreamWriter? _stdoutWriter;
-    private StreamWriter? _stderrWriter;
     private bool _disposed;
 
     public McpSidecarStartResult Start()
@@ -27,7 +22,6 @@ internal sealed class McpSidecarProcess(
         string processDirectory = GetProcessDirectory();
         string executablePath = Path.Combine(processDirectory, ProcessExecutableName);
         string logDirectory = Path.Combine(workingDirectory, "Diagnostics", "McpServer");
-        _ = Directory.CreateDirectory(logDirectory);
 
         if (!File.Exists(executablePath))
         {
@@ -37,11 +31,7 @@ internal sealed class McpSidecarProcess(
         }
 
         string stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-        string stdoutPath = Path.Combine(logDirectory, $"{stamp}.stdout.log");
-        string stderrPath = Path.Combine(logDirectory, $"{stamp}.stderr.log");
         string eventLogPath = Path.Combine(logDirectory, $"{stamp}.events.clef");
-        StreamWriter stdoutWriter = CreateLogWriter(stdoutPath);
-        StreamWriter stderrWriter = CreateLogWriter(stderrPath);
         Process process = new()
         {
             StartInfo =
@@ -50,8 +40,6 @@ internal sealed class McpSidecarProcess(
                 WorkingDirectory = processDirectory,
                 CreateNoWindow = true,
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
             },
         };
         process.StartInfo.ArgumentList.Add("--parent-pid");
@@ -63,32 +51,21 @@ internal sealed class McpSidecarProcess(
 
         try
         {
-            process.OutputDataReceived += (_, args) => WriteStdoutLine(args.Data);
-            process.ErrorDataReceived += (_, args) => WriteStderrLine(args.Data);
-
             if (!process.Start())
             {
                 throw new InvalidOperationException("Failed to start Wanxiang.Xiangshu MCP server process.");
             }
 
-            _stdoutWriter = stdoutWriter;
-            _stderrWriter = stderrWriter;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
             _process = process;
 
             return new McpSidecarStartResult(
                 process.Id,
                 logDirectory,
-                stdoutPath,
-                stderrPath,
                 eventLogPath);
         }
         catch
         {
             process.Dispose();
-            stdoutWriter.Dispose();
-            stderrWriter.Dispose();
             throw;
         }
     }
@@ -113,14 +90,6 @@ internal sealed class McpSidecarProcess(
 
             process.Dispose();
         }
-
-        lock (_logSyncRoot)
-        {
-            _stdoutWriter?.Dispose();
-            _stdoutWriter = null;
-            _stderrWriter?.Dispose();
-            _stderrWriter = null;
-        }
     }
 
     private string GetProcessDirectory()
@@ -139,55 +108,16 @@ internal sealed class McpSidecarProcess(
         }
     }
 
-    private static StreamWriter CreateLogWriter(string path)
-    {
-        return new StreamWriter(path, append: false, Encoding.UTF8)
-        {
-            AutoFlush = true,
-        };
-    }
-
-    private void WriteStdoutLine(string? line)
-    {
-        if (line is null)
-        {
-            return;
-        }
-
-        lock (_logSyncRoot)
-        {
-            _stdoutWriter?.WriteLine(line);
-        }
-    }
-
-    private void WriteStderrLine(string? line)
-    {
-        if (line is null)
-        {
-            return;
-        }
-
-        lock (_logSyncRoot)
-        {
-            _stderrWriter?.WriteLine(line);
-        }
-    }
 }
 
 internal sealed class McpSidecarStartResult(
     int processId,
     string logDirectory,
-    string stdoutPath,
-    string stderrPath,
     string eventLogPath)
 {
     public int ProcessId { get; } = processId;
 
     public string LogDirectory { get; } = logDirectory;
-
-    public string StdoutPath { get; } = stdoutPath;
-
-    public string StderrPath { get; } = stderrPath;
 
     public string EventLogPath { get; } = eventLogPath;
 }

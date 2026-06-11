@@ -1,4 +1,4 @@
-namespace Wanxiang.Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal enum AgentAdapter
 {

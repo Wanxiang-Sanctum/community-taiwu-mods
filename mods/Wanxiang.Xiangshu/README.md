@@ -2,18 +2,19 @@
 
 太吾绘卷混沌愿望回应 Mod。
 
-## 当前阶段
+## 当前实现边界
 
-当前版本验证这些运行边界：
+当前版本已经形成一条最小可测的本机 Agent 对话路径：
 
 - 前端插件和后端插件能够各自暴露本机 IPC ping endpoint。
 - 前端插件能够拉起游戏外 MCP sidecar，并通过 MCP 工具区分前端侧和后端侧 IPC。
 - 太吾 Mod 用户配置能够记录本机 Agent 类型、CLI 入口和工作目录。
-- 进入存档后，前端诊断热键能够启动所选 CLI Agent，并要求它调用相枢工具链检查工具。
+- 进入存档后，前端热键能够打开相枢聊天窗口。
+- 玩家消息能够进入前端内存会话，按批次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
 
-可用对话窗口、玩家对话会话、游戏状态修改和外部业务服务对接都不在当前阶段内。当前 CLI 调用只用于
-诊断工具链。后续相枢内部 Agent 会话由前端插件管理；MCP server 不承载主对话协议，只作为注册给本机
-Agent 的相枢工具服务。设计边界见 `docs/agent-chat.md`。
+当前聊天窗口仍是运行时生成的最小界面；不持久化会话，不提供 MCP 快速答复工具，不修改游戏状态，也不
+对接外部业务服务。相枢内部 Agent 会话由前端插件管理；MCP server 不承载主对话协议，只作为注册给
+本机 Agent 的相枢工具服务。对话体验和内部协议边界见 `docs/agent-chat.md`。
 
 ## 本机 IPC 与 MCP Sidecar
 
@@ -36,14 +37,14 @@ manifest 只记录发现本机 endpoint 所需的最小信息：`side`、`transp
 `127.0.0.1` 的随机端口，启动后把实际地址写入同一个 manifest。插件正常释放时会结束 MCP server；
 前端进程退出时，MCP server 也会停止。
 
-MCP sidecar 的 stdout、stderr 和关键事件日志写入：
+MCP server 使用独立进程内的 Serilog 文件日志，关键事件写入：
 
 ```text
 <AgentWorkingDirectory>/Diagnostics/McpServer/
 ```
 
-关键事件日志文件后缀为 `.events.clef`，每行是一条 compact JSON 事件；stdout/stderr 记录进程原始输出。
-关键事件只记录启动、监听地址、manifest 注册、父进程退出和异常，避免常驻刷屏。
+日志文件后缀为 `.events.clef`，每行是一条 compact JSON 事件。关键事件只记录启动、监听地址、
+manifest 注册、父进程退出和异常，避免常驻刷屏。
 
 当前暴露三个诊断工具：
 
@@ -58,30 +59,34 @@ MCP sidecar 的 stdout、stderr 和关键事件日志写入：
 切换 Codex CLI 和 Claude Code 时不需要维护两套路径字段；CLI 入口留空时会按当前选择使用默认
 命令。相对工作目录会解析到相枢 Mod 目录下，默认是 `AgentWorkspace`。
 
-相枢启动 MCP sidecar 和诊断 CLI 进程时会把 stdout、stderr、事件和退出信息写入工作目录，作为开发观察
-入口。诊断日志不改变 CLI 的权限策略，也不代表已有玩家对话入口。
+这些设置同时服务聊天调用和工具链诊断。聊天调用会读取当前配置，等待相枢 MCP sidecar endpoint 注册，
+然后把当前对话批次交给所选 CLI Agent。
 
-## 诊断热键
+## 日志边界
 
-前端插件会把一个诊断命令注册到游戏原生热键系统的地图热键分组中。默认热键是
+前端插件和后端插件的运行信息进入游戏日志系统；相枢不在游戏进程内另建一套持久化日志文件。聊天 CLI
+调用的标准输出和标准错误由前端内存捕获，并只把摘要和错误写入游戏日志；Codex `--output-last-message`
+和 Claude `--mcp-config` 使用临时协议文件，调用结束后删除。MCP server 是游戏外独立进程，保留自己的
+事件日志目录作为开发观察入口。这些日志不改变 CLI 的权限策略。
+
+## 聊天热键
+
+前端插件会把一个相枢聊天命令注册到游戏原生热键系统的地图热键分组中。默认热键是
 `Ctrl+Backslash`（`Ctrl+\`）。该命令目前在系统设置里显示为游戏内 `Mod` 文本，键位本身走游戏
 原生热键保存和冲突检测。
 
 热键只在进入存档后生效：主界面/地图界面需要正在更新，玩家已经能够操作主角，且游戏没有阻塞热键输入。
-主菜单、系统设置、弹窗、剧情和其他阻塞热键的界面不作为有效测试场景。按下热键后，前端会读取当前
-Agent 配置，等待相枢 MCP sidecar endpoint 注册，然后启动所选 CLI：
+主菜单、系统设置、弹窗、剧情和其他阻塞热键的界面不作为有效测试场景。按下热键后，前端会打开或关闭
+相枢聊天窗口；窗口打开时同一热键仍可用于关闭。
+
+玩家送出消息后，前端会读取当前 Agent 配置，等待相枢 MCP sidecar endpoint 注册，然后启动所选 CLI：
 
 - Codex CLI：通过 `codex exec` 注入 `mcp_servers.xiangshu.url`，prompt 走 stdin。
 - Claude Code：写入临时 `mcp-config` JSON，并用 `claude --print` 启动。
 
-本轮诊断 prompt 会要求 Agent 调用 `xiangshu_check_toolchain`。stdout、stderr、Codex
-`--output-last-message` 和退出信息会写入：
-
-```text
-<AgentWorkingDirectory>/Diagnostics/
-```
-
-触发成功时，`Player.log` 会出现 `Wanxiang.Xiangshu diagnostic hotkey accepted.` 和诊断日志目录。
+聊天 prompt 会带入相枢身份约束、当前可见对话和本批玩家消息。触发成功时，游戏日志会出现相枢
+`chat hotkey accepted` 记录。如果 CLI 启动、MCP 注册或调用失败，玩家界面只显示一条相枢口吻的固定
+失败消息，详细错误通过游戏日志记录。
 
 ## 开发
 
@@ -117,7 +122,9 @@ IPC contract、manifest 注册和本机 endpoint 辅助类库。
 - `Config.Lua`：游戏读取的 mod 配置。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：相枢设计说明；当前包含相枢对话体验和本机 Agent 内部设计。
-- `src/Frontend/`：前端插件项目；当前启动前端 MessagePipe IPC endpoint。
+- `src/Frontend/`：前端插件项目；根目录保留插件生命周期组合根，`Agent/`、`Chat/`、`HotKeys/`、
+  `Ipc/`、`Sidecar/` 和 `Logging/` 分别承载本机 Agent 调用、聊天会话与窗口、热键、前端 IPC、
+  MCP sidecar 进程生命周期和游戏日志适配。
 - `src/Backend/`：后端插件项目；当前启动后端 MessagePipe IPC endpoint。
 - `src/Ipc/`：Wanxiang.Xiangshu IPC contract、manifest 注册和本机 endpoint 辅助类库。
 - `src/McpServer/`：游戏外 MCP sidecar；当前通过 MCP 工具调用前后端 IPC ping。

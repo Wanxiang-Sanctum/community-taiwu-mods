@@ -1,15 +1,16 @@
 using Game.Views.Bottom;
 using HarmonyLib;
 using UnityEngine;
+using Wanxiang.Xiangshu.Frontend.Logging;
 
-namespace Wanxiang.Xiangshu.Frontend;
+namespace Wanxiang.Xiangshu.Frontend.HotKeys;
 
 internal static class XiangshuHotKeys
 {
-    private const byte LaunchAgentDiagnosticCommandId = 101;
+    private const byte ToggleChatCommandId = 101;
 
-    internal static readonly HotKeyCommand LaunchAgentDiagnostic = new(
-        LaunchAgentDiagnosticCommandId,
+    internal static readonly HotKeyCommand ToggleChat = new(
+        ToggleChatCommandId,
         LanguageKey.LK_Mod,
         KeyCode.Backslash,
         KeyCode.LeftControl);
@@ -18,25 +19,25 @@ internal static class XiangshuHotKeys
     {
         CommandKitBase kit = CommandKitBase.MapCommandKit;
 
-        if (kit.GroupCommand.Any(command => ReferenceEquals(command, LaunchAgentDiagnostic)))
+        if (kit.GroupCommand.Any(command => ReferenceEquals(command, ToggleChat)))
         {
             return;
         }
 
-        if (kit.GroupCommand.Any(command => command.Id == LaunchAgentDiagnosticCommandId))
+        if (kit.GroupCommand.Any(command => command.Id == ToggleChatCommandId))
         {
-            Debug.LogWarning(
-                $"Wanxiang.Xiangshu cannot register diagnostic hotkey in MapCommandKit because command id {LaunchAgentDiagnosticCommandId} is already used. The default Ctrl+Backslash diagnostic hotkey will still be checked directly.");
+            XiangshuFrontendLog.Warning(
+                $"cannot register chat hotkey in MapCommandKit because command id {ToggleChatCommandId} is already used. The default Ctrl+Backslash chat hotkey will still be checked directly.");
             return;
         }
 
         kit.GroupCommand =
         [
             .. kit.GroupCommand,
-            LaunchAgentDiagnostic,
+            ToggleChat,
         ];
         CommandKitBase.Init();
-        Debug.Log("Wanxiang.Xiangshu diagnostic hotkey registered: Ctrl+Backslash.");
+        XiangshuFrontendLog.Info("chat hotkey registered: Ctrl+Backslash.");
     }
 
     public static void PatchViewBottomUpdate(Harmony harmony)
@@ -83,16 +84,16 @@ internal static class FrontendHotkeyBridge
             return;
         }
 
-        if (!CanTriggerInCurrentUi())
+        if (!plugin.IsChatWindowVisible && !CanTriggerInCurrentUi())
         {
             return;
         }
 
-        if (XiangshuHotKeys.LaunchAgentDiagnostic.Check(
+        if (XiangshuHotKeys.ToggleChat.Check(
                 UIElement.Bottom,
                 holdCheck: false,
                 downCheck: false,
-                isIgnoreBlockHotKey: false,
+                isIgnoreBlockHotKey: plugin.IsChatWindowVisible,
                 fnKeyCheckNone: false,
                 isIgnoreElement: true))
         {
@@ -102,8 +103,8 @@ internal static class FrontendHotkeyBridge
             }
 
             s_lastHandledFrame = Time.frameCount;
-            Debug.Log("Wanxiang.Xiangshu diagnostic hotkey accepted.");
-            plugin.LaunchAgentDiagnostic();
+            XiangshuFrontendLog.Info("chat hotkey accepted.");
+            plugin.ToggleChatWindow();
         }
     }
 

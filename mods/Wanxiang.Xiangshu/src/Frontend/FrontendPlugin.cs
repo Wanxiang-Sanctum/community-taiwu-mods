@@ -2,7 +2,12 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
 using TaiwuModdingLib.Core.Plugin;
-using UnityEngine;
+using Wanxiang.Xiangshu.Frontend.Agent;
+using Wanxiang.Xiangshu.Frontend.Chat;
+using Wanxiang.Xiangshu.Frontend.HotKeys;
+using Wanxiang.Xiangshu.Frontend.Ipc;
+using Wanxiang.Xiangshu.Frontend.Logging;
+using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend;
@@ -17,9 +22,13 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private FrontendIpcServer? _ipcServer;
     private McpSidecarProcess? _mcpServerProcess;
     private AgentCliLauncher? _agentCliLauncher;
+    private AgentChatSession? _chatSession;
+    private XiangshuChatWindow? _chatWindow;
     private Harmony? _harmony;
 
     internal AgentSettings? CurrentAgentSettings { get; private set; }
+
+    internal bool IsChatWindowVisible => _chatWindow?.IsVisible == true;
 
     public override void Initialize()
     {
@@ -32,7 +41,9 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             LogInfo(
                 $"frontend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.ManifestPath}.");
             _agentCliLauncher = new AgentCliLauncher();
-            InstallAgentDiagnosticHotkey();
+            _chatSession = new AgentChatSession(_agentCliLauncher, () => CurrentAgentSettings);
+            _chatWindow = XiangshuChatWindow.Create(_chatSession);
+            InstallChatHotkey();
 
             StartMcpServer(CurrentAgentSettings);
             LogInfo(
@@ -40,7 +51,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Wanxiang.Xiangshu frontend plugin initialization failed: {ex}");
+            XiangshuFrontendLog.Error("frontend plugin initialization failed: " + ex);
             throw;
         }
     }
@@ -55,6 +66,10 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _harmony?.UnpatchSelf();
         _harmony = null;
         FrontendHotkeyBridge.Detach(this);
+        _chatWindow?.DestroyWindow();
+        _chatWindow = null;
+        _chatSession?.Dispose();
+        _chatSession = null;
         _agentCliLauncher?.Dispose();
         _agentCliLauncher = null;
         _mcpServerProcess?.Dispose();
@@ -76,7 +91,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             McpSidecarStartResult result = _mcpServerProcess.Start();
             LogInfo(
-                $"MCP sidecar started; pid={result.ProcessId}; logs={result.LogDirectory}; stdout={result.StdoutPath}; stderr={result.StderrPath}; events={result.EventLogPath}.");
+                $"MCP sidecar started; pid={result.ProcessId}; logs={result.LogDirectory}; eventLog={result.EventLogPath}.");
         }
         catch (Exception ex) when (ex is FileNotFoundException
             or Win32Exception
@@ -86,17 +101,27 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             _mcpServerProcess.Dispose();
             _mcpServerProcess = null;
-            Debug.LogError($"Wanxiang.Xiangshu MCP sidecar failed to start: {ex}");
+            XiangshuFrontendLog.Error("MCP sidecar failed to start: " + ex);
         }
     }
 
-    private void InstallAgentDiagnosticHotkey()
+    private void InstallChatHotkey()
     {
         XiangshuHotKeys.RegisterWithGameCommandKit();
         FrontendHotkeyBridge.Attach(this);
         _harmony = new Harmony("Wanxiang.Xiangshu.Frontend");
         XiangshuHotKeys.PatchViewBottomUpdate(_harmony);
-        LogInfo("frontend ViewBottom hotkey patch installed.");
+        LogInfo("frontend ViewBottom chat hotkey patch installed.");
+    }
+
+    internal void ToggleChatWindow()
+    {
+        if (_chatWindow is null)
+        {
+            throw new InvalidOperationException("Wanxiang.Xiangshu chat window is not initialized.");
+        }
+
+        _chatWindow.Toggle();
     }
 
     internal void LaunchAgentDiagnostic()
@@ -114,6 +139,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     private static void LogInfo(string message)
     {
-        Debug.Log("Wanxiang.Xiangshu " + message);
+        XiangshuFrontendLog.Info(message);
     }
 }
