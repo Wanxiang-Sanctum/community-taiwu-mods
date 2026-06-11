@@ -118,20 +118,21 @@ internal static class PluginIpcProxy
                     options.InstanceLifetime = InstanceLifetime.Singleton;
                     options.MessagePackSerializerOptions = StandardResolver.Options;
                 });
-        _ = services.AddSingleton<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>(
-            provider => new AsyncMessageBroker<IInterprocessKey, IInterprocessValue>(
-                new AsyncMessageBrokerCore<IInterprocessKey, IInterprocessValue>(
-                    provider.GetRequiredService<MessagePipeDiagnosticsInfo>(),
-                    provider.GetRequiredService<MessagePipeOptions>()),
-                provider.GetRequiredService<FilterAttachedAsyncMessageHandlerFactory>()));
-        _ = services.AddSingleton<TcpWorker>(
-            provider => new TcpWorker(
-                provider,
-                provider.GetRequiredService<MessagePipeInterprocessTcpOptions>(),
-                provider.GetRequiredService<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>()));
-        _ = services.AddSingleton<IRemoteRequestHandler<IpcPingRequest, IpcPingResponse>>(
-            provider => new TcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
-                provider.GetRequiredService<TcpWorker>()));
+        _ = services
+            .AddSingleton<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>(
+                provider => new AsyncMessageBroker<IInterprocessKey, IInterprocessValue>(
+                    new AsyncMessageBrokerCore<IInterprocessKey, IInterprocessValue>(
+                        provider.GetRequiredService<MessagePipeDiagnosticsInfo>(),
+                        provider.GetRequiredService<MessagePipeOptions>()),
+                    provider.GetRequiredService<FilterAttachedAsyncMessageHandlerFactory>()))
+            .AddSingleton<TcpWorker>(
+                provider => new TcpWorker(
+                    provider,
+                    provider.GetRequiredService<MessagePipeInterprocessTcpOptions>(),
+                    provider.GetRequiredService<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>()))
+            .AddSingleton<IRemoteRequestHandler<IpcPingRequest, IpcPingResponse>>(
+                provider => new TcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
+                    provider.GetRequiredService<TcpWorker>()));
 
         ServiceProvider? provider = null;
 

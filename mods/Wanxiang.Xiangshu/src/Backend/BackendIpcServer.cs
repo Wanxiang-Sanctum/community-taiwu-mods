@@ -119,11 +119,12 @@ internal sealed class BackendIpcServer : IDisposable
 
     private static void RegisterIpcPingHandler(IServiceCollection services)
     {
-        _ = services.AddSingleton<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>, BackendIpcPingHandler>();
-        _ = services.AddSingleton<IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>>(
-            provider => new AsyncRequestHandler<IpcPingRequest, IpcPingResponse>(
-                provider.GetRequiredService<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>>(),
-                provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
+        _ = services
+            .AddSingleton<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>, BackendIpcPingHandler>()
+            .AddSingleton<IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>>(
+                provider => new AsyncRequestHandler<IpcPingRequest, IpcPingResponse>(
+                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>>(),
+                    provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
         AsyncRequestHandlerRegistory.Add(
             typeof(IpcPingRequest),
             typeof(IpcPingResponse),
