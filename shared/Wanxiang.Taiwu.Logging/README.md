@@ -24,7 +24,8 @@ Log.Error(ex, "MCP sidecar failed to start");
 ```
 
 日志上下文建议使用匿名对象表达。运行时契约是 `context` 必须能通过 Newtonsoft.Json 序列化为 JSON
-对象；标量值需要放进具名属性里，例如 `new { frame }`。
+对象；标量值需要放进具名属性里，例如 `new { frame }`。调用方不需要把上下文预先转换为 `JObject`、
+字典或字符串；游戏运行时兼容性由这个共享库内部处理。
 
 ## 输出形态
 
