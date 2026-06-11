@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -21,8 +22,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PanelMinimumWidth = 460f;
     private const float PanelMinimumHeight = 520f;
     private const float PanelMargin = 32f;
-    private const int PanelSortingOrder = 30000;
 
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
     private static readonly Color HeaderColor = new(0.12f, 0.087f, 0.058f, 0.98f);
@@ -76,6 +77,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         IsVisible = visible;
         gameObject.SetActive(visible);
+        LogVisibilityChange(visible);
 
         if (!visible)
         {
@@ -268,12 +270,13 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         layout.minHeight = 34f;
     }
 
-    private void BuildUi()
+    private void BuildUi(UIManager uiManager)
     {
         RectTransform rootRect = GetComponent<RectTransform>();
         StretchToParent(rootRect);
 
         GameObject panel = CreateChild("Panel", transform);
+        EnsureInteractivePanel(panel, uiManager);
         _panelRect = panel.GetComponent<RectTransform>();
         _panelRect.anchorMin = new Vector2(1f, 0.5f);
         _panelRect.anchorMax = new Vector2(1f, 0.5f);
@@ -461,6 +464,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         if (uiManager is null)
         {
+            Log.Warning("chat window cannot build because UIManager is unavailable");
             return false;
         }
 
@@ -469,37 +473,57 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         if (layer is null)
         {
+            Log.Warning("chat window cannot build because no Taiwu UI layer is available");
             return false;
         }
 
         transform.SetParent(layer, worldPositionStays: false);
         transform.SetAsLastSibling();
-        EnsureInteractiveCanvas(uiManager);
         CaptureGameTextStyle();
-        BuildUi();
+        BuildUi(uiManager);
         _uiBuilt = true;
         return true;
     }
 
-    private void EnsureInteractiveCanvas(UIManager uiManager)
+    private static void EnsureInteractivePanel(
+        GameObject panel,
+        UIManager uiManager)
     {
-        Canvas canvas = gameObject.GetComponent<Canvas>();
-        canvas ??= gameObject.AddComponent<Canvas>();
+        Canvas canvas = panel.GetComponent<Canvas>();
+        canvas ??= panel.AddComponent<Canvas>();
 
         canvas.enabled = true;
-        canvas.overrideSorting = true;
-        canvas.sortingLayerName = "UI";
-        canvas.sortingOrder = PanelSortingOrder;
+        canvas.overrideSorting = false;
         canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1
             | AdditionalCanvasShaderChannels.TexCoord2
             | AdditionalCanvasShaderChannels.Normal
             | AdditionalCanvasShaderChannels.Tangent;
 
-        ConchShipGraphicRaycaster raycaster = gameObject.GetComponent<ConchShipGraphicRaycaster>();
-        raycaster ??= gameObject.AddComponent<ConchShipGraphicRaycaster>();
+        ConchShipGraphicRaycaster raycaster = panel.GetComponent<ConchShipGraphicRaycaster>();
+        raycaster ??= panel.AddComponent<ConchShipGraphicRaycaster>();
 
         raycaster.enabled = true;
         raycaster.TargetCamera = uiManager.UiCamera;
+    }
+
+    private void LogVisibilityChange(bool visible)
+    {
+        bool activeSelf = gameObject.activeSelf;
+        bool activeInHierarchy = gameObject.activeInHierarchy;
+
+        Log.Info(
+            "chat window visibility changed",
+            new
+            {
+                visible,
+                activeSelf,
+                activeInHierarchy,
+                parent = transform.parent?.name,
+                panelWidth = _panelRect?.rect.width ?? 0f,
+                panelHeight = _panelRect?.rect.height ?? 0f,
+                panelX = _panelRect?.anchoredPosition.x ?? 0f,
+                panelY = _panelRect?.anchoredPosition.y ?? 0f,
+            });
     }
 
     private void ApplyPanelLayout()
