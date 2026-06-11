@@ -16,20 +16,16 @@ internal sealed class AgentSettings
 
     private const string AgentWorkingDirectoryKey = "AgentWorkingDirectory";
 
-    private const string DebugModeKey = "DebugMode";
-
     private AgentSettings(
         AgentAdapter adapter,
         string commandPath,
         string modDirectory,
-        string workingDirectory,
-        bool debugModeEnabled)
+        string workingDirectory)
     {
         Adapter = adapter;
         CommandPath = commandPath;
         ModDirectory = modDirectory;
         WorkingDirectory = workingDirectory;
-        DebugModeEnabled = debugModeEnabled;
     }
 
     public AgentAdapter Adapter { get; }
@@ -40,19 +36,16 @@ internal sealed class AgentSettings
 
     public string WorkingDirectory { get; }
 
-    public bool DebugModeEnabled { get; }
-
     public static AgentSettings Load(string modIdStr)
     {
         string modDirectory = GetModDirectory(modIdStr);
         AgentAdapter adapter = ReadAgentAdapter(modIdStr);
         string commandPath = ReadCommandPath(modIdStr, adapter);
         string workingDirectory = ReadWorkingDirectory(modIdStr, modDirectory);
-        bool debugModeEnabled = ReadDebugMode(modIdStr);
 
         _ = Directory.CreateDirectory(workingDirectory);
 
-        return new AgentSettings(adapter, commandPath, modDirectory, workingDirectory, debugModeEnabled);
+        return new AgentSettings(adapter, commandPath, modDirectory, workingDirectory);
     }
 
     private static AgentAdapter ReadAgentAdapter(string modIdStr)
@@ -102,14 +95,6 @@ internal sealed class AgentSettings
         return Path.GetFullPath(path);
     }
 
-    private static bool ReadDebugMode(string modIdStr)
-    {
-        bool value = false;
-        _ = TryGetSetting(modIdStr, DebugModeKey, ref value);
-
-        return value;
-    }
-
     private static string GetDefaultCommandPath(AgentAdapter adapter)
     {
         if (adapter == AgentAdapter.Claude)
@@ -129,14 +114,6 @@ internal sealed class AgentSettings
         string modIdStr,
         string key,
         ref int value)
-    {
-        return global::ModManager.GetSetting(modIdStr, key, ref value);
-    }
-
-    private static bool TryGetSetting(
-        string modIdStr,
-        string key,
-        ref bool value)
     {
         return global::ModManager.GetSetting(modIdStr, key, ref value);
     }

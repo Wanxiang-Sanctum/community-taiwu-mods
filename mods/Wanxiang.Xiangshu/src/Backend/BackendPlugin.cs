@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using GameData.Domains;
+using GameData.Utilities;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -27,7 +28,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Wanxiang.Xiangshu backend plugin initialization failed: {ex}");
+            LogError("backend plugin initialization failed: " + ex);
             throw;
         }
     }
@@ -40,6 +41,11 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
     private static void LogInfo(string message)
     {
-        Console.WriteLine("Wanxiang.Xiangshu " + message);
+        AdaptableLog.TagInfo("Wanxiang.Xiangshu", message);
+    }
+
+    private static void LogError(string message)
+    {
+        AdaptableLog.TagError("Wanxiang.Xiangshu", message);
     }
 }

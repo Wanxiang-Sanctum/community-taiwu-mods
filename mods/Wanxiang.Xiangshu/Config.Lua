@@ -37,18 +37,9 @@ return {
       GroupName = "本机 Agent",
       DefaultValue = "AgentWorkspace",
     },
-    {
-      SettingType = "Toggle",
-      Key = "DebugMode",
-      DisplayName = "调试模式",
-      Description = "诊断日志始终写入工作目录；开启后，会尽量额外显示 MCP sidecar 和诊断 CLI 控制台窗口。",
-      GroupName = "诊断",
-      DefaultValue = false,
-    },
   },
   SettingGroups = {
     "本机 Agent",
-    "诊断",
   },
   UpdateLogList = {},
   ChangeConfig = false,

@@ -81,6 +81,7 @@ internal sealed class AgentCliLauncher : IDisposable
         string stdoutPath = Path.Combine(diagnosticDirectory, $"{stamp}.stdout.log");
         string stderrPath = Path.Combine(diagnosticDirectory, $"{stamp}.stderr.log");
         string exitPath = Path.Combine(diagnosticDirectory, $"{stamp}.exit.txt");
+        Process? process = null;
 
         try
         {
@@ -92,20 +93,20 @@ internal sealed class AgentCliLauncher : IDisposable
                 diagnosticDirectory,
                 stamp);
 
-            Process process = new()
+            process = new Process
             {
                 StartInfo = startInfo,
                 EnableRaisingEvents = false,
             };
 
-            lock (_syncRoot)
-            {
-                _process = process;
-            }
-
             if (!process.Start())
             {
                 throw new InvalidOperationException("Failed to start the configured agent CLI.");
+            }
+
+            lock (_syncRoot)
+            {
+                _process = process;
             }
 
             if (settings.Adapter == AgentAdapter.Codex)
@@ -118,7 +119,6 @@ internal sealed class AgentCliLauncher : IDisposable
             Task<string> stderrTask = process.StandardError.ReadToEndAsync();
 
             await Task.Run(process.WaitForExit, cancellationToken);
-
             string stdout = await stdoutTask;
             string stderr = await stderrTask;
 
@@ -140,13 +140,27 @@ internal sealed class AgentCliLauncher : IDisposable
         }
         finally
         {
+            bool disposeProcess = false;
+
             lock (_syncRoot)
             {
-                if (_process?.HasExited != false)
+                if (ReferenceEquals(_process, process))
                 {
-                    _process?.Dispose();
-                    _process = null;
+                    if (_process?.HasExited != false)
+                    {
+                        _process = null;
+                        disposeProcess = true;
+                    }
                 }
+                else if (process is not null)
+                {
+                    disposeProcess = true;
+                }
+            }
+
+            if (disposeProcess)
+            {
+                process?.Dispose();
             }
         }
     }
@@ -165,7 +179,7 @@ internal sealed class AgentCliLauncher : IDisposable
             RedirectStandardInput = settings.Adapter == AgentAdapter.Codex,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            CreateNoWindow = !settings.DebugModeEnabled,
+            CreateNoWindow = true,
         };
 
         if (settings.Adapter == AgentAdapter.Claude)

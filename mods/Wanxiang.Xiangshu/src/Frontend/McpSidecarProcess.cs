@@ -20,7 +20,7 @@ internal sealed class McpSidecarProcess(
     private StreamWriter? _stderrWriter;
     private bool _disposed;
 
-    public McpSidecarStartResult Start(bool debugModeEnabled)
+    public McpSidecarStartResult Start()
     {
         ThrowIfDisposed();
 
@@ -48,7 +48,7 @@ internal sealed class McpSidecarProcess(
             {
                 FileName = executablePath,
                 WorkingDirectory = processDirectory,
-                CreateNoWindow = !debugModeEnabled,
+                CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

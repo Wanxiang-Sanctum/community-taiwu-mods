@@ -36,7 +36,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
             StartMcpServer(CurrentAgentSettings);
             LogInfo(
-                $"frontend plugin initialized; adapter={CurrentAgentSettings.Adapter}; workingDirectory={CurrentAgentSettings.WorkingDirectory}; debugMode={CurrentAgentSettings.DebugModeEnabled}.");
+                $"frontend plugin initialized; adapter={CurrentAgentSettings.Adapter}; workingDirectory={CurrentAgentSettings.WorkingDirectory}.");
         }
         catch (Exception ex)
         {
@@ -47,16 +47,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     public override void OnModSettingUpdate()
     {
-        AgentSettings nextSettings = AgentSettings.Load(ModIdStr);
-        bool shouldRestartMcpServer =
-            CurrentAgentSettings?.DebugModeEnabled != nextSettings.DebugModeEnabled;
-
-        CurrentAgentSettings = nextSettings;
-
-        if (shouldRestartMcpServer && _mcpServerProcess is not null)
-        {
-            StartMcpServer(nextSettings);
-        }
+        CurrentAgentSettings = AgentSettings.Load(ModIdStr);
     }
 
     public override void Dispose()
@@ -83,7 +74,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
         try
         {
-            McpSidecarStartResult result = _mcpServerProcess.Start(settings.DebugModeEnabled);
+            McpSidecarStartResult result = _mcpServerProcess.Start();
             LogInfo(
                 $"MCP sidecar started; pid={result.ProcessId}; logs={result.LogDirectory}; stdout={result.StdoutPath}; stderr={result.StderrPath}; events={result.EventLogPath}.");
         }
