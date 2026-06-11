@@ -6,6 +6,10 @@
 
   <ItemGroup>
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
+    <TaiwuModPackDirectory
+      Include="AgentWorkspace"
+      PackagePath="AgentWorkspace"
+    />
     <TaiwuModPackProject
       Include="src/Frontend/Wanxiang.Xiangshu.Frontend.csproj"
     />

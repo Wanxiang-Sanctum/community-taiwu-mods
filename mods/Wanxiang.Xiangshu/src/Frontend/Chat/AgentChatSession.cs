@@ -21,7 +21,7 @@ internal sealed class AgentChatSession(
     private readonly Func<AgentSettings?> _settingsProvider = settingsProvider;
     private readonly ConcurrentQueue<AgentChatSessionEvent> _events = new();
     private readonly object _syncRoot = new();
-    private readonly List<AgentChatMessage> _messages = [];
+    private readonly List<AgentChatMessage> _visibleMessages = [];
     private readonly Queue<AgentChatMessage> _pendingMessages = new();
     private readonly CancellationTokenSource _cancellation = new();
     private readonly string _sessionId = Guid.NewGuid().ToString("N");
@@ -53,7 +53,7 @@ internal sealed class AgentChatSession(
                 trimmedContent,
                 "user",
                 batchId: null);
-            _messages.Add(message);
+            _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
         }
 
@@ -161,8 +161,7 @@ internal sealed class AgentChatSession(
                 _sessionId,
                 batchId,
                 _externalSessionId,
-                [.. _messages.Select(ToAgentChatTurnMessage)],
-                [.. batchMessages.Select(ToAgentChatTurnMessage)]);
+                [.. batchMessages.Select(static message => message.Content)]);
         }
     }
 
@@ -191,7 +190,7 @@ internal sealed class AgentChatSession(
                 content,
                 origin,
                 batchId);
-            _messages.Add(message);
+            _visibleMessages.Add(message);
         }
 
         _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
@@ -200,14 +199,6 @@ internal sealed class AgentChatSession(
     private void AddAssistantSessionMessage(string content)
     {
         AddAssistantMessage(content, "session", batchId: null);
-    }
-
-    private static AgentChatTurnMessage ToAgentChatTurnMessage(AgentChatMessage message)
-    {
-        AgentChatTurnRole role = message.Role == AgentChatRole.User
-            ? AgentChatTurnRole.User
-            : AgentChatTurnRole.Assistant;
-        return new AgentChatTurnMessage(role, message.Content);
     }
 
     private string CreateMessageId()

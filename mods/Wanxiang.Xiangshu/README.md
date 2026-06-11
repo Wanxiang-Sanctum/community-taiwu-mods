@@ -10,11 +10,12 @@
 - 前端插件能够拉起游戏外 MCP sidecar，并通过 MCP 工具区分前端侧和后端侧 IPC。
 - 太吾 Mod 用户配置能够记录本机 Agent 类型、CLI 入口和工作目录。
 - 进入存档后，前端热键能够打开相枢聊天窗口。
-- 玩家消息能够进入前端内存会话，按批次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
+- 玩家消息能够进入前端投递会话，按批次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
 
-当前聊天窗口仍是运行时生成的最小界面；不持久化会话，不提供 MCP 快速答复工具，不修改游戏状态，也不
-对接外部业务服务。相枢内部 Agent 会话由前端插件管理；MCP server 不承载主对话协议，只作为注册给
-本机 Agent 的相枢工具服务。对话体验和内部协议边界见 `docs/agent-chat.md`。
+当前聊天窗口仍是运行时生成的最小界面；前端不持久化游戏内可见对话，不提供 MCP 快速答复工具，不修改
+游戏状态，也不对接外部业务服务。长期上下文由本机 CLI Agent 自己的会话系统维护；前端只保存当前运行期
+的投递队列和外部会话 id。MCP server 不承载主对话协议，只作为注册给本机 Agent 的相枢工具服务。对话
+体验和内部协议边界见 `docs/agent-chat.md`。
 
 ## 本机 IPC 与 MCP Sidecar
 
@@ -22,10 +23,10 @@
 都只暴露一个 ping 请求，用来验证游戏外进程能够区分连接前端侧和后端侧。插件启动成功后会在游戏日志中
 记录各自的监听地址、进程 ID 和 manifest 路径。
 
-IPC endpoint 端口在插件启动时分配，并写入相枢 Mod 目录下的 manifest：
+IPC endpoint 端口在插件启动时分配，并写入本机 Agent 工作目录下的 manifest：
 
 ```text
-<Wanxiang.Xiangshu Mod directory>/AgentWorkspace/ipc-endpoints.json
+<AgentWorkingDirectory>/XiangshuRuntime/ipc-endpoints.json
 ```
 
 manifest 只记录发现本机 endpoint 所需的最小信息：`side`、`transport`、`host`、`path`、
@@ -40,7 +41,7 @@ manifest 只记录发现本机 endpoint 所需的最小信息：`side`、`transp
 MCP server 使用独立进程内的 Serilog 文件日志，关键事件写入：
 
 ```text
-<AgentWorkingDirectory>/Diagnostics/McpServer/
+<AgentWorkingDirectory>/XiangshuRuntime/Diagnostics/McpServer/
 ```
 
 日志文件后缀为 `.events.clef`，每行是一条 compact JSON 事件。关键事件只记录启动、监听地址、
@@ -58,6 +59,17 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 太吾 Mod 用户配置提供一个相枢内部 Agent 选择项、一个复用的 CLI 入口字段，以及一个工作目录字段。
 切换 Codex CLI 和 Claude Code 时不需要维护两套路径字段；CLI 入口留空时会按当前选择使用默认
 命令。相对工作目录会解析到相枢 Mod 目录下，默认是 `AgentWorkspace`。
+
+默认包内会预置 `AgentWorkspace/AGENTS.md`，作为相枢的默认本机 Agent 工作区配置和自定义示范；
+`AgentWorkspace/CLAUDE.md` 只负责让 Claude Code 转向同目录的 `AGENTS.md`。用户可以在这个工作区
+维护自己的人设、指令、设置和 Agent 技能；配置到其它工作目录时，该目录由用户自行维护。
+
+相枢运行时代码把每轮对话序列化为 `wanxiang.xiangshu.chat-turn.v1` 结构化回合输入，字段包括参与者、
+本批玩家消息和请求输出说话人。前端捕获 CLI 返回的外部会话 id，并在后续批次中恢复同一个本机 Agent
+会话。
+
+`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest 和 MCP 诊断日志，后续再承载
+聊天会话文件；游戏内仍不增加会话管理界面。
 
 这些设置同时服务聊天调用和工具链诊断。聊天调用会读取当前配置，等待相枢 MCP sidecar endpoint 注册，
 然后把当前对话批次交给所选 CLI Agent。
@@ -84,12 +96,15 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 
 玩家送出消息后，前端会读取当前 Agent 配置，等待相枢 MCP sidecar endpoint 注册，然后启动所选 CLI：
 
-- Codex CLI：通过 `codex exec` 注入 `mcp_servers.xiangshu.url`，prompt 走 stdin。
-- Claude Code：写入临时 `mcp-config` JSON，并用 `claude --print` 启动。
+- Codex CLI：通过 `codex exec` 注入 `mcp_servers.xiangshu.url`，结构化回合输入走 stdin，并用
+  `--output-schema` 约束最终回复。
+- Claude Code：写入临时 `mcp-config` JSON，用 `claude --print` 启动，并用 `--json-schema`
+  约束最终回复。
 
-聊天 prompt 会带入相枢身份约束、当前可见对话和本批玩家消息。触发成功时，游戏日志会出现相枢
-`chat hotkey accepted` 记录。如果 CLI 启动、MCP 注册或调用失败，玩家界面只显示一条相枢口吻的固定
-失败消息，详细错误通过游戏日志记录。
+结构化回合输入会带入本批玩家消息和请求输出说话人；历史上下文由恢复后的本机 Agent 会话提供。最终回复
+必须是包含 `reply` 字段的 JSON；前端只提取 `reply` 显示给玩家。触发成功时，游戏日志会出现相枢
+`chat hotkey accepted` 记录。CLI 启动、MCP 注册、调用失败或回复解析失败时，玩家界面显示一条相枢
+固定说明，详细错误通过游戏日志记录。
 
 ## 开发
 
@@ -107,9 +122,9 @@ dotnet build mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.cs
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Xiangshu
 ```
 
-`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、前后端最终入口 DLL、声明复制的
-IPC contract DLL，以及 MCP server 的 `net10.0/win-x64` self-contained 裁剪发布目录组装到仓库根目录的
-`artifacts/mods/Wanxiang.Xiangshu/`。前端插件从
+`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、`AgentWorkspace/`、前后端最终入口 DLL、
+声明复制的 IPC contract DLL，以及 MCP server 的 `net10.0/win-x64` self-contained 裁剪发布目录组装到
+仓库根目录的 `artifacts/mods/Wanxiang.Xiangshu/`。前端插件从
 `Processes/Wanxiang.Xiangshu.McpServer/Wanxiang.Xiangshu.McpServer.exe` 启动 MCP sidecar。IPC
 contract DLL 作为独立文件部署，避免 MessagePipe 请求类型被合并改名。
 
@@ -123,6 +138,8 @@ IPC contract、manifest 注册和本机 endpoint 辅助类库。
 ## 项目结构
 
 - `Config.Lua`：游戏读取的 mod 配置。
+- `AgentWorkspace/`：默认本机 Agent 工作区；打包后作为 `AgentWorkingDirectory` 的默认目录，包含
+  `AGENTS.md`、Claude Code 兼容用的 `CLAUDE.md`，以及相枢 Mod 的运行数据目录 `XiangshuRuntime/`。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：相枢设计说明；当前包含相枢对话体验和本机 Agent 内部设计。
 - `src/Frontend/`：前端插件项目；根目录保留插件生命周期组合根，`Agent/`、`Chat/`、`HotKeys/`、

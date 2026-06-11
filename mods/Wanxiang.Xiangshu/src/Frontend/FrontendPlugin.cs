@@ -37,17 +37,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         try
         {
             CurrentAgentSettings = AgentSettings.Load(ModIdStr);
-            IpcEndpointRegistry.ConfigureForModDirectory(CurrentAgentSettings.ModDirectory);
-            _ipcServer = new FrontendIpcServer();
-            IpcEndpoint endpoint = _ipcServer.Start();
-            Log.Info(
-                "frontend IPC listening",
-                new
-                {
-                    endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
-                    processId = endpoint.ProcessId,
-                    manifest = IpcEndpointRegistry.ManifestPath,
-                });
+            IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
+            StartFrontendIpcServer();
             _agentCliLauncher = new AgentCliLauncher();
             _chatSession = new AgentChatSession(_agentCliLauncher, () => CurrentAgentSettings);
             _chatWindow = XiangshuChatWindow.Create(_chatSession);
@@ -72,6 +63,9 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     public override void OnModSettingUpdate()
     {
         CurrentAgentSettings = AgentSettings.Load(ModIdStr);
+        IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
+        StartFrontendIpcServer();
+        StartMcpServer(CurrentAgentSettings);
     }
 
     public override void Dispose()
@@ -122,6 +116,21 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             _mcpServerProcess = null;
             Log.Error(ex, "MCP sidecar failed to start");
         }
+    }
+
+    private void StartFrontendIpcServer()
+    {
+        _ipcServer?.Dispose();
+        _ipcServer = new FrontendIpcServer();
+        IpcEndpoint endpoint = _ipcServer.Start();
+        Log.Info(
+            "frontend IPC listening",
+            new
+            {
+                endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
+                processId = endpoint.ProcessId,
+                manifest = IpcEndpointRegistry.ManifestPath,
+            });
     }
 
     private void InstallChatHotkey()

@@ -1,3 +1,5 @@
+using Wanxiang.Xiangshu.Ipc;
+
 namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal enum AgentAdapter
@@ -8,7 +10,7 @@ internal enum AgentAdapter
 
 internal sealed class AgentSettings
 {
-    public const string DefaultWorkingDirectoryName = "AgentWorkspace";
+    public const string DefaultWorkingDirectoryName = XiangshuRuntimePaths.DefaultAgentWorkingDirectoryName;
 
     private const string AgentAdapterKey = "AgentAdapter";
 
@@ -44,6 +46,7 @@ internal sealed class AgentSettings
         string workingDirectory = ReadWorkingDirectory(modIdStr, modDirectory);
 
         _ = Directory.CreateDirectory(workingDirectory);
+        _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
 
         return new AgentSettings(adapter, commandPath, modDirectory, workingDirectory);
     }
@@ -85,14 +88,7 @@ internal sealed class AgentSettings
             value = DefaultWorkingDirectoryName;
         }
 
-        string path = Environment.ExpandEnvironmentVariables(value.Trim());
-
-        if (!Path.IsPathRooted(path))
-        {
-            path = Path.Combine(modDirectory, path);
-        }
-
-        return Path.GetFullPath(path);
+        return XiangshuRuntimePaths.ResolveAgentWorkingDirectory(modDirectory, value);
     }
 
     private static string GetDefaultCommandPath(AgentAdapter adapter)

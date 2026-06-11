@@ -13,6 +13,8 @@ namespace Wanxiang.Xiangshu.Backend;
 [PluginConfig("Wanxiang.Xiangshu.Backend", "WanxiangSanctum", "0.1.0")]
 public sealed class BackendPlugin : TaiwuRemakePlugin
 {
+    private const string AgentWorkingDirectoryKey = "AgentWorkingDirectory";
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private BackendIpcServer? _ipcServer;
@@ -21,18 +23,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     {
         try
         {
-            IpcEndpointRegistry.ConfigureForModDirectory(
-                DomainManager.Mod.GetModDirectory(ModIdStr));
-            _ipcServer = new BackendIpcServer();
-            IpcEndpoint endpoint = _ipcServer.Start();
-            Log.Info(
-                "backend IPC listening",
-                new
-                {
-                    endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
-                    processId = endpoint.ProcessId,
-                    manifest = IpcEndpointRegistry.ManifestPath,
-                });
+            StartIpcServer();
         }
         catch (Exception ex)
         {
@@ -41,9 +32,42 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         }
     }
 
+    public override void OnModSettingUpdate()
+    {
+        StartIpcServer();
+    }
+
     public override void Dispose()
     {
         _ipcServer?.Dispose();
         _ipcServer = null;
+    }
+
+    private void StartIpcServer()
+    {
+        _ipcServer?.Dispose();
+
+        string workingDirectory = ReadAgentWorkingDirectory();
+        _ = Directory.CreateDirectory(workingDirectory);
+        _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
+        IpcEndpointRegistry.ConfigureForWorkingDirectory(workingDirectory);
+        _ipcServer = new BackendIpcServer();
+        IpcEndpoint endpoint = _ipcServer.Start();
+        Log.Info(
+            "backend IPC listening",
+            new
+            {
+                endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
+                processId = endpoint.ProcessId,
+                manifest = IpcEndpointRegistry.ManifestPath,
+            });
+    }
+
+    private string ReadAgentWorkingDirectory()
+    {
+        string modDirectory = DomainManager.Mod.GetModDirectory(ModIdStr);
+        string value = XiangshuRuntimePaths.DefaultAgentWorkingDirectoryName;
+        _ = DomainManager.Mod.GetSetting(ModIdStr, AgentWorkingDirectoryKey, ref value);
+        return XiangshuRuntimePaths.ResolveAgentWorkingDirectory(modDirectory, value);
     }
 }

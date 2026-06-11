@@ -10,8 +10,20 @@ namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentCliLauncher : IDisposable
 {
-    private const string DiagnosticPrompt =
-        "Use the xiangshu MCP server now. Call the tool xiangshu_check_toolchain, then summarize whether the toolchain is ready and report the frontend, backend, and mcp-server status.";
+    private const string DiagnosticInput =
+        """
+        {
+          "schema": "wanxiang.xiangshu.diagnostic.v1",
+          "requestedAction": {
+            "kind": "toolchain-check",
+            "tool": "xiangshu_check_toolchain"
+          },
+          "requestedOutput": {
+            "kind": "toolchain-status-summary",
+            "fields": ["frontend", "backend", "mcp-server"]
+          }
+        }
+        """;
 
     private static readonly TimeSpan McpEndpointWaitTimeout = TimeSpan.FromSeconds(10);
 
@@ -75,12 +87,14 @@ internal sealed class AgentCliLauncher : IDisposable
 
         try
         {
-            string prompt = AgentChatPromptBuilder.BuildPrompt(turn);
+            string agentInput = AgentChatTurnInputBuilder.Build(turn);
             using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create();
             AgentProcessResult result = await RunInvocationAsync(
                     settings,
-                    prompt,
+                    agentInput,
+                    turn.ExternalSessionId,
                     tempFiles,
+                    useChatReplySchema: true,
                     cancellation.Token);
 
             if (result.ExitCode != 0)
@@ -154,8 +168,10 @@ internal sealed class AgentCliLauncher : IDisposable
         {
             _ = await RunInvocationAsync(
                     settings,
-                    DiagnosticPrompt,
+                    DiagnosticInput,
+                    externalSessionId: null,
                     tempFiles,
+                    useChatReplySchema: false,
                     cancellation.Token);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -173,8 +189,10 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private async Task<AgentProcessResult> RunInvocationAsync(
         AgentSettings settings,
-        string prompt,
+        string agentInput,
+        string? externalSessionId,
         AgentCliTempFiles tempFiles,
+        bool useChatReplySchema,
         CancellationToken cancellationToken)
     {
         Process? process = null;
@@ -187,7 +205,9 @@ internal sealed class AgentCliLauncher : IDisposable
                 settings,
                 mcpUrl,
                 tempFiles,
-                prompt);
+                agentInput,
+                externalSessionId,
+                useChatReplySchema);
 
             process = new Process
             {
@@ -207,7 +227,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
             if (settings.Adapter == AgentAdapter.Codex)
             {
-                await process.StandardInput.WriteAsync(prompt);
+                await process.StandardInput.WriteAsync(agentInput);
                 process.StandardInput.Close();
             }
 
@@ -252,7 +272,9 @@ internal sealed class AgentCliLauncher : IDisposable
         AgentSettings settings,
         string mcpUrl,
         AgentCliTempFiles tempFiles,
-        string prompt)
+        string agentInput,
+        string? externalSessionId,
+        bool useChatReplySchema)
     {
         ProcessStartInfo startInfo = new()
         {
@@ -267,11 +289,20 @@ internal sealed class AgentCliLauncher : IDisposable
 
         if (settings.Adapter == AgentAdapter.Claude)
         {
-            ConfigureClaude(startInfo, mcpUrl, tempFiles, prompt);
+            ConfigureClaude(startInfo, mcpUrl, tempFiles, agentInput, externalSessionId, useChatReplySchema);
         }
         else
         {
-            ConfigureCodex(startInfo, mcpUrl, settings.WorkingDirectory, tempFiles.LastMessagePath);
+            string? outputSchemaPath = useChatReplySchema
+                ? tempFiles.WriteChatReplySchema()
+                : null;
+            ConfigureCodex(
+                startInfo,
+                mcpUrl,
+                settings.WorkingDirectory,
+                tempFiles.LastMessagePath,
+                externalSessionId,
+                outputSchemaPath);
         }
 
         return startInfo;
@@ -281,18 +312,40 @@ internal sealed class AgentCliLauncher : IDisposable
         ProcessStartInfo startInfo,
         string mcpUrl,
         string workingDirectory,
-        string lastMessagePath)
+        string lastMessagePath,
+        string? externalSessionId,
+        string? outputSchemaPath)
     {
         startInfo.ArgumentList.Add("exec");
+        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        {
+            startInfo.ArgumentList.Add("resume");
+        }
+
         startInfo.ArgumentList.Add("--dangerously-bypass-approvals-and-sandbox");
         startInfo.ArgumentList.Add("--skip-git-repo-check");
         startInfo.ArgumentList.Add("--json");
         startInfo.ArgumentList.Add("--output-last-message");
         startInfo.ArgumentList.Add(lastMessagePath);
-        startInfo.ArgumentList.Add("--cd");
-        startInfo.ArgumentList.Add(workingDirectory);
+        if (outputSchemaPath is not null)
+        {
+            startInfo.ArgumentList.Add("--output-schema");
+            startInfo.ArgumentList.Add(outputSchemaPath);
+        }
+
+        if (string.IsNullOrWhiteSpace(externalSessionId))
+        {
+            startInfo.ArgumentList.Add("--cd");
+            startInfo.ArgumentList.Add(workingDirectory);
+        }
+
         startInfo.ArgumentList.Add("--config");
         startInfo.ArgumentList.Add($"mcp_servers.xiangshu.url=\"{mcpUrl}\"");
+        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        {
+            startInfo.ArgumentList.Add(externalSessionId);
+        }
+
         startInfo.ArgumentList.Add("-");
     }
 
@@ -300,18 +353,32 @@ internal sealed class AgentCliLauncher : IDisposable
         ProcessStartInfo startInfo,
         string mcpUrl,
         AgentCliTempFiles tempFiles,
-        string prompt)
+        string agentInput,
+        string? externalSessionId,
+        bool useChatReplySchema)
     {
         string mcpConfigPath = tempFiles.WriteClaudeMcpConfig(mcpUrl);
 
         startInfo.ArgumentList.Add("--print");
+        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        {
+            startInfo.ArgumentList.Add("--resume");
+            startInfo.ArgumentList.Add(externalSessionId);
+        }
+
         startInfo.ArgumentList.Add("--output-format");
         startInfo.ArgumentList.Add("stream-json");
         startInfo.ArgumentList.Add("--verbose");
         startInfo.ArgumentList.Add("--dangerously-skip-permissions");
         startInfo.ArgumentList.Add("--mcp-config");
         startInfo.ArgumentList.Add(mcpConfigPath);
-        startInfo.ArgumentList.Add(prompt);
+        if (useChatReplySchema)
+        {
+            startInfo.ArgumentList.Add("--json-schema");
+            startInfo.ArgumentList.Add(AgentCliTempFiles.ChatReplySchemaJson);
+        }
+
+        startInfo.ArgumentList.Add(agentInput);
     }
 
     private bool TryBeginInvocation(
@@ -383,16 +450,59 @@ internal sealed class AgentCliLauncher : IDisposable
         if (adapter == AgentAdapter.Codex
             && !string.IsNullOrWhiteSpace(result.LastMessage))
         {
-            return result.LastMessage;
+            return ExtractChatReply(result.LastMessage);
         }
 
         if (adapter == AgentAdapter.Claude
             && TryExtractClaudeResult(result.Stdout, out string? claudeResult))
         {
-            return claudeResult ?? string.Empty;
+            return ExtractChatReply(claudeResult ?? string.Empty);
         }
 
-        return result.Stdout.Trim();
+        return ExtractChatReply(result.Stdout);
+    }
+
+    private static string ExtractChatReply(string value)
+    {
+        if (TryExtractChatReply(value, out string? reply))
+        {
+            return reply;
+        }
+
+        throw new InvalidOperationException("The configured agent CLI did not return a valid chat reply.");
+    }
+
+    private static bool TryExtractChatReply(
+        string value,
+        [NotNullWhen(true)]
+        out string? reply)
+    {
+        reply = null;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        try
+        {
+            return TryExtractChatReply(JToken.Parse(value), out reply);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryExtractChatReply(
+        JToken token,
+        [NotNullWhen(true)]
+        out string? reply)
+    {
+        reply = token is JObject jsonObject
+            ? jsonObject["reply"]?.Value<string>()?.Trim()
+            : null;
+        return !string.IsNullOrWhiteSpace(reply);
     }
 
     private static string TrimForException(string value)
@@ -439,9 +549,11 @@ internal sealed class AgentCliLauncher : IDisposable
         foreach (string line in SplitLines(stdout))
         {
             if (TryParseJsonLine(line, out JObject? jsonObject)
-                && TryReadString(jsonObject, "result", out string? value))
+                && jsonObject.TryGetValue("result", out JToken? value))
             {
-                result = value;
+                result = value.Type == JTokenType.String
+                    ? value.Value<string>()
+                    : value.ToString(Formatting.None);
             }
         }
 

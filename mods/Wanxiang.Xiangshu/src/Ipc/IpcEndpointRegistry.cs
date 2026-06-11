@@ -11,10 +11,6 @@ namespace Wanxiang.Xiangshu.Ipc;
 
 public static class IpcEndpointRegistry
 {
-    private const string RuntimeDataDirectoryName = "AgentWorkspace";
-
-    private const string ManifestFileName = "ipc-endpoints.json";
-
 #if NET10_0_OR_GREATER
     private static readonly Lock ManifestPathSyncRoot = new();
 #else
@@ -46,11 +42,30 @@ public static class IpcEndpointRegistry
             throw new ArgumentException("Mod directory is required.", nameof(modDirectory));
         }
 
-        ConfigureManifestPath(
-            Path.Combine(
+        ConfigureForWorkingDirectory(
+            XiangshuRuntimePaths.ResolveAgentWorkingDirectory(
                 Path.GetFullPath(modDirectory),
-                RuntimeDataDirectoryName,
-                ManifestFileName));
+                configuredValue: null));
+    }
+
+    public static void ConfigureForWorkingDirectory(string workingDirectory)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(workingDirectory);
+#else
+        if (workingDirectory is null)
+        {
+            throw new ArgumentNullException(nameof(workingDirectory));
+        }
+#endif
+
+        if (workingDirectory.Length == 0)
+        {
+            throw new ArgumentException("Agent working directory is required.", nameof(workingDirectory));
+        }
+
+        ConfigureManifestPath(
+            XiangshuRuntimePaths.GetIpcManifestPath(workingDirectory));
     }
 
     public static void ConfigureManifestPath(string manifestPath)

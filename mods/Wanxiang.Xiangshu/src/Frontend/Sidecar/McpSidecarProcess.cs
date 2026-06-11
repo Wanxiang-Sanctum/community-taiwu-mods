@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Sidecar;
 
@@ -21,7 +22,7 @@ internal sealed class McpSidecarProcess(
 
         string processDirectory = GetProcessDirectory();
         string executablePath = Path.Combine(processDirectory, ProcessExecutableName);
-        string logDirectory = Path.Combine(workingDirectory, "Diagnostics", "McpServer");
+        string logDirectory = XiangshuRuntimePaths.GetMcpServerDiagnosticsDirectory(workingDirectory);
 
         if (!File.Exists(executablePath))
         {

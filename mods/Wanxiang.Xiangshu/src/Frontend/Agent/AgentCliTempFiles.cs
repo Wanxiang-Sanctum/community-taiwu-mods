@@ -6,6 +6,21 @@ namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentCliTempFiles : IDisposable
 {
+    public const string ChatReplySchemaJson =
+        """
+        {
+          "type": "object",
+          "properties": {
+            "reply": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["reply"],
+          "additionalProperties": false
+        }
+        """;
+
     private readonly string _directory;
 
     private AgentCliTempFiles(string directory)
@@ -13,11 +28,14 @@ internal sealed class AgentCliTempFiles : IDisposable
         _directory = directory;
         LastMessagePath = Path.Combine(directory, "last-message.txt");
         McpConfigPath = Path.Combine(directory, "mcp.json");
+        ChatReplySchemaPath = Path.Combine(directory, "chat-reply.schema.json");
     }
 
     public string LastMessagePath { get; }
 
     public string McpConfigPath { get; }
+
+    public string ChatReplySchemaPath { get; }
 
     public static AgentCliTempFiles Create()
     {
@@ -45,6 +63,12 @@ internal sealed class AgentCliTempFiles : IDisposable
             config.ToString(Formatting.Indented),
             Encoding.UTF8);
         return McpConfigPath;
+    }
+
+    public string WriteChatReplySchema()
+    {
+        File.WriteAllText(ChatReplySchemaPath, ChatReplySchemaJson, Encoding.UTF8);
+        return ChatReplySchemaPath;
     }
 
     public string ReadLastMessage()
