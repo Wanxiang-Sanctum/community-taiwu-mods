@@ -16,9 +16,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[0.84.46-test, )",
-        "resolved": "0.84.46-test",
-        "contentHash": "7qNz5BdFeFJelK4Q0TzWtfe/n/zm5+TqQQa/Jwl2iBl+r6WxZ5wsWD5FIWZuyifyipSwTJFY4LdmpknHA3JEdA=="
+        "requested": "[0.84.54-test, )",
+        "resolved": "0.84.54-test",
+        "contentHash": "A5jC6E+SFAliSDJzRGv12wnzJRAuQdC4hmGR1Na0as/B8Rqd/OtkufDKzGjQj1br17N0xgLqvmgrcqVMpy+wIQ=="
       }
     }
   }
