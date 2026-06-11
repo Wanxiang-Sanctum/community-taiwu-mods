@@ -19,11 +19,6 @@
       PrivateAssets="all"
     />
     <PackageReference
-      Include="Newtonsoft.Json"
-      ExcludeAssets="runtime"
-      PrivateAssets="all"
-    />
-    <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe"
       ExcludeAssets="runtime"
       PrivateAssets="all"

@@ -119,7 +119,9 @@ public sealed class TaiwuLogger
                 logObject["exception"] = exception.ToString();
             }
 
-            return normalizedMessage + " | " + logObject.ToString(Formatting.None);
+            return normalizedMessage
+                + " | "
+                + logObject.ToString(Formatting.None, []);
         }
 
         private static JObject ToLogObject(object context)

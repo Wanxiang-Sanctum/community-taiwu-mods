@@ -60,7 +60,7 @@ internal sealed class AgentCliTempFiles : IDisposable
                             new JProperty("url", mcpUrl))))));
         File.WriteAllText(
             McpConfigPath,
-            config.ToString(Formatting.Indented),
+            config.ToString(Formatting.Indented, []),
             Encoding.UTF8);
         return McpConfigPath;
     }

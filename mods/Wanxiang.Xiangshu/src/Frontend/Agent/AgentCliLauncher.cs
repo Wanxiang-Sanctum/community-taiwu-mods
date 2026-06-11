@@ -553,7 +553,7 @@ internal sealed class AgentCliLauncher : IDisposable
             {
                 result = value.Type == JTokenType.String
                     ? value.Value<string>()
-                    : value.ToString(Formatting.None);
+                    : value.ToString(Formatting.None, []);
             }
         }
 
