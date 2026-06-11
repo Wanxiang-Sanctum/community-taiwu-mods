@@ -270,13 +270,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         layout.minHeight = 34f;
     }
 
-    private void BuildUi(UIManager uiManager)
+    private void BuildUi()
     {
         RectTransform rootRect = GetComponent<RectTransform>();
         StretchToParent(rootRect);
 
         GameObject panel = CreateChild("Panel", transform);
-        EnsurePanelEventCanvas(panel, uiManager);
         _panelRect = panel.GetComponent<RectTransform>();
         _panelRect.anchorMin = new Vector2(1f, 0.5f);
         _panelRect.anchorMax = new Vector2(1f, 0.5f);
@@ -479,28 +478,32 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         transform.SetParent(layer, worldPositionStays: false);
         transform.SetAsLastSibling();
+        EnsureLayerRaycaster(layer, uiManager);
         CaptureGameTextStyle();
-        BuildUi(uiManager);
+        BuildUi();
         _uiBuilt = true;
         return true;
     }
 
-    private static void EnsurePanelEventCanvas(
-        GameObject panel,
+    private static void EnsureLayerRaycaster(
+        RectTransform layer,
         UIManager uiManager)
     {
-        Canvas canvas = panel.GetComponent<Canvas>();
-        canvas ??= panel.AddComponent<Canvas>();
+        Canvas canvas = layer.GetComponentInParent<Canvas>();
 
-        canvas.enabled = true;
-        canvas.overrideSorting = false;
-        canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1
-            | AdditionalCanvasShaderChannels.TexCoord2
-            | AdditionalCanvasShaderChannels.Normal
-            | AdditionalCanvasShaderChannels.Tangent;
+        if (canvas is null)
+        {
+            Log.Warning(
+                "chat window cannot attach raycaster because no parent canvas was found",
+                new
+                {
+                    layer = layer.name,
+                });
+            return;
+        }
 
-        ConchShipGraphicRaycaster raycaster = panel.GetComponent<ConchShipGraphicRaycaster>();
-        raycaster ??= panel.AddComponent<ConchShipGraphicRaycaster>();
+        ConchShipGraphicRaycaster raycaster = canvas.GetComponent<ConchShipGraphicRaycaster>();
+        raycaster ??= canvas.gameObject.AddComponent<ConchShipGraphicRaycaster>();
 
         raycaster.enabled = true;
         raycaster.TargetCamera = uiManager.UiCamera;
@@ -519,6 +522,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
                 activeSelf,
                 activeInHierarchy,
                 parent = transform.parent?.name,
+                canvas = _panelRect?.GetComponentInParent<Canvas>()?.name,
                 panelWidth = _panelRect?.rect.width ?? 0f,
                 panelHeight = _panelRect?.rect.height ?? 0f,
                 panelX = _panelRect?.anchoredPosition.x ?? 0f,
