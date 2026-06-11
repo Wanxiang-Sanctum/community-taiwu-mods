@@ -60,6 +60,10 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 切换 Codex CLI 和 Claude Code 时不需要维护两套路径字段；CLI 入口留空时会按当前选择使用默认
 命令。相对工作目录会解析到相枢 Mod 目录下，默认是 `AgentWorkspace`。
 
+这些配置是运行时启动参数。前端插件和后端插件只在初始化时读取一次；在游戏内修改设置后，需要重启游戏
+才会重建 IPC endpoint、manifest 路径、MCP sidecar 和本机 Agent 会话。运行中的对话不会尝试热切换
+工作目录或 CLI 适配器。
+
 默认包内会预置 `AgentWorkspace/AGENTS.md`，作为相枢的默认本机 Agent 工作区配置和自定义示范；
 `AgentWorkspace/CLAUDE.md` 只负责让 Claude Code 转向同目录的 `AGENTS.md`。用户可以在这个工作区
 维护自己的人设、指令、设置和 Agent 技能；配置到其它工作目录时，该目录由用户自行维护。
@@ -68,11 +72,11 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 本批玩家消息和请求输出说话人。前端捕获 CLI 返回的外部会话 id，并在后续批次中恢复同一个本机 Agent
 会话。
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest 和 MCP 诊断日志，后续再承载
-聊天会话文件；游戏内仍不增加会话管理界面。
+`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest 和 MCP 诊断日志，并为后续聊天
+会话文件预留位置；游戏内仍不增加会话管理界面。
 
-这些设置同时服务聊天调用和工具链诊断。聊天调用会读取当前配置，等待相枢 MCP sidecar endpoint 注册，
-然后把当前对话批次交给所选 CLI Agent。
+聊天调用和工具链诊断都使用本次启动时加载的配置。聊天调用会等待相枢 MCP sidecar endpoint 注册，然后
+把当前对话批次交给所选 CLI Agent。
 
 ## 日志边界
 
@@ -94,7 +98,8 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 主菜单、系统设置、弹窗、剧情和其他阻塞热键的界面不作为有效测试场景。按下热键后，前端会打开或关闭
 相枢聊天窗口；窗口打开时同一热键仍可用于关闭。
 
-玩家送出消息后，前端会读取当前 Agent 配置，等待相枢 MCP sidecar endpoint 注册，然后启动所选 CLI：
+玩家送出消息后，前端会使用启动时加载的 Agent 配置，等待相枢 MCP sidecar endpoint 注册，然后启动所选
+CLI：
 
 - Codex CLI：通过 `codex exec` 注入 `mcp_servers.xiangshu.url`，结构化回合输入走 stdin，并用
   `--output-schema` 约束最终回复。

@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
@@ -14,6 +16,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const string HeaderIconSprite = "map_icon_xiangshu";
     private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
     private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
+    private const float PanelPreferredWidth = 620f;
+    private const float PanelPreferredHeight = 720f;
+    private const float PanelMinimumWidth = 460f;
+    private const float PanelMinimumHeight = 520f;
+    private const float PanelMargin = 32f;
+    private const int PanelSortingOrder = 30000;
 
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -33,6 +41,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static TMP_SpriteAsset? s_gameSpriteAsset;
 
     private AgentChatSession? _session;
+    private RectTransform? _panelRect;
     private RectTransform? _messageContent;
     private ScrollRect? _scrollRect;
     private DisableHotkeyInputField? _inputField;
@@ -77,8 +86,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         transform.SetAsLastSibling();
         DrainSessionEvents();
         _scrollToBottom = true;
-        _inputField?.Select();
-        _inputField?.ActivateInputField();
+        FocusInputField();
     }
 
     public void DestroyWindow()
@@ -125,6 +133,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Justification = "Unity invokes LateUpdate by method name.")]
     private void LateUpdate()
     {
+        ApplyPanelLayout();
+
         if (!_scrollToBottom || _scrollRect is null)
         {
             return;
@@ -169,7 +179,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _inputField.SetTextWithoutNotify(string.Empty);
         _session.SubmitUserMessage(content);
         UpdateSendButtonState();
-        _inputField.ActivateInputField();
+        FocusInputField();
     }
 
     private void UpdateSendButtonState()
@@ -264,12 +274,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         StretchToParent(rootRect);
 
         GameObject panel = CreateChild("Panel", transform);
-        RectTransform panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(1f, 0.5f);
-        panelRect.anchorMax = new Vector2(1f, 0.5f);
-        panelRect.pivot = new Vector2(1f, 0.5f);
-        panelRect.anchoredPosition = new Vector2(-32f, 0f);
-        panelRect.sizeDelta = new Vector2(620f, 720f);
+        _panelRect = panel.GetComponent<RectTransform>();
+        _panelRect.anchorMin = new Vector2(1f, 0.5f);
+        _panelRect.anchorMax = new Vector2(1f, 0.5f);
+        _panelRect.pivot = new Vector2(1f, 0.5f);
+        ApplyPanelLayout();
         _ = AddImage(panel, PanelColor);
 
         GameObject edge = CreateChild("Edge", panel.transform);
@@ -465,10 +474,100 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         transform.SetParent(layer, worldPositionStays: false);
         transform.SetAsLastSibling();
+        EnsureInteractiveCanvas(uiManager);
         CaptureGameTextStyle();
         BuildUi();
         _uiBuilt = true;
         return true;
+    }
+
+    private void EnsureInteractiveCanvas(UIManager uiManager)
+    {
+        Canvas canvas = gameObject.GetComponent<Canvas>();
+        canvas ??= gameObject.AddComponent<Canvas>();
+
+        canvas.enabled = true;
+        canvas.overrideSorting = true;
+        canvas.sortingLayerName = "UI";
+        canvas.sortingOrder = PanelSortingOrder;
+        canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1
+            | AdditionalCanvasShaderChannels.TexCoord2
+            | AdditionalCanvasShaderChannels.Normal
+            | AdditionalCanvasShaderChannels.Tangent;
+
+        ConchShipGraphicRaycaster raycaster = gameObject.GetComponent<ConchShipGraphicRaycaster>();
+        raycaster ??= gameObject.AddComponent<ConchShipGraphicRaycaster>();
+
+        raycaster.enabled = true;
+        raycaster.TargetCamera = uiManager.UiCamera;
+    }
+
+    private void ApplyPanelLayout()
+    {
+        if (_panelRect is null)
+        {
+            return;
+        }
+
+        Vector2 parentSize = transform is RectTransform rootRect
+            ? rootRect.rect.size
+            : Vector2.zero;
+        float width = GetResponsiveSize(
+            parentSize.x,
+            PanelPreferredWidth,
+            PanelMinimumWidth);
+        float height = GetResponsiveSize(
+            parentSize.y,
+            PanelPreferredHeight,
+            PanelMinimumHeight);
+        float margin = Mathf.Min(PanelMargin, Mathf.Max(12f, parentSize.x * 0.025f));
+
+        _panelRect.anchoredPosition = new Vector2(-margin, 0f);
+        _panelRect.sizeDelta = new Vector2(width, height);
+    }
+
+    private static float GetResponsiveSize(
+        float availableSize,
+        float preferredSize,
+        float minimumSize)
+    {
+        if (availableSize <= 0f)
+        {
+            return preferredSize;
+        }
+
+        float maximumSize = Mathf.Max(minimumSize, availableSize - (PanelMargin * 2f));
+        return Mathf.Clamp(preferredSize, minimumSize, maximumSize);
+    }
+
+    private void FocusInputField()
+    {
+        DisableHotkeyInputField? inputField = _inputField;
+        if (inputField?.gameObject.activeInHierarchy != true)
+        {
+            return;
+        }
+
+        EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
+
+        inputField.Select();
+        inputField.ActivateInputField();
+        _ = StartCoroutine(FocusInputFieldAtEndOfFrame());
+    }
+
+    private IEnumerator FocusInputFieldAtEndOfFrame()
+    {
+        yield return null;
+
+        DisableHotkeyInputField? inputField = _inputField;
+        if (!IsVisible || inputField?.gameObject.activeInHierarchy != true)
+        {
+            yield break;
+        }
+
+        EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
+
+        inputField.ActivateInputField();
     }
 
     private static GameObject CreateChild(

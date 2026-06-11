@@ -62,10 +62,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     public override void OnModSettingUpdate()
     {
-        CurrentAgentSettings = AgentSettings.Load(ModIdStr);
-        IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
-        StartFrontendIpcServer();
-        StartMcpServer(CurrentAgentSettings);
+        Log.Info("frontend settings updated; restart the game to apply Wanxiang.Xiangshu runtime settings.");
     }
 
     public override void Dispose()

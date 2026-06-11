@@ -13,5 +13,9 @@
 只接收自己的 turn DTO，不依赖聊天 UI 或会话模型。新增前端能力时优先放入既有职责目录；只有出现新的
 运行职责时才新增同级目录。
 
+本机 Agent 配置读取入口是 `Agent/AgentSettings.cs`，但调用时机由 `FrontendPlugin.cs` 控制：初始化时
+读取一次并注入运行时对象。其它子模块不直接读取 Mod 设置，也不在 `OnModSettingUpdate` 路径中热切换
+工作目录、CLI 适配器、IPC manifest 或 MCP sidecar。设置修改后由游戏重启重建前端运行时。
+
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
 前端项目内不新增本地日志包装层。

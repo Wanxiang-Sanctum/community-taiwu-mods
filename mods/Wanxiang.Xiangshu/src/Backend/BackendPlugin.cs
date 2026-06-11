@@ -34,7 +34,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
     public override void OnModSettingUpdate()
     {
-        StartIpcServer();
+        Log.Info("backend settings updated; restart the game to apply Wanxiang.Xiangshu runtime settings.");
     }
 
     public override void Dispose()

@@ -13,6 +13,8 @@ internal sealed class McpSidecarProcess(
 
     private const string ProcessExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
 
+    private const int ProcessExitWaitTimeoutMilliseconds = 5000;
+
     private Process? _process;
     private bool _disposed;
 
@@ -87,6 +89,7 @@ internal sealed class McpSidecarProcess(
             if (!process.HasExited)
             {
                 process.Kill();
+                _ = process.WaitForExit(ProcessExitWaitTimeoutMilliseconds);
             }
 
             process.Dispose();
