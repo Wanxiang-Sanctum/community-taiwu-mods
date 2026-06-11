@@ -4,6 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <TaiwuModMergeDependency Include="Wanxiang.Taiwu.Logging.dll" />
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
   </ItemGroup>
 

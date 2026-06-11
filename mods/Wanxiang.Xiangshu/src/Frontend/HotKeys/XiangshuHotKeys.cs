@@ -1,13 +1,15 @@
 using Game.Views.Bottom;
 using HarmonyLib;
 using UnityEngine;
-using Wanxiang.Xiangshu.Frontend.Logging;
+using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.HotKeys;
 
 internal static class XiangshuHotKeys
 {
     private const byte ToggleChatCommandId = 101;
+
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     internal static readonly HotKeyCommand ToggleChat = new(
         ToggleChatCommandId,
@@ -26,8 +28,13 @@ internal static class XiangshuHotKeys
 
         if (kit.GroupCommand.Any(command => command.Id == ToggleChatCommandId))
         {
-            XiangshuFrontendLog.Warning(
-                $"cannot register chat hotkey in MapCommandKit because command id {ToggleChatCommandId} is already used. The default Ctrl+Backslash chat hotkey will still be checked directly.");
+            Log.Warning(
+                "cannot register chat hotkey in MapCommandKit because command id is already used",
+                new
+                {
+                    commandId = ToggleChatCommandId,
+                    fallbackHotkey = "Ctrl+Backslash",
+                });
             return;
         }
 
@@ -37,7 +44,12 @@ internal static class XiangshuHotKeys
             ToggleChat,
         ];
         CommandKitBase.Init();
-        XiangshuFrontendLog.Info("chat hotkey registered: Ctrl+Backslash.");
+        Log.Info(
+            "chat hotkey registered",
+            new
+            {
+                hotkey = "Ctrl+Backslash",
+            });
     }
 
     public static void PatchViewBottomUpdate(Harmony harmony)
@@ -50,6 +62,8 @@ internal static class XiangshuHotKeys
 
 internal static class FrontendHotkeyBridge
 {
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
+
     private static FrontendPlugin? s_plugin;
     private static int s_lastHandledFrame = -1;
 
@@ -103,7 +117,12 @@ internal static class FrontendHotkeyBridge
             }
 
             s_lastHandledFrame = Time.frameCount;
-            XiangshuFrontendLog.Info("chat hotkey accepted.");
+            Log.Info(
+                "chat hotkey accepted",
+                new
+                {
+                    frame = Time.frameCount,
+                });
             plugin.ToggleChatWindow();
         }
     }

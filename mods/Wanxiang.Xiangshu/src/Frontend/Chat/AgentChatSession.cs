@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
-using Wanxiang.Xiangshu.Frontend.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -14,6 +14,8 @@ internal sealed class AgentChatSession(
     Func<AgentSettings?> settingsProvider) : IDisposable
 {
     private const string FailureMessage = "此刻诸机不应，稍后再问。";
+
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private readonly AgentCliLauncher _agentCliLauncher = agentCliLauncher;
     private readonly Func<AgentSettings?> _settingsProvider = settingsProvider;
@@ -126,7 +128,7 @@ internal sealed class AgentChatSession(
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    XiangshuFrontendLog.Error("chat agent invocation failed: " + ex);
+                    Log.Error(ex, "chat agent invocation failed");
                     AddAssistantSessionMessage(FailureMessage);
                 }
             }

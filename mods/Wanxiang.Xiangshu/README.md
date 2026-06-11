@@ -64,10 +64,13 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 
 ## 日志边界
 
-前端插件和后端插件的运行信息进入游戏日志系统；相枢不在游戏进程内另建一套持久化日志文件。聊天 CLI
-调用的标准输出和标准错误由前端内存捕获，并只把摘要和错误写入游戏日志；Codex `--output-last-message`
-和 Claude `--mcp-config` 使用临时协议文件，调用结束后删除。MCP server 是游戏外独立进程，保留自己的
-事件日志目录作为开发观察入口。这些日志不改变 CLI 的权限策略。
+游戏进程内的运行信息只进入太吾游戏日志系统；相枢前端和后端插件不另建持久化日志文件。聊天 CLI 调用的
+标准输出和标准错误由前端在内存中捕获，只有摘要和错误进入游戏日志。Codex `--output-last-message`
+和 Claude `--mcp-config` 使用临时协议文件，调用结束后删除。
+
+前端插件和后端插件统一通过 `shared/Wanxiang.Taiwu.Logging` 记录结构化上下文。共享库把上下文序列化为
+单行紧凑 JSON，并交给游戏日志系统；它不接管 MCP server 的独立进程日志。MCP server 是游戏外独立
+进程，保留自己的事件日志目录作为开发观察入口。日志记录不改变 CLI 的权限策略。
 
 ## 聊天热键
 
@@ -123,8 +126,8 @@ IPC contract、manifest 注册和本机 endpoint 辅助类库。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：相枢设计说明；当前包含相枢对话体验和本机 Agent 内部设计。
 - `src/Frontend/`：前端插件项目；根目录保留插件生命周期组合根，`Agent/`、`Chat/`、`HotKeys/`、
-  `Ipc/`、`Sidecar/` 和 `Logging/` 分别承载本机 Agent 调用、聊天会话与窗口、热键、前端 IPC、
-  MCP sidecar 进程生命周期和游戏日志适配。
+  `Ipc/` 和 `Sidecar/` 分别承载本机 Agent 调用、聊天会话与窗口、热键、前端 IPC 和 MCP sidecar
+  进程生命周期。
 - `src/Backend/`：后端插件项目；当前启动后端 MessagePipe IPC endpoint。
 - `src/Ipc/`：Wanxiang.Xiangshu IPC contract、manifest 注册和本机 endpoint 辅助类库。
 - `src/McpServer/`：游戏外 MCP sidecar；当前通过 MCP 工具调用前后端 IPC ping。

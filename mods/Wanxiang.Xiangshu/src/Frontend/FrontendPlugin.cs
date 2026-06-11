@@ -2,11 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
-using Wanxiang.Xiangshu.Frontend.Logging;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -19,6 +19,8 @@ namespace Wanxiang.Xiangshu.Frontend;
 [PluginConfig("Wanxiang.Xiangshu.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
+
     private FrontendIpcServer? _ipcServer;
     private McpSidecarProcess? _mcpServerProcess;
     private AgentCliLauncher? _agentCliLauncher;
@@ -38,20 +40,31 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             IpcEndpointRegistry.ConfigureForModDirectory(CurrentAgentSettings.ModDirectory);
             _ipcServer = new FrontendIpcServer();
             IpcEndpoint endpoint = _ipcServer.Start();
-            LogInfo(
-                $"frontend IPC listening at {IpcRuntime.FormatEndpointAddress(endpoint)}; pid={endpoint.ProcessId}; manifest={IpcEndpointRegistry.ManifestPath}.");
+            Log.Info(
+                "frontend IPC listening",
+                new
+                {
+                    endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
+                    processId = endpoint.ProcessId,
+                    manifest = IpcEndpointRegistry.ManifestPath,
+                });
             _agentCliLauncher = new AgentCliLauncher();
             _chatSession = new AgentChatSession(_agentCliLauncher, () => CurrentAgentSettings);
             _chatWindow = XiangshuChatWindow.Create(_chatSession);
             InstallChatHotkey();
 
             StartMcpServer(CurrentAgentSettings);
-            LogInfo(
-                $"frontend plugin initialized; adapter={CurrentAgentSettings.Adapter}; workingDirectory={CurrentAgentSettings.WorkingDirectory}.");
+            Log.Info(
+                "frontend plugin initialized",
+                new
+                {
+                    adapter = CurrentAgentSettings.Adapter,
+                    workingDirectory = CurrentAgentSettings.WorkingDirectory,
+                });
         }
         catch (Exception ex)
         {
-            XiangshuFrontendLog.Error("frontend plugin initialization failed: " + ex);
+            Log.Error(ex, "frontend plugin initialization failed");
             throw;
         }
     }
@@ -90,8 +103,14 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         try
         {
             McpSidecarStartResult result = _mcpServerProcess.Start();
-            LogInfo(
-                $"MCP sidecar started; pid={result.ProcessId}; logs={result.LogDirectory}; eventLog={result.EventLogPath}.");
+            Log.Info(
+                "MCP sidecar started",
+                new
+                {
+                    processId = result.ProcessId,
+                    logDirectory = result.LogDirectory,
+                    eventLog = result.EventLogPath,
+                });
         }
         catch (Exception ex) when (ex is FileNotFoundException
             or Win32Exception
@@ -101,7 +120,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             _mcpServerProcess.Dispose();
             _mcpServerProcess = null;
-            XiangshuFrontendLog.Error("MCP sidecar failed to start: " + ex);
+            Log.Error(ex, "MCP sidecar failed to start");
         }
     }
 
@@ -111,7 +130,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         FrontendHotkeyBridge.Attach(this);
         _harmony = new Harmony("Wanxiang.Xiangshu.Frontend");
         XiangshuHotKeys.PatchViewBottomUpdate(_harmony);
-        LogInfo("frontend ViewBottom chat hotkey patch installed.");
+        Log.Info("frontend ViewBottom chat hotkey patch installed");
     }
 
     internal void ToggleChatWindow()
@@ -134,11 +153,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         }
 
         (bool _, string message) = _agentCliLauncher.TryStartDiagnostic(settings);
-        LogInfo(message);
-    }
-
-    private static void LogInfo(string message)
-    {
-        XiangshuFrontendLog.Info(message);
+        Log.Info(message);
     }
 }

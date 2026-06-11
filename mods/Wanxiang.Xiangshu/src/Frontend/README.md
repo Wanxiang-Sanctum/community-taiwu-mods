@@ -8,8 +8,10 @@
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint。
 - `Sidecar/`：MCP server 进程生命周期。MCP server 自己负责独立进程日志。
-- `Logging/`：前端插件代码到太吾游戏日志系统的适配层。
 
 依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 可以调用 `Agent/` 投递一个对话批次；`Agent/`
 只接收自己的 turn DTO，不依赖聊天 UI 或会话模型。新增前端能力时优先放入既有职责目录；只有出现新的
 运行职责时才新增同级目录。
+
+前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
+前端项目内不新增本地日志包装层。

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Wanxiang.Xiangshu.Frontend.Logging;
+using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
@@ -14,6 +14,8 @@ internal sealed class AgentCliLauncher : IDisposable
         "Use the xiangshu MCP server now. Call the tool xiangshu_check_toolchain, then summarize whether the toolchain is ready and report the frontend, backend, and mcp-server status.";
 
     private static readonly TimeSpan McpEndpointWaitTimeout = TimeSpan.FromSeconds(10);
+
+    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private readonly object _syncRoot = new();
 
@@ -161,7 +163,7 @@ internal sealed class AgentCliLauncher : IDisposable
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            XiangshuFrontendLog.Error("agent diagnostic failed: " + ex);
+            Log.Error(ex, "agent diagnostic failed");
         }
         finally
         {
@@ -407,18 +409,25 @@ internal sealed class AgentCliLauncher : IDisposable
     {
         if (exitCode == 0)
         {
-            XiangshuFrontendLog.Info(
-                $"agent invocation completed; adapter={adapter}; stdoutLength={stdout.Length.ToString(CultureInfo.InvariantCulture)}; stderrLength={stderr.Length.ToString(CultureInfo.InvariantCulture)}.");
+            Log.Info(
+                "agent invocation completed",
+                new
+                {
+                    adapter,
+                    stdoutLength = stdout.Length,
+                    stderrLength = stderr.Length,
+                });
             return;
         }
 
-        XiangshuFrontendLog.Error(
-            "agent invocation failed; adapter="
-            + adapter
-            + "; exitCode="
-            + exitCode.ToString(CultureInfo.InvariantCulture)
-            + "; stderr="
-            + TrimForException(stderr));
+        Log.Error(
+            "agent invocation failed",
+            new
+            {
+                adapter,
+                exitCode,
+                stderr = TrimForException(stderr),
+            });
     }
 
     private static bool TryExtractClaudeResult(
