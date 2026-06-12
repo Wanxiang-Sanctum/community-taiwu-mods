@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Cysharp.Threading.Tasks;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
 
@@ -34,6 +35,7 @@ internal sealed class AgentChatSession(
     private int _nextBatchId;
     private bool _working;
     private bool _disposed;
+    private bool _cancellationDisposed;
     private string? _externalSessionId;
 
     public void SubmitUserMessage(
@@ -76,46 +78,57 @@ internal sealed class AgentChatSession(
 
     public void Dispose()
     {
-        if (_disposed)
+        bool disposeCancellation;
+
+        lock (_syncRoot)
         {
-            return;
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            disposeCancellation = !_working;
         }
 
-        _disposed = true;
         _cancellation.Cancel();
-        _cancellation.Dispose();
+
+        if (disposeCancellation)
+        {
+            DisposeCancellation();
+        }
     }
 
     private void StartProcessingIfNeeded()
     {
         lock (_syncRoot)
         {
-            if (_working || _pendingMessages.Count == 0)
+            if (_disposed || _working || _pendingMessages.Count == 0)
             {
                 return;
             }
 
             _working = true;
+            _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: true));
         }
 
-        _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: true));
-#pragma warning disable CA2025
-        _ = Task.Run(ProcessPendingMessagesAsync);
-#pragma warning restore CA2025
+        ProcessPendingMessagesAsync(_cancellation.Token).Forget(
+            static ex => Log.Error(ex, "chat session processing failed"));
     }
 
-    private async Task ProcessPendingMessagesAsync()
+    private async UniTask ProcessPendingMessagesAsync(CancellationToken cancellationToken)
     {
         try
         {
-            while (!_cancellation.IsCancellationRequested)
+            await UniTask.SwitchToThreadPool();
+
+            while (!cancellationToken.IsCancellationRequested)
             {
                 AgentSettings? settings = _settingsProvider();
-                AgentChatTurn? turn = CreateNextTurn();
+                AgentChatTurn? turn = CreateNextTurnOrStop();
 
                 if (turn is null)
                 {
-                    FinishProcessing();
                     return;
                 }
 
@@ -130,7 +143,7 @@ internal sealed class AgentChatSession(
                     AgentCliInvocationResult result = await _agentCliLauncher.InvokeChatAsync(
                             settings,
                             turn,
-                            _cancellation.Token);
+                            cancellationToken);
                     _externalSessionId = result.ExternalSessionId ?? _externalSessionId;
                     AddAssistantMessage(result.AssistantMessage, "agent", turn.BatchId);
                 }
@@ -141,17 +154,22 @@ internal sealed class AgentChatSession(
                 }
             }
         }
-        catch (OperationCanceledException) when (_cancellation.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+        }
+        finally
+        {
+            StopProcessing();
         }
     }
 
-    private AgentChatTurn? CreateNextTurn()
+    private AgentChatTurn? CreateNextTurnOrStop()
     {
         lock (_syncRoot)
         {
             if (_pendingMessages.Count == 0)
             {
+                _ = StopProcessingLocked();
                 return null;
             }
 
@@ -175,14 +193,51 @@ internal sealed class AgentChatSession(
         }
     }
 
-    private void FinishProcessing()
+    private void StopProcessing()
+    {
+        bool disposeCancellation;
+
+        lock (_syncRoot)
+        {
+            disposeCancellation = StopProcessingLocked();
+        }
+
+        if (disposeCancellation)
+        {
+            DisposeCancellation();
+        }
+    }
+
+    private bool StopProcessingLocked()
+    {
+        if (!_working)
+        {
+            return _disposed && !_cancellationDisposed;
+        }
+
+        _working = false;
+
+        if (!_disposed)
+        {
+            _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: false));
+        }
+
+        return _disposed && !_cancellationDisposed;
+    }
+
+    private void DisposeCancellation()
     {
         lock (_syncRoot)
         {
-            _working = false;
+            if (_cancellationDisposed)
+            {
+                return;
+            }
+
+            _cancellationDisposed = true;
         }
 
-        _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: false));
+        _cancellation.Dispose();
     }
 
     private void AddAssistantMessage(

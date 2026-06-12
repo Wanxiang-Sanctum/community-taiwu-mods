@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Wanxiang.Taiwu.Logging;
@@ -57,9 +58,8 @@ internal sealed class AgentCliLauncher : IDisposable
             CancellationTokenSource invocationCancellation = cancellation;
             cancellation = null;
 
-#pragma warning disable CA2025
-            _ = Task.Run(() => RunDiagnosticAsync(settings, invocationCancellation));
-#pragma warning restore CA2025
+            RunDiagnosticAsync(settings, invocationCancellation).Forget(
+                static ex => Log.Error(ex, "agent diagnostic failed"));
 
             return (
                 Started: true,
@@ -71,7 +71,7 @@ internal sealed class AgentCliLauncher : IDisposable
         }
     }
 
-    public async Task<AgentCliInvocationResult> InvokeChatAsync(
+    public async UniTask<AgentCliInvocationResult> InvokeChatAsync(
         AgentSettings settings,
         AgentChatTurn turn,
         CancellationToken cancellationToken)
@@ -79,6 +79,7 @@ internal sealed class AgentCliLauncher : IDisposable
         ThrowIfDisposed();
 
         CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        CancellationToken invocationToken = cancellation.Token;
 
         if (!TryBeginInvocation(cancellation, out string? busyMessage))
         {
@@ -89,6 +90,9 @@ internal sealed class AgentCliLauncher : IDisposable
 
         try
         {
+            await UniTask.SwitchToThreadPool();
+            invocationToken.ThrowIfCancellationRequested();
+
             string agentInput = AgentChatTurnInputBuilder.Build(turn);
             using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
             AgentProcessResult result = await RunInvocationAsync(
@@ -97,7 +101,7 @@ internal sealed class AgentCliLauncher : IDisposable
                     turn.ExternalSessionId,
                     tempFiles,
                     useChatReplySchema: true,
-                    cancellation.Token);
+                    invocationToken);
 
             if (result.ExitCode != 0)
             {
@@ -130,51 +134,56 @@ internal sealed class AgentCliLauncher : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         CancellationTokenSource? cancellation;
         Process? process;
+        bool invocationOwnsProcess;
 
         lock (_syncRoot)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
             cancellation = _activeInvocationCancellation;
             _activeInvocationCancellation = null;
             process = _process;
             _process = null;
+            invocationOwnsProcess = cancellation is not null;
         }
 
         cancellation?.Cancel();
-        cancellation?.Dispose();
 
         if (process is not null)
         {
             TryKill(process);
-#pragma warning disable CA1508
-            process?.Dispose();
-#pragma warning restore CA1508
+
+            if (!invocationOwnsProcess)
+            {
+                process.Dispose();
+            }
         }
     }
 
-    private async Task RunDiagnosticAsync(
+    private async UniTask RunDiagnosticAsync(
         AgentSettings settings,
         CancellationTokenSource cancellation)
     {
-        using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
+        CancellationToken cancellationToken = cancellation.Token;
+        await UniTask.SwitchToThreadPool();
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
+            using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
             _ = await RunInvocationAsync(
                     settings,
                     DiagnosticInput,
                     externalSessionId: null,
                     tempFiles,
                     useChatReplySchema: false,
-                    cancellation.Token);
+                    cancellationToken);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -189,7 +198,7 @@ internal sealed class AgentCliLauncher : IDisposable
         }
     }
 
-    private async Task<AgentProcessResult> RunInvocationAsync(
+    private async UniTask<AgentProcessResult> RunInvocationAsync(
         AgentSettings settings,
         string agentInput,
         string? externalSessionId,
@@ -214,7 +223,7 @@ internal sealed class AgentCliLauncher : IDisposable
             process = new Process
             {
                 StartInfo = startInfo,
-                EnableRaisingEvents = false,
+                EnableRaisingEvents = true,
             };
 
             if (!process.Start())
@@ -236,7 +245,7 @@ internal sealed class AgentCliLauncher : IDisposable
             Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
             Task<string> stderrTask = process.StandardError.ReadToEndAsync();
 
-            await Task.Run(process.WaitForExit, cancellationToken);
+            await WaitForExitAsync(process, cancellationToken);
             string stdout = await stdoutTask;
             string stderr = await stderrTask;
 
@@ -389,6 +398,8 @@ internal sealed class AgentCliLauncher : IDisposable
     {
         lock (_syncRoot)
         {
+            ThrowIfDisposedLocked();
+
             if (_activeInvocationCancellation is not null || _process?.HasExited == false)
             {
                 busyMessage = "Wanxiang.Xiangshu agent invocation is already running.";
@@ -416,7 +427,7 @@ internal sealed class AgentCliLauncher : IDisposable
         cancellation.Dispose();
     }
 
-    private static async Task<IpcEndpoint> WaitForMcpEndpointAsync(CancellationToken cancellationToken)
+    private static async UniTask<IpcEndpoint> WaitForMcpEndpointAsync(CancellationToken cancellationToken)
     {
         DateTimeOffset deadline = DateTimeOffset.UtcNow + McpEndpointDiscoveryWindow;
 
@@ -429,10 +440,48 @@ internal sealed class AgentCliLauncher : IDisposable
                 return endpoint;
             }
 
-            await Task.Delay(McpEndpointPollInterval, cancellationToken);
+            await UniTask.Delay(McpEndpointPollInterval, cancellationToken: cancellationToken);
         }
 
         throw new InvalidOperationException("No live Wanxiang.Xiangshu MCP endpoint was found.");
+    }
+
+    private static async UniTask WaitForExitAsync(
+        Process process,
+        CancellationToken cancellationToken)
+    {
+        if (process.HasExited)
+        {
+            return;
+        }
+
+        UniTaskCompletionSource completionSource = new();
+
+        void OnExited(object? sender, EventArgs args)
+        {
+            _ = sender;
+            _ = args;
+            _ = completionSource.TrySetResult();
+        }
+
+        process.Exited += OnExited;
+
+        try
+        {
+            if (process.HasExited)
+            {
+                return;
+            }
+
+            await using CancellationTokenRegistration registration = cancellationToken.Register(
+                static state => ((UniTaskCompletionSource)state).TrySetCanceled(),
+                completionSource);
+            await completionSource.Task;
+        }
+        finally
+        {
+            process.Exited -= OnExited;
+        }
     }
 
     private static string BuildMcpUrl(IpcEndpoint endpoint)
@@ -661,6 +710,14 @@ internal sealed class AgentCliLauncher : IDisposable
     }
 
     private void ThrowIfDisposed()
+    {
+        lock (_syncRoot)
+        {
+            ThrowIfDisposedLocked();
+        }
+    }
+
+    private void ThrowIfDisposedLocked()
     {
         if (_disposed)
         {

@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -58,7 +58,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private readonly List<LayoutElement> _messageBubbleLayouts = [];
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
     private bool _uiBuilt;
-    private bool _scrollToBottom;
+    private bool _scrollToBottomScheduled;
     private float _lastMessageBubbleWidth = PreferredMessageBubbleWidth;
 
     public bool IsVisible { get; private set; }
@@ -99,7 +99,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         transform.SetAsLastSibling();
         _participants?.Refresh();
         DrainSessionEvents();
-        _scrollToBottom = true;
+        ScheduleScrollToBottom();
         FocusInputField();
     }
 
@@ -177,15 +177,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void LateUpdate()
     {
         ApplyPanelLayout();
-
-        if (!_scrollToBottom || _scrollRect is null)
-        {
-            return;
-        }
-
-        Canvas.ForceUpdateCanvases();
-        _scrollRect.verticalNormalizedPosition = 0f;
-        _scrollToBottom = false;
     }
 
     private void DrainSessionEvents()
@@ -320,7 +311,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         body.text = message.Content;
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_messageContent);
-        _scrollToBottom = true;
+        ScheduleScrollToBottom();
     }
 
     private void UpdatePlayerSpeakerLabels()
@@ -748,23 +739,69 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         inputField.Select();
         inputField.ActivateInputField();
-        _ = StartCoroutine(RefocusInputNextFrame());
+        RefocusInputNextFrameAsync(WindowLifetimeToken).Forget(
+            static ex => Log.Error(ex, "chat input refocus failed"));
     }
 
-    private IEnumerator RefocusInputNextFrame()
+    private async UniTask RefocusInputNextFrameAsync(CancellationToken cancellationToken)
     {
-        yield return null;
+        try
+        {
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
 
         DisableHotkeyInputField? inputField = _inputField;
         if (!IsVisible || inputField?.gameObject.activeInHierarchy != true)
         {
-            yield break;
+            return;
         }
 
         EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
 
         inputField.ActivateInputField();
     }
+
+    private void ScheduleScrollToBottom()
+    {
+        if (_scrollToBottomScheduled)
+        {
+            return;
+        }
+
+        _scrollToBottomScheduled = true;
+        ScrollToBottomNextFrameAsync(WindowLifetimeToken).Forget(
+            static ex => Log.Error(ex, "chat scroll-to-bottom failed"));
+    }
+
+    private async UniTask ScrollToBottomNextFrameAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        finally
+        {
+            _scrollToBottomScheduled = false;
+        }
+
+        if (!IsVisible || _scrollRect is null)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        _scrollRect.verticalNormalizedPosition = 0f;
+    }
+
+    private CancellationToken WindowLifetimeToken => this.GetCancellationTokenOnDestroy();
 
     private static GameObject CreateChild(
         string name,

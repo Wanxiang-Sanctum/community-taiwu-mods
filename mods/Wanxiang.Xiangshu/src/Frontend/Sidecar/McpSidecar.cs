@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using Wanxiang.Xiangshu.Ipc;
@@ -12,8 +13,6 @@ internal sealed class McpSidecar(
     private const string McpServerBundleName = "Wanxiang.Xiangshu.McpServer";
 
     private const string McpServerExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
-
-    private static readonly TimeSpan PostKillExitWait = TimeSpan.FromSeconds(5);
 
     private Process? _process;
     private bool _disposed;
@@ -86,13 +85,25 @@ internal sealed class McpSidecar(
 
         if (process is not null)
         {
+            TryKill(process);
+            process.Dispose();
+        }
+    }
+
+    private static void TryKill(Process process)
+    {
+        try
+        {
             if (!process.HasExited)
             {
                 process.Kill();
-                _ = process.WaitForExit((int)PostKillExitWait.TotalMilliseconds);
             }
-
-            process.Dispose();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (Win32Exception)
+        {
         }
     }
 
