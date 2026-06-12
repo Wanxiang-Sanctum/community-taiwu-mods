@@ -7,11 +7,12 @@ using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
+using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
-internal sealed class FrontendIpcServer : IDisposable
+internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -102,7 +103,7 @@ internal sealed class FrontendIpcServer : IDisposable
         }
     }
 
-    private static void ConfigureContainer(IContainerBuilder builder, int port)
+    private void ConfigureContainer(IContainerBuilder builder, int port)
     {
         MessagePipeOptions options = builder.RegisterMessagePipe(
             options =>
@@ -110,7 +111,13 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
+        _ = builder.RegisterInstance(chatSession);
         _ = builder.RegisterAsyncRequestHandler<IpcPingRequest, IpcPingResponse, FrontendIpcPingHandler>(
+            options);
+        _ = builder.RegisterAsyncRequestHandler<
+            IpcIntermediateReplyRequest,
+            IpcIntermediateReplyResponse,
+            FrontendIntermediateReplyHandler>(
             options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
@@ -124,6 +131,10 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.MessagePackSerializerOptions = StandardResolver.Options;
             });
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            IpcIntermediateReplyRequest,
+            IpcIntermediateReplyResponse>(
             tcpOptions);
     }
 
@@ -152,5 +163,22 @@ internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<IpcPingReque
                 Side = IpcRuntime.FrontendSide,
                 Message = $"frontend pong: {request.Message}",
             });
+    }
+}
+
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "MessagePipe constructs request handlers through DI and reflection.")]
+internal sealed class FrontendIntermediateReplyHandler(AgentChatSession chatSession)
+    : IAsyncRequestHandler<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>
+{
+    public UniTask<IpcIntermediateReplyResponse> InvokeAsync(
+        IpcIntermediateReplyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        chatSession.AddIntermediateReply(request.Content);
+
+        return UniTask.FromResult(new IpcIntermediateReplyResponse());
     }
 }

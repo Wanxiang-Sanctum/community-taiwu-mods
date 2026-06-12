@@ -5,8 +5,7 @@ internal sealed class AgentChatMessage(
     AgentChatRole role,
     string speakerName,
     string content,
-    string origin,
-    string? batchId)
+    string origin)
 {
     public string Id { get; } = id;
 
@@ -17,8 +16,6 @@ internal sealed class AgentChatMessage(
     public string Content { get; } = content;
 
     public string Origin { get; } = origin;
-
-    public string? BatchId { get; set; } = batchId;
 }
 
 internal enum AgentChatRole

@@ -82,9 +82,12 @@ internal static class PluginIpcProxy
             ?? throw new McpException(
                 $"No live Wanxiang.Xiangshu {normalizedSide} IPC endpoint was found. Start the game mod first.");
 
-        IpcPingResponse response = await InvokePingAsync(
+        IpcPingResponse response = await InvokeAsync<IpcPingRequest, IpcPingResponse>(
             endpoint,
-            message,
+            new IpcPingRequest
+            {
+                Message = message,
+            },
             cancellationToken);
         PingResult result = new(DescribeEndpoint(endpoint), response);
 
@@ -93,14 +96,36 @@ internal static class PluginIpcProxy
             XiangshuMcpJsonContext.Default.PingResult);
     }
 
+    public static async Task<string> SendIntermediateReplyAsync(
+        string content,
+        CancellationToken cancellationToken)
+    {
+        IpcEndpoint endpoint =
+            IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendSide)
+            ?? throw new McpException(
+                "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
+
+        _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>(
+            endpoint,
+            new IpcIntermediateReplyRequest
+            {
+                Content = content,
+            },
+            cancellationToken);
+
+        return "Intermediate reply sent.";
+    }
+
     [SuppressMessage(
         "Usage",
         "ASP0000:Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'",
         Justification = "Each tool call needs an isolated MessagePipe client configured for the selected manifest endpoint.")]
-    private static async Task<IpcPingResponse> InvokePingAsync(
+    private static async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         IpcEndpoint endpoint,
-        string message,
+        TRequest request,
         CancellationToken cancellationToken)
+        where TRequest : class
+        where TResponse : class
     {
         ServiceCollection services = new();
         _ = services
@@ -130,8 +155,8 @@ internal static class PluginIpcProxy
                     provider,
                     provider.GetRequiredService<MessagePipeInterprocessTcpOptions>(),
                     provider.GetRequiredService<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>()))
-            .AddSingleton<IRemoteRequestHandler<IpcPingRequest, IpcPingResponse>>(
-                provider => new TcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
+            .AddSingleton<IRemoteRequestHandler<TRequest, TResponse>>(
+                provider => new TcpRemoteRequestHandler<TRequest, TResponse>(
                     provider.GetRequiredService<TcpWorker>()));
 
         ServiceProvider? provider = null;
@@ -139,16 +164,11 @@ internal static class PluginIpcProxy
         try
         {
             provider = services.BuildServiceProvider();
-            IRemoteRequestHandler<IpcPingRequest, IpcPingResponse> handler =
-                provider.GetRequiredService<IRemoteRequestHandler<IpcPingRequest, IpcPingResponse>>();
+            IRemoteRequestHandler<TRequest, TResponse> handler =
+                provider.GetRequiredService<IRemoteRequestHandler<TRequest, TResponse>>();
 
             return await handler
-                .InvokeAsync(
-                    new IpcPingRequest
-                    {
-                        Message = message,
-                    },
-                    cancellationToken);
+                .InvokeAsync(request, cancellationToken);
         }
         finally
         {
@@ -187,9 +207,12 @@ internal static class PluginIpcProxy
 
         try
         {
-            IpcPingResponse response = await InvokePingAsync(
+            IpcPingResponse response = await InvokeAsync<IpcPingRequest, IpcPingResponse>(
                 endpoint,
-                ToolchainCheckMessage,
+                new IpcPingRequest
+                {
+                    Message = ToolchainCheckMessage,
+                },
                 timeout.Token);
 
             return new SideCheckResult(

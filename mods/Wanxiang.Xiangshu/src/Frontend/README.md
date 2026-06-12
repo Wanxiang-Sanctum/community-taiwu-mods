@@ -9,7 +9,7 @@
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint。
 - `Sidecar/`：MCP server 进程生命周期，并把独立进程日志定向到 `XiangshuRuntime/Diagnostics/McpServer/`。
 
-依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 可以调用 `Agent/` 投递一个对话批次；`Agent/`
+依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 可以调用 `Agent/` 投递一个对话轮次；`Agent/`
 只接收自己的 turn DTO，不依赖聊天 UI 或会话模型。新增前端能力时优先放入既有职责目录；只有出现新的
 运行职责时才新增同级目录。
 

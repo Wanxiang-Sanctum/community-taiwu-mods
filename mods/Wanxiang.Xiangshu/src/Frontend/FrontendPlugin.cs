@@ -39,7 +39,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             CurrentAgentSettings = AgentSettings.Load(ModIdStr);
             IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
-            StartFrontendIpcServer();
             _agentCliLauncher = new AgentCliLauncher();
             _chatParticipantIdentity = new ChatParticipantIdentity();
             _chatSession = new AgentChatSession(
@@ -49,6 +48,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
                 CurrentAgentSettings.Adapter,
                 ChatParticipantIdentity.AssistantName);
             _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
+            StartFrontendIpcServer(_chatSession);
             InstallChatHotkey();
 
             StartMcpSidecar(CurrentAgentSettings);
@@ -124,10 +124,10 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         }
     }
 
-    private void StartFrontendIpcServer()
+    private void StartFrontendIpcServer(AgentChatSession chatSession)
     {
         _ipcServer?.Dispose();
-        _ipcServer = new FrontendIpcServer();
+        _ipcServer = new FrontendIpcServer(chatSession);
         IpcEndpoint endpoint = _ipcServer.Start();
         Log.Info(
             "frontend IPC listening",

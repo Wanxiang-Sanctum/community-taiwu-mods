@@ -10,13 +10,13 @@
 - 前端插件能够拉起游戏外 MCP sidecar，并通过 MCP 工具区分前端侧和后端侧 IPC。
 - 太吾 Mod 用户配置能够记录本机 Agent 类型、CLI 入口和工作目录。
 - 进入存档后，前端热键能够打开相枢聊天窗口。
-- 玩家消息能够进入前端投递会话，按批次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
+- 玩家消息能够进入前端投递会话，按轮次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
 - 前端能够把当前可见对话和外部 Agent 会话 id 写入 `XiangshuRuntime/ChatSessions/`，重启后在同一
   Agent 适配器下恢复当前对话窗口记录并继续复用同一个 CLI Agent 会话。
 
-当前聊天窗口仍是运行时生成的最小界面；当前路径只覆盖本机 CLI Agent 对话。MCP 快速答复工具和游戏
-状态修改工具留到后续迭代，外部业务服务对接不属于当前边界。长期上下文由本机 CLI Agent 自己的会话
-系统维护；前端只保存当前可见对话、投递批次编号和外部会话 id。MCP server 不承载主对话协议，只作为
+当前聊天窗口仍是运行时生成的最小界面；当前路径只覆盖本机 CLI Agent 对话。会修改游戏状态的 MCP 工具
+留到后续迭代，外部业务服务对接不属于当前边界。长期上下文由本机 CLI Agent 自己的会话
+系统维护；前端只保存当前可见对话和外部会话 id。MCP server 不承载主对话协议，只作为
 注册给本机 Agent 的相枢工具服务。对话体验和内部协议边界见 `docs/agent-chat.md`。
 
 ## 本机 IPC 与 MCP Sidecar
@@ -56,6 +56,11 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 - `xiangshu_check_toolchain`：检查当前 MCP server 是否已注册，并用 ping 诊断当前前端和后端 IPC 链路。
 - `xiangshu_ping_plugin`：向 `frontend` 或 `backend` endpoint 发送 MessagePipe ping。
 
+当前还暴露一个对话体验工具：
+
+- `xiangshu_send_intermediate_reply`：向当前本地聊天会话发送一条相枢中间答复。工具参数只包含要显示给
+  玩家看的文本。
+
 ## 本机 Agent 配置
 
 太吾 Mod 用户配置提供一个相枢内部 Agent 选择项、一个复用的 CLI 入口字段，以及一个工作目录字段。
@@ -70,15 +75,15 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 `AgentWorkspace/CLAUDE.md` 只负责让 Claude Code 转向同目录的 `AGENTS.md`。用户可以在这个工作区
 维护自己的人设、指令、设置和 Agent 技能；配置到其它工作目录时，该目录由用户自行维护。
 
-相枢运行时代码把每轮对话序列化为 `wanxiang.xiangshu.chat-turn.v1` 结构化回合输入，字段包括参与者、
-本批玩家消息和请求输出说话人；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
-并在后续批次中恢复同一个本机 Agent 会话。
+相枢运行时代码把每轮对话序列化为结构化回合输入，字段包括参与者和
+本轮玩家消息；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
+并在后续轮次中恢复同一个本机 Agent 会话。
 
 `XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP 诊断日志、前端启动本机
 Agent 时使用的短生命周期协议文件，以及当前聊天会话文件；游戏内当前只有聊天入口，没有会话管理界面。
 
 聊天调用和工具链诊断都使用本次启动时加载的配置。聊天调用会等待相枢 MCP sidecar endpoint 注册，然后
-把当前对话批次交给所选 CLI Agent。前端默认按完全信任式非交互模式启动 CLI，以避免游戏内对话等待
+把当前对话轮次交给所选 CLI Agent。前端默认按完全信任式非交互模式启动 CLI，以避免游戏内对话等待
 权限交互；`AgentWorkingDirectory` 因此应视为本机 Agent 的受信工作区。
 
 ## 日志边界
@@ -110,8 +115,8 @@ CLI：
 - Claude Code：写入临时 `mcp-config` JSON，用 `claude --print` 启动，并用 `--json-schema`
   约束最终回复。
 
-结构化回合输入会带入本批玩家消息、当前太吾角色真实姓名和请求输出说话人；历史上下文由恢复后的本机
-Agent 会话提供。最终回复必须是包含 `reply` 字段的 JSON；前端只提取 `reply` 显示给玩家。触发成功时，
+结构化回合输入会带入本轮玩家消息和当前太吾角色真实姓名；历史上下文由恢复后的本机 Agent 会话提供。
+最终回复必须是包含 `reply` 字段的 JSON；前端只提取 `reply` 显示给玩家。触发成功时，
 游戏日志会出现相枢 `chat hotkey accepted` 记录。CLI 启动、MCP 注册、调用失败或回复解析失败时，
 玩家界面显示一条相枢固定说明，详细错误通过游戏日志记录。
 

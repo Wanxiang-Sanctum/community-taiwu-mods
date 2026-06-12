@@ -53,4 +53,20 @@ internal sealed class PluginTools
     {
         return PluginIpcProxy.PingAsync(side, message, cancellationToken);
     }
+
+    [McpServerTool(
+        Name = "xiangshu_send_intermediate_reply",
+        Destructive = false,
+        Idempotent = false,
+        ReadOnly = false)]
+    [Description("Sends an intermediate Xiangshu reply to the current in-game chat session.")]
+    public Task<string> SendIntermediateReplyAsync(
+        [Description("Short text to show to the player as Xiangshu.")]
+        string content,
+        CancellationToken cancellationToken = default)
+    {
+        return PluginIpcProxy.SendIntermediateReplyAsync(
+            content,
+            cancellationToken);
+    }
 }

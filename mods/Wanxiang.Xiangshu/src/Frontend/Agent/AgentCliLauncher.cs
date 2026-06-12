@@ -14,17 +14,8 @@ internal sealed class AgentCliLauncher : IDisposable
 {
     private const string DiagnosticInput =
         """
-        {
-          "schema": "wanxiang.xiangshu.diagnostic.v1",
-          "requestedAction": {
-            "kind": "toolchain-check",
-            "tool": "xiangshu_check_toolchain"
-          },
-          "requestedOutput": {
-            "kind": "toolchain-status-summary",
-            "fields": ["frontend", "backend", "mcp-server"]
-          }
-        }
+        Call the `xiangshu_check_toolchain` tool and summarize whether the frontend,
+        backend, and MCP server endpoints are reachable.
         """;
 
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);

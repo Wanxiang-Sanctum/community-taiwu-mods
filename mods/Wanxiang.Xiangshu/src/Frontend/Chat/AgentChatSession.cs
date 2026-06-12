@@ -29,7 +29,6 @@ internal sealed class AgentChatSession : IDisposable
     private readonly string _sessionId;
 
     private int _nextMessageId;
-    private int _nextBatchId;
     private bool _working;
     private bool _disposed;
     private bool _cancellationDisposed;
@@ -74,7 +73,6 @@ internal sealed class AgentChatSession : IDisposable
         {
             _visibleMessages.AddRange(restoredState.VisibleMessages);
             _nextMessageId = restoredState.LastMessageNumber;
-            _nextBatchId = restoredState.LastBatchNumber;
             _externalSessionId = restoredState.ExternalSessionId;
         }
 
@@ -104,8 +102,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.User,
                 trimmedSpeakerName,
                 trimmedContent,
-                "user",
-                batchId: null);
+                "user");
             _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
         }
@@ -127,6 +124,33 @@ internal sealed class AgentChatSession : IDisposable
             ThrowIfDisposedLocked();
             return [.. _visibleMessages];
         }
+    }
+
+    public void AddIntermediateReply(string? content)
+    {
+        string normalizedContent = NormalizeMessageContent(content);
+        AgentChatMessage message;
+
+        lock (_syncRoot)
+        {
+            ThrowIfDisposedLocked();
+
+            if (normalizedContent.Length == 0)
+            {
+                throw new InvalidOperationException("Intermediate reply content is required.");
+            }
+
+            message = new AgentChatMessage(
+                CreateMessageId(),
+                AgentChatRole.Assistant,
+                _assistantName,
+                normalizedContent,
+                "agent-intermediate");
+            _visibleMessages.Add(message);
+        }
+
+        PersistSnapshot();
+        _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
     }
 
     public void Dispose()
@@ -197,7 +221,7 @@ internal sealed class AgentChatSession : IDisposable
                             turn,
                             cancellationToken);
                     UpdateExternalSessionId(result.ExternalSessionId);
-                    AddAssistantMessage(result.AssistantMessage, "agent", turn.BatchId);
+                    AddAssistantMessage(result.AssistantMessage, "agent");
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -229,23 +253,19 @@ internal sealed class AgentChatSession : IDisposable
             }
             else
             {
-                string batchId = CreateBatchId();
-                List<AgentChatMessage> batchMessages = [];
+                List<AgentChatMessage> turnMessages = [];
 
                 while (_pendingMessages.Count > 0)
                 {
                     AgentChatMessage message = _pendingMessages.Dequeue();
-                    message.BatchId = batchId;
-                    batchMessages.Add(message);
+                    turnMessages.Add(message);
                 }
 
                 turn = new AgentChatTurn(
-                    _sessionId,
-                    batchId,
                     _externalSessionId,
-                    batchMessages[^1].SpeakerName,
+                    turnMessages[^1].SpeakerName,
                     _assistantName,
-                    [.. batchMessages.Select(static message => message.Content)]);
+                    [.. turnMessages.Select(static message => message.Content)]);
             }
         }
 
@@ -297,8 +317,7 @@ internal sealed class AgentChatSession : IDisposable
 
     private void AddAssistantMessage(
         string content,
-        string origin,
-        string? batchId)
+        string origin)
     {
         AgentChatMessage message;
 
@@ -309,8 +328,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.Assistant,
                 _assistantName,
                 content,
-                origin,
-                batchId);
+                origin);
             _visibleMessages.Add(message);
         }
 
@@ -320,19 +338,13 @@ internal sealed class AgentChatSession : IDisposable
 
     private void AddAssistantSessionMessage(string content)
     {
-        AddAssistantMessage(content, "session", batchId: null);
+        AddAssistantMessage(content, "session");
     }
 
     private string CreateMessageId()
     {
         _nextMessageId++;
         return "message-" + _nextMessageId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-    }
-
-    private string CreateBatchId()
-    {
-        _nextBatchId++;
-        return "batch-" + _nextBatchId.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private void UpdateExternalSessionId(string? externalSessionId)
@@ -364,7 +376,6 @@ internal sealed class AgentChatSession : IDisposable
                 _adapterName,
                 _externalSessionId,
                 _nextMessageId,
-                _nextBatchId,
                 [.. _visibleMessages.Select(CloneMessage)]);
         }
 
@@ -378,13 +389,17 @@ internal sealed class AgentChatSession : IDisposable
             message.Role,
             message.SpeakerName,
             message.Content,
-            message.Origin,
-            message.BatchId);
+            message.Origin);
     }
 
     private static string GetAdapterName(AgentAdapter adapter)
     {
         return adapter == AgentAdapter.Claude ? "claude" : "codex";
+    }
+
+    private static string NormalizeMessageContent(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
     }
 
     private void ThrowIfDisposedLocked()

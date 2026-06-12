@@ -8,9 +8,6 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 internal sealed class AgentChatSessionStore(string workingDirectory)
 {
-    private const string CurrentSchema = "wanxiang.xiangshu.chat-session-current.v1";
-    private const string SessionSchema = "wanxiang.xiangshu.chat-session.v1";
-
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     private static readonly JsonSerializerSettings JsonSettings = new()
@@ -32,7 +29,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         }
 
         PersistedCurrentChatSession current = ReadJson<PersistedCurrentChatSession>(_currentPath);
-        RequireSchema(current.Schema, CurrentSchema, _currentPath);
 
         string sessionId = NormalizeSessionId(current.CurrentSessionId, "currentSessionId", _currentPath);
         string sessionPath = GetSessionPath(sessionId);
@@ -50,7 +46,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             _currentPath,
             new PersistedCurrentChatSession
             {
-                Schema = CurrentSchema,
                 UpdatedAtUtc = now,
                 CurrentSessionId = state.SessionId,
             });
@@ -60,13 +55,10 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         PersistedChatSession session,
         string sessionPath)
     {
-        RequireSchema(session.Schema, SessionSchema, sessionPath);
-
         string sessionId = NormalizeSessionId(session.SessionId, "sessionId", sessionPath);
 
         List<AgentChatMessage> messages = [];
         int maxMessageNumber = 0;
-        int maxBatchNumber = 0;
 
         List<PersistedChatMessage> visibleMessages = session.VisibleMessages
             ?? throw new InvalidDataException($"Missing chat session field 'visibleMessages' in {sessionPath}.");
@@ -76,7 +68,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             AgentChatMessage message = CreateMessage(persistedMessage, sessionPath);
             messages.Add(message);
             maxMessageNumber = Math.Max(maxMessageNumber, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
-            maxBatchNumber = Math.Max(maxBatchNumber, ParseOptionalOrdinal(message.BatchId, "batch-", sessionPath));
         }
 
         return new AgentChatSessionState(
@@ -84,7 +75,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.ExternalSessionId),
             Math.Max(session.LastMessageNumber, maxMessageNumber),
-            Math.Max(session.LastBatchNumber, maxBatchNumber),
             messages);
     }
 
@@ -94,14 +84,11 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         return new PersistedChatSession
         {
-            Schema = SessionSchema,
-            Version = 1,
             UpdatedAtUtc = now,
             SessionId = state.SessionId,
             Adapter = state.Adapter,
             ExternalSessionId = state.ExternalSessionId,
             LastMessageNumber = state.LastMessageNumber,
-            LastBatchNumber = state.LastBatchNumber,
             VisibleMessages =
             [
                 .. state.VisibleMessages.Select(CreatePersistedMessage),
@@ -118,7 +105,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             SpeakerName = message.SpeakerName,
             Content = message.Content,
             Origin = message.Origin,
-            BatchId = message.BatchId,
         };
     }
 
@@ -131,8 +117,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             ParseRole(persistedMessage.Role, sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
-            NormalizeRequired(persistedMessage.Origin, "message.origin", sessionPath),
-            NormalizeNullable(persistedMessage.BatchId));
+            NormalizeRequired(persistedMessage.Origin, "message.origin", sessionPath));
     }
 
     private static AgentChatRole ParseRole(
@@ -211,21 +196,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
     }
 
-    private static int ParseOptionalOrdinal(
-        string? value,
-        string prefix,
-        string path)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return 0;
-        }
-
-        return TryParseOrdinal(value, prefix, out int ordinal)
-            ? ordinal
-            : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
-    }
-
     private static bool TryParseOrdinal(
         string value,
         string prefix,
@@ -250,17 +220,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         ordinal = parsedOrdinal;
         return true;
-    }
-
-    private static void RequireSchema(
-        string? actualSchema,
-        string expectedSchema,
-        string path)
-    {
-        if (!string.Equals(actualSchema, expectedSchema, StringComparison.Ordinal))
-        {
-            throw new InvalidDataException($"Unexpected chat session schema in {path}.");
-        }
     }
 
     private static string NormalizeRequired(
@@ -295,8 +254,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
     private sealed class PersistedCurrentChatSession
     {
-        public string? Schema { get; set; }
-
         public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
         public string CurrentSessionId { get; set; } = string.Empty;
@@ -304,10 +261,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
     private sealed class PersistedChatSession
     {
-        public string? Schema { get; set; }
-
-        public int Version { get; set; } = 1;
-
         public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
         public string SessionId { get; set; } = string.Empty;
@@ -317,8 +270,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         public string? ExternalSessionId { get; set; }
 
         public int LastMessageNumber { get; set; }
-
-        public int LastBatchNumber { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
     }
@@ -334,8 +285,6 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         public string Content { get; set; } = string.Empty;
 
         public string Origin { get; set; } = string.Empty;
-
-        public string? BatchId { get; set; }
     }
 }
 
@@ -344,7 +293,6 @@ internal sealed class AgentChatSessionState(
     string adapter,
     string? externalSessionId,
     int lastMessageNumber,
-    int lastBatchNumber,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
     public string SessionId { get; } = sessionId;
@@ -354,8 +302,6 @@ internal sealed class AgentChatSessionState(
     public string? ExternalSessionId { get; } = externalSessionId;
 
     public int LastMessageNumber { get; } = lastMessageNumber;
-
-    public int LastBatchNumber { get; } = lastBatchNumber;
 
     public IReadOnlyList<AgentChatMessage> VisibleMessages { get; } = visibleMessages;
 }

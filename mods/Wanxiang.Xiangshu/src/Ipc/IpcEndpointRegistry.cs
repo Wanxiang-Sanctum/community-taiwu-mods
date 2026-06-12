@@ -192,7 +192,6 @@ public static class IpcEndpointRegistry
 
         update(manifest);
 
-        manifest.Version = 1;
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         string json = SerializeManifest(manifest);
@@ -312,8 +311,6 @@ public sealed class IpcEndpointRegistration(
 
 internal sealed class IpcEndpointManifest
 {
-    public int Version { get; set; } = 1;
-
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public List<IpcEndpoint> Endpoints { get; set; } = [];
