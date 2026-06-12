@@ -22,6 +22,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MinimumPanelWidth = 460f;
     private const float MinimumPanelHeight = 520f;
     private const float PanelScreenMargin = 32f;
+    private const float HeaderHeight = 58f;
+    private const float HeaderIconSize = 38f;
+    private const float HeaderCloseButtonSize = 40f;
     private const float MessageRowHorizontalPadding = 14f;
     private const float MessageBubbleWidthRatio = 0.76f;
     private const float MinimumMessageBubbleWidth = 220f;
@@ -34,6 +37,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color HeaderColor = new(0.12f, 0.087f, 0.058f, 0.98f);
     private static readonly Color MessageAreaColor = new(0.035f, 0.033f, 0.031f, 0.72f);
     private static readonly Color InputColor = new(0.08f, 0.074f, 0.063f, 0.98f);
+    private static readonly Color FocusedInputColor = new(0.105f, 0.092f, 0.071f, 0.99f);
+    private static readonly Color InputFocusOutlineColor = new(0.82f, 0.59f, 0.28f, 0.72f);
     private static readonly Color AssistantBubbleColor = new(0.18f, 0.15f, 0.11f, 0.96f);
     private static readonly Color UserBubbleColor = new(0.095f, 0.15f, 0.17f, 0.96f);
     private static readonly Color AccentColor = new(0.82f, 0.59f, 0.28f, 1f);
@@ -51,6 +56,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private RectTransform? _messageContent;
     private ScrollRect? _scrollRect;
     private DisableHotkeyInputField? _inputField;
+    private CImage? _inputFieldImage;
+    private Outline? _inputFocusOutline;
     private Button? _sendButton;
     private CImage? _sendButtonImage;
     private TextMeshProUGUI? _sendButtonText;
@@ -58,6 +65,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private readonly List<LayoutElement> _messageBubbleLayouts = [];
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
     private bool _uiBuilt;
+    private bool _inputFocused;
     private bool _scrollToBottomScheduled;
     private float _lastMessageBubbleWidth = PreferredMessageBubbleWidth;
 
@@ -93,6 +101,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (!visible)
         {
             _inputField?.DeactivateInputField();
+            SetInputFocused(focused: false);
             return;
         }
 
@@ -136,6 +145,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         DrainSessionEvents();
         UpdateSendButtonState();
+        UpdateInputFocusVisual();
 
         if (_inputField?.isFocused == true
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
@@ -296,6 +306,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             isUser ? new Color(0.72f, 0.88f, 0.9f, 1f) : AccentColor,
             FontStyles.Bold);
         speaker.text = message.SpeakerName;
+        speaker.alignment = isUser
+            ? TextAlignmentOptions.MidlineRight
+            : TextAlignmentOptions.MidlineLeft;
 
         if (isUser)
         {
@@ -451,13 +464,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         GameObject header = CreateChild("Header", parent);
         _ = AddImage(header, HeaderColor);
         LayoutElement headerLayoutElement = header.AddComponent<LayoutElement>();
-        headerLayoutElement.preferredHeight = 58f;
+        headerLayoutElement.minHeight = HeaderHeight;
+        headerLayoutElement.preferredHeight = HeaderHeight;
+        headerLayoutElement.flexibleHeight = 0f;
 
         HorizontalLayoutGroup headerLayout = header.AddComponent<HorizontalLayoutGroup>();
-        headerLayout.childAlignment = TextAnchor.MiddleCenter;
+        headerLayout.childAlignment = TextAnchor.MiddleLeft;
         headerLayout.childControlHeight = true;
         headerLayout.childControlWidth = true;
-        headerLayout.childForceExpandHeight = true;
+        headerLayout.childForceExpandHeight = false;
         headerLayout.childForceExpandWidth = false;
         headerLayout.padding = new RectOffset(14, 8, 0, 0);
         headerLayout.spacing = 12f;
@@ -465,9 +480,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         GameObject iconObject = CreateChild("HeaderIcon", header.transform);
         CImage icon = AddImage(iconObject, new Color(0.72f, 0.44f, 0.19f, 1f), HeaderIconSprite);
         icon.raycastTarget = false;
-        LayoutElement iconLayout = iconObject.AddComponent<LayoutElement>();
-        iconLayout.preferredWidth = 38f;
-        iconLayout.preferredHeight = 38f;
+        icon.preserveAspect = true;
+        _ = SetFixedLayoutSize(iconObject, HeaderIconSize, HeaderIconSize);
 
         TextMeshProUGUI title = CreateText("Title", header.transform, 24f, TextColor, FontStyles.Bold);
         title.text = "相枢";
@@ -475,7 +489,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
         titleLayout.flexibleWidth = 1f;
 
-        Button close = CreateButton("CloseButton", header.transform, "×", 40f, 40f);
+        Button close = CreateButton(
+            "CloseButton",
+            header.transform,
+            "×",
+            HeaderCloseButtonSize,
+            HeaderCloseButtonSize);
         close.onClick.AddListener(() => SetVisible(visible: false));
     }
 
@@ -538,16 +557,27 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         GameObject inputObject = CreateChild("InputField", inputArea.transform);
         CImage inputImage = AddImage(inputObject, InputColor);
+        _inputFieldImage = inputImage;
+        _inputFocusOutline = inputObject.AddComponent<Outline>();
+        _inputFocusOutline.effectColor = InputFocusOutlineColor;
+        _inputFocusOutline.effectDistance = new Vector2(2f, -2f);
+        _inputFocusOutline.enabled = false;
         LayoutElement inputLayout = inputObject.AddComponent<LayoutElement>();
         inputLayout.flexibleWidth = 1f;
         inputLayout.minHeight = 92f;
 
         _inputField = inputObject.AddComponent<DisableHotkeyInputField>();
+        _inputField.transition = Selectable.Transition.None;
         _inputField.lineType = TMP_InputField.LineType.MultiLineNewline;
         _inputField.characterLimit = 4000;
         _inputField.targetGraphic = inputImage;
+        _inputField.customCaretColor = true;
         _inputField.caretColor = AccentColor;
+        _inputField.caretWidth = 2;
+        _inputField.caretBlinkRate = 0.8f;
         _inputField.selectionColor = new Color(0.8f, 0.55f, 0.25f, 0.32f);
+        _inputField.onSelect.AddListener(_ => SetInputFocused(focused: true));
+        _inputField.onDeselect.AddListener(_ => SetInputFocused(focused: false));
 
         GameObject textViewport = CreateChild("TextViewport", inputObject.transform);
         RectTransform textViewportRect = textViewport.GetComponent<RectTransform>();
@@ -564,11 +594,13 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             TextColor,
             FontStyles.Normal);
         inputText.text = string.Empty;
+        inputText.alignment = TextAlignmentOptions.TopLeft;
         StretchToParent(inputText.rectTransform);
 
         _inputField.textViewport = textViewportRect;
         _inputField.textComponent = inputText;
         _inputField.onValueChanged.AddListener(_ => UpdateSendButtonState());
+        SetInputFocused(focused: false);
 
         _sendButton = CreateButton("SendButton", inputArea.transform, "送出", 88f, 92f);
         _sendButton.onClick.AddListener(SendCurrentInput);
@@ -739,6 +771,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         inputField.Select();
         inputField.ActivateInputField();
+        SetInputFocused(focused: true);
         RefocusInputNextFrameAsync(WindowLifetimeToken).Forget(
             static ex => Log.Error(ex, "chat input refocus failed"));
     }
@@ -763,6 +796,34 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
 
         inputField.ActivateInputField();
+        SetInputFocused(focused: true);
+    }
+
+    private void UpdateInputFocusVisual()
+    {
+        bool focused = _inputField?.isFocused == true;
+
+        if (_inputFocused == focused)
+        {
+            return;
+        }
+
+        SetInputFocused(focused);
+    }
+
+    private void SetInputFocused(bool focused)
+    {
+        _inputFocused = focused;
+
+        if (_inputFieldImage is { } inputFieldImage)
+        {
+            inputFieldImage.color = focused ? FocusedInputColor : InputColor;
+        }
+
+        if (_inputFocusOutline is { } inputFocusOutline)
+        {
+            inputFocusOutline.enabled = focused;
+        }
     }
 
     private void ScheduleScrollToBottom()
@@ -850,15 +911,32 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         colors.pressedColor = new Color(0.82f, 0.72f, 0.58f, 1f);
         colors.disabledColor = Color.white;
         button.colors = colors;
-        LayoutElement layout = buttonObject.AddComponent<LayoutElement>();
-        layout.preferredWidth = width;
-        layout.preferredHeight = height;
+        _ = SetFixedLayoutSize(buttonObject, width, height);
 
         TextMeshProUGUI text = CreateText("Label", buttonObject.transform, 18f, TextColor, FontStyles.Bold);
         text.text = label;
         text.alignment = TextAlignmentOptions.Center;
         StretchToParent(text.rectTransform);
         return button;
+    }
+
+    private static LayoutElement SetFixedLayoutSize(
+        GameObject target,
+        float width,
+        float height)
+    {
+        RectTransform rectTransform = target.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(width, height);
+
+        LayoutElement layout = target.GetComponent<LayoutElement>()
+            ?? target.AddComponent<LayoutElement>();
+        layout.minWidth = width;
+        layout.preferredWidth = width;
+        layout.flexibleWidth = 0f;
+        layout.minHeight = height;
+        layout.preferredHeight = height;
+        layout.flexibleHeight = 0f;
+        return layout;
     }
 
     private static GameObject CreateInactiveChild(
