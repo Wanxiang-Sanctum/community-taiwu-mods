@@ -198,11 +198,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         while (_session.TryDequeueEvent(out AgentChatSessionEvent sessionEvent))
         {
-            if (sessionEvent.Kind == AgentChatSessionEventKind.MessageAdded
-                && sessionEvent.Message is not null)
-            {
-                AddMessage(sessionEvent.Message);
-            }
+            AddMessage(sessionEvent.Message);
         }
     }
 

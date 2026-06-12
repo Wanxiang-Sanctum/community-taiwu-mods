@@ -133,7 +133,8 @@ endpoint，`Sidecar/` 负责 MCP server 进程生命周期。
 - CLI 入口留空时，前端按所选 Agent 类型映射默认命令。
 - 相对工作目录会解析到相枢 Mod 目录下，并由插件创建；默认包内预置 `AgentWorkspace/AGENTS.md`。
 - IPC endpoint manifest 写入 `AgentWorkingDirectory/XiangshuRuntime/ipc-endpoints.json`，不写入用户级
-  AppData 目录。
+  AppData 目录。manifest 只承担发现职责，不维护额外心跳或可用性状态；endpoint 监听由插件生命周期
+  维护，MCP 诊断工具当前用 ping 测试链路。
 - 前端把相枢聊天命令注册到游戏原生地图热键分组，默认 `Ctrl+Backslash`（`Ctrl+\`）。
 - 聊天热键只在进入存档后的主界面/地图交互中生效；窗口打开后同一热键可关闭窗口。
 - 玩家消息会立即显示在运行时生成的聊天窗口中，并进入前端投递队列。

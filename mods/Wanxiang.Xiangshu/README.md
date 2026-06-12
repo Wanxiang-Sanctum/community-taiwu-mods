@@ -30,7 +30,8 @@ IPC endpoint 端口在插件启动时分配，并写入本机 Agent 工作目录
 ```
 
 manifest 只记录发现本机 endpoint 所需的最小信息：`side`、`transport`、`host`、`path`、
-`port`、`processId` 和 `startedAtUtc`。MCP server 会以 `side = "mcp-server"`、
+`port`、`processId` 和 `startedAtUtc`。endpoint 监听由插件生命周期维护，manifest 不承担独立心跳或
+可用性协议。MCP server 会以 `side = "mcp-server"`、
 `transport = "mcp-streamable-http"`、`path = "/mcp"` 写入同一个 manifest。
 
 前端插件启动时会拉起 MCP sidecar。MCP server 是独立的 `net10.0`、`win-x64`、self-contained
@@ -49,9 +50,8 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 
 当前暴露三个诊断工具：
 
-- `xiangshu_list_endpoints`：列出 manifest 中仍存活的前端/后端 IPC endpoint。
-- `xiangshu_check_toolchain`：检查当前 MCP server 是否已注册，并分别 ping 前端和后端 IPC endpoint，
-  返回整条工具链是否 ready 以及每一侧的失败原因。
+- `xiangshu_list_endpoints`：列出 manifest 中当前可发现的前端/后端 IPC endpoint。
+- `xiangshu_check_toolchain`：检查当前 MCP server 是否已注册，并用 ping 诊断当前前端和后端 IPC 链路。
 - `xiangshu_ping_plugin`：向 `frontend` 或 `backend` endpoint 发送 MessagePipe ping。
 
 ## 本机 Agent 配置

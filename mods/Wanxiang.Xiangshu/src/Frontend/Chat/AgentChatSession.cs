@@ -42,8 +42,6 @@ internal sealed class AgentChatSession(
         string content,
         string speakerName)
     {
-        ThrowIfDisposed();
-
         string trimmedContent = content.Trim();
         string trimmedSpeakerName = speakerName.Trim();
 
@@ -56,6 +54,8 @@ internal sealed class AgentChatSession(
 
         lock (_syncRoot)
         {
+            ThrowIfDisposedLocked();
+
             message = new AgentChatMessage(
                 CreateMessageId(),
                 AgentChatRole.User,
@@ -109,7 +109,6 @@ internal sealed class AgentChatSession(
             }
 
             _working = true;
-            _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: true));
         }
 
         ProcessPendingMessagesAsync(_cancellation.Token).Forget(
@@ -217,11 +216,6 @@ internal sealed class AgentChatSession(
 
         _working = false;
 
-        if (!_disposed)
-        {
-            _events.Enqueue(AgentChatSessionEvent.WorkingChanged(isWorking: false));
-        }
-
         return _disposed && !_cancellationDisposed;
     }
 
@@ -279,7 +273,7 @@ internal sealed class AgentChatSession(
         return "batch-" + _nextBatchId.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    private void ThrowIfDisposed()
+    private void ThrowIfDisposedLocked()
     {
         if (_disposed)
         {

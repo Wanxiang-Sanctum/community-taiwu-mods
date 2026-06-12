@@ -37,7 +37,7 @@ public static class IpcEndpointRegistry
         }
 #endif
 
-        if (modDirectory.Length == 0)
+        if (string.IsNullOrWhiteSpace(modDirectory))
         {
             throw new ArgumentException("Mod directory is required.", nameof(modDirectory));
         }
@@ -59,7 +59,7 @@ public static class IpcEndpointRegistry
         }
 #endif
 
-        if (workingDirectory.Length == 0)
+        if (string.IsNullOrWhiteSpace(workingDirectory))
         {
             throw new ArgumentException("Agent working directory is required.", nameof(workingDirectory));
         }
@@ -79,7 +79,7 @@ public static class IpcEndpointRegistry
         }
 #endif
 
-        if (manifestPath.Length == 0)
+        if (string.IsNullOrWhiteSpace(manifestPath))
         {
             throw new ArgumentException("IPC endpoint manifest path is required.", nameof(manifestPath));
         }
@@ -283,11 +283,7 @@ public static class IpcEndpointRegistry
             using Process process = Process.GetProcessById(endpoint.ProcessId);
             return !process.HasExited;
         }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-        catch (InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             return false;
         }

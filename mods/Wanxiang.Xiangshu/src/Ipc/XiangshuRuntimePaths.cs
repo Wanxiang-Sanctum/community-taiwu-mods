@@ -28,10 +28,20 @@ public static class XiangshuRuntimePaths
         }
 #endif
 
+        if (string.IsNullOrWhiteSpace(modDirectory))
+        {
+            throw new ArgumentException("Mod directory is required.", nameof(modDirectory));
+        }
+
         string value = string.IsNullOrWhiteSpace(configuredValue)
             ? DefaultAgentWorkingDirectoryName
             : configuredValue.Trim();
         string path = Environment.ExpandEnvironmentVariables(value);
+
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            path = DefaultAgentWorkingDirectoryName;
+        }
 
         if (!Path.IsPathRooted(path))
         {
@@ -51,6 +61,11 @@ public static class XiangshuRuntimePaths
             throw new ArgumentNullException(nameof(agentWorkingDirectory));
         }
 #endif
+
+        if (string.IsNullOrWhiteSpace(agentWorkingDirectory))
+        {
+            throw new ArgumentException("Agent working directory is required.", nameof(agentWorkingDirectory));
+        }
 
         return Path.Combine(
             Path.GetFullPath(agentWorkingDirectory),
