@@ -76,6 +76,15 @@ internal sealed class AgentChatSession(
         return _events.TryDequeue(out sessionEvent);
     }
 
+    public IReadOnlyList<AgentChatMessage> CreateVisibleMessagesSnapshot()
+    {
+        lock (_syncRoot)
+        {
+            ThrowIfDisposedLocked();
+            return [.. _visibleMessages];
+        }
+    }
+
     public void Dispose()
     {
         bool disposeCancellation;

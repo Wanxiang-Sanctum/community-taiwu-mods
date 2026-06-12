@@ -30,6 +30,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MinimumMessageBubbleWidth = 220f;
     private const float PreferredMessageBubbleWidth = 430f;
     private const float MaximumMessageBubbleWidth = 460f;
+    private const float MinimumDraggedPanelVisibleMargin = 8f;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
@@ -64,10 +65,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private ChatParticipantIdentity? _participants;
     private readonly List<LayoutElement> _messageBubbleLayouts = [];
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
+    private readonly HashSet<string> _renderedMessageIds = new(StringComparer.Ordinal);
     private bool _uiBuilt;
     private bool _inputFocused;
     private bool _scrollToBottomScheduled;
     private float _lastMessageBubbleWidth = PreferredMessageBubbleWidth;
+    private Vector2 _panelOffset;
+    private Vector2 _panelDragStartPointer;
+    private Vector2 _panelDragStartOffset;
+    private bool _panelDragActive;
 
     public bool IsVisible { get; private set; }
 
@@ -146,6 +152,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         DrainSessionEvents();
         UpdateSendButtonState();
         UpdateInputFocusVisual();
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            SetVisible(visible: false);
+            return;
+        }
 
         if (_inputField?.isFocused == true
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
@@ -261,6 +273,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
+        if (!_renderedMessageIds.Add(message.Id))
+        {
+            return;
+        }
+
         bool isUser = message.Role == AgentChatRole.User;
         GameObject row = CreateChild("MessageRow", _messageContent);
         HorizontalLayoutGroup rowLayout = row.AddComponent<HorizontalLayoutGroup>();
@@ -321,6 +338,21 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_messageContent);
         ScheduleScrollToBottom();
+    }
+
+    private void ReplayVisibleMessages()
+    {
+        AgentChatSession? session = _session;
+
+        if (session is null)
+        {
+            return;
+        }
+
+        foreach (AgentChatMessage message in session.CreateVisibleMessagesSnapshot())
+        {
+            AddMessage(message);
+        }
     }
 
     private void UpdatePlayerSpeakerLabels()
@@ -492,6 +524,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             HeaderCloseButtonSize,
             HeaderCloseButtonSize);
         close.onClick.AddListener(() => SetVisible(visible: false));
+
+        HeaderDragHandle dragHandle = header.AddComponent<HeaderDragHandle>();
+        dragHandle.Initialize(this);
     }
 
     private void BuildMessageArea(Transform parent)
@@ -634,6 +669,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         EnsureLayerRaycaster(layer, uiManager);
         CaptureGameTextStyle();
         BuildUi();
+        ReplayVisibleMessages();
         _uiBuilt = true;
         return true;
     }
@@ -704,9 +740,62 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             MinimumPanelHeight,
             verticalMargin);
 
-        _panelRect.anchoredPosition = new Vector2(-horizontalMargin, 0f);
+        _panelOffset = ClampPanelOffset(
+            _panelOffset,
+            parentSize,
+            width,
+            height,
+            horizontalMargin,
+            verticalMargin);
+        _panelRect.anchoredPosition = new Vector2(-horizontalMargin, 0f) + _panelOffset;
         _panelRect.sizeDelta = new Vector2(width, height);
         ReflowMessageBubbles();
+    }
+
+    private void BeginPanelDrag(PointerEventData eventData)
+    {
+        if (!TryGetPointerLocalPosition(eventData, out Vector2 pointer))
+        {
+            return;
+        }
+
+        _panelDragStartPointer = pointer;
+        _panelDragStartOffset = _panelOffset;
+        _panelDragActive = true;
+    }
+
+    private void DragPanel(PointerEventData eventData)
+    {
+        if (!_panelDragActive || !TryGetPointerLocalPosition(eventData, out Vector2 pointer))
+        {
+            return;
+        }
+
+        _panelOffset = _panelDragStartOffset + pointer - _panelDragStartPointer;
+        ApplyPanelLayout();
+    }
+
+    private void EndPanelDrag()
+    {
+        _panelDragActive = false;
+    }
+
+    private bool TryGetPointerLocalPosition(
+        PointerEventData eventData,
+        out Vector2 localPosition)
+    {
+        localPosition = default;
+
+        if (_panelRect?.parent is not RectTransform parentRect)
+        {
+            return false;
+        }
+
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parentRect,
+            eventData.position,
+            eventData.pressEventCamera,
+            out localPosition);
     }
 
     private Vector2 GetRootLayoutSize()
@@ -753,6 +842,45 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         float effectiveMinimumSize = Mathf.Min(minimumSize, maximumSize);
         return Mathf.Clamp(preferredSize, effectiveMinimumSize, maximumSize);
+    }
+
+    private static Vector2 ClampPanelOffset(
+        Vector2 offset,
+        Vector2 parentSize,
+        float panelWidth,
+        float panelHeight,
+        float horizontalMargin,
+        float verticalMargin)
+    {
+        if (parentSize.x <= 0f || parentSize.y <= 0f)
+        {
+            return offset;
+        }
+
+        float horizontalVisibleMargin = Mathf.Min(
+            MinimumDraggedPanelVisibleMargin,
+            horizontalMargin);
+        float verticalVisibleMargin = Mathf.Min(
+            MinimumDraggedPanelVisibleMargin,
+            verticalMargin);
+        float minimumX = panelWidth - parentSize.x + horizontalVisibleMargin + horizontalMargin;
+        float maximumX = horizontalMargin - horizontalVisibleMargin;
+        float minimumY = (-parentSize.y * 0.5f) + verticalVisibleMargin + (panelHeight * 0.5f);
+        float maximumY = (parentSize.y * 0.5f) - verticalVisibleMargin - (panelHeight * 0.5f);
+
+        return new Vector2(
+            ClampOrCenter(offset.x, minimumX, maximumX),
+            ClampOrCenter(offset.y, minimumY, maximumY));
+    }
+
+    private static float ClampOrCenter(
+        float value,
+        float minimum,
+        float maximum)
+    {
+        return minimum <= maximum
+            ? Mathf.Clamp(value, minimum, maximum)
+            : (minimum + maximum) * 0.5f;
     }
 
     private void FocusInputField()
@@ -1030,6 +1158,31 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (s_gameSpriteAsset is not null)
         {
             text.spriteAsset = s_gameSpriteAsset;
+        }
+    }
+
+    private sealed class HeaderDragHandle : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        private XiangshuChatWindow? _window;
+
+        public void Initialize(XiangshuChatWindow window)
+        {
+            _window = window;
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            _window?.BeginPanelDrag(eventData);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            _window?.DragPanel(eventData);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            _window?.EndPanelDrag();
         }
     }
 }
