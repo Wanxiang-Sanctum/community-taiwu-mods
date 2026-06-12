@@ -11,11 +11,13 @@
 - 太吾 Mod 用户配置能够记录本机 Agent 类型、CLI 入口和工作目录。
 - 进入存档后，前端热键能够打开相枢聊天窗口。
 - 玩家消息能够进入前端投递会话，按批次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
+- 前端能够把当前可见对话和外部 Agent 会话 id 写入 `XiangshuRuntime/ChatSessions/`，重启后在同一
+  Agent 适配器下恢复当前对话窗口记录并继续复用同一个 CLI Agent 会话。
 
-当前聊天窗口仍是运行时生成的最小界面；前端不持久化游戏内可见对话，不提供 MCP 快速答复工具，不修改
-游戏状态，也不对接外部业务服务。长期上下文由本机 CLI Agent 自己的会话系统维护；前端只保存当前运行期
-的投递队列和外部会话 id。MCP server 不承载主对话协议，只作为注册给本机 Agent 的相枢工具服务。对话
-体验和内部协议边界见 `docs/agent-chat.md`。
+当前聊天窗口仍是运行时生成的最小界面；当前路径只覆盖本机 CLI Agent 对话。MCP 快速答复工具和游戏
+状态修改工具留到后续迭代，外部业务服务对接不属于当前边界。长期上下文由本机 CLI Agent 自己的会话
+系统维护；前端只保存当前可见对话、投递批次编号和外部会话 id。MCP server 不承载主对话协议，只作为
+注册给本机 Agent 的相枢工具服务。对话体验和内部协议边界见 `docs/agent-chat.md`。
 
 ## 本机 IPC 与 MCP Sidecar
 
@@ -61,8 +63,8 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 命令。相对工作目录会解析到相枢 Mod 目录下，默认是 `AgentWorkspace`。
 
 这些配置是运行时启动参数。前端插件和后端插件只在初始化时读取一次；在游戏内修改设置后，需要重启游戏
-才会重建 IPC endpoint、manifest 路径、MCP sidecar 和本机 Agent 会话。运行中的对话不会尝试热切换
-工作目录或 CLI 适配器。
+来重建 IPC endpoint、manifest 路径、MCP sidecar 和本机 Agent 会话。运行中的对话继续使用本次启动时
+加载的工作目录和 CLI 适配器。
 
 默认包内会预置 `AgentWorkspace/AGENTS.md`，作为相枢的默认本机 Agent 工作区配置和自定义示范；
 `AgentWorkspace/CLAUDE.md` 只负责让 Claude Code 转向同目录的 `AGENTS.md`。用户可以在这个工作区
@@ -72,11 +74,12 @@ manifest 注册、父进程退出和异常，避免常驻刷屏。
 本批玩家消息和请求输出说话人；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
 并在后续批次中恢复同一个本机 Agent 会话。
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP 诊断日志和前端启动本机
-Agent 时使用的短生命周期协议文件，并为后续聊天会话文件预留位置；游戏内仍不增加会话管理界面。
+`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP 诊断日志、前端启动本机
+Agent 时使用的短生命周期协议文件，以及当前聊天会话文件；游戏内当前只有聊天入口，没有会话管理界面。
 
 聊天调用和工具链诊断都使用本次启动时加载的配置。聊天调用会等待相枢 MCP sidecar endpoint 注册，然后
-把当前对话批次交给所选 CLI Agent。
+把当前对话批次交给所选 CLI Agent。前端默认按完全信任式非交互模式启动 CLI，以避免游戏内对话等待
+权限交互；`AgentWorkingDirectory` 因此应视为本机 Agent 的受信工作区。
 
 ## 日志边界
 
@@ -87,7 +90,7 @@ Codex `--output-schema` 和 Claude `--mcp-config` 使用 `XiangshuRuntime/Temp/A
 
 前端插件和后端插件统一通过 `shared/Wanxiang.Taiwu.Logging` 记录结构化上下文。共享库把上下文序列化为
 单行紧凑 JSON，并交给游戏日志系统；它不接管 MCP server 的独立进程日志。MCP server 是游戏外独立
-进程，保留自己的事件日志目录作为开发观察入口。日志记录不改变 CLI 的权限策略。
+进程，保留自己的事件日志目录作为开发观察入口。
 
 ## 聊天热键
 

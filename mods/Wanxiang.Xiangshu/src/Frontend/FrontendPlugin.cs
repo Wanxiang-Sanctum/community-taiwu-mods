@@ -45,6 +45,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             _chatSession = new AgentChatSession(
                 _agentCliLauncher,
                 () => CurrentAgentSettings,
+                new AgentChatSessionStore(CurrentAgentSettings.WorkingDirectory),
+                CurrentAgentSettings.Adapter,
                 ChatParticipantIdentity.AssistantName);
             _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
             InstallChatHotkey();

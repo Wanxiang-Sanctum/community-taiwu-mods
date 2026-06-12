@@ -15,8 +15,8 @@
 
 ## 工作区边界
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，用于 IPC manifest、MCP 诊断日志，并为后续聊天会话文件
-预留位置。不要创建、修改、删除或整理这个目录里的内容。
+`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，用于 IPC manifest、MCP 诊断日志、临时协议文件和聊天
+会话文件。不要创建、修改、删除或整理这个目录里的内容。
 
 ## 输出
 

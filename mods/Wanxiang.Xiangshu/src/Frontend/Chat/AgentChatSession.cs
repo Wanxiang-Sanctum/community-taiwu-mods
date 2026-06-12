@@ -10,26 +10,23 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     "Usage",
     "CA2213:Disposable fields should be disposed",
     Justification = "AgentCliLauncher is owned and disposed by FrontendPlugin; the chat session only borrows it.")]
-internal sealed class AgentChatSession(
-    AgentCliLauncher agentCliLauncher,
-    Func<AgentSettings?> settingsProvider,
-    string assistantName) : IDisposable
+internal sealed class AgentChatSession : IDisposable
 {
     private const string FailureMessage = "此刻诸机不应，稍后再问。";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
-    private readonly AgentCliLauncher _agentCliLauncher = agentCliLauncher;
-    private readonly Func<AgentSettings?> _settingsProvider = settingsProvider;
-    private readonly string _assistantName = string.IsNullOrWhiteSpace(assistantName)
-        ? ChatParticipantIdentity.AssistantName
-        : assistantName.Trim();
+    private readonly AgentCliLauncher _agentCliLauncher;
+    private readonly Func<AgentSettings?> _settingsProvider;
+    private readonly AgentChatSessionStore? _sessionStore;
+    private readonly string _adapterName;
+    private readonly string _assistantName;
     private readonly ConcurrentQueue<AgentChatSessionEvent> _events = new();
     private readonly object _syncRoot = new();
     private readonly List<AgentChatMessage> _visibleMessages = [];
     private readonly Queue<AgentChatMessage> _pendingMessages = new();
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly string _sessionId = Guid.NewGuid().ToString("N");
+    private readonly string _sessionId;
 
     private int _nextMessageId;
     private int _nextBatchId;
@@ -37,6 +34,52 @@ internal sealed class AgentChatSession(
     private bool _disposed;
     private bool _cancellationDisposed;
     private string? _externalSessionId;
+
+    public AgentChatSession(
+        AgentCliLauncher agentCliLauncher,
+        Func<AgentSettings?> settingsProvider,
+        AgentChatSessionStore? sessionStore,
+        AgentAdapter adapter,
+        string assistantName)
+    {
+        _agentCliLauncher = agentCliLauncher
+            ?? throw new ArgumentNullException(nameof(agentCliLauncher));
+        _settingsProvider = settingsProvider
+            ?? throw new ArgumentNullException(nameof(settingsProvider));
+        _sessionStore = sessionStore;
+        _adapterName = GetAdapterName(adapter);
+        _assistantName = string.IsNullOrWhiteSpace(assistantName)
+            ? ChatParticipantIdentity.AssistantName
+            : assistantName.Trim();
+
+        AgentChatSessionState? restoredState = _sessionStore?.LoadCurrent();
+
+        if (restoredState is not null
+            && !string.Equals(restoredState.Adapter, _adapterName, StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Info(
+                "chat session reset because agent adapter changed",
+                new
+                {
+                    restoredState.SessionId,
+                    restoredAdapter = restoredState.Adapter,
+                    currentAdapter = _adapterName,
+                });
+            restoredState = null;
+        }
+
+        _sessionId = restoredState?.SessionId ?? Guid.NewGuid().ToString("N");
+
+        if (restoredState is not null)
+        {
+            _visibleMessages.AddRange(restoredState.VisibleMessages);
+            _nextMessageId = restoredState.LastMessageNumber;
+            _nextBatchId = restoredState.LastBatchNumber;
+            _externalSessionId = restoredState.ExternalSessionId;
+        }
+
+        PersistSnapshot();
+    }
 
     public void SubmitUserMessage(
         string content,
@@ -67,6 +110,7 @@ internal sealed class AgentChatSession(
             _pendingMessages.Enqueue(message);
         }
 
+        PersistSnapshot();
         _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         StartProcessingIfNeeded();
     }
@@ -152,7 +196,7 @@ internal sealed class AgentChatSession(
                             settings,
                             turn,
                             cancellationToken);
-                    _externalSessionId = result.ExternalSessionId ?? _externalSessionId;
+                    UpdateExternalSessionId(result.ExternalSessionId);
                     AddAssistantMessage(result.AssistantMessage, "agent", turn.BatchId);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
@@ -168,37 +212,45 @@ internal sealed class AgentChatSession(
         finally
         {
             StopProcessing();
+            PersistSnapshot();
         }
     }
 
     private AgentChatTurn? CreateNextTurnOrStop()
     {
+        AgentChatTurn? turn;
+
         lock (_syncRoot)
         {
             if (_pendingMessages.Count == 0)
             {
                 _ = StopProcessingLocked();
-                return null;
+                turn = null;
             }
-
-            string batchId = CreateBatchId();
-            List<AgentChatMessage> batchMessages = [];
-
-            while (_pendingMessages.Count > 0)
+            else
             {
-                AgentChatMessage message = _pendingMessages.Dequeue();
-                message.BatchId = batchId;
-                batchMessages.Add(message);
-            }
+                string batchId = CreateBatchId();
+                List<AgentChatMessage> batchMessages = [];
 
-            return new AgentChatTurn(
-                _sessionId,
-                batchId,
-                _externalSessionId,
-                batchMessages[^1].SpeakerName,
-                _assistantName,
-                [.. batchMessages.Select(static message => message.Content)]);
+                while (_pendingMessages.Count > 0)
+                {
+                    AgentChatMessage message = _pendingMessages.Dequeue();
+                    message.BatchId = batchId;
+                    batchMessages.Add(message);
+                }
+
+                turn = new AgentChatTurn(
+                    _sessionId,
+                    batchId,
+                    _externalSessionId,
+                    batchMessages[^1].SpeakerName,
+                    _assistantName,
+                    [.. batchMessages.Select(static message => message.Content)]);
+            }
         }
+
+        PersistSnapshot();
+        return turn;
     }
 
     private void StopProcessing()
@@ -262,6 +314,7 @@ internal sealed class AgentChatSession(
             _visibleMessages.Add(message);
         }
 
+        PersistSnapshot();
         _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
     }
 
@@ -280,6 +333,58 @@ internal sealed class AgentChatSession(
     {
         _nextBatchId++;
         return "batch-" + _nextBatchId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private void UpdateExternalSessionId(string? externalSessionId)
+    {
+        if (string.IsNullOrWhiteSpace(externalSessionId))
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            _externalSessionId = externalSessionId.Trim();
+        }
+    }
+
+    private void PersistSnapshot()
+    {
+        AgentChatSessionState? state;
+
+        lock (_syncRoot)
+        {
+            if (_sessionStore is null)
+            {
+                return;
+            }
+
+            state = new AgentChatSessionState(
+                _sessionId,
+                _adapterName,
+                _externalSessionId,
+                _nextMessageId,
+                _nextBatchId,
+                [.. _visibleMessages.Select(CloneMessage)]);
+        }
+
+        _sessionStore.Save(state);
+    }
+
+    private static AgentChatMessage CloneMessage(AgentChatMessage message)
+    {
+        return new AgentChatMessage(
+            message.Id,
+            message.Role,
+            message.SpeakerName,
+            message.Content,
+            message.Origin,
+            message.BatchId);
+    }
+
+    private static string GetAdapterName(AgentAdapter adapter)
+    {
+        return adapter == AgentAdapter.Claude ? "claude" : "codex";
     }
 
     private void ThrowIfDisposedLocked()

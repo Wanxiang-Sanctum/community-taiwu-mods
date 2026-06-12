@@ -1,0 +1,361 @@
+using System.Globalization;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Wanxiang.Xiangshu.Ipc;
+
+namespace Wanxiang.Xiangshu.Frontend.Chat;
+
+internal sealed class AgentChatSessionStore(string workingDirectory)
+{
+    private const string CurrentSchema = "wanxiang.xiangshu.chat-session-current.v1";
+    private const string SessionSchema = "wanxiang.xiangshu.chat-session.v1";
+
+    private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
+    private static readonly JsonSerializerSettings JsonSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        NullValueHandling = NullValueHandling.Ignore,
+    };
+
+    private readonly string _currentPath = XiangshuRuntimePaths.GetCurrentChatSessionPath(workingDirectory);
+    private readonly string _sessionsDirectory = XiangshuRuntimePaths.GetChatSessionSnapshotsDirectory(workingDirectory);
+
+    public AgentChatSessionState? LoadCurrent()
+    {
+        EnsureDirectories();
+
+        if (!File.Exists(_currentPath))
+        {
+            return null;
+        }
+
+        PersistedCurrentChatSession current = ReadJson<PersistedCurrentChatSession>(_currentPath);
+        RequireSchema(current.Schema, CurrentSchema, _currentPath);
+
+        string sessionId = NormalizeSessionId(current.CurrentSessionId, "currentSessionId", _currentPath);
+        string sessionPath = GetSessionPath(sessionId);
+        PersistedChatSession session = ReadJson<PersistedChatSession>(sessionPath);
+        return CreateState(session, sessionPath);
+    }
+
+    public void Save(AgentChatSessionState state)
+    {
+        EnsureDirectories();
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        WriteJson(GetSessionPath(state.SessionId), CreatePersistedSession(state, now));
+        WriteJson(
+            _currentPath,
+            new PersistedCurrentChatSession
+            {
+                Schema = CurrentSchema,
+                UpdatedAtUtc = now,
+                CurrentSessionId = state.SessionId,
+            });
+    }
+
+    private static AgentChatSessionState CreateState(
+        PersistedChatSession session,
+        string sessionPath)
+    {
+        RequireSchema(session.Schema, SessionSchema, sessionPath);
+
+        string sessionId = NormalizeSessionId(session.SessionId, "sessionId", sessionPath);
+
+        List<AgentChatMessage> messages = [];
+        int maxMessageNumber = 0;
+        int maxBatchNumber = 0;
+
+        List<PersistedChatMessage> visibleMessages = session.VisibleMessages
+            ?? throw new InvalidDataException($"Missing chat session field 'visibleMessages' in {sessionPath}.");
+
+        foreach (PersistedChatMessage persistedMessage in visibleMessages)
+        {
+            AgentChatMessage message = CreateMessage(persistedMessage, sessionPath);
+            messages.Add(message);
+            maxMessageNumber = Math.Max(maxMessageNumber, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
+            maxBatchNumber = Math.Max(maxBatchNumber, ParseOptionalOrdinal(message.BatchId, "batch-", sessionPath));
+        }
+
+        return new AgentChatSessionState(
+            sessionId,
+            NormalizeRequired(session.Adapter, "adapter", sessionPath),
+            NormalizeNullable(session.ExternalSessionId),
+            Math.Max(session.LastMessageNumber, maxMessageNumber),
+            Math.Max(session.LastBatchNumber, maxBatchNumber),
+            messages);
+    }
+
+    private static PersistedChatSession CreatePersistedSession(
+        AgentChatSessionState state,
+        DateTimeOffset now)
+    {
+        return new PersistedChatSession
+        {
+            Schema = SessionSchema,
+            Version = 1,
+            UpdatedAtUtc = now,
+            SessionId = state.SessionId,
+            Adapter = state.Adapter,
+            ExternalSessionId = state.ExternalSessionId,
+            LastMessageNumber = state.LastMessageNumber,
+            LastBatchNumber = state.LastBatchNumber,
+            VisibleMessages =
+            [
+                .. state.VisibleMessages.Select(CreatePersistedMessage),
+            ],
+        };
+    }
+
+    private static PersistedChatMessage CreatePersistedMessage(AgentChatMessage message)
+    {
+        return new PersistedChatMessage
+        {
+            Id = message.Id,
+            Role = message.Role == AgentChatRole.Assistant ? "assistant" : "user",
+            SpeakerName = message.SpeakerName,
+            Content = message.Content,
+            Origin = message.Origin,
+            BatchId = message.BatchId,
+        };
+    }
+
+    private static AgentChatMessage CreateMessage(
+        PersistedChatMessage persistedMessage,
+        string sessionPath)
+    {
+        return new AgentChatMessage(
+            NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
+            ParseRole(persistedMessage.Role, sessionPath),
+            NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
+            NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
+            NormalizeRequired(persistedMessage.Origin, "message.origin", sessionPath),
+            NormalizeNullable(persistedMessage.BatchId));
+    }
+
+    private static AgentChatRole ParseRole(
+        string? role,
+        string sessionPath)
+    {
+        if (string.Equals(role?.Trim(), "assistant", StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentChatRole.Assistant;
+        }
+
+        if (string.Equals(role?.Trim(), "user", StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentChatRole.User;
+        }
+
+        throw new InvalidDataException($"Invalid chat message role in {sessionPath}.");
+    }
+
+    private string GetSessionPath(string sessionId)
+    {
+        return Path.Combine(_sessionsDirectory, sessionId + ".json");
+    }
+
+    private void EnsureDirectories()
+    {
+        _ = Directory.CreateDirectory(_sessionsDirectory);
+
+        string? currentDirectory = Path.GetDirectoryName(_currentPath);
+
+        if (!string.IsNullOrEmpty(currentDirectory))
+        {
+            _ = Directory.CreateDirectory(currentDirectory);
+        }
+    }
+
+    private static T ReadJson<T>(string path)
+        where T : class
+    {
+        string json = File.ReadAllText(path, Utf8NoBom);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidDataException($"Chat session file is empty: {path}");
+        }
+
+        return JsonConvert.DeserializeObject<T>(json, JsonSettings)
+            ?? throw new InvalidDataException($"Chat session file is not a JSON object: {path}");
+    }
+
+    private static void WriteJson(
+        string path,
+        object value)
+    {
+        string json = JsonConvert.SerializeObject(value, Formatting.Indented, JsonSettings);
+        File.WriteAllText(path, json + Environment.NewLine, Utf8NoBom);
+    }
+
+    private static string Normalize(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+    }
+
+    private static string? NormalizeNullable(string? value)
+    {
+        string normalized = Normalize(value);
+        return normalized.Length == 0 ? null : normalized;
+    }
+
+    private static int ParseRequiredOrdinal(
+        string value,
+        string prefix,
+        string path)
+    {
+        return TryParseOrdinal(value, prefix, out int ordinal)
+            ? ordinal
+            : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
+    }
+
+    private static int ParseOptionalOrdinal(
+        string? value,
+        string prefix,
+        string path)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return 0;
+        }
+
+        return TryParseOrdinal(value, prefix, out int ordinal)
+            ? ordinal
+            : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
+    }
+
+    private static bool TryParseOrdinal(
+        string value,
+        string prefix,
+        out int ordinal)
+    {
+        ordinal = 0;
+
+        if (!value.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(
+            value[prefix.Length..],
+            NumberStyles.None,
+            CultureInfo.InvariantCulture,
+            out int parsedOrdinal)
+            || parsedOrdinal < 0)
+        {
+            return false;
+        }
+
+        ordinal = parsedOrdinal;
+        return true;
+    }
+
+    private static void RequireSchema(
+        string? actualSchema,
+        string expectedSchema,
+        string path)
+    {
+        if (!string.Equals(actualSchema, expectedSchema, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException($"Unexpected chat session schema in {path}.");
+        }
+    }
+
+    private static string NormalizeRequired(
+        string? value,
+        string fieldName,
+        string path)
+    {
+        string normalized = Normalize(value);
+
+        if (normalized.Length == 0)
+        {
+            throw new InvalidDataException($"Missing chat session field '{fieldName}' in {path}.");
+        }
+
+        return normalized;
+    }
+
+    private static string NormalizeSessionId(
+        string? value,
+        string fieldName,
+        string path)
+    {
+        string normalized = NormalizeRequired(value, fieldName, path);
+
+        if (!Guid.TryParseExact(normalized, "N", out Guid sessionId))
+        {
+            throw new InvalidDataException($"Invalid chat session field '{fieldName}' in {path}.");
+        }
+
+        return sessionId.ToString("N");
+    }
+
+    private sealed class PersistedCurrentChatSession
+    {
+        public string? Schema { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+
+        public string CurrentSessionId { get; set; } = string.Empty;
+    }
+
+    private sealed class PersistedChatSession
+    {
+        public string? Schema { get; set; }
+
+        public int Version { get; set; } = 1;
+
+        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+
+        public string SessionId { get; set; } = string.Empty;
+
+        public string? Adapter { get; set; }
+
+        public string? ExternalSessionId { get; set; }
+
+        public int LastMessageNumber { get; set; }
+
+        public int LastBatchNumber { get; set; }
+
+        public List<PersistedChatMessage>? VisibleMessages { get; set; }
+    }
+
+    private sealed class PersistedChatMessage
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Role { get; set; } = string.Empty;
+
+        public string SpeakerName { get; set; } = string.Empty;
+
+        public string Content { get; set; } = string.Empty;
+
+        public string Origin { get; set; } = string.Empty;
+
+        public string? BatchId { get; set; }
+    }
+}
+
+internal sealed class AgentChatSessionState(
+    string sessionId,
+    string adapter,
+    string? externalSessionId,
+    int lastMessageNumber,
+    int lastBatchNumber,
+    IReadOnlyList<AgentChatMessage> visibleMessages)
+{
+    public string SessionId { get; } = sessionId;
+
+    public string Adapter { get; } = adapter;
+
+    public string? ExternalSessionId { get; } = externalSessionId;
+
+    public int LastMessageNumber { get; } = lastMessageNumber;
+
+    public int LastBatchNumber { get; } = lastBatchNumber;
+
+    public IReadOnlyList<AgentChatMessage> VisibleMessages { get; } = visibleMessages;
+}

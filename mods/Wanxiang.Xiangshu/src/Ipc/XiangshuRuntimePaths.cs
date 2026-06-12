@@ -15,6 +15,12 @@ public static class XiangshuRuntimePaths
 
     public const string McpServerDiagnosticsDirectoryName = "McpServer";
 
+    public const string ChatSessionsDirectoryName = "ChatSessions";
+
+    public const string CurrentChatSessionFileName = "current.json";
+
+    public const string ChatSessionSnapshotsDirectoryName = "sessions";
+
     public static string ResolveAgentWorkingDirectory(
         string modDirectory,
         string? configuredValue)
@@ -85,5 +91,26 @@ public static class XiangshuRuntimePaths
             GetRuntimeDirectory(agentWorkingDirectory),
             DiagnosticsDirectoryName,
             McpServerDiagnosticsDirectoryName);
+    }
+
+    public static string GetChatSessionsDirectory(string agentWorkingDirectory)
+    {
+        return Path.Combine(
+            GetRuntimeDirectory(agentWorkingDirectory),
+            ChatSessionsDirectoryName);
+    }
+
+    public static string GetCurrentChatSessionPath(string agentWorkingDirectory)
+    {
+        return Path.Combine(
+            GetChatSessionsDirectory(agentWorkingDirectory),
+            CurrentChatSessionFileName);
+    }
+
+    public static string GetChatSessionSnapshotsDirectory(string agentWorkingDirectory)
+    {
+        return Path.Combine(
+            GetChatSessionsDirectory(agentWorkingDirectory),
+            ChatSessionSnapshotsDirectoryName);
     }
 }
