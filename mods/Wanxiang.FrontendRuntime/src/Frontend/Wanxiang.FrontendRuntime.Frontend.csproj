@@ -5,6 +5,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.StringTools" />
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Reflection.Metadata" />
+    <PackageReference Include="System.Text.Encoding.CodePages" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" />
     <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
     <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"

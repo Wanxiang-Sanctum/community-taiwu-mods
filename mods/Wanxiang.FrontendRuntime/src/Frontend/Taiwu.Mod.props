@@ -12,6 +12,9 @@
     <TaiwuModCopyDependency Include="MessagePipe.VContainer.dll" />
     <TaiwuModCopyDependency Include="Microsoft.NET.StringTools.dll" />
     <TaiwuModCopyDependency Include="System.Collections.Immutable.dll" />
+    <TaiwuModCopyDependency Include="System.Reflection.Metadata.dll" />
+    <TaiwuModCopyDependency Include="System.Text.Encoding.CodePages.dll" />
+    <TaiwuModCopyDependency Include="System.Threading.Tasks.Extensions.dll" />
     <TaiwuModCopyDependency Include="UniTask.dll" />
     <TaiwuModCopyDependency Include="UniTask.Linq.dll" />
     <TaiwuModCopyDependency Include="UniTask.TextMeshPro.dll" />

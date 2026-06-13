@@ -12,14 +12,15 @@
 - MessagePipe 核心、Interprocess 和 VContainer 集成。
 - VContainer。
 - UniTask 核心、LINQ、TextMeshPro 和 Addressables 扩展。
-- MessagePack 和游戏未提供的辅助程序集。
+- MessagePack、Roslyn 前端运行所需的 `System.*` 辅助程序集，以及游戏未提供的其它辅助程序集。
 
 `System.Buffers.dll`、`System.Memory.dll`、`System.Numerics.Vectors.dll` 和
 `System.Runtime.CompilerServices.Unsafe.dll` 已由游戏运行时提供，不在本 mod 中复制部署。
 
-前端入口 DLL 会直接引用本 mod 负责提供的程序集，使太吾的前端插件加载逻辑能按入口 DLL 的直接引用从
-`Plugins/` 目录预加载这些依赖。插件初始化时仅在 UniTask PlayerLoop 尚未注入时，通过 UniTask 公开
-API 注入当前 Unity PlayerLoop。
+本 mod 通过 `TaiwuModCopyDependency` 把共享运行时 DLL 部署到 `Plugins/` 目录，并通过入口代码中的
+`RuntimeAssemblyMarkers` 形成直接程序集引用，让游戏自身的 mod 加载与程序集解析流程看到这些依赖。
+插件代码不自行扫描或加载 DLL；初始化时仅在 UniTask PlayerLoop 尚未注入时，通过 UniTask 公开 API 注入
+当前 Unity PlayerLoop。
 
 ## 下游使用
 
@@ -42,12 +43,14 @@ API 注入当前 Unity PlayerLoop。
 ## 维护边界
 
 本 mod 自身的项目引用以 `Taiwu.ModKit.Dependencies.*` 为主；`TaiwuModCopyDependency` 是随包部署
-DLL 的显式清单。只有当入口 DLL 需要直接引用某个辅助程序集，且该程序集没有作为可编译引用从上游包传递
-下来时，才额外写直接 `PackageReference`。
+DLL 的显式清单。`RuntimeAssemblyMarkers` 只用于让入口 DLL 产生直接 AssemblyRef，不承担加载逻辑。只有
+当某个辅助程序集需要进入 copy-local 输出、但没有从上游运行时包稳定传递下来时，才额外写直接
+`PackageReference`。
 
-`Microsoft.NET.StringTools.dll` 是当前的例外：它会随 `MessagePack` 进入 runtime/copy-local 输出，
-但不会作为 compile asset 传递，因此这里直接引用它来生成入口 DLL 的直接程序集引用。这个包的版本由仓库
-根目录的 `Directory.Packages.props` 统一管理。
+`Microsoft.NET.StringTools.dll`、`System.Reflection.Metadata.dll`、`System.Text.Encoding.CodePages.dll`
+和 `System.Threading.Tasks.Extensions.dll` 是当前的例外：它们会随下游功能进入 runtime/copy-local 输出，
+但不会总是作为 compile asset 传递，因此这里直接引用它们来保证包恢复和 copy-local 输出稳定。相关包版本由
+仓库根目录的 `Directory.Packages.props` 统一管理。
 
 ## 开发
 

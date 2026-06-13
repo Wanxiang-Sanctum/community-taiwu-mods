@@ -32,6 +32,13 @@
     <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.8" />
+    <PackageVersion Include="System.Collections.Immutable" Version="9.0.0" />
+    <PackageVersion Include="System.Reflection.Metadata" Version="9.0.0" />
+    <PackageVersion Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageVersion
+      Include="System.Threading.Tasks.Extensions"
+      Version="4.6.0"
+    />
     <PackageVersion
       Include="Taiwu.ModKit.References.Plugin"
       Version="$(TaiwuModKitReferencesVersion)"

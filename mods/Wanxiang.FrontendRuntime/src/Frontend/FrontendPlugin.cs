@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.Reflection.Metadata;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePipe;
@@ -28,6 +30,8 @@ internal static class FrontendRuntimeAssemblies
     private static readonly Type[] RuntimeAssemblyMarkers =
     [
         typeof(ImmutableArray<>),
+        typeof(MetadataReader),
+        typeof(CodePagesEncodingProvider),
         typeof(SpanBasedStringBuilder),
         typeof(MessagePackObjectAttribute),
         typeof(MessagePackSerializer),
