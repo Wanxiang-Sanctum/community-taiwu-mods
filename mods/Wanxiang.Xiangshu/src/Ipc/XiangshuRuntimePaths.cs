@@ -25,7 +25,7 @@ public static class XiangshuRuntimePaths
         string modDirectory,
         string? configuredValue)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(modDirectory);
 #else
         if (modDirectory is null)
@@ -59,7 +59,7 @@ public static class XiangshuRuntimePaths
 
     public static string GetRuntimeDirectory(string agentWorkingDirectory)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(agentWorkingDirectory);
 #else
         if (agentWorkingDirectory is null)

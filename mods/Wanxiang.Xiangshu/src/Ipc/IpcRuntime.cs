@@ -22,7 +22,7 @@ public static class IpcRuntime
 
     public static string FormatEndpointAddress(IpcEndpoint endpoint)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(endpoint);
 #else
         if (endpoint is null)
@@ -43,7 +43,7 @@ public static class IpcRuntime
 
     public static int ReserveLoopbackPort()
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         using TcpListener socket = new(IPAddress.Loopback, port: 0);
 
         socket.Start();

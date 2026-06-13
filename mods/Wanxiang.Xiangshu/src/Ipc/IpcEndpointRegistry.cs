@@ -28,7 +28,7 @@ public static class IpcEndpointRegistry
 
     public static void ConfigureForModDirectory(string modDirectory)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(modDirectory);
 #else
         if (modDirectory is null)
@@ -50,7 +50,7 @@ public static class IpcEndpointRegistry
 
     public static void ConfigureForWorkingDirectory(string workingDirectory)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(workingDirectory);
 #else
         if (workingDirectory is null)
@@ -70,7 +70,7 @@ public static class IpcEndpointRegistry
 
     public static void ConfigureManifestPath(string manifestPath)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(manifestPath);
 #else
         if (manifestPath is null)
@@ -136,7 +136,7 @@ public static class IpcEndpointRegistry
 
     public static IpcEndpointRegistration Register(IpcEndpoint endpoint)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(endpoint);
 #else
         if (endpoint is null)
@@ -180,7 +180,7 @@ public static class IpcEndpointRegistry
 
     private static void UpdateManifest(string manifestPath, Action<IpcEndpointManifest> update)
     {
-#if NET10_0_OR_GREATER
+#if NET6_0_OR_GREATER
         string directory = Path.GetDirectoryName(manifestPath)!;
 #else
         string directory = Path.GetDirectoryName(manifestPath);

@@ -16,18 +16,47 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[0.84.56-test, )",
-        "resolved": "0.84.56-test",
-        "contentHash": "B9xLSFaJVmnPzLdpD/K8BjUEyErtT7zSX0YOdPYe3+b6TyOThmunq55kxSWuWREKIUSbp2IL8Ws/6INe3sdHoA==",
+        "requested": "[0.84.58-test, )",
+        "resolved": "0.84.58-test",
+        "contentHash": "Njpv+ANKWHX5RhjYs69rXj6G6lWragrQUOe/dLTd4+TQXULjKE2OxcECqUv2hfgkNdrEcCqTouX0NFJIiWzy2g==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[0.84.56-test]"
+          "Taiwu.ModKit.References.Plugin": "[0.84.58-test]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[0.84.56-test, )",
-        "resolved": "0.84.56-test",
-        "contentHash": "7fudJuTSzfCOGeRmCldolEA3rs9XMTztB6AaRUSxV+JcqRfsoWuaV25eAbBeGjbtkkXt1EyzMuXRHKiSTrjnHA=="
+        "requested": "[0.84.58-test, )",
+        "resolved": "0.84.58-test",
+        "contentHash": "7ieRcSSMNkDNuKW7QTpyNt4WwrJWWHCLI2+WgygRhn7xlpNxch7W/kSLPQhE7Fow3yLuLZ8o4JmywKhShuMavQ=="
+      }
+    },
+    "net8.0": {
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "E8fu71Y+vzhniJKy1K13Rzwm8Vjcj7CDFBpflqncKUZfc3SzuF0kMBiyMmgXNPkjWTdE3Z+30HlGgYjHONZY/Q=="
+      },
+      "Roslynator.Formatting.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
+      },
+      "Taiwu.ModKit.References.Shared": {
+        "type": "Direct",
+        "requested": "[0.84.58-test, )",
+        "resolved": "0.84.58-test",
+        "contentHash": "Njpv+ANKWHX5RhjYs69rXj6G6lWragrQUOe/dLTd4+TQXULjKE2OxcECqUv2hfgkNdrEcCqTouX0NFJIiWzy2g==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[0.84.58-test]"
+        }
+      },
+      "Taiwu.ModKit.References.Plugin": {
+        "type": "CentralTransitive",
+        "requested": "[0.84.58-test, )",
+        "resolved": "0.84.58-test",
+        "contentHash": "7ieRcSSMNkDNuKW7QTpyNt4WwrJWWHCLI2+WgygRhn7xlpNxch7W/kSLPQhE7Fow3yLuLZ8o4JmywKhShuMavQ=="
       }
     }
   }
