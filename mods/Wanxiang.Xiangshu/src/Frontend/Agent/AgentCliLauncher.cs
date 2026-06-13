@@ -22,6 +22,8 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static readonly TimeSpan McpEndpointPollInterval = TimeSpan.FromMilliseconds(250);
 
+    private static readonly TimeSpan ProcessExitTimeout = TimeSpan.FromSeconds(2);
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private readonly object _syncRoot = new();
@@ -149,7 +151,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
         if (process is not null)
         {
-            TryKill(process);
+            TryKillProcess(process, reason: "launcher disposed");
 
             if (!invocationOwnsProcess)
             {
@@ -251,7 +253,7 @@ internal sealed class AgentCliLauncher : IDisposable
         }
         catch (OperationCanceledException)
         {
-            TryKill(process);
+            TryKillProcess(process, reason: "invocation cancelled");
 
             throw;
         }
@@ -682,7 +684,9 @@ internal sealed class AgentCliLauncher : IDisposable
         return false;
     }
 
-    private static void TryKill(Process? process)
+    private static void TryKillProcess(
+        Process? process,
+        string reason)
     {
         if (process is null)
         {
@@ -693,7 +697,24 @@ internal sealed class AgentCliLauncher : IDisposable
         {
             if (!process.HasExited)
             {
+                Log.Info(
+                    "killing agent CLI process",
+                    new
+                    {
+                        reason,
+                        process.Id,
+                    });
                 process.Kill();
+                if (!process.WaitForExit((int)ProcessExitTimeout.TotalMilliseconds))
+                {
+                    Log.Warning(
+                        "agent CLI process stayed alive after kill",
+                        new
+                        {
+                            reason,
+                            process.Id,
+                        });
+                }
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)

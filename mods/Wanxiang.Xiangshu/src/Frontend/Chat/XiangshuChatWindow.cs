@@ -46,6 +46,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color TextColor = new(0.92f, 0.88f, 0.78f, 1f);
     private static readonly Color MutedTextColor = new(0.67f, 0.62f, 0.52f, 1f);
     private static readonly Color ButtonColor = new(0.24f, 0.16f, 0.08f, 1f);
+    private static readonly Color WorkingButtonColor = new(0.34f, 0.20f, 0.08f, 1f);
     private static readonly Color DisabledButtonColor = new(0.13f, 0.105f, 0.08f, 1f);
 
     private static TMP_FontAsset? s_gameFontAsset;
@@ -162,7 +163,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (_inputField?.isFocused == true
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             && !Input.GetKey(KeyCode.LeftShift)
-            && !Input.GetKey(KeyCode.RightShift))
+            && !Input.GetKey(KeyCode.RightShift)
+            && _session?.IsWorking != true)
         {
             SendCurrentInput();
         }
@@ -210,8 +212,30 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         while (_session.TryDequeueEvent(out AgentChatSessionEvent sessionEvent))
         {
-            AddMessage(sessionEvent.Message);
+            if (sessionEvent.Kind == AgentChatSessionEventKind.MessageAdded
+                && sessionEvent.Message is not null)
+            {
+                AddMessage(sessionEvent.Message);
+            }
         }
+
+        UpdateSendButtonState();
+    }
+
+    private void ActivateSendButton()
+    {
+        if (_session is null)
+        {
+            return;
+        }
+
+        if (_session.IsWorking)
+        {
+            InterruptCurrentAgentReply();
+            return;
+        }
+
+        SendCurrentInput();
     }
 
     private void SendCurrentInput()
@@ -251,19 +275,63 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         FocusInputField();
     }
 
-    private void UpdateSendButtonState()
+    private void InterruptCurrentAgentReply()
     {
-        if (_sendButton is null || _inputField is null || _sendButtonImage is null)
+        if (_session is null)
         {
             return;
         }
 
-        bool canSend = !string.IsNullOrWhiteSpace(_inputField.text)
-            && _participants?.IsPlayerNameReady == true;
-        _sendButton.interactable = canSend;
-        _sendButtonImage.color = canSend ? ButtonColor : DisabledButtonColor;
+        ChatParticipantIdentity? participants = _participants;
 
-        SetSendButtonTextColor(canSend ? TextColor : MutedTextColor);
+        if (participants is null)
+        {
+            return;
+        }
+
+        participants.Refresh();
+
+        if (!participants.IsPlayerNameReady)
+        {
+            UpdateSendButtonState();
+            return;
+        }
+
+        _ = _session.RequestInterrupt(participants.PlayerName!);
+        UpdateSendButtonState();
+        FocusInputField();
+    }
+
+    private void UpdateSendButtonState()
+    {
+        if (_sendButton is not { } sendButton
+            || _inputField is not { } inputField
+            || _sendButtonImage is not { } sendButtonImage
+            || _sendButtonText is not { } sendButtonText)
+        {
+            return;
+        }
+
+        bool isWorking = _session?.IsWorking == true;
+        bool isPlayerReady = _participants?.IsPlayerNameReady == true;
+
+        if (isWorking)
+        {
+            bool canInterrupt = isPlayerReady && _session?.CanRequestInterrupt == true;
+            sendButton.interactable = canInterrupt;
+            sendButtonImage.color = canInterrupt ? WorkingButtonColor : DisabledButtonColor;
+            sendButtonText.text = canInterrupt ? "且慢" : "止息中";
+            sendButtonText.color = canInterrupt ? TextColor : MutedTextColor;
+            return;
+        }
+
+        bool canSend = !string.IsNullOrWhiteSpace(inputField.text)
+            && isPlayerReady;
+        sendButton.interactable = canSend;
+        sendButtonImage.color = canSend ? ButtonColor : DisabledButtonColor;
+
+        sendButtonText.text = "送出";
+        sendButtonText.color = canSend ? TextColor : MutedTextColor;
     }
 
     private void AddMessage(AgentChatMessage message)
@@ -634,7 +702,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         SetInputFocused(focused: false);
 
         _sendButton = CreateButton("SendButton", inputArea.transform, "送出", 88f, 92f);
-        _sendButton.onClick.AddListener(SendCurrentInput);
+        _sendButton.onClick.AddListener(ActivateSendButton);
         _sendButtonText = _sendButton.GetComponentInChildren<TextMeshProUGUI>();
         _sendButtonImage = _sendButton.GetComponent<CImage>();
         UpdateSendButtonState();
@@ -1090,16 +1158,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         return image;
-    }
-
-    private void SetSendButtonTextColor(Color color)
-    {
-        if (_sendButtonText is null)
-        {
-            return;
-        }
-
-        _sendButtonText.color = color;
     }
 
     private static void StretchToParent(RectTransform rectTransform)

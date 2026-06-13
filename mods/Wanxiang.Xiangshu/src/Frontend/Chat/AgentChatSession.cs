@@ -13,6 +13,7 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 internal sealed class AgentChatSession : IDisposable
 {
     private const string FailureMessage = "此刻诸机不应，稍后再问。";
+    private const string InterruptMessage = "且慢";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
@@ -32,6 +33,8 @@ internal sealed class AgentChatSession : IDisposable
     private bool _working;
     private bool _disposed;
     private bool _cancellationDisposed;
+    private bool _suppressIntermediateRepliesUntilNextTurn;
+    private AgentChatTurnInvocation? _activeTurn;
     private string? _externalSessionId;
 
     public AgentChatSession(
@@ -79,6 +82,30 @@ internal sealed class AgentChatSession : IDisposable
         PersistSnapshot();
     }
 
+    public bool IsWorking
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                ThrowIfDisposedLocked();
+                return _working;
+            }
+        }
+    }
+
+    public bool CanRequestInterrupt
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                ThrowIfDisposedLocked();
+                return _working && _activeTurn is { InterruptRequested: false };
+            }
+        }
+    }
+
     public void SubmitUserMessage(
         string content,
         string speakerName)
@@ -112,6 +139,47 @@ internal sealed class AgentChatSession : IDisposable
         StartProcessingIfNeeded();
     }
 
+    public bool RequestInterrupt(string speakerName)
+    {
+        string trimmedSpeakerName = speakerName.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedSpeakerName))
+        {
+            return false;
+        }
+
+        AgentChatMessage message;
+        CancellationTokenSource turnCancellation;
+
+        lock (_syncRoot)
+        {
+            ThrowIfDisposedLocked();
+
+            if (!_working || _activeTurn is not { InterruptRequested: false } activeTurn)
+            {
+                return false;
+            }
+
+            message = new AgentChatMessage(
+                CreateMessageId(),
+                AgentChatRole.User,
+                trimmedSpeakerName,
+                InterruptMessage,
+                "user");
+            _visibleMessages.Add(message);
+            RequeueInterruptedTurnLocked(activeTurn.Messages, message);
+            activeTurn.InterruptRequested = true;
+            _suppressIntermediateRepliesUntilNextTurn = true;
+            turnCancellation = activeTurn.Cancellation;
+        }
+
+        PersistSnapshot();
+        _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
+        _events.Enqueue(AgentChatSessionEvent.StateChanged());
+        turnCancellation.Cancel();
+        return true;
+    }
+
     public bool TryDequeueEvent(out AgentChatSessionEvent sessionEvent)
     {
         return _events.TryDequeue(out sessionEvent);
@@ -123,6 +191,30 @@ internal sealed class AgentChatSession : IDisposable
         {
             ThrowIfDisposedLocked();
             return [.. _visibleMessages];
+        }
+    }
+
+    private void RequeueInterruptedTurnLocked(
+        IReadOnlyList<AgentChatMessage> activeTurnMessages,
+        AgentChatMessage interruptMessage)
+    {
+        Queue<AgentChatMessage> requeuedMessages = new();
+
+        foreach (AgentChatMessage message in activeTurnMessages)
+        {
+            requeuedMessages.Enqueue(message);
+        }
+
+        while (_pendingMessages.Count > 0)
+        {
+            requeuedMessages.Enqueue(_pendingMessages.Dequeue());
+        }
+
+        requeuedMessages.Enqueue(interruptMessage);
+
+        while (requeuedMessages.Count > 0)
+        {
+            _pendingMessages.Enqueue(requeuedMessages.Dequeue());
         }
     }
 
@@ -138,6 +230,12 @@ internal sealed class AgentChatSession : IDisposable
             if (normalizedContent.Length == 0)
             {
                 throw new InvalidOperationException("Intermediate reply content is required.");
+            }
+
+            if (_suppressIntermediateRepliesUntilNextTurn
+                || _activeTurn?.InterruptRequested == true)
+            {
+                return;
             }
 
             message = new AgentChatMessage(
@@ -178,6 +276,8 @@ internal sealed class AgentChatSession : IDisposable
 
     private void StartProcessingIfNeeded()
     {
+        bool stateChanged = false;
+
         lock (_syncRoot)
         {
             if (_disposed || _working || _pendingMessages.Count == 0)
@@ -186,6 +286,12 @@ internal sealed class AgentChatSession : IDisposable
             }
 
             _working = true;
+            stateChanged = true;
+        }
+
+        if (stateChanged)
+        {
+            _events.Enqueue(AgentChatSessionEvent.StateChanged());
         }
 
         ProcessPendingMessagesAsync(_cancellation.Token).Forget(
@@ -200,28 +306,75 @@ internal sealed class AgentChatSession : IDisposable
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                AgentSettings? settings = _settingsProvider();
-                AgentChatTurn? turn = CreateNextTurnOrStop();
+                AgentChatTurnInvocation? invocation = CreateNextTurnInvocationOrStop();
 
-                if (turn is null)
+                if (invocation is null)
                 {
                     return;
                 }
 
+                AgentSettings? settings = _settingsProvider();
+
                 if (settings is null)
                 {
-                    AddAssistantSessionMessage(FailureMessage);
+                    bool turnCompleted = false;
+                    CancellationToken turnToken = invocation.Cancellation.Token;
+
+                    try
+                    {
+                        turnToken.ThrowIfCancellationRequested();
+                        turnCompleted = true;
+                        if (!CompleteTurnInvocation(invocation))
+                        {
+                            throw new OperationCanceledException(turnToken);
+                        }
+
+                        AddAssistantSessionMessage(FailureMessage);
+                    }
+                    finally
+                    {
+                        if (!turnCompleted)
+                        {
+                            _ = CompleteTurnInvocation(invocation);
+                        }
+                    }
+
                     continue;
                 }
 
                 try
                 {
-                    AgentCliInvocationResult result = await _agentCliLauncher.InvokeChatAsync(
+                    bool turnCompleted = false;
+                    CancellationToken turnToken = invocation.Cancellation.Token;
+
+                    try
+                    {
+                        turnToken.ThrowIfCancellationRequested();
+                        AgentCliInvocationResult result = await _agentCliLauncher.InvokeChatAsync(
                             settings,
-                            turn,
-                            cancellationToken);
-                    UpdateExternalSessionId(result.ExternalSessionId);
-                    AddAssistantMessage(result.AssistantMessage, "agent");
+                            invocation.Turn,
+                            turnToken);
+                        turnToken.ThrowIfCancellationRequested();
+                        turnCompleted = true;
+                        if (!CompleteTurnInvocation(invocation))
+                        {
+                            throw new OperationCanceledException(turnToken);
+                        }
+
+                        UpdateExternalSessionId(result.ExternalSessionId);
+                        AddAssistantMessage(result.AssistantMessage, "agent");
+                    }
+                    finally
+                    {
+                        if (!turnCompleted)
+                        {
+                            _ = CompleteTurnInvocation(invocation);
+                        }
+                    }
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    Log.Info("chat agent invocation cancelled by player");
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -240,16 +393,15 @@ internal sealed class AgentChatSession : IDisposable
         }
     }
 
-    private AgentChatTurn? CreateNextTurnOrStop()
+    private AgentChatTurnInvocation? CreateNextTurnInvocationOrStop()
     {
-        AgentChatTurn? turn;
+        AgentChatTurnInvocation? invocation;
 
         lock (_syncRoot)
         {
             if (_pendingMessages.Count == 0)
             {
-                _ = StopProcessingLocked();
-                turn = null;
+                invocation = null;
             }
             else
             {
@@ -261,25 +413,81 @@ internal sealed class AgentChatSession : IDisposable
                     turnMessages.Add(message);
                 }
 
-                turn = new AgentChatTurn(
-                    _externalSessionId,
-                    turnMessages[^1].SpeakerName,
-                    _assistantName,
-                    [.. turnMessages.Select(static message => message.Content)]);
+                invocation = CreateTurnInvocation(turnMessages);
+                _activeTurn = invocation;
+                _suppressIntermediateRepliesUntilNextTurn = false;
             }
         }
 
         PersistSnapshot();
-        return turn;
+        if (invocation is not null)
+        {
+            _events.Enqueue(AgentChatSessionEvent.StateChanged());
+        }
+
+        return invocation;
+    }
+
+    private AgentChatTurnInvocation CreateTurnInvocation(List<AgentChatMessage> turnMessages)
+    {
+        CancellationTokenSource? turnCancellation = null;
+
+        try
+        {
+            AgentChatTurn turn = new(
+                _externalSessionId,
+                turnMessages[^1].SpeakerName,
+                _assistantName,
+                [.. turnMessages.Select(static message => message.Content)]);
+            turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(_cancellation.Token);
+            AgentChatTurnInvocation invocation = new(turn, [.. turnMessages], turnCancellation);
+            turnCancellation = null;
+            return invocation;
+        }
+        finally
+        {
+            turnCancellation?.Dispose();
+        }
+    }
+
+    private bool CompleteTurnInvocation(AgentChatTurnInvocation invocation)
+    {
+        bool stateChanged = false;
+        bool cancelled = invocation.Cancellation.IsCancellationRequested;
+
+        lock (_syncRoot)
+        {
+            if (ReferenceEquals(_activeTurn, invocation))
+            {
+                cancelled = cancelled || invocation.InterruptRequested;
+                _activeTurn = null;
+                stateChanged = true;
+            }
+        }
+
+        invocation.Cancellation.Dispose();
+
+        if (stateChanged)
+        {
+            _events.Enqueue(AgentChatSessionEvent.StateChanged());
+        }
+
+        return !cancelled;
     }
 
     private void StopProcessing()
     {
         bool disposeCancellation;
+        bool stateChanged;
 
         lock (_syncRoot)
         {
-            disposeCancellation = StopProcessingLocked();
+            (disposeCancellation, stateChanged) = StopProcessingLocked();
+        }
+
+        if (stateChanged)
+        {
+            _events.Enqueue(AgentChatSessionEvent.StateChanged());
         }
 
         if (disposeCancellation)
@@ -288,16 +496,16 @@ internal sealed class AgentChatSession : IDisposable
         }
     }
 
-    private bool StopProcessingLocked()
+    private (bool DisposeCancellation, bool StateChanged) StopProcessingLocked()
     {
         if (!_working)
         {
-            return _disposed && !_cancellationDisposed;
+            return (_disposed && !_cancellationDisposed, StateChanged: false);
         }
 
         _working = false;
 
-        return _disposed && !_cancellationDisposed;
+        return (_disposed && !_cancellationDisposed, StateChanged: true);
     }
 
     private void DisposeCancellation()
@@ -408,5 +616,19 @@ internal sealed class AgentChatSession : IDisposable
         {
             throw new ObjectDisposedException(nameof(AgentChatSession));
         }
+    }
+
+    private sealed class AgentChatTurnInvocation(
+        AgentChatTurn turn,
+        IReadOnlyList<AgentChatMessage> messages,
+        CancellationTokenSource cancellation)
+    {
+        public AgentChatTurn Turn { get; } = turn;
+
+        public IReadOnlyList<AgentChatMessage> Messages { get; } = messages;
+
+        public CancellationTokenSource Cancellation { get; } = cancellation;
+
+        public bool InterruptRequested { get; set; }
     }
 }
