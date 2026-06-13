@@ -20,9 +20,12 @@ internal sealed class PluginTools
         Destructive = false,
         Idempotent = false,
         ReadOnly = false)]
-    [Description("Sends an intermediate Xiangshu reply to the current in-game chat session.")]
+    [Description(
+        "Shows a short provisional Xiangshu message in the current in-game chat before the final reply. "
+        + "Use it when a turn needs multiple steps, long-running work, or an early player-visible acknowledgement. "
+        + "The content must be brief in-world Xiangshu text, with no MCP, IPC, CLI, log, or implementation details.")]
     public Task<string> SendIntermediateReplyAsync(
-        [Description("Short text to show to the player as Xiangshu.")]
+        [Description("Brief player-visible text in Xiangshu's voice.")]
         string content,
         CancellationToken cancellationToken = default)
     {
@@ -36,13 +39,23 @@ internal sealed class PluginTools
         Destructive = true,
         Idempotent = false,
         ReadOnly = false)]
-    [Description("Executes trusted C# code inside the Wanxiang.Xiangshu frontend or backend plugin process.")]
+    [Description(
+        "Runs fully trusted C# inside the live Wanxiang.Xiangshu frontend or backend plugin process. "
+        + "Use it when the answer or requested action needs current game/mod state that only plugin APIs can access. "
+        + "Do not use it for ordinary conversation or static knowledge. Mutate game/mod state only when the player intent is clear. "
+        + "The tool returns JSON with returnValueJson, error, and diagnostics; check error before relying on returnValueJson.")]
     public Task<string> ExecuteCSharpScriptAsync(
-        [Description("Target plugin side. Valid values: frontend, backend.")]
+        [Description(
+            "Target plugin side: frontend for UI, chat window, and frontend runtime state; "
+            + "backend for backend plugin state and backend-side game APIs. If the side is uncertain, avoid mutation "
+            + "until a minimal read-only script confirms where the needed state lives.")]
         string side,
-        [Description("Complete C# source to compile. Define public static class XiangshuScript with Execute or ExecuteAsync taking XiangshuScriptGlobals.")]
+        [Description(
+            "Complete C# compilation unit, not a snippet. Include using directives and define exactly one public static "
+            + "XiangshuScript class with Execute or ExecuteAsync taking XiangshuScriptGlobals; the return value is serialized to JSON.")]
         string script,
-        [Description("Optional JSON object passed to the script as globals.Arguments. Non-string values are passed as compact JSON strings.")]
+        [Description(
+            "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
         string argumentsJson = "{}",
         CancellationToken cancellationToken = default)
     {
