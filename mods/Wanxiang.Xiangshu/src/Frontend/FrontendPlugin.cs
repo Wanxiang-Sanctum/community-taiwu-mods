@@ -157,17 +157,4 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
         _chatWindow.Toggle();
     }
-
-    internal void LaunchAgentDiagnostic()
-    {
-        AgentSettings? settings = CurrentAgentSettings;
-
-        if (settings is null || _agentCliLauncher is null)
-        {
-            throw new InvalidOperationException("Wanxiang.Xiangshu frontend plugin is not initialized.");
-        }
-
-        (bool _, string message) = _agentCliLauncher.TryStartDiagnostic(settings);
-        Log.Info(message);
-    }
 }

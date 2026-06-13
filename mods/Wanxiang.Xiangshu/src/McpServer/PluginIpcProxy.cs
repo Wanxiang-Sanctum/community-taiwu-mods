@@ -13,89 +13,6 @@ namespace Wanxiang.Xiangshu.McpServer;
 
 internal static class PluginIpcProxy
 {
-    private const string ToolchainCheckMessage = "xiangshu toolchain check";
-
-    private static readonly TimeSpan PingTimeout = TimeSpan.FromSeconds(5);
-
-    public static string ListEndpoints()
-    {
-        IpcEndpoint[] endpoints =
-        [
-            .. IpcEndpointRegistry.GetLiveEndpoints()
-                .OrderBy(endpoint => endpoint.Side, StringComparer.OrdinalIgnoreCase)
-                .ThenByDescending(endpoint => endpoint.StartedAtUtc),
-        ];
-        EndpointListResult result = new(
-            IpcEndpointRegistry.ManifestPath,
-            [.. endpoints.Select(DescribeEndpoint)]);
-
-        return JsonSerializer.Serialize(
-            result,
-            XiangshuMcpJsonContext.Default.EndpointListResult);
-    }
-
-    public static async Task<string> CheckToolchainAsync(CancellationToken cancellationToken)
-    {
-        IpcEndpoint[] endpoints =
-        [
-            .. IpcEndpointRegistry.GetLiveEndpoints()
-                .OrderBy(endpoint => endpoint.Side, StringComparer.OrdinalIgnoreCase)
-                .ThenByDescending(endpoint => endpoint.StartedAtUtc),
-        ];
-
-        IpcEndpoint? mcpEndpoint = FindLatestEndpoint(endpoints, IpcRuntime.McpServerSide);
-        EndpointDescription[] endpointDescriptions = [.. endpoints.Select(DescribeEndpoint)];
-        SideCheckResult frontend = await CheckSideAsync(
-            endpoints,
-            IpcRuntime.FrontendSide,
-            cancellationToken);
-        SideCheckResult backend = await CheckSideAsync(
-            endpoints,
-            IpcRuntime.BackendSide,
-            cancellationToken);
-        ToolchainCheckResult result = new(
-            DateTimeOffset.UtcNow,
-            IpcEndpointRegistry.ManifestPath,
-            mcpEndpoint is not null
-                && frontend.PingSucceeded
-                && backend.PingSucceeded,
-            new McpServerCheckResult(
-                mcpEndpoint is not null,
-                mcpEndpoint is null ? null : DescribeEndpoint(mcpEndpoint)),
-            endpointDescriptions,
-            frontend,
-            backend);
-
-        return JsonSerializer.Serialize(
-            result,
-            XiangshuMcpJsonContext.Default.ToolchainCheckResult);
-    }
-
-    public static async Task<string> PingAsync(
-        string side,
-        string message,
-        CancellationToken cancellationToken)
-    {
-        string normalizedSide = NormalizeSide(side);
-        IpcEndpoint endpoint =
-            IpcEndpointRegistry.TryGetLiveEndpoint(normalizedSide)
-            ?? throw new McpException(
-                $"No live Wanxiang.Xiangshu {normalizedSide} IPC endpoint was found. Start the game mod first.");
-
-        IpcPingResponse response = await InvokeAsync<IpcPingRequest, IpcPingResponse>(
-            endpoint,
-            new IpcPingRequest
-            {
-                Message = message,
-            },
-            cancellationToken);
-        PingResult result = new(DescribeEndpoint(endpoint), response);
-
-        return JsonSerializer.Serialize(
-            result,
-            XiangshuMcpJsonContext.Default.PingResult);
-    }
-
     public static async Task<string> SendIntermediateReplyAsync(
         string content,
         CancellationToken cancellationToken)
@@ -114,6 +31,32 @@ internal static class PluginIpcProxy
             cancellationToken);
 
         return "Intermediate reply sent.";
+    }
+
+    public static async Task<string> ExecuteCSharpScriptAsync(
+        string side,
+        string script,
+        string argumentsJson,
+        CancellationToken cancellationToken)
+    {
+        string normalizedSide = NormalizeSide(side);
+        IpcEndpoint endpoint =
+            IpcEndpointRegistry.TryGetLiveEndpoint(normalizedSide)
+            ?? throw new McpException(
+                $"No live Wanxiang.Xiangshu {normalizedSide} IPC endpoint was found. Start the game mod first.");
+
+        IpcExecuteScriptResponse response = await InvokeAsync<IpcExecuteScriptRequest, IpcExecuteScriptResponse>(
+            endpoint,
+            new IpcExecuteScriptRequest
+            {
+                Script = script,
+                Arguments = ParseArgumentsJson(argumentsJson),
+            },
+            cancellationToken);
+
+        return JsonSerializer.Serialize(
+            response,
+            XiangshuMcpJsonContext.Default.IpcExecuteScriptResponse);
     }
 
     [SuppressMessage(
@@ -179,72 +122,6 @@ internal static class PluginIpcProxy
         }
     }
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "The diagnostic tool reports per-side IPC failures as structured data instead of failing the whole MCP call.")]
-    private static async Task<SideCheckResult> CheckSideAsync(
-        IReadOnlyList<IpcEndpoint> endpoints,
-        string side,
-        CancellationToken cancellationToken)
-    {
-        IpcEndpoint? endpoint = FindLatestEndpoint(endpoints, side);
-
-        if (endpoint is null)
-        {
-            return new SideCheckResult(
-                side,
-                EndpointFound: false,
-                Endpoint: null,
-                PingSucceeded: false,
-                Response: null,
-                Error: $"No live Wanxiang.Xiangshu {side} IPC endpoint was found.");
-        }
-
-        using CancellationTokenSource timeout =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(PingTimeout);
-
-        try
-        {
-            IpcPingResponse response = await InvokeAsync<IpcPingRequest, IpcPingResponse>(
-                endpoint,
-                new IpcPingRequest
-                {
-                    Message = ToolchainCheckMessage,
-                },
-                timeout.Token);
-
-            return new SideCheckResult(
-                side,
-                EndpointFound: true,
-                DescribeEndpoint(endpoint),
-                PingSucceeded: true,
-                response,
-                Error: null);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return new SideCheckResult(
-                side,
-                EndpointFound: true,
-                DescribeEndpoint(endpoint),
-                PingSucceeded: false,
-                Response: null,
-                Error: $"Timed out after {PingTimeout.TotalSeconds} seconds while pinging {side}.");
-        }
-        catch (Exception ex)
-        {
-            return new SideCheckResult(
-                side,
-                EndpointFound: true,
-                DescribeEndpoint(endpoint),
-                PingSucceeded: false,
-                Response: null,
-                Error: ex.ToString());
-        }
-    }
-
     private static string NormalizeSide(string side)
     {
         if (string.IsNullOrWhiteSpace(side))
@@ -267,73 +144,41 @@ internal static class PluginIpcProxy
         throw new McpException("Side must be either 'frontend' or 'backend'.");
     }
 
-    private static IpcEndpoint? FindLatestEndpoint(
-        IEnumerable<IpcEndpoint> endpoints,
-        string side)
+    private static Dictionary<string, string> ParseArgumentsJson(string argumentsJson)
     {
-        return endpoints
-            .Where(endpoint => string.Equals(endpoint.Side, side, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(endpoint => endpoint.StartedAtUtc)
-            .FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(argumentsJson))
+        {
+            return [];
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(argumentsJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new McpException("argumentsJson must be a JSON object.");
+            }
+
+            Dictionary<string, string> arguments = new(StringComparer.Ordinal);
+            foreach (JsonProperty property in document.RootElement.EnumerateObject())
+            {
+                arguments[property.Name] = property.Value.ValueKind == JsonValueKind.String
+                    ? property.Value.GetString() ?? string.Empty
+                    : property.Value.GetRawText();
+            }
+
+            return arguments;
+        }
+        catch (JsonException ex)
+        {
+            throw new McpException("argumentsJson must be a valid JSON object.", ex);
+        }
     }
 
-    private static EndpointDescription DescribeEndpoint(IpcEndpoint endpoint)
-    {
-        return new EndpointDescription(
-            endpoint.Side,
-            endpoint.Transport,
-            endpoint.Host,
-            endpoint.Path,
-            endpoint.Port,
-            endpoint.ProcessId,
-            endpoint.StartedAtUtc,
-            IpcRuntime.FormatEndpointAddress(endpoint));
-    }
-
-    internal sealed record EndpointListResult(
-        string ManifestPath,
-        IReadOnlyList<EndpointDescription> Endpoints);
-
-    internal sealed record ToolchainCheckResult(
-        DateTimeOffset CheckedAtUtc,
-        string ManifestPath,
-        bool Ready,
-        McpServerCheckResult McpServer,
-        IReadOnlyList<EndpointDescription> Endpoints,
-        SideCheckResult Frontend,
-        SideCheckResult Backend);
-
-    internal sealed record McpServerCheckResult(
-        bool Registered,
-        EndpointDescription? Endpoint);
-
-    internal sealed record PingResult(
-        EndpointDescription Endpoint,
-        IpcPingResponse Response);
-
-    internal sealed record EndpointDescription(
-        string Side,
-        string Transport,
-        string Host,
-        string Path,
-        int Port,
-        int ProcessId,
-        DateTimeOffset StartedAtUtc,
-        string Address);
-
-    internal sealed record SideCheckResult(
-        string Side,
-        bool EndpointFound,
-        EndpointDescription? Endpoint,
-        bool PingSucceeded,
-        IpcPingResponse? Response,
-        string? Error);
 }
 
 [JsonSourceGenerationOptions(
     JsonSerializerDefaults.Web,
     WriteIndented = true)]
-[JsonSerializable(typeof(PluginIpcProxy.EndpointListResult))]
-[JsonSerializable(typeof(PluginIpcProxy.ToolchainCheckResult))]
-[JsonSerializable(typeof(PluginIpcProxy.PingResult))]
+[JsonSerializable(typeof(IpcExecuteScriptResponse))]
 internal sealed partial class XiangshuMcpJsonContext : JsonSerializerContext;

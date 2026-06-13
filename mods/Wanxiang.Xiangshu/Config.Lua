@@ -5,7 +5,7 @@ return {
   Version = "0.1.0",
   GameVersion = "0.84.46-test",
   Author = "Wanxiang Sanctum",
-  Description = "一个混沌的愿望回应 mod。当前提供本机 IPC、MCP 工具链诊断，以及由本机 Agent 驱动的相枢对话入口。",
+  Description = "一个混沌的愿望回应 mod。当前提供本机 Agent 对话入口、MCP 工具服务和前后端脚本通道。",
   WorkshopCover = nil,
   Visibility = 0,
   DefaultSettings = {
@@ -13,7 +13,7 @@ return {
       SettingType = "Dropdown",
       Key = "AgentAdapter",
       DisplayName = "本机 Agent",
-      Description = "选择相枢对话和工具链诊断使用的本机 Agent。",
+      Description = "选择相枢对话使用的本机 Agent。",
       GroupName = "本机 Agent",
       Options = {
         "Codex CLI",

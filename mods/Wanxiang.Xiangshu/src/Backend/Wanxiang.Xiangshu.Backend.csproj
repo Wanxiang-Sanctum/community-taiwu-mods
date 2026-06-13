@@ -12,6 +12,9 @@
     <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
     />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
+    />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,6 +5,7 @@ using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Wanxiang.Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Backend;
 
@@ -74,7 +75,7 @@ internal sealed class BackendIpcServer : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        RegisterIpcPingHandler(services);
+        RegisterIpcScriptHandler(services);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
             port,
@@ -117,18 +118,20 @@ internal sealed class BackendIpcServer : IDisposable
         }
     }
 
-    private static void RegisterIpcPingHandler(IServiceCollection services)
+    private static void RegisterIpcScriptHandler(IServiceCollection services)
     {
         _ = services
-            .AddSingleton<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>, BackendIpcPingHandler>()
-            .AddSingleton<IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>>(
-                provider => new AsyncRequestHandler<IpcPingRequest, IpcPingResponse>(
-                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcPingRequest, IpcPingResponse>>(),
+            .AddSingleton(
+                new XiangshuScriptRunner(IpcRuntime.BackendSide))
+            .AddSingleton<IAsyncRequestHandlerCore<IpcExecuteScriptRequest, IpcExecuteScriptResponse>, BackendExecuteScriptHandler>()
+            .AddSingleton<IAsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>>(
+                provider => new AsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>(
+                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcExecuteScriptRequest, IpcExecuteScriptResponse>>(),
                     provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
         AsyncRequestHandlerRegistory.Add(
-            typeof(IpcPingRequest),
-            typeof(IpcPingResponse),
-            typeof(BackendIpcPingHandler));
+            typeof(IpcExecuteScriptRequest),
+            typeof(IpcExecuteScriptResponse),
+            typeof(BackendExecuteScriptHandler));
     }
 
     private void ThrowIfDisposed()
@@ -141,17 +144,13 @@ internal sealed class BackendIpcServer : IDisposable
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class BackendIpcPingHandler : IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>
+internal sealed class BackendExecuteScriptHandler(XiangshuScriptRunner scriptRunner)
+    : IAsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>
 {
-    public ValueTask<IpcPingResponse> InvokeAsync(
-        IpcPingRequest request,
+    public async ValueTask<IpcExecuteScriptResponse> InvokeAsync(
+        IpcExecuteScriptRequest request,
         CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(
-            new IpcPingResponse
-            {
-                Side = IpcRuntime.BackendSide,
-                Message = $"backend pong: {request.Message}",
-            });
+        return await scriptRunner.ExecuteAsync(request, cancellationToken);
     }
 }

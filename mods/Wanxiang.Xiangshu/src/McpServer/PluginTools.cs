@@ -16,45 +16,6 @@ namespace Wanxiang.Xiangshu.McpServer;
 internal sealed class PluginTools
 {
     [McpServerTool(
-        Name = "xiangshu_list_endpoints",
-        Destructive = false,
-        Idempotent = true,
-        ReadOnly = true)]
-    [Description("Lists live Wanxiang.Xiangshu frontend and backend IPC endpoints discovered from the local manifest.")]
-    public string ListEndpoints()
-    {
-        return PluginIpcProxy.ListEndpoints();
-    }
-
-    [McpServerTool(
-        Name = "xiangshu_check_toolchain",
-        Destructive = false,
-        Idempotent = true,
-        ReadOnly = true)]
-    [Description("Checks whether the Wanxiang.Xiangshu MCP server can discover and ping the frontend and backend IPC endpoints.")]
-    public Task<string> CheckToolchainAsync(
-        CancellationToken cancellationToken = default)
-    {
-        return PluginIpcProxy.CheckToolchainAsync(cancellationToken);
-    }
-
-    [McpServerTool(
-        Name = "xiangshu_ping_plugin",
-        Destructive = false,
-        Idempotent = true,
-        ReadOnly = true)]
-    [Description("Pings the Wanxiang.Xiangshu frontend or backend plugin through its local MessagePipe IPC endpoint.")]
-    public Task<string> PingPluginAsync(
-        [Description("Plugin side to ping. Valid values: frontend, backend.")]
-        string side,
-        [Description("Message to include in the ping request.")]
-        string message = "hello from MCP",
-        CancellationToken cancellationToken = default)
-    {
-        return PluginIpcProxy.PingAsync(side, message, cancellationToken);
-    }
-
-    [McpServerTool(
         Name = "xiangshu_send_intermediate_reply",
         Destructive = false,
         Idempotent = false,
@@ -67,6 +28,28 @@ internal sealed class PluginTools
     {
         return PluginIpcProxy.SendIntermediateReplyAsync(
             content,
+            cancellationToken);
+    }
+
+    [McpServerTool(
+        Name = "xiangshu_execute_csharp_script",
+        Destructive = true,
+        Idempotent = false,
+        ReadOnly = false)]
+    [Description("Executes trusted C# code inside the Wanxiang.Xiangshu frontend or backend plugin process.")]
+    public Task<string> ExecuteCSharpScriptAsync(
+        [Description("Target plugin side. Valid values: frontend, backend.")]
+        string side,
+        [Description("Complete C# source to compile. Define public static class XiangshuScript with Execute or ExecuteAsync taking XiangshuScriptGlobals.")]
+        string script,
+        [Description("Optional JSON object passed to the script as globals.Arguments. Non-string values are passed as compact JSON strings.")]
+        string argumentsJson = "{}",
+        CancellationToken cancellationToken = default)
+    {
+        return PluginIpcProxy.ExecuteCSharpScriptAsync(
+            side,
+            script,
+            argumentsJson,
             cancellationToken);
     }
 }

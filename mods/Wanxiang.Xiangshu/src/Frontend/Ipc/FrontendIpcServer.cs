@@ -9,6 +9,7 @@ using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
@@ -112,7 +113,12 @@ internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposa
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
         _ = builder.RegisterInstance(chatSession);
-        _ = builder.RegisterAsyncRequestHandler<IpcPingRequest, IpcPingResponse, FrontendIpcPingHandler>(
+        _ = builder.RegisterInstance(
+            new XiangshuScriptRunner(IpcRuntime.FrontendSide));
+        _ = builder.RegisterAsyncRequestHandler<
+            IpcExecuteScriptRequest,
+            IpcExecuteScriptResponse,
+            FrontendExecuteScriptHandler>(
             options);
         _ = builder.RegisterAsyncRequestHandler<
             IpcIntermediateReplyRequest,
@@ -130,7 +136,9 @@ internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposa
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.MessagePackSerializerOptions = StandardResolver.Options;
             });
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<IpcPingRequest, IpcPingResponse>(
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            IpcExecuteScriptRequest,
+            IpcExecuteScriptResponse>(
             tcpOptions);
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcIntermediateReplyRequest,
@@ -151,18 +159,14 @@ internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposa
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class FrontendIpcPingHandler : IAsyncRequestHandler<IpcPingRequest, IpcPingResponse>
+internal sealed class FrontendExecuteScriptHandler(XiangshuScriptRunner scriptRunner)
+    : IAsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>
 {
-    public UniTask<IpcPingResponse> InvokeAsync(
-        IpcPingRequest request,
+    public async UniTask<IpcExecuteScriptResponse> InvokeAsync(
+        IpcExecuteScriptRequest request,
         CancellationToken cancellationToken = default)
     {
-        return UniTask.FromResult(
-            new IpcPingResponse
-            {
-                Side = IpcRuntime.FrontendSide,
-                Message = $"frontend pong: {request.Message}",
-            });
+        return await scriptRunner.ExecuteAsync(request, cancellationToken);
     }
 }
 

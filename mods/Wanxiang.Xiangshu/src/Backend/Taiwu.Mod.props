@@ -6,6 +6,9 @@
   <ItemGroup>
     <TaiwuModMergeDependency Include="Wanxiang.Taiwu.Logging.dll" />
     <TaiwuModMergeDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
+    <TaiwuModMergeDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
+    <TaiwuModMergeDependency Include="Microsoft.CodeAnalysis.dll" />
+    <TaiwuModMergeDependency Include="Microsoft.CodeAnalysis.CSharp.dll" />
     <TaiwuModMergeDependency Include="MessagePack.Annotations.dll" />
     <TaiwuModMergeDependency Include="MessagePack.dll" />
     <TaiwuModMergeDependency Include="MessagePipe.dll" />

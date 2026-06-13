@@ -12,12 +12,6 @@ namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentCliLauncher : IDisposable
 {
-    private const string DiagnosticInput =
-        """
-        Call the `xiangshu_check_toolchain` tool and summarize whether the frontend,
-        backend, and MCP server endpoints are reachable.
-        """;
-
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
 
     private static readonly TimeSpan McpEndpointPollInterval = TimeSpan.FromMilliseconds(250);
@@ -31,39 +25,6 @@ internal sealed class AgentCliLauncher : IDisposable
     private Process? _process;
     private CancellationTokenSource? _activeInvocationCancellation;
     private bool _disposed;
-
-    public (bool Started, string Message) TryStartDiagnostic(AgentSettings settings)
-    {
-        ThrowIfDisposed();
-
-        CancellationTokenSource? cancellation = new();
-
-        try
-        {
-            if (!TryBeginInvocation(cancellation, out string? busyMessage))
-            {
-                cancellation.Dispose();
-                cancellation = null;
-                return (
-                    Started: false,
-                    busyMessage ?? "Wanxiang.Xiangshu agent diagnostic is already running.");
-            }
-
-            CancellationTokenSource invocationCancellation = cancellation;
-            cancellation = null;
-
-            RunDiagnosticAsync(settings, invocationCancellation).Forget(
-                static ex => Log.Error(ex, "agent diagnostic failed"));
-
-            return (
-                Started: true,
-                "Wanxiang.Xiangshu agent diagnostic started.");
-        }
-        finally
-        {
-            cancellation?.Dispose();
-        }
-    }
 
     public async UniTask<AgentCliInvocationResult> InvokeChatAsync(
         AgentSettings settings,
@@ -157,38 +118,6 @@ internal sealed class AgentCliLauncher : IDisposable
             {
                 process.Dispose();
             }
-        }
-    }
-
-    private async UniTask RunDiagnosticAsync(
-        AgentSettings settings,
-        CancellationTokenSource cancellation)
-    {
-        CancellationToken cancellationToken = cancellation.Token;
-        await UniTask.SwitchToThreadPool();
-        cancellationToken.ThrowIfCancellationRequested();
-
-        try
-        {
-            using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
-            _ = await RunInvocationAsync(
-                    settings,
-                    DiagnosticInput,
-                    externalSessionId: null,
-                    tempFiles,
-                    useChatReplySchema: false,
-                    cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-        {
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            Log.Error(ex, "agent diagnostic failed");
-        }
-        finally
-        {
-            CompleteInvocation(cancellation);
         }
     }
 

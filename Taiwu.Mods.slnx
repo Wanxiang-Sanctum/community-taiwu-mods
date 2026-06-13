@@ -18,6 +18,9 @@
     <Project
       Path="mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
     />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
+    />
   </Folder>
   <Folder Name="/shared/">
     <Project

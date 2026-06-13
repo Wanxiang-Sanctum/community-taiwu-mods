@@ -3,6 +3,4 @@
 `BackendPlugin.cs` 是太吾后端插件生命周期的组合根。当前后端职责集中在启动后端 MessagePipe IPC
 endpoint，并把 endpoint 注册到 `XiangshuRuntime/ipc-endpoints.json`。
 
-当前后端 IPC 暴露 ping 请求，用于 MCP sidecar 诊断链路和区分前端/后端 endpoint。
-
-后续后端侧脚本执行能力也归这个模块：它承载后端进程可访问的游戏 API、数据状态和线程边界。
+后端侧脚本执行能力归这个模块：它承载后端进程可访问的游戏 API、数据状态和线程边界。
