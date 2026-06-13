@@ -16,18 +16,18 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[0.84.58-test, )",
-        "resolved": "0.84.58-test",
-        "contentHash": "Njpv+ANKWHX5RhjYs69rXj6G6lWragrQUOe/dLTd4+TQXULjKE2OxcECqUv2hfgkNdrEcCqTouX0NFJIiWzy2g==",
+        "requested": "[0.84.60-test, )",
+        "resolved": "0.84.60-test",
+        "contentHash": "PwVyfWSsJSF6oRkBDuf27cVRY8HR0CtGVesEBdb+Z4E5fIxUZl/YUE2NX8qxHnOVFgW9XzyzVto5wT9HatTbeg==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[0.84.58-test]"
+          "Taiwu.ModKit.References.Plugin": "[0.84.60-test]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[0.84.58-test, )",
-        "resolved": "0.84.58-test",
-        "contentHash": "7ieRcSSMNkDNuKW7QTpyNt4WwrJWWHCLI2+WgygRhn7xlpNxch7W/kSLPQhE7Fow3yLuLZ8o4JmywKhShuMavQ=="
+        "requested": "[0.84.60-test, )",
+        "resolved": "0.84.60-test",
+        "contentHash": "mIOFX7q9O2OgtwOUrPohgVkruEzFPzwS2onqTUnEvXvOUrD4Hzbz+9JqMG4REVjyTBFPRXKUntY0hf3dOxSAxg=="
       }
     },
     "net10.0": {
@@ -59,18 +59,18 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[0.84.58-test, )",
-        "resolved": "0.84.58-test",
-        "contentHash": "Njpv+ANKWHX5RhjYs69rXj6G6lWragrQUOe/dLTd4+TQXULjKE2OxcECqUv2hfgkNdrEcCqTouX0NFJIiWzy2g==",
+        "requested": "[0.84.60-test, )",
+        "resolved": "0.84.60-test",
+        "contentHash": "PwVyfWSsJSF6oRkBDuf27cVRY8HR0CtGVesEBdb+Z4E5fIxUZl/YUE2NX8qxHnOVFgW9XzyzVto5wT9HatTbeg==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[0.84.58-test]"
+          "Taiwu.ModKit.References.Plugin": "[0.84.60-test]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[0.84.58-test, )",
-        "resolved": "0.84.58-test",
-        "contentHash": "7ieRcSSMNkDNuKW7QTpyNt4WwrJWWHCLI2+WgygRhn7xlpNxch7W/kSLPQhE7Fow3yLuLZ8o4JmywKhShuMavQ=="
+        "requested": "[0.84.60-test, )",
+        "resolved": "0.84.60-test",
+        "contentHash": "mIOFX7q9O2OgtwOUrPohgVkruEzFPzwS2onqTUnEvXvOUrD4Hzbz+9JqMG4REVjyTBFPRXKUntY0hf3dOxSAxg=="
       }
     }
   }
