@@ -9,23 +9,6 @@
     />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.NET.StringTools" />
-    <!-- Keep Roslyn support assemblies on the exact major versions referenced by Microsoft.CodeAnalysis 5.3.0. -->
-    <PackageReference
-      Include="System.Collections.Immutable"
-      VersionOverride="9.0.0"
-    />
-    <PackageReference
-      Include="System.Reflection.Metadata"
-      VersionOverride="9.0.0"
-    />
-    <PackageReference
-      Include="System.Text.Encoding.CodePages"
-      VersionOverride="8.0.0"
-    />
-    <PackageReference
-      Include="System.Threading.Tasks.Extensions"
-      VersionOverride="4.6.0"
-    />
     <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
     <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"
