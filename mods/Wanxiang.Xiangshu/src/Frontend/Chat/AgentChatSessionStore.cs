@@ -51,6 +51,19 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             });
     }
 
+    public void DeleteSnapshot(string sessionId)
+    {
+        EnsureDirectories();
+
+        string normalizedSessionId = NormalizeSessionId(sessionId, "sessionId", _sessionsDirectory);
+        string sessionPath = GetSessionPath(normalizedSessionId);
+
+        if (File.Exists(sessionPath))
+        {
+            File.Delete(sessionPath);
+        }
+    }
+
     private static AgentChatSessionState CreateState(
         PersistedChatSession session,
         string sessionPath)

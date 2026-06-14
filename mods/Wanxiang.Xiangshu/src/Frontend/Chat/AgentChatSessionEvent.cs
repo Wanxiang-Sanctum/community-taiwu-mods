@@ -23,10 +23,16 @@ internal sealed class AgentChatSessionEvent
     {
         return new AgentChatSessionEvent(AgentChatSessionEventKind.StateChanged, message: null);
     }
+
+    public static AgentChatSessionEvent MessagesReset()
+    {
+        return new AgentChatSessionEvent(AgentChatSessionEventKind.MessagesReset, message: null);
+    }
 }
 
 internal enum AgentChatSessionEventKind
 {
     MessageAdded = 0,
     StateChanged = 1,
+    MessagesReset = 2,
 }

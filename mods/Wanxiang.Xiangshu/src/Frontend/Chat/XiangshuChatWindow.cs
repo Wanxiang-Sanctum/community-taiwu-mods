@@ -29,6 +29,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float HeaderHeight = 78f;
     private const float HeaderPortraitSize = 56f;
     private const float HeaderIconSize = 24f;
+    private const float HeaderResetButtonWidth = 58f;
+    private const float HeaderResetButtonHeight = 40f;
     private const float HeaderCloseButtonSize = 40f;
     private const float ScrollbarWidth = 10f;
     private const float ScrollbarRightInset = 8f;
@@ -221,6 +223,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         while (_session.TryDequeueEvent(out AgentChatSessionEvent sessionEvent))
         {
+            if (sessionEvent.Kind == AgentChatSessionEventKind.MessagesReset)
+            {
+                ReloadVisibleMessages();
+                continue;
+            }
+
             if (sessionEvent.Kind == AgentChatSessionEventKind.MessageAdded
                 && sessionEvent.Message is not null)
             {
@@ -307,6 +315,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         _ = _session.RequestInterrupt(participants.PlayerName!);
+        UpdateSendButtonState();
+        FocusInputField();
+    }
+
+    private void ResetChatSession()
+    {
+        AgentChatSession? session = _session;
+
+        if (session is null)
+        {
+            return;
+        }
+
+        session.Reset();
         UpdateSendButtonState();
         FocusInputField();
     }
@@ -431,6 +453,26 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         {
             AddMessage(message);
         }
+    }
+
+    private void ReloadVisibleMessages()
+    {
+        if (_messageContent is null)
+        {
+            return;
+        }
+
+        for (int index = _messageContent.childCount - 1; index >= 0; index--)
+        {
+            Destroy(_messageContent.GetChild(index).gameObject);
+        }
+
+        _messageBubbleLayouts.Clear();
+        _playerSpeakerTexts.Clear();
+        _renderedMessageIds.Clear();
+        ReplayVisibleMessages();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_messageContent);
+        ScheduleScrollToBottom();
     }
 
     private void UpdatePlayerSpeakerLabels()
@@ -582,6 +624,14 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         headerLayout.childForceExpandWidth = false;
         headerLayout.padding = new RectOffset(14, 8, 8, 8);
         headerLayout.spacing = 12f;
+
+        Button reset = CreateButton(
+            "ResetButton",
+            header.transform,
+            "重置",
+            HeaderResetButtonWidth,
+            HeaderResetButtonHeight);
+        reset.onClick.AddListener(ResetChatSession);
 
         GameObject portraitFrame = CreateChild("XiangshuPortraitFrame", header.transform);
         CImage portraitFrameImage = AddImage(portraitFrame, new Color(0.42f, 0.25f, 0.13f, 0.82f), HeaderPortraitFrameSprite);
