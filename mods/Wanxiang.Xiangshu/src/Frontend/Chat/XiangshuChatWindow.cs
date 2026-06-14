@@ -15,11 +15,11 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 internal sealed class XiangshuChatWindow : MonoBehaviour
 {
     private const string HeaderIconSprite = "map_icon_xiangshu";
-    private const string HeaderPortraitSprite = "npcface_image_2001_0";
+    private const string HeaderPortraitTexturePath =
+        "RemakeResources/Textures/SectStory/npcface_image_2001_0";
     private const string HeaderPortraitFrameSprite = "gamelinescroll_icon_big_charm_2001";
     private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
     private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
-    private const string NeutralBubbleSprite = "ui9_back_mousetip_base_npcthink_0";
     private const string ScrollbarHandleSprite = "sp_gn_gundong_7";
     private const float PreferredPanelWidth = 620f;
     private const float PreferredPanelHeight = 720f;
@@ -45,7 +45,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
     private static readonly Color HeaderColor = new(0.12f, 0.087f, 0.058f, 0.98f);
-    private static readonly Color MessageAreaColor = new(0.035f, 0.033f, 0.031f, 0.72f);
+    private static readonly Color MessageAreaColor = new(0.035f, 0.033f, 0.031f, 0.96f);
     private static readonly Color InputColor = new(0.08f, 0.074f, 0.063f, 0.98f);
     private static readonly Color FocusedInputColor = new(0.105f, 0.092f, 0.071f, 0.99f);
     private static readonly Color InputFocusOutlineColor = new(0.82f, 0.59f, 0.28f, 0.72f);
@@ -394,7 +394,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _ = row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         GameObject bubble = CreateChild(isUser ? "PlayerBubble" : "XiangshuBubble", row.transform);
-        CImage bubbleImage = AddImage(
+        CImage bubbleImage = AddSpriteImage(
             bubble,
             isUser ? UserBubbleColor : AssistantBubbleColor,
             isUser ? UserBubbleSprite : AssistantBubbleSprite);
@@ -577,7 +577,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _panelRect.anchorMax = new Vector2(1f, 0.5f);
         _panelRect.pivot = new Vector2(1f, 0.5f);
         ApplyPanelLayout();
-        _ = AddImage(panel, PanelColor, NeutralBubbleSprite);
+        _ = AddSolidImage(panel, PanelColor);
 
         GameObject edge = CreateChild("Edge", panel.transform);
         RectTransform edgeRect = edge.GetComponent<RectTransform>();
@@ -586,7 +586,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         edgeRect.pivot = new Vector2(0f, 0.5f);
         edgeRect.sizeDelta = new Vector2(4f, 0f);
         edgeRect.anchoredPosition = Vector2.zero;
-        CImage edgeImage = AddImage(edge, PanelEdgeColor);
+        CImage edgeImage = AddSolidImage(edge, PanelEdgeColor);
         edgeImage.raycastTarget = false;
 
         GameObject column = CreateChild("Column", panel.transform);
@@ -610,7 +610,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildHeader(Transform parent)
     {
         GameObject header = CreateChild("Header", parent);
-        _ = AddImage(header, HeaderColor, NeutralBubbleSprite);
+        _ = AddSolidImage(header, HeaderColor);
         LayoutElement headerLayoutElement = header.AddComponent<LayoutElement>();
         headerLayoutElement.minHeight = HeaderHeight;
         headerLayoutElement.preferredHeight = HeaderHeight;
@@ -634,7 +634,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         reset.onClick.AddListener(ResetChatSession);
 
         GameObject portraitFrame = CreateChild("XiangshuPortraitFrame", header.transform);
-        CImage portraitFrameImage = AddImage(portraitFrame, new Color(0.42f, 0.25f, 0.13f, 0.82f), HeaderPortraitFrameSprite);
+        CImage portraitFrameImage = AddSpriteImage(portraitFrame, new Color(0.42f, 0.25f, 0.13f, 0.82f), HeaderPortraitFrameSprite);
         portraitFrameImage.raycastTarget = false;
         portraitFrameImage.preserveAspect = true;
         _ = SetFixedLayoutSize(portraitFrame, HeaderPortraitSize, HeaderPortraitSize);
@@ -644,9 +644,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         StretchToParent(portraitRect);
         portraitRect.offsetMin = new Vector2(5f, 5f);
         portraitRect.offsetMax = new Vector2(-5f, -5f);
-        CImage portrait = AddImage(portraitObject, Color.white, HeaderPortraitSprite);
+        CRawImage portrait = AddTextureImage(portraitObject, Color.white, HeaderPortraitTexturePath);
         portrait.raycastTarget = false;
-        portrait.preserveAspect = true;
 
         GameObject iconObject = CreateChild("XiangshuIcon", portraitFrame.transform);
         RectTransform iconRect = iconObject.GetComponent<RectTransform>();
@@ -654,7 +653,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         iconRect.anchorMax = new Vector2(1f, 0f);
         iconRect.pivot = new Vector2(1f, 0f);
         iconRect.anchoredPosition = new Vector2(2f, -2f);
-        CImage icon = AddImage(iconObject, new Color(0.92f, 0.61f, 0.24f, 1f), HeaderIconSprite);
+        CImage icon = AddSpriteImage(iconObject, new Color(0.92f, 0.61f, 0.24f, 1f), HeaderIconSprite);
         icon.raycastTarget = false;
         icon.preserveAspect = true;
         _ = SetFixedLayoutSize(iconObject, HeaderIconSize, HeaderIconSize);
@@ -684,7 +683,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         scrollLayout.flexibleHeight = 1f;
         scrollLayout.minHeight = 300f;
 
-        _ = AddImage(scrollObject, MessageAreaColor, NeutralBubbleSprite);
+        _ = AddSolidImage(scrollObject, MessageAreaColor);
         _scrollRect = scrollObject.AddComponent<ScrollRect>();
         _scrollRect.horizontal = false;
         _scrollRect.movementType = ScrollRect.MovementType.Clamped;
@@ -694,7 +693,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         RectTransform viewportRect = viewport.GetComponent<RectTransform>();
         StretchToParent(viewportRect);
         viewportRect.offsetMax = new Vector2(-(ScrollbarWidth + (ScrollbarRightInset * 2f)), 0f);
-        CImage viewportImage = AddImage(viewport, new Color(0f, 0f, 0f, 0.08f));
+        CImage viewportImage = AddSolidImage(viewport, new Color(0f, 0f, 0f, 0.08f));
         viewportImage.raycastTarget = false;
         viewport.AddComponent<Mask>().showMaskGraphic = false;
 
@@ -726,7 +725,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildInputArea(Transform parent)
     {
         GameObject inputArea = CreateChild("InputArea", parent);
-        CImage inputAreaImage = AddImage(inputArea, new Color(0.045f, 0.039f, 0.032f, 0.88f), NeutralBubbleSprite);
+        CImage inputAreaImage = AddSolidImage(inputArea, new Color(0.045f, 0.039f, 0.032f, 0.88f));
         inputAreaImage.raycastTarget = false;
         LayoutElement inputAreaLayoutElement = inputArea.AddComponent<LayoutElement>();
         inputAreaLayoutElement.preferredHeight = 116f;
@@ -741,7 +740,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         inputAreaLayout.spacing = 10f;
 
         GameObject inputObject = CreateChild("InputField", inputArea.transform);
-        CImage inputImage = AddImage(inputObject, InputColor, NeutralBubbleSprite);
+        CImage inputImage = AddSolidImage(inputObject, InputColor);
         _inputFieldImage = inputImage;
         _inputFocusOutline = inputObject.AddComponent<Outline>();
         _inputFocusOutline.effectColor = InputFocusOutlineColor;
@@ -1180,7 +1179,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         float height)
     {
         GameObject buttonObject = CreateChild(name, parent);
-        CImage image = AddImage(buttonObject, ButtonColor, NeutralBubbleSprite);
+        CImage image = AddSolidImage(buttonObject, ButtonColor);
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
         ColorBlock colors = button.colors;
@@ -1207,7 +1206,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         trackRect.pivot = new Vector2(1f, 0.5f);
         trackRect.anchoredPosition = new Vector2(-ScrollbarRightInset, 0f);
         trackRect.sizeDelta = new Vector2(ScrollbarWidth, -20f);
-        CImage trackImage = AddImage(track, ScrollbarTrackColor, NeutralBubbleSprite);
+        CImage trackImage = AddSolidImage(track, ScrollbarTrackColor);
         trackImage.raycastTarget = true;
 
         Scrollbar scrollbar = track.AddComponent<Scrollbar>();
@@ -1223,7 +1222,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         GameObject handle = CreateChild("Handle", slidingArea.transform);
         RectTransform handleRect = handle.GetComponent<RectTransform>();
         StretchToParent(handleRect);
-        CImage handleImage = AddImage(handle, ScrollbarHandleColor, ScrollbarHandleSprite);
+        CImage handleImage = AddSpriteImage(handle, ScrollbarHandleColor, ScrollbarHandleSprite);
         handleImage.raycastTarget = true;
 
         scrollbar.targetGraphic = handleImage;
@@ -1267,21 +1266,81 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return child;
     }
 
-    private static CImage AddImage(
+    private static CImage AddSolidImage(
+        GameObject target,
+        Color color)
+    {
+        CImage image = target.AddComponent<CImage>();
+        image.color = color;
+        return image;
+    }
+
+    private static CImage AddSpriteImage(
         GameObject target,
         Color color,
-        string? spriteName = null)
+        string spriteName)
     {
         CImage image = target.AddComponent<CImage>();
         image.color = color;
 
-        if (!string.IsNullOrWhiteSpace(spriteName))
+        image.type = spriteName.StartsWith("ui9_back_", StringComparison.Ordinal)
+            ? Image.Type.Sliced
+            : Image.Type.Simple;
+        image.SetEnabled(shouldBeEnabled: false);
+        image.SetSprite(
+            spriteName,
+            onSpriteChange: () => UpdateSpriteImageEnabled(image));
+        UpdateSpriteImageEnabled(image);
+
+        return image;
+    }
+
+    private static void UpdateSpriteImageEnabled(CImage image)
+    {
+        if (image == null)
         {
-            image.type = spriteName.StartsWith("ui9_back_", StringComparison.Ordinal)
-                ? Image.Type.Sliced
-                : Image.Type.Simple;
-            image.SetSpriteOnly(spriteName);
+            return;
         }
+
+        image.SetEnabled(image.sprite != null);
+    }
+
+    private static CRawImage AddTextureImage(
+        GameObject target,
+        Color color,
+        string texturePath)
+    {
+        CRawImage image = target.AddComponent<CRawImage>();
+        image.color = color;
+        image.enabled = false;
+
+        ResLoader.Load<Texture2D>(
+            texturePath,
+            texture =>
+            {
+                if (image == null)
+                {
+                    return;
+                }
+
+                image.texture = texture;
+                image.enabled = true;
+            },
+            path =>
+            {
+                if (image != null)
+                {
+                    image.texture = null;
+                    image.enabled = false;
+                }
+
+                Log.Warning(
+                    "chat window texture failed to load",
+                    new
+                    {
+                        path,
+                    });
+            });
 
         return image;
     }
