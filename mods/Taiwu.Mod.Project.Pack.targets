@@ -9,6 +9,9 @@
     <AllowDuplicateInternalizedResources
       Condition="'$(AllowDuplicateInternalizedResources)' == ''"
     >false</AllowDuplicateInternalizedResources>
+    <_TaiwuModInternalizeExcludeFile
+      Condition="'$(_TaiwuModInternalizeExcludeFile)' == ''"
+    >$(IntermediateOutputPath)TaiwuModInternalizeExcludes.txt</_TaiwuModInternalizeExcludeFile>
     <TaiwuModPackDependsOn Condition="'$(TaiwuModPackDependsOn)' == ''"
     >Build</TaiwuModPackDependsOn>
     <TaiwuModCopyDependencyPackageDirectory
@@ -180,9 +183,34 @@
     />
   </Target>
 
+  <!-- ILRepack must not rename CLR-recognized runtime support attributes copied from merged assemblies. -->
+  <Target
+    Name="WriteTaiwuModInternalizeExcludeFile"
+    Condition="'$(InternalizeMergedDependencies)' == 'true' And '$(RenameInternalizedDependencies)' == 'true'"
+  >
+    <ItemGroup>
+      <_TaiwuModInternalizeExclude
+        Include="System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute"
+      />
+    </ItemGroup>
+    <MakeDir
+      Directories="$([System.IO.Path]::GetDirectoryName('$(_TaiwuModInternalizeExcludeFile)'))"
+    />
+    <WriteLinesToFile
+      File="$(_TaiwuModInternalizeExcludeFile)"
+      Lines="@(_TaiwuModInternalizeExclude)"
+      Overwrite="true"
+    />
+    <ItemGroup>
+      <_TaiwuModResolvedInternalizeExcludeFile
+        Include="$(_TaiwuModInternalizeExcludeFile)"
+      />
+    </ItemGroup>
+  </Target>
+
   <Target
     Name="ResolveTaiwuModPackOutputs"
-    DependsOnTargets="ResolveTaiwuModPackOutputAssets"
+    DependsOnTargets="ResolveTaiwuModPackOutputAssets;WriteTaiwuModInternalizeExcludeFile"
     Outputs="@(_TaiwuModPackOutput)"
   >
     <ItemGroup>
@@ -196,6 +224,8 @@
         >$(RenameInternalizedDependencies)</RenameInternalizedDependencies>
         <AllowDuplicateInternalizedResources
         >$(AllowDuplicateInternalizedResources)</AllowDuplicateInternalizedResources>
+        <InternalizeExcludeFile
+        >@(_TaiwuModResolvedInternalizeExcludeFile->'%(FullPath)')</InternalizeExcludeFile>
         <KeyFile>$(KeyFile)</KeyFile>
       </_TaiwuModPackOutput>
       <_TaiwuModPackOutput Include="@(_TaiwuModUniqueResolvedMergeDependency)">
