@@ -13,7 +13,6 @@
     <PackageReference Include="MessagePipe.Interprocess" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.NET.StringTools" />
     <PackageReference
       Include="Taiwu.ModKit.References.Backend"
       PrivateAssets="all"

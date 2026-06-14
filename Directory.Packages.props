@@ -22,11 +22,13 @@
          System.Collections.Immutable 8.0.0.0; Unity/Mono frontend loading
          cannot bind MessagePack 3.1.x against Immutable 9.x. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <!-- Game-process plugins stay on DI 6.x: MessagePipe 1.8.2 strong-names
+         DependencyInjection.Abstractions 6.0.0.0, and Taiwu plugin loading
+         does not provide binding redirects. -->
     <PackageVersion
       Include="Microsoft.Extensions.DependencyInjection"
-      Version="10.0.9"
+      Version="6.0.0"
     />
-    <PackageVersion Include="Microsoft.NET.StringTools" Version="18.7.1" />
     <PackageVersion
       Include="Roslynator.Analyzers"
       Version="$(RoslynatorVersion)"

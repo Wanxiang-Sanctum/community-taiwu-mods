@@ -98,6 +98,11 @@
         "resolved": "10.5.2",
         "contentHash": "Ei+YWV9Ybnps7pR1dgjlG29gelXEwZkhLVAcWmKe6HvXS6LNBYgSdWiY3Hk9OZXYtK34rv/NtLWBQYQGOBQYPQ=="
       },
+      "Microsoft.NET.StringTools": {
+        "type": "Transitive",
+        "resolved": "17.11.4",
+        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
+      },
       "ModelContextProtocol": {
         "type": "Transitive",
         "resolved": "1.4.0",
@@ -121,12 +126,6 @@
       },
       "wanxiang.xiangshu.ipc": {
         "type": "Project"
-      },
-      "Microsoft.NET.StringTools": {
-        "type": "CentralTransitive",
-        "requested": "[18.7.1, )",
-        "resolved": "17.11.4",
-        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
       }
     },
     "net10.0/win-x64": {}

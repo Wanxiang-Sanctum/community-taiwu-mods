@@ -1,10 +1,6 @@
 using GameData.Domains;
-using MessagePack;
-using MessagePipe;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.NET.StringTools;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Prelude.PluginLoading;
 
@@ -41,17 +37,14 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
 internal static class PreludeBackendAssemblies
 {
+    /// <summary>
+    /// Root runtime assemblies whose local AssemblyRef graphs should be preloaded.
+    /// </summary>
     private static readonly Type[] RuntimeAssemblyMarkers =
     [
-        typeof(MessagePackObjectAttribute),
-        typeof(MessagePackSerializer),
-        typeof(IAsyncRequestHandler<,>),
         typeof(MessagePipe.Interprocess.MessagePipeInterprocessOptions),
-        typeof(Compilation),
         typeof(CSharpCompilation),
-        typeof(IServiceCollection),
         typeof(ServiceProvider),
-        typeof(SpanBasedStringBuilder),
     ];
 
     public static void KeepReferenced()

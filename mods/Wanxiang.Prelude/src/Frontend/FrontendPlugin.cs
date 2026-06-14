@@ -1,13 +1,8 @@
 using System.Text;
 using Cysharp.Threading.Tasks;
-using MessagePack;
-using MessagePipe;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.NET.StringTools;
 using TaiwuModdingLib.Core.Plugin;
 using UnityEngine.LowLevel;
-using VContainer;
 using Wanxiang.Prelude.PluginLoading;
 
 namespace Wanxiang.Prelude.Frontend;
@@ -44,19 +39,15 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
 internal static class PreludeFrontendAssemblies
 {
+    /// <summary>
+    /// Root runtime assemblies whose local AssemblyRef graphs should be preloaded.
+    /// </summary>
     private static readonly Type[] RuntimeAssemblyMarkers =
     [
         typeof(CodePagesEncodingProvider),
-        typeof(SpanBasedStringBuilder),
-        typeof(MessagePackObjectAttribute),
-        typeof(MessagePackSerializer),
-        typeof(IAsyncRequestHandler<,>),
         typeof(MessagePipe.Interprocess.MessagePipeInterprocessOptions),
         typeof(MessagePipe.ContainerBuilderExtensions),
-        typeof(Compilation),
         typeof(CSharpCompilation),
-        typeof(IContainerBuilder),
-        typeof(UniTask),
         typeof(Cysharp.Threading.Tasks.Linq.IAsyncWriter<>),
         typeof(TextMeshProAsyncExtensions),
         typeof(AddressablesAsyncExtensions),

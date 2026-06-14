@@ -8,7 +8,6 @@
       Include="$(TaiwuModsModsDir)Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
     />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <PackageReference Include="Microsoft.NET.StringTools" />
     <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
     <PackageReference
       Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"

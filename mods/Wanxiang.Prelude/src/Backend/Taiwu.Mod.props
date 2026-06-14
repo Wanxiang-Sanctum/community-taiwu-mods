@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <TaiwuModMergeDependency Include="Wanxiang.Prelude.PluginLoading.dll" />
+    <!-- Deployment list only. Prelude source marks preload roots; recursive
+         AssemblyRef loading reaches copied transitive DLLs. -->
     <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
     <TaiwuModCopyDependency Include="MessagePack.dll" />
     <TaiwuModCopyDependency Include="MessagePipe.dll" />
