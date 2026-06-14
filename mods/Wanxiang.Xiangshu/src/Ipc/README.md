@@ -2,7 +2,7 @@
 
 `src/Ipc/` 是前端插件、后端插件和 MCP sidecar 共享的 contract 与本机 endpoint 辅助库。
 
-当前职责：
+职责：
 
 - 定义 MessagePipe 请求/响应 DTO。
 - 定义受信脚本执行请求、脚本输入、入口返回值、错误和诊断 DTO。

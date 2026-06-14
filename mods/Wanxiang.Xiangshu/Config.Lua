@@ -5,7 +5,7 @@ return {
   Version = "0.1.0",
   GameVersion = "0.84.46-test",
   Author = "Wanxiang Sanctum",
-  Description = "一个混沌的愿望回应 mod。当前提供本机 Agent 对话入口、MCP 工具服务和前后端脚本通道。",
+  Description = "一个混沌的愿望回应 mod。可在游戏内与本机 Agent 对话，并通过 MCP 工具连接前后端脚本能力。",
   WorkshopCover = nil,
   Visibility = 0,
   DefaultSettings = {
@@ -33,7 +33,7 @@ return {
       SettingType = "InputField",
       Key = "AgentWorkingDirectory",
       DisplayName = "工作目录",
-      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录包含 AGENTS.md 和 CLAUDE.md，运行数据写入 .xiangshu-runtime。",
+      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录随包提供示例工作区。",
       GroupName = "本机 Agent",
       DefaultValue = "AgentWorkspace",
     },

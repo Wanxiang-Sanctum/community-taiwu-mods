@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <PublicizerRuntimeStrategies
+      Condition="'$(TargetFramework)' == 'netstandard2.1'"
+    >Unsafe</PublicizerRuntimeStrategies>
+    <PublicizerRuntimeStrategies Condition="'$(TargetFramework)' == 'net8.0'"
+    >IgnoresAccessChecksTo</PublicizerRuntimeStrategies>
+    <NoWarn Condition="'$(TargetFramework)' == 'net8.0'"
+    >$(NoWarn);CS0436</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Krafs.Publicizer"
+      PrivateAssets="all"
+      ExcludeAssets="runtime"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Plugin"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Publicize
+      Include="TaiwuModdingLib:TaiwuModdingLib.Core.Plugin.PluginHelper"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
+      Include="TaiwuModdingLib:TaiwuModdingLib.Core.Plugin.TaiwuRemakePlugin.ModIdStr"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+  </ItemGroup>
+</Project>

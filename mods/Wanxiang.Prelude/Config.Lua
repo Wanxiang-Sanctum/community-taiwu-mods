@@ -1,11 +1,11 @@
 return {
-  Title = "万象前端运行时",
+  Title = "万象引",
   Source = 0,
   FileId = 0,
   Version = "0.1.0",
   GameVersion = "0.84.46-test",
   Author = "Wanxiang Sanctum",
-  Description = "为其他前端 mod 提供 UniTask、MessagePipe、VContainer 等共享运行时程序集，并在需要时初始化 UniTask PlayerLoop。需要这些前端运行时的 mod 可将本 mod 设为依赖，避免重复携带程序集和重复初始化。",
+  Description = "万象系 Mod 的前置引导层，提供共享运行时和插件依赖解析桥接。需要这些能力的 Mod 应依赖万象引。",
   WorkshopCover = nil,
   Visibility = 0,
   TagList = {
@@ -19,11 +19,11 @@ return {
   HasArchive = false,
   NeedRestartWhenSettingChanged = false,
   BackendPlugins = {
-    "Wanxiang.FrontendRuntime.Backend.dll",
+    "Backend/Wanxiang.Prelude.Backend.dll",
   },
   BackendPatches = {},
   FrontendPlugins = {
-    "Wanxiang.FrontendRuntime.Frontend.dll",
+    "Frontend/Wanxiang.Prelude.Frontend.dll",
   },
   FrontendPatches = {},
   EventPackages = {},

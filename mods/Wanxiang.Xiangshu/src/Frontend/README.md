@@ -4,8 +4,8 @@
 `Wanxiang.Xiangshu.Frontend` 下。
 
 - `Agent/`：本机 Agent 设置、CLI 进程调用、结构化回合输入构造、结果解析，以及 CLI 所需的临时协议文件。
-- `Chat/`：前端投递会话状态、会话快照持久化、可见聊天消息/事件模型，以及当前运行时生成并复用游戏
-  UI 资源的聊天窗口；它维护单一对话入口。
+- `Chat/`：前端投递会话状态、会话快照持久化、可见聊天消息/事件模型，以及游戏内聊天窗口；它维护单一
+  对话入口。
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
 - `Sidecar/`：MCP server 进程生命周期，并把独立进程日志定向到 `.xiangshu-runtime/Diagnostics/McpServer/`。

@@ -1,10 +1,15 @@
 <Project>
   <PropertyGroup>
     <TaiwuModSide>Frontend</TaiwuModSide>
+    <TaiwuModPluginPackageDirectory
+    >Plugins/Frontend</TaiwuModPluginPackageDirectory>
+    <TaiwuModCopyDependencyPackageDirectory
+    >Plugins/Frontend</TaiwuModCopyDependencyPackageDirectory>
     <UsePublicizer>false</UsePublicizer>
   </PropertyGroup>
 
   <ItemGroup>
+    <TaiwuModMergeDependency Include="Wanxiang.Prelude.PluginLoading.dll" />
     <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
     <TaiwuModCopyDependency Include="MessagePack.dll" />
     <TaiwuModCopyDependency Include="MessagePipe.dll" />

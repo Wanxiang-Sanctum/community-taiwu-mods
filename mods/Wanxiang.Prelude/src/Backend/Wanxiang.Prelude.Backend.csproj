@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
+    />
+    <PackageReference Include="MessagePack" NoWarn="NU1903" />
+    <PackageReference Include="MessagePipe" />
+    <PackageReference Include="MessagePipe.Interprocess" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.NET.StringTools" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Backend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

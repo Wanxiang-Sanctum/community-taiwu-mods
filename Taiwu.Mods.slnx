@@ -1,10 +1,13 @@
 <Solution>
   <Folder Name="/mods/">
     <Project
-      Path="mods/Wanxiang.FrontendRuntime/src/Backend/Wanxiang.FrontendRuntime.Backend.csproj"
+      Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project
-      Path="mods/Wanxiang.FrontendRuntime/src/Frontend/Wanxiang.FrontendRuntime.Frontend.csproj"
+      Path="mods/Wanxiang.Prelude/src/Frontend/Wanxiang.Prelude.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
     />
     <Project
       Path="mods/Wanxiang.Xiangshu/src/Backend/Wanxiang.Xiangshu.Backend.csproj"

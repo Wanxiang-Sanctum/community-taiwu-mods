@@ -2,13 +2,13 @@
 
 Mod 源码目录。
 
-每个一级子目录是一个独立 mod。新建 mod：
+每个一级子目录是一个独立 Mod。新建 Mod：
 
 ```powershell
 dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 ```
 
-新建后，mod 目录包含游戏读取的 `Config.Lua`、项目内 README，以及前端和后端两个插件项目。
+新建后，Mod 目录包含游戏读取的 `Config.Lua`、项目内 README，以及前端和后端两个插件项目。
 
 ```text
 mods/MyMod/
@@ -38,7 +38,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 
 ## 组包声明
 
-每个 mod 的 `Taiwu.Mod.Pack.proj` 是可部署目录的组包入口。它只描述最终目录由哪些文件、目录和
+每个 Mod 的 `Taiwu.Mod.Pack.proj` 是可部署目录的组包入口。它只描述最终目录由哪些文件、目录和
 项目组成，不给项目额外标记类型；太吾插件、共享 DLL、发布目录和普通静态文件都走同一条
 组合路径。
 
@@ -79,7 +79,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 - `TaiwuModPackDirectory`：复制目录。
 - `TaiwuModPackEntry`：入口程序集。只有项目需要自行声明入口 DLL 并参与依赖合并时才直接使用。
 
-`TaiwuModPackProject` 只用于 mod 的组包入口，不在项目级继续嵌套。
+`TaiwuModPackProject` 只用于 Mod 的组包入口，不在项目级继续嵌套。
 
 需要把某个项目的 `dotnet publish` 输出目录整体放进包内时，在该项目中导入发布目录组包目标：
 
@@ -95,7 +95,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 </Project>
 ```
 
-然后在 mod 的 `Taiwu.Mod.Pack.proj` 中加入：
+然后在 Mod 的 `Taiwu.Mod.Pack.proj` 中加入：
 
 ```xml
 <ItemGroup>
@@ -130,7 +130,7 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 ```
 
 前端通常从 `Assembly-CSharp` 开始，后端通常从 `GameData` 开始；如果只需要具体类型或成员，优先写
-更窄的 `Publicize Include`。Publicizer 运行时策略由仓库按端侧固定选择，不作为普通 mod 配置入口。
+更窄的 `Publicize Include`。Publicizer 运行时策略由仓库按端侧固定选择，不作为普通 Mod 配置入口。
 
 需要关闭默认 Publicizer 支持时，可以在 `Taiwu.Mod.props` 中设置：
 
@@ -142,13 +142,27 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 
 ## 插件入口和依赖部署
 
-太吾读取 `Config.Lua` 中的 `FrontendPlugins` 和 `BackendPlugins`，并从 mod 的 `Plugins/`
-目录按文件名加载这些插件入口 DLL。`FrontendPlugins` 和 `BackendPlugins` 只列插件入口 DLL；
+太吾读取 `Config.Lua` 中的 `FrontendPlugins` 和 `BackendPlugins`，并从 Mod 的 `Plugins/`
+目录加载这些插件入口 DLL。列表项是相对 `Plugins/` 的入口路径，可以是文件名，也可以包含子目录；
 独立依赖 DLL 同样部署到 `Plugins/` 下。
 
 前端和后端插件项目会自动把自身入口 DLL 声明为 `Plugins/<TargetFileName>`。额外依赖需要在插件项目旁
 的 `Taiwu.Mod.props` 或项目文件中显式声明。普通 `dotnet build` 负责生成项目常规输出；`pack-mod`
 在构建后读取项目包产物组装最终包。
+
+需要把入口和复制依赖部署到 `Plugins/` 下的子目录时，在插件项目旁的 `Taiwu.Mod.props` 中设置：
+
+```xml
+<PropertyGroup>
+  <TaiwuModPluginPackageDirectory>Plugins/Frontend</TaiwuModPluginPackageDirectory>
+  <TaiwuModCopyDependencyPackageDirectory>Plugins/Frontend</TaiwuModCopyDependencyPackageDirectory>
+</PropertyGroup>
+```
+
+然后在 `Config.Lua` 中使用相对 `Plugins/` 的入口路径，例如
+`Frontend/MyMod.Frontend.dll`。这适合前后端或多个插件需要携带同名 DLL、且运行时必须按入口所在目录优先
+解析依赖的场景。原生加载器不会完整处理这种依赖解析需求；需要该能力的实际 Mod 应声明 `Wanxiang.Prelude`
+（万象引）为前置依赖。
 
 依赖部署有两种动作。需要作为独立文件复制到 `Plugins/` 时，声明：
 
@@ -167,17 +181,18 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 ```
 
 每个依赖选择一种动作。同一个 DLL 同时写进 `TaiwuModMergeDependency` 和
-`TaiwuModCopyDependency` 会报错；复制依赖写入 `Plugins/<DLL 文件名>`。这两个依赖声明只表达太吾
+`TaiwuModCopyDependency` 会报错；复制依赖默认写入 `Plugins/<DLL 文件名>`，设置
+`TaiwuModCopyDependencyPackageDirectory` 后写入该目录下。这两个依赖声明只表达太吾
 插件入口的 DLL 处理方式；非插件项目的运行时依赖应放在项目自己的发布目录中。
 
 `Include` 只写 DLL 文件名。`pack-mod` 不读取 NuGet 缓存路径或任意项目输出路径，而是在入口项目
 本次构建后，从进入该项目输出目录的 DLL 中按文件名匹配，再执行复制或合并。
 
-需要随 mod 部署的依赖，要先通过项目自身的 `ProjectReference`、`PackageReference` 等标准引用进入
+需要随 Mod 部署的依赖，要先通过项目自身的 `ProjectReference`、`PackageReference` 等标准引用进入
 入口项目输出目录，再用 `TaiwuModMergeDependency` 或 `TaiwuModCopyDependency` 声明打包动作。
 游戏或运行时已经提供的 DLL 作为外部运行时依赖处理。
 
-被合并的依赖会内部化并重命名，降低不同 mod 携带同名依赖时的冲突风险。需要调整内部化策略时，在项目中设置：
+被合并的依赖会内部化并重命名，降低不同 Mod 携带同名依赖时的冲突风险。需要调整内部化策略时，在项目中设置：
 
 ```xml
 <PropertyGroup>

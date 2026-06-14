@@ -11,6 +11,12 @@
     >false</AllowDuplicateInternalizedResources>
     <TaiwuModPackDependsOn Condition="'$(TaiwuModPackDependsOn)' == ''"
     >Build</TaiwuModPackDependsOn>
+    <TaiwuModCopyDependencyPackageDirectory
+      Condition="'$(TaiwuModCopyDependencyPackageDirectory)' == ''"
+    >Plugins</TaiwuModCopyDependencyPackageDirectory>
+    <_TaiwuModCopyDependencyPackageDirectory
+    >$([System.String]::Copy('$(TaiwuModCopyDependencyPackageDirectory)').Replace('\',
+      '/').Trim('/'))</_TaiwuModCopyDependencyPackageDirectory>
   </PropertyGroup>
 
   <Target
@@ -191,7 +197,8 @@
         <Kind>File</Kind>
         <SourcePath
         >%(_TaiwuModUniqueResolvedCopyDependency.FullPath)</SourcePath>
-        <PackagePath>Plugins/%(Filename)%(Extension)</PackagePath>
+        <PackagePath
+        >$(_TaiwuModCopyDependencyPackageDirectory)/%(Filename)%(Extension)</PackagePath>
       </_TaiwuModPackOutput>
       <_TaiwuModPackOutput Include="@(TaiwuModPackFile)">
         <Kind>File</Kind>

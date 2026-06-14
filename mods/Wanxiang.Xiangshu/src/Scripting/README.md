@@ -3,7 +3,7 @@
 `src/Scripting/` 是前端插件和后端插件共用的本机 C# 脚本执行器。它不承载 MCP 工具语义，也不直接定义
 MessagePipe endpoint；跨进程请求与响应仍由 `src/Ipc/` 定义。
 
-当前执行器把受信脚本编译为临时内存程序集，并在目标插件进程内调用。它会引用当前进程已经加载且有物理
+执行器把受信脚本编译为临时内存程序集，并在目标插件进程内调用。它会引用当前进程已经加载且有物理
 路径的程序集，因此脚本能访问该侧进程可见的公开游戏 API。脚本以完全信任方式运行；稳定读写游戏状态的
 facade 由前端/后端模块按侧端能力补充。
 
@@ -28,6 +28,5 @@ public static class XiangshuScript
 `Execute` 或 `ExecuteAsync`，参数必须是一个 `XiangshuScriptGlobals`。同步返回值、`Task` 和
 `Task<T>` 都会按结果处理。
 
-Roslyn 核心 DLL 会合并进相枢前后端入口；必要 `System.*` 辅助程序集由 `Wanxiang.FrontendRuntime`
-前置 mod 部署。相枢项目保留编译期引用和脚本执行实现，但不在自己的前端或后端入口项目中复制这些同名
-运行依赖。
+脚本编译所需运行时由入口项目和 `Wanxiang.Prelude`（万象引）按侧端部署。本模块只维护脚本形态、编译与
+调用约定，不维护可部署 DLL 清单。

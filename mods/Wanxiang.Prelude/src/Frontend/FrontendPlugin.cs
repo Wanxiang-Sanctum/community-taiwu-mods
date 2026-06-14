@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Reflection.Metadata;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using MessagePack;
@@ -8,29 +6,44 @@ using Microsoft.NET.StringTools;
 using TaiwuModdingLib.Core.Plugin;
 using UnityEngine.LowLevel;
 using VContainer;
+using Wanxiang.Prelude.PluginLoading;
 
-namespace Wanxiang.FrontendRuntime.Frontend;
+namespace Wanxiang.Prelude.Frontend;
 
-[PluginConfig("Wanxiang.FrontendRuntime.Frontend", "WanxiangSanctum", "0.1.0")]
+[PluginConfig("Wanxiang.Prelude.Frontend", "WanxiangPrelude", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     public override void Initialize()
     {
-        FrontendRuntimeAssemblies.KeepReferenced();
+        PluginLoadBridge.Apply(
+            "Wanxiang.Prelude.Frontend.PluginLoading",
+            typeof(FrontendPlugin).Assembly,
+            GetPluginDirectory("Frontend"),
+            GetPluginDirectory(string.Empty));
+        PreludeFrontendAssemblies.KeepReferenced();
         UniTaskEnvironment.EnsureInjected();
     }
 
     public override void Dispose()
     {
+        PluginLoadBridge.Unpatch();
+    }
+
+    private string GetPluginDirectory(string side)
+    {
+        string modDirectory = Path.GetFullPath(
+            global::ModManager.GetModInfo(ModIdStr).DirectoryName);
+        string pluginRootDirectory = Path.Combine(modDirectory, "Plugins");
+        return string.IsNullOrEmpty(side)
+            ? pluginRootDirectory
+            : Path.Combine(pluginRootDirectory, side);
     }
 }
 
-internal static class FrontendRuntimeAssemblies
+internal static class PreludeFrontendAssemblies
 {
     private static readonly Type[] RuntimeAssemblyMarkers =
     [
-        typeof(ImmutableArray<>),
-        typeof(MetadataReader),
         typeof(CodePagesEncodingProvider),
         typeof(SpanBasedStringBuilder),
         typeof(MessagePackObjectAttribute),
