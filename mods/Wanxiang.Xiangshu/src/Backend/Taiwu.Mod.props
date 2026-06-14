@@ -1,12 +1,16 @@
 <Project>
   <PropertyGroup>
     <TaiwuModSide>Backend</TaiwuModSide>
+    <TaiwuModPluginPackageDirectory
+    >Plugins/Backend</TaiwuModPluginPackageDirectory>
+    <TaiwuModCopyDependencyPackageDirectory
+    >Plugins/Backend</TaiwuModCopyDependencyPackageDirectory>
   </PropertyGroup>
 
   <ItemGroup>
     <TaiwuModMergeDependency Include="Wanxiang.Taiwu.Logging.dll" />
-    <TaiwuModMergeDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
-    <TaiwuModMergeDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
+    <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
+    <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
   </ItemGroup>
 
   <!--

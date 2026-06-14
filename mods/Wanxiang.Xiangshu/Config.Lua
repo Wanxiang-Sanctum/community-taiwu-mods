@@ -46,11 +46,11 @@ return {
   HasArchive = false,
   NeedRestartWhenSettingChanged = true,
   BackendPlugins = {
-    "Wanxiang.Xiangshu.Backend.dll",
+    "Backend/Wanxiang.Xiangshu.Backend.dll",
   },
   BackendPatches = {},
   FrontendPlugins = {
-    "Wanxiang.Xiangshu.Frontend.dll",
+    "Frontend/Wanxiang.Xiangshu.Frontend.dll",
   },
   FrontendPatches = {},
   EventPackages = {},
