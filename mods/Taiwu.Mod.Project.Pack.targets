@@ -5,7 +5,7 @@
     >true</InternalizeMergedDependencies>
     <RenameInternalizedDependencies
       Condition="'$(RenameInternalizedDependencies)' == ''"
-    >true</RenameInternalizedDependencies>
+    >false</RenameInternalizedDependencies>
     <AllowDuplicateInternalizedResources
       Condition="'$(AllowDuplicateInternalizedResources)' == ''"
     >false</AllowDuplicateInternalizedResources>
