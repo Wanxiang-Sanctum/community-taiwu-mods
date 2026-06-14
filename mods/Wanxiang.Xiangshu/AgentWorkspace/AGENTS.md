@@ -38,7 +38,7 @@
 
 ## 工作区边界
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，用于 IPC manifest、MCP sidecar 事件日志、临时协议文件
+`.xiangshu-runtime/` 是相枢 Mod 的运行数据目录，用于 IPC manifest、MCP sidecar 事件日志、临时协议文件
 和聊天会话文件。不要创建、修改、删除或整理这个目录里的内容。
 
 脚本相关 skill 只在需要编写或修改相枢运行时 C# 脚本时使用。

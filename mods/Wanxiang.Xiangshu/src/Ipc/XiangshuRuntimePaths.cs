@@ -7,7 +7,7 @@ public static class XiangshuRuntimePaths
 {
     public const string DefaultAgentWorkingDirectoryName = "AgentWorkspace";
 
-    public const string RuntimeDirectoryName = "XiangshuRuntime";
+    public const string RuntimeDirectoryName = ".xiangshu-runtime";
 
     public const string IpcManifestFileName = "ipc-endpoints.json";
 

@@ -11,7 +11,7 @@
 - 太吾 Mod 用户配置能够记录本机 Agent 类型、CLI 入口和工作目录。
 - 进入存档后，前端热键能够打开相枢聊天窗口。
 - 玩家消息能够进入前端投递会话，按轮次投递给所选 CLI Agent，并把最终答复显示为相枢消息。
-- 前端能够把当前可见对话和外部 Agent 会话 id 写入 `XiangshuRuntime/ChatSessions/`，重启后在同一
+- 前端能够把当前可见对话和外部 Agent 会话 id 写入 `.xiangshu-runtime/ChatSessions/`，重启后在同一
   Agent 适配器下恢复当前对话窗口记录并继续复用同一个 CLI Agent 会话。
 
 当前聊天窗口仍由前端运行时生成，但已经复用游戏字体、`CImage`、相枢地图图标、相枢故事头像、原生提示
@@ -37,7 +37,7 @@
 IPC endpoint 端口在插件启动时分配，并写入本机 Agent 工作目录下的 manifest：
 
 ```text
-<AgentWorkingDirectory>/XiangshuRuntime/ipc-endpoints.json
+<AgentWorkingDirectory>/.xiangshu-runtime/ipc-endpoints.json
 ```
 
 manifest 记录发现本机 endpoint 所需的信息：`side`、`transport`、`host`、`path`、`port`、
@@ -53,7 +53,7 @@ MCP server 会以 `side = "mcp-server"`、
 MCP server 使用独立进程内的 Serilog 文件日志，关键事件写入：
 
 ```text
-<AgentWorkingDirectory>/XiangshuRuntime/Diagnostics/McpServer/
+<AgentWorkingDirectory>/.xiangshu-runtime/Diagnostics/McpServer/
 ```
 
 日志文件后缀为 `.events.clef`，每行是一条 compact JSON 事件。关键事件覆盖启动、监听地址、
@@ -85,7 +85,7 @@ manifest 注册、父进程退出和异常。
 本轮玩家消息；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
 并在后续轮次中恢复同一个本机 Agent 会话。
 
-`XiangshuRuntime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP sidecar 事件日志、前端启动本机
+`.xiangshu-runtime/` 是相枢 Mod 的运行数据目录，当前保存 IPC manifest、MCP sidecar 事件日志、前端启动本机
 Agent 时使用的短生命周期协议文件，以及当前聊天会话文件；游戏内入口为聊天入口。
 
 聊天调用使用本次启动时加载的配置。聊天调用会等待相枢 MCP sidecar endpoint 注册，然后
@@ -96,7 +96,7 @@ CLI 投递；`AgentWorkingDirectory` 因此应视为本机 Agent 的受信工作
 
 游戏进程内的运行信息进入太吾游戏日志系统。聊天 CLI 调用的标准输出和标准错误由前端在内存中捕获，
 摘要和错误进入游戏日志。Codex `--output-last-message`、
-Codex `--output-schema` 和 Claude `--mcp-config` 使用 `XiangshuRuntime/Temp/AgentCli/` 下的临时协议
+Codex `--output-schema` 和 Claude `--mcp-config` 使用 `.xiangshu-runtime/Temp/AgentCli/` 下的临时协议
 文件，调用结束后删除对应调用子目录。
 
 前端插件和后端插件统一通过 `shared/Wanxiang.Taiwu.Logging` 记录结构化上下文。共享库把上下文序列化为

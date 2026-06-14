@@ -1,7 +1,7 @@
 # MCP Server 模块结构
 
 `src/McpServer/` 是游戏外 MCP sidecar。前端插件负责启动它；它启动后注册自己的 MCP endpoint，并把事件
-日志写入 `XiangshuRuntime/Diagnostics/McpServer/`。
+日志写入 `.xiangshu-runtime/Diagnostics/McpServer/`。
 
 当前 MCP 工具承担前后端 C# 脚本执行路由，以及把中间答复请求转发到前端聊天会话。endpoint 可用性随
 工具调用结果返回。

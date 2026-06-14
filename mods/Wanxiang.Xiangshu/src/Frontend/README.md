@@ -8,7 +8,7 @@
   UI 资源的聊天窗口；它维护单一对话入口。
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
-- `Sidecar/`：MCP server 进程生命周期，并把独立进程日志定向到 `XiangshuRuntime/Diagnostics/McpServer/`。
+- `Sidecar/`：MCP server 进程生命周期，并把独立进程日志定向到 `.xiangshu-runtime/Diagnostics/McpServer/`。
 
 依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 可以调用 `Agent/` 投递一个对话轮次；`Agent/`
 接收自己的 turn DTO。新增前端能力时优先放入既有职责目录；出现新的运行职责时再新增同级目录。

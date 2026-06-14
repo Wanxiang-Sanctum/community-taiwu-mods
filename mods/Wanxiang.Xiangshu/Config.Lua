@@ -33,7 +33,7 @@ return {
       SettingType = "InputField",
       Key = "AgentWorkingDirectory",
       DisplayName = "工作目录",
-      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录包含 AGENTS.md、CLAUDE.md 和 XiangshuRuntime。",
+      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录包含 AGENTS.md 和 CLAUDE.md，运行数据写入 .xiangshu-runtime。",
       GroupName = "本机 Agent",
       DefaultValue = "AgentWorkspace",
     },
