@@ -9,8 +9,15 @@
     />
   </ItemGroup>
 
+  <!-- Wanxiang.Prelude provides the Roslyn runtime DLLs for both frontend and backend. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference
+      Include="Microsoft.CodeAnalysis.CSharp"
+      ExcludeAssets="runtime"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference
       Include="Taiwu.ModKit.References.Shared"
       PrivateAssets="all"

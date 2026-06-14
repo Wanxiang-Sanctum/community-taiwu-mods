@@ -17,11 +17,29 @@
     />
   </ItemGroup>
 
+  <!-- Runtime DLLs are provided by Wanxiang.Prelude.Backend; this project only needs compile assets. -->
   <ItemGroup>
-    <PackageReference Include="MessagePack" NoWarn="NU1903" />
-    <PackageReference Include="MessagePipe" />
-    <PackageReference Include="MessagePipe.Interprocess" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference
+      Include="MessagePack"
+      ExcludeAssets="runtime"
+      NoWarn="NU1903"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="MessagePipe"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="MessagePipe.Interprocess"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
     <PackageReference
       Include="Taiwu.ModKit.References.Backend"
       PrivateAssets="all"

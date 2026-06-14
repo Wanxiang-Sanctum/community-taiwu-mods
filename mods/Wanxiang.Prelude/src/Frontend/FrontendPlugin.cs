@@ -2,6 +2,8 @@ using System.Text;
 using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePipe;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.NET.StringTools;
 using TaiwuModdingLib.Core.Plugin;
 using UnityEngine.LowLevel;
@@ -51,6 +53,8 @@ internal static class PreludeFrontendAssemblies
         typeof(IAsyncRequestHandler<,>),
         typeof(MessagePipe.Interprocess.MessagePipeInterprocessOptions),
         typeof(MessagePipe.ContainerBuilderExtensions),
+        typeof(Compilation),
+        typeof(CSharpCompilation),
         typeof(IContainerBuilder),
         typeof(UniTask),
         typeof(Cysharp.Threading.Tasks.Linq.IAsyncWriter<>),

@@ -7,6 +7,7 @@
     <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
     />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.NET.StringTools" />
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.Reflection.Metadata" />
