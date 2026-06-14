@@ -124,7 +124,7 @@
       },
       "Microsoft.NET.StringTools": {
         "type": "CentralTransitive",
-        "requested": "[17.11.4, )",
+        "requested": "[18.7.1, )",
         "resolved": "17.11.4",
         "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
       }
