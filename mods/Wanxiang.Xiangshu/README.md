@@ -77,11 +77,9 @@ manifest 注册、父进程退出和异常。
 来重建 IPC endpoint、manifest 路径、MCP sidecar 和本机 Agent 会话。运行中的对话继续使用本次启动时
 加载的工作目录和 CLI 适配器。
 
-默认包内会预置 `AgentWorkspace/AGENTS.md`，作为相枢的默认本机 Agent 工作区配置和自定义示范；
-`AgentWorkspace/CLAUDE.md` 负责让 Claude Code 转向同目录的 `AGENTS.md`。默认工作区还包含一份按需读取的
-轻量游戏语境 `AgentWorkspace/GAME_CONTEXT.md`，以及面向 Claude Code 与 Codex CLI 的本地 skill 目录；
-这些目录各自保留真实文件副本，避免依赖软链接。用户可以在这个工作区维护自己的人设、指令、设置和
-Agent 技能；配置到其它工作目录时，该目录由用户自行维护。
+默认包内会预置一个自包含的 `AgentWorkspace/`，作为相枢的默认本机 Agent 工作区和自定义示范。默认工作区
+负责提供本机 Agent 指令、轻量静态语境、CLI 适配入口和本地脚本技能；用户可以在这个工作区维护自己
+的人设、指令、设置和 Agent 技能。配置到其它工作目录时，该目录由用户自行维护。
 
 相枢运行时代码把每轮对话序列化为结构化回合输入，字段包括参与者和
 本轮玩家消息；玩家参与者名来自当前太吾角色真实姓名。前端捕获 CLI 返回的外部会话 id，
@@ -168,9 +166,9 @@ IPC contract、manifest 注册和本机 endpoint 辅助类库。
 根 README 说明入口和所有权；模块内部增长约定优先看对应目录下的 `README.md`。
 
 - `Config.Lua`：游戏读取的 mod 配置。
-- `AgentWorkspace/`：默认本机 Agent 工作区；打包后作为 `AgentWorkingDirectory` 的默认目录，包含
-  `AGENTS.md`、Claude Code 兼容用的 `CLAUDE.md`、按需读取的轻量游戏语境 `GAME_CONTEXT.md`、
-  面向 Claude Code 与 Codex CLI 的本地 skill 目录，以及相枢 Mod 的运行数据目录 `XiangshuRuntime/`。
+- `AgentWorkspace/`：默认本机 Agent 工作区；打包后作为 `AgentWorkingDirectory` 的默认目录，承载
+  本机 Agent 指令、轻量语境、CLI 适配入口、本地技能和相枢运行数据分区。内部入口和文件职责由该目录
+  自己维护。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：相枢设计说明；当前包含相枢对话体验、本机 Agent、IPC 脚本运行方向等内部设计。
 - `src/Frontend/`：前端插件项目；根目录保留插件生命周期组合根，`Agent/`、`Chat/`、`HotKeys/`、
