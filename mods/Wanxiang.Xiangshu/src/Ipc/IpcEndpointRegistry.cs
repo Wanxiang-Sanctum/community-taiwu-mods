@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 #else
+using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 #endif
@@ -22,7 +23,7 @@ public static class IpcEndpointRegistry
 #if !NET10_0_OR_GREATER
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        ContractResolver = new IpcManifestContractResolver(),
     };
 #endif
 
@@ -288,6 +289,17 @@ public static class IpcEndpointRegistry
         }
     }
 }
+
+#if !NET10_0_OR_GREATER
+internal sealed class IpcManifestContractResolver : CamelCasePropertyNamesContractResolver
+{
+    protected override IValueProvider CreateMemberValueProvider(MemberInfo member)
+    {
+        // ILRepack-renamed internal types can reject Json.NET's DynamicMethod setters in Taiwu game processes.
+        return new ReflectionValueProvider(member);
+    }
+}
+#endif
 
 public sealed class IpcEndpointRegistration(
     string manifestPath,
