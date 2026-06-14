@@ -232,6 +232,8 @@ internal sealed class ModPacker(
             GetILRepackToolPath(),
             "/ndebug",
             "/parallel",
+            "/copyattrs",
+            "/allowMultiple",
             $"/out:{outputPath}",
         ];
 

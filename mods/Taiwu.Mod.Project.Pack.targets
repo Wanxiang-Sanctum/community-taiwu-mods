@@ -20,6 +20,16 @@
   </PropertyGroup>
 
   <Target
+    Name="EnableUnsafeBlocksForMergedDependencies"
+    BeforeTargets="CoreCompile"
+    Condition="'$(AllowUnsafeBlocks)' != 'true' And '@(TaiwuModMergeDependency)' != ''"
+  >
+    <PropertyGroup>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+  </Target>
+
+  <Target
     Name="ResolveTaiwuModPackOutputAssets"
     DependsOnTargets="$(TaiwuModPackDependsOn)"
   >
