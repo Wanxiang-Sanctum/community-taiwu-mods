@@ -16,7 +16,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 {
     private const string HeaderIconSprite = "map_icon_xiangshu";
     private const string HeaderPortraitTexturePath =
-        "RemakeResources/Textures/SectStory/npcface_image_2001_0";
+        "RemakeResources/Textures/GameLineScroll/npcface_image_2001_0";
     private const string HeaderPortraitFrameSprite = "gamelinescroll_icon_big_charm_2001";
     private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
     private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
