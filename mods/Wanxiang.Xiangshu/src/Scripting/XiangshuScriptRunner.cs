@@ -44,10 +44,7 @@ public sealed class XiangshuScriptRunner(string side)
             cancellationToken.ThrowIfCancellationRequested();
 
             EmitResultData emit = Compile(request.Script, cancellationToken);
-            foreach (string diagnostic in emit.Diagnostics)
-            {
-                response.Diagnostics.Add(diagnostic);
-            }
+            response.Diagnostics.AddRange(emit.Diagnostics);
             if (!emit.Succeeded || emit.AssemblyBytes is null)
             {
                 response.Error = "Script compilation failed.";

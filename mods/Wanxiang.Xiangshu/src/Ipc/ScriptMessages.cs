@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Wanxiang.Xiangshu.Ipc;
@@ -22,6 +22,10 @@ public sealed class IpcExecuteScriptResponse
     [DataMember(Order = 1)]
     public string Error { get; set; } = string.Empty;
 
+    [SuppressMessage(
+        "Design",
+        "CA1002:Do not expose generic lists",
+        Justification = "List<T> avoids MessagePack's trimmed dynamic Collection<T> formatter in the MCP sidecar.")]
     [DataMember(Order = 2)]
-    public Collection<string> Diagnostics { get; set; } = [];
+    public List<string> Diagnostics { get; set; } = [];
 }
