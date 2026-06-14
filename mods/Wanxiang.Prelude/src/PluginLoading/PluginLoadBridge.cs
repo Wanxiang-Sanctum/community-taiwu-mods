@@ -22,10 +22,9 @@ public static class PluginLoadBridge
         string[] searchDirectories = PluginAssemblyResolver.NormalizeSearchDirectories(
             currentPluginSearchDirectories);
         PluginAssemblyResolver.EnsureInstalled();
-        PluginAssemblyResolver.RegisterAssembly(
+        PluginAssemblyResolver.RegisterAssemblyGraph(
             currentPluginAssembly,
             searchDirectories);
-        PreloadReferencedAssemblies(currentPluginAssembly, searchDirectories);
 
         lock (HarmonySync)
         {
@@ -37,19 +36,6 @@ public static class PluginLoadBridge
             Harmony harmony = new(harmonyId);
             harmony.PatchAll(typeof(PluginLoadBridge).Assembly);
             s_harmony = harmony;
-        }
-    }
-
-    private static void PreloadReferencedAssemblies(
-        Assembly assembly,
-        IReadOnlyList<string> searchDirectories)
-    {
-        foreach (AssemblyName referencedAssembly in assembly.GetReferencedAssemblies())
-        {
-            _ = PluginAssemblyResolver.TryResolve(
-                referencedAssembly,
-                searchDirectories,
-                out _);
         }
     }
 

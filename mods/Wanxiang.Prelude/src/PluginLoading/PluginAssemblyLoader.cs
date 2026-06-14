@@ -24,11 +24,10 @@ internal static class PluginAssemblyLoader
 
             using (PluginAssemblyResolver.PushSearchDirectories(searchDirectories))
             {
-                Assembly assembly = PluginAssemblyResolver.LoadAssemblyFromPath(
+                Assembly assembly = PluginAssemblyResolver.LoadAssemblyGraphFromPath(
                     pluginPath,
                     searchDirectories,
                     usePathCache: false);
-                PreloadDirectDependencies(assembly, searchDirectories);
 
                 Type entrypointType = GetEntrypointType(assembly)
                     ?? throw new TypeLoadException(
@@ -55,19 +54,6 @@ internal static class PluginAssemblyLoader
         return assembly
             .GetExportedTypes()
             .FirstOrDefault(static type => typeof(TaiwuRemakePlugin).IsAssignableFrom(type));
-    }
-
-    private static void PreloadDirectDependencies(
-        Assembly assembly,
-        IReadOnlyList<string> searchDirectories)
-    {
-        foreach (AssemblyName referencedAssembly in assembly.GetReferencedAssemblies())
-        {
-            _ = PluginAssemblyResolver.TryResolve(
-                referencedAssembly,
-                searchDirectories,
-                out _);
-        }
     }
 
     private static InvalidOperationException CreatePluginLoadException(

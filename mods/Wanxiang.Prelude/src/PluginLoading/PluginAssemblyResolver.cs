@@ -59,18 +59,43 @@ internal static class PluginAssemblyResolver
         return new ResolverScope(searchDirectories);
     }
 
-    public static void RegisterAssembly(
+    public static void RegisterAssemblyGraph(
         Assembly assembly,
         params string[] searchDirectories)
     {
         string[] normalizedSearchDirectories = NormalizeSearchDirectories(searchDirectories);
+        RegisterAssembly(assembly, normalizedSearchDirectories);
+        PreloadLocalDependencyGraph(
+            assembly,
+            normalizedSearchDirectories,
+            new HashSet<string>(StringComparer.Ordinal));
+    }
+
+    public static Assembly LoadAssemblyGraphFromPath(
+        string path,
+        IReadOnlyList<string> searchDirectories,
+        bool usePathCache)
+    {
+        Assembly assembly = LoadAssemblyFromPath(path, searchDirectories, usePathCache);
+        PreloadLocalDependencyGraph(
+            assembly,
+            searchDirectories,
+            new HashSet<string>(StringComparer.Ordinal));
+        return assembly;
+    }
+
+    private static void RegisterAssembly(
+        Assembly assembly,
+        IReadOnlyList<string> searchDirectories)
+    {
+        string[] normalizedSearchDirectories = NormalizeSearchDirectories([.. searchDirectories]);
         lock (Sync)
         {
             SearchDirectoriesByAssembly[assembly] = normalizedSearchDirectories;
         }
     }
 
-    public static Assembly LoadAssemblyFromPath(
+    private static Assembly LoadAssemblyFromPath(
         string path,
         IReadOnlyList<string> searchDirectories,
         bool usePathCache)
@@ -103,7 +128,7 @@ internal static class PluginAssemblyResolver
         }
     }
 
-    public static bool TryResolve(
+    private static bool TryResolve(
         AssemblyName assemblyName,
         IReadOnlyList<string> searchDirectories,
         [NotNullWhen(true)] out Assembly? assembly)
@@ -117,6 +142,43 @@ internal static class PluginAssemblyResolver
         }
 
         return TryFindLoadedAssembly(assemblyName, out assembly);
+    }
+
+    private static void PreloadLocalDependencyGraph(
+        Assembly assembly,
+        IReadOnlyList<string> searchDirectories,
+        ISet<string> visitedAssemblyNames)
+    {
+        string assemblyFullName = assembly.FullName ?? assembly.GetName().Name ?? string.Empty;
+        if (!visitedAssemblyNames.Add(assemblyFullName))
+        {
+            return;
+        }
+
+        foreach (AssemblyName referencedAssemblyName in assembly.GetReferencedAssemblies())
+        {
+            if (!TryResolve(
+                    referencedAssemblyName,
+                    searchDirectories,
+                    out Assembly? referencedAssembly)
+                || !IsRegisteredAssembly(referencedAssembly))
+            {
+                continue;
+            }
+
+            PreloadLocalDependencyGraph(
+                referencedAssembly,
+                searchDirectories,
+                visitedAssemblyNames);
+        }
+    }
+
+    private static bool IsRegisteredAssembly(Assembly assembly)
+    {
+        lock (Sync)
+        {
+            return SearchDirectoriesByAssembly.ContainsKey(assembly);
+        }
     }
 
     private static Assembly? ResolveAssembly(object? sender, ResolveEventArgs args)
