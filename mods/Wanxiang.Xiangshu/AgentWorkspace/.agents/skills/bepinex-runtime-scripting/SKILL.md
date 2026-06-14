@@ -7,7 +7,7 @@ description: "Use when drafting or revising Xiangshu runtime C# scripts that nee
 
 ## Scope
 
-Use this skill only after a Xiangshu runtime C# script is already the right implementation shape. MCP tool descriptions own whether and where a script is invoked; this skill owns the script compilation-unit contract, helper API reference selection, and runtime mutation discipline.
+Use this skill after the request already calls for a Xiangshu runtime C# script. Produce a complete compilation unit, choose helper APIs from the checked-in XML, orient game API use by runtime side, and keep mutations narrow.
 
 ## Script Entry Contract
 
@@ -37,7 +37,19 @@ Before choosing helper APIs, read the XML that matches the script side:
 - Frontend: `references/taiwu-plugin-helper-api-0.84.58-test.netstandard2.1.xml`
 - Backend: `references/taiwu-plugin-helper-api-0.84.58-test.net8.0.xml`
 
-Use the XML's `availableAssemblies`, `assembly`, `type`, and member signatures as the API directory. Do not maintain or infer a parallel DLL/API summary from this skill. The package id recorded inside the XML is provenance only: it identifies which pinned reference assemblies generated the signatures, not a runtime object or a search target.
+Use the XML's `availableAssemblies`, `assembly`, `type`, and member signatures as the API directory. Ignore package id metadata when choosing runtime APIs.
+
+## Runtime Game API Orientation
+
+Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types:
+
+- Prefer backend for persisted or authoritative game state: Taiwu identity, inventory, characters, map/world data, organizations, items, information, combat state, monthly events, adventure state, and state mutations.
+- Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Item`, `GameData.Domains.Information`, `GameData.Domains.Combat`, `GameData.Domains.TaiwuEvent`, and `GameData.Domains.Adventure` are common anchors.
+- `DomainManager.*` is the usual backend entry shape for domain access. For Taiwu-specific state, look for `DomainManager.Taiwu`; for characters, use `DomainManager.Character`; for event or monthly flow, use `DomainManager.TaiwuEvent` or related domain managers.
+- Shared value shapes, display data, config cells, and enum names usually come from `GameData.Shared`, `Config`, `Config.Common`, `Config.ConfigCells`, and `GameData.Domains.*` enum namespaces. Prefer reachable enum and config names over raw numeric constants.
+- Prefer frontend for visible UI state, selected controls, active windows, Unity objects, local resources, hotkeys, and display-only data.
+- Frontend UI roots usually live under `Game.Views.*`; reusable widgets and list/sort/filter components under `Game.Components.*`; UI lifecycle, resources, commands, and localization under `FrameWork.UISystem`, `FrameWork.ResManager`, `FrameWork.CommandSystem`, and `FrameWork.Localization`.
+- Resolve text, config IDs, event GUIDs, and player-facing names from the player request, current tool results, packaged lightweight context, or live game APIs.
 
 ## Drafting Order
 
@@ -46,7 +58,7 @@ When drafting the script body:
 - Decide the target side from the requested state or action.
 - Use the entry contract above as the outer shape.
 - Read the matching XML before selecting helper namespaces, types, overloads, or parameter shapes.
-- Turn to frontend/backend game APIs only when the task needs a concrete domain object or state API on that side.
+- Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.
 - Bind or inspect live game objects only after the helper API choice is known.
 - Keep the body focused on the requested runtime state change.
 
