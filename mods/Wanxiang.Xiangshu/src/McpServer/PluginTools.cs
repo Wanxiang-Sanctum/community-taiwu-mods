@@ -51,8 +51,9 @@ internal sealed class PluginTools
             + "until a minimal read-only script confirms where the needed state lives.")]
         string side,
         [Description(
-            "Complete C# compilation unit, not a snippet. Include using directives and define exactly one public static "
-            + "XiangshuScript class with Execute or ExecuteAsync taking XiangshuScriptGlobals; the return value is serialized to JSON.")]
+            "Complete C# compilation unit, not a snippet. Include using directives and define exactly one "
+            + "public static non-generic XiangshuScript class with public static Execute or ExecuteAsync "
+            + "taking XiangshuScriptGlobals; the return value is serialized to JSON.")]
         string script,
         [Description(
             "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]

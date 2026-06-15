@@ -232,9 +232,10 @@ CLI Agent
 编译时引用该进程已加载且有物理路径的程序集；稳定读写游戏状态的 facade 由前后端模块按侧端能力扩展。
 
 脚本通道传递完整 C# 编译单元，不定义 statements/expression 模式，也不提供预置 `using` 列表。脚本自己
-声明 `using`、类型和入口；runner 只负责编译源码，并调用名为 `XiangshuScript` 的公开静态类型上的
-`Execute` 或 `ExecuteAsync` 方法。入口接收一个 `XiangshuScriptGlobals` 参数，用来访问目标侧、调用
-参数和取消信号。
+声明 `using`、类型和入口；runner 只负责编译源码，并调用名为 `XiangshuScript` 的 public static 非泛型
+class 上的 public static `Execute` 或 `ExecuteAsync` 方法。入口接收一个 `XiangshuScriptGlobals` 参数，
+用来访问目标侧、调用参数和取消信号。若入口契约不满足，runner 返回统一的入口契约错误，而不是把它归类为
+MCP 或 IPC 转发失败。
 
 ## MCP 驱动的中间答复
 

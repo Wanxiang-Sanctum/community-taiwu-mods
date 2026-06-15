@@ -24,9 +24,9 @@ public static class XiangshuScript
 }
 ```
 
-入口类型可以放在脚本自己的 namespace 下，但简单类型名必须是 `XiangshuScript`。入口方法可以是
-`Execute` 或 `ExecuteAsync`，参数必须是一个 `XiangshuScriptGlobals`。同步返回值、`Task` 和
-`Task<T>` 都会按结果处理。
+入口类型可以放在脚本自己的 namespace 下，但简单类型名必须是 `XiangshuScript`，且必须是
+`public static` 非泛型 class。入口方法可以是 `Execute` 或 `ExecuteAsync`，必须是 public static 方法，
+参数必须是一个 `XiangshuScriptGlobals`。同步返回值、`Task` 和 `Task<T>` 都会按结果处理。
 
 脚本编译所需运行时由入口项目和 `Wanxiang.Prelude`（万象引）按侧端部署。本模块只维护脚本形态、编译与
 调用约定，不维护可部署 DLL 清单。

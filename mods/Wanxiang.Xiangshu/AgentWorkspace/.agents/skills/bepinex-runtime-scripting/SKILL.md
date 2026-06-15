@@ -28,7 +28,7 @@ public static class XiangshuScript
 }
 ```
 
-The entry type may be inside a namespace, but its simple name must be `XiangshuScript`, and the script must define exactly one public static entry type with that simple name. Define exactly one public static `Execute` or `ExecuteAsync` method that takes one `XiangshuScriptGlobals` parameter; synchronous values, `Task`, and `Task<T>` are accepted. Use `globals.Arguments` for MCP arguments and `globals.CancellationToken` for cancellable work.
+The entry type may be inside a namespace, but its simple name must be `XiangshuScript`, and the script must define exactly one public static non-generic class with that simple name. Define exactly one public static `Execute` or `ExecuteAsync` method that takes one `XiangshuScriptGlobals` parameter; synchronous values, `Task`, and `Task<T>` are accepted. Use `globals.Arguments` for MCP arguments and `globals.CancellationToken` for cancellable work.
 
 ## API Reference Files
 

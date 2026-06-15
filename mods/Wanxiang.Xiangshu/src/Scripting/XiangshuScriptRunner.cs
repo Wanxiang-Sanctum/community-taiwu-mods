@@ -135,46 +135,42 @@ public sealed class XiangshuScriptRunner(string side)
     {
         Type[] candidates =
         [
-            .. assembly
-                .GetTypes()
-                .Where(static type =>
-                    type.Name == EntryTypeName
-                    && type.IsAbstract
-                    && type.IsSealed
-                    && type.IsPublic),
+            .. assembly.GetTypes().Where(IsValidEntryType),
         ];
 
-        if (candidates.Length == 0)
+        if (candidates.Length == 1)
         {
-            throw new InvalidOperationException(
-                $"Compiled script entry type was not found. Define public static class {EntryTypeName}.");
+            return candidates[0];
         }
 
         if (candidates.Length > 1)
         {
             throw new InvalidOperationException(
-                $"Compiled script has multiple public static {EntryTypeName} types. Keep only one entry type.");
+                $"Compiled script has multiple public static {EntryTypeName} entry types. Keep only one entry type.");
         }
 
-        return candidates[0];
+        throw new InvalidOperationException(GetEntryTypeContractMessage());
     }
 
     private static MethodInfo FindEntryMethod(Type scriptType)
     {
+        const BindingFlags EntryMethodSearchFlags =
+            BindingFlags.Public
+            | BindingFlags.Static
+            | BindingFlags.DeclaredOnly;
+
         MethodInfo[] candidates =
         [
             .. scriptType
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .GetMethods(EntryMethodSearchFlags)
                 .Where(static method =>
-                    (method.Name == AsyncEntryMethodName || method.Name == SyncEntryMethodName)
+                    IsEntryMethodName(method.Name)
                     && HasGlobalsParameter(method)),
         ];
 
-        if (candidates.Length == 0)
+        if (candidates.Length == 1)
         {
-            throw new InvalidOperationException(
-                $"Compiled script entry method was not found. Define {EntryTypeName}.{AsyncEntryMethodName}"
-                + $" or {EntryTypeName}.{SyncEntryMethodName} with one XiangshuScriptGlobals parameter.");
+            return candidates[0];
         }
 
         if (candidates.Length > 1)
@@ -184,7 +180,22 @@ public sealed class XiangshuScriptRunner(string side)
                 + $" or {SyncEntryMethodName} overload that takes XiangshuScriptGlobals.");
         }
 
-        return candidates[0];
+        throw new InvalidOperationException(GetEntryMethodContractMessage());
+    }
+
+    private static bool IsValidEntryType(Type type)
+    {
+        return type.Name == EntryTypeName
+            && type.IsClass
+            && type.IsAbstract
+            && type.IsSealed
+            && type.IsPublic
+            && !type.ContainsGenericParameters;
+    }
+
+    private static bool IsEntryMethodName(string name)
+    {
+        return name is AsyncEntryMethodName or SyncEntryMethodName;
     }
 
     private static bool HasGlobalsParameter(MethodInfo method)
@@ -192,6 +203,19 @@ public sealed class XiangshuScriptRunner(string side)
         ParameterInfo[] parameters = method.GetParameters();
         return parameters.Length == 1
             && parameters[0].ParameterType == typeof(XiangshuScriptGlobals);
+    }
+
+    private static string GetEntryTypeContractMessage()
+    {
+        return "Compiled script entry type contract was not satisfied. Define exactly one public static "
+            + $"non-generic class named {EntryTypeName}.";
+    }
+
+    private static string GetEntryMethodContractMessage()
+    {
+        return "Compiled script entry method contract was not satisfied. Define exactly one public static "
+            + $"{EntryTypeName}.{AsyncEntryMethodName} or {EntryTypeName}.{SyncEntryMethodName} method with one "
+            + "XiangshuScriptGlobals parameter.";
     }
 
     private static async Task<object?> ResolveInvocationResultAsync(
