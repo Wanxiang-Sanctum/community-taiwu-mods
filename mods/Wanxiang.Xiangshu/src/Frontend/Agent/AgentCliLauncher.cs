@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Wanxiang.Taiwu.Logging;
+using Wanxiang.Xiangshu.Frontend.Settings;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
@@ -221,6 +222,7 @@ internal sealed class AgentCliLauncher : IDisposable
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
+        ApplyEnvironmentVariables(startInfo, settings.EnvironmentVariables);
 
         if (settings.Adapter == AgentAdapter.Claude)
         {
@@ -241,6 +243,16 @@ internal sealed class AgentCliLauncher : IDisposable
         }
 
         return startInfo;
+    }
+
+    private static void ApplyEnvironmentVariables(
+        ProcessStartInfo startInfo,
+        IReadOnlyList<AgentEnvironmentVariable> environmentVariables)
+    {
+        foreach (AgentEnvironmentVariable variable in environmentVariables)
+        {
+            startInfo.Environment[variable.Name] = variable.Value;
+        }
     }
 
     private static void ConfigureCodex(

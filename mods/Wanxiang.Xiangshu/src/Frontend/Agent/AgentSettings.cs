@@ -1,3 +1,4 @@
+using Wanxiang.Xiangshu.Frontend.Settings;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
@@ -22,12 +23,14 @@ internal sealed class AgentSettings
         AgentAdapter adapter,
         string commandPath,
         string modDirectory,
-        string workingDirectory)
+        string workingDirectory,
+        IReadOnlyList<AgentEnvironmentVariable> environmentVariables)
     {
         Adapter = adapter;
         CommandPath = commandPath;
         ModDirectory = modDirectory;
         WorkingDirectory = workingDirectory;
+        EnvironmentVariables = environmentVariables;
     }
 
     public AgentAdapter Adapter { get; }
@@ -37,6 +40,8 @@ internal sealed class AgentSettings
     public string ModDirectory { get; }
 
     public string WorkingDirectory { get; }
+
+    public IReadOnlyList<AgentEnvironmentVariable> EnvironmentVariables { get; }
 
     public static AgentSettings Load(string modIdStr)
     {
@@ -48,7 +53,12 @@ internal sealed class AgentSettings
         _ = Directory.CreateDirectory(workingDirectory);
         _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
 
-        return new AgentSettings(adapter, commandPath, modDirectory, workingDirectory);
+        return new AgentSettings(
+            adapter,
+            commandPath,
+            modDirectory,
+            workingDirectory,
+            LocalSettingsFile.LoadAgentEnvironmentVariables(modDirectory));
     }
 
     private static AgentAdapter ReadAgentAdapter(string modIdStr)

@@ -37,8 +37,24 @@
 - `AgentWorkingDirectory`：本机 Agent 的工作目录；相对路径会解析到相枢 Mod 目录下，默认是
   `AgentWorkspace`。
 
-这些配置是启动参数。前端插件和后端插件在初始化时读取一次；在游戏内修改设置后，需要重启游戏来重建
-IPC endpoint、MCP sidecar、运行数据目录和本机 Agent 会话。
+本地进阶设置不放进太吾 Mod 配置界面，也不属于 Agent 工作区。如果需要给 CLI Agent 传环境变量，在相枢
+Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
+
+```json
+{
+  "agent": {
+    "env": {
+      "HTTPS_PROXY": "http://127.0.0.1:7890"
+    }
+  }
+}
+```
+
+相枢启动 Codex/Claude 子进程时，会把 `agent.env` 中的字符串键值写入子进程环境。这些变量不传给游戏
+进程或 MCP sidecar，也不会写入相枢日志。
+
+太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、
+MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 
 默认包内预置 `AgentWorkspace/`，作为可编辑的本机 Agent 工作区示例。配置到其它工作目录时，该目录由用户
 自行维护。
