@@ -8,7 +8,7 @@ using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Scripting;
 
-public sealed class XiangshuScriptRunner(string side)
+public sealed class XiangshuScriptRunner(string targetSide)
 {
     private const string EntryTypeName = "XiangshuScript";
     private const string AsyncEntryMethodName = "ExecuteAsync";
@@ -24,8 +24,8 @@ public sealed class XiangshuScriptRunner(string side)
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Script errors are returned to the MCP caller as tool data instead of escaping the plugin IPC handler.")]
-    public async Task<IpcExecuteScriptResponse> ExecuteAsync(
-        IpcExecuteScriptRequest request,
+    public async Task<IpcRunScriptResponse> ExecuteAsync(
+        IpcRunScriptRequest request,
         CancellationToken cancellationToken = default)
     {
 #if NET6_0_OR_GREATER
@@ -37,7 +37,7 @@ public sealed class XiangshuScriptRunner(string side)
         }
 #endif
 
-        IpcExecuteScriptResponse response = new();
+        IpcRunScriptResponse response = new();
 
         try
         {
@@ -54,7 +54,7 @@ public sealed class XiangshuScriptRunner(string side)
             object? value = await InvokeAsync(
                 emit.AssemblyBytes,
                 new XiangshuScriptGlobals(
-                    side,
+                    targetSide,
                     request.Arguments,
                     cancellationToken),
                 cancellationToken);

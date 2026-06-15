@@ -35,7 +35,7 @@ internal sealed class PluginTools
     }
 
     [McpServerTool(
-        Name = "xiangshu_execute_csharp_script",
+        Name = "xiangshu_run_csharp_script",
         Destructive = true,
         Idempotent = false,
         ReadOnly = false)]
@@ -45,12 +45,12 @@ internal sealed class PluginTools
         + "do not use it for ordinary conversation or static knowledge. "
         + "Mutate state only when the player's target and intent are clear. "
         + "The tool returns JSON with returnValueJson, error, and diagnostics; check error before relying on returnValueJson.")]
-    public Task<string> ExecuteCSharpScriptAsync(
+    public Task<string> RunCSharpScriptAsync(
         [Description(
             "Target plugin side: frontend for UI, chat window, and frontend runtime state; "
             + "backend for backend plugin state and backend-side game APIs. If the side is uncertain, avoid mutation "
             + "until a minimal read-only script confirms where the needed state lives.")]
-        string side,
+        string targetSide,
         [Description(
             "Complete C# compilation unit, not a snippet. Include using directives and define exactly one "
             + "public static non-generic XiangshuScript class with public static Execute or ExecuteAsync "
@@ -61,8 +61,8 @@ internal sealed class PluginTools
         string argumentsJson = "{}",
         CancellationToken cancellationToken = default)
     {
-        return PluginIpcProxy.ExecuteCSharpScriptAsync(
-            side,
+        return PluginIpcProxy.RunCSharpScriptAsync(
+            targetSide,
             script,
             argumentsJson,
             cancellationToken);

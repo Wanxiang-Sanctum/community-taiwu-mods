@@ -36,7 +36,7 @@ internal sealed class AgentChatSession : IDisposable
     private int _sessionGeneration;
     private TurnDispatch? _activeDispatch;
     private string _sessionId;
-    private string? _externalSessionId;
+    private string? _agentSessionId;
 
     public AgentChatSession(
         AgentCliLauncher agentCliLauncher,
@@ -77,7 +77,7 @@ internal sealed class AgentChatSession : IDisposable
         {
             _visibleMessages.AddRange(restoredState.VisibleMessages);
             _nextMessageId = restoredState.LastMessageNumber;
-            _externalSessionId = restoredState.ExternalSessionId;
+            _agentSessionId = restoredState.AgentSessionId;
         }
 
         PersistSnapshot();
@@ -520,7 +520,7 @@ internal sealed class AgentChatSession : IDisposable
 
     private static string GetCliSessionMode(TurnDispatch dispatch)
     {
-        return string.IsNullOrWhiteSpace(dispatch.Turn.ExternalSessionId)
+        return string.IsNullOrWhiteSpace(dispatch.Turn.AgentSessionId)
             ? "new"
             : "resumed";
     }
@@ -571,7 +571,7 @@ internal sealed class AgentChatSession : IDisposable
         try
         {
             AgentChatTurn turn = new(
-                _externalSessionId,
+                _agentSessionId,
                 turnMessages[^1].SpeakerName,
                 _assistantName,
                 [.. turnMessages.Select(static message => message.Content)]);
@@ -677,9 +677,9 @@ internal sealed class AgentChatSession : IDisposable
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(result.ExternalSessionId))
+            if (!string.IsNullOrWhiteSpace(result.AgentSessionId))
             {
-                _externalSessionId = result.ExternalSessionId.Trim();
+                _agentSessionId = result.AgentSessionId.Trim();
             }
 
             message = new AgentChatMessage(
@@ -728,7 +728,7 @@ internal sealed class AgentChatSession : IDisposable
     {
         _sessionGeneration++;
         _sessionId = Guid.NewGuid().ToString("N");
-        _externalSessionId = null;
+        _agentSessionId = null;
         _nextMessageId = 0;
         _visibleMessages.Clear();
         _pendingMessages.Clear();
@@ -789,7 +789,7 @@ internal sealed class AgentChatSession : IDisposable
         return new AgentChatSessionState(
             _sessionId,
             _adapterName,
-            _externalSessionId,
+            _agentSessionId,
             _nextMessageId,
             [.. _visibleMessages.Select(CloneMessage)]);
     }

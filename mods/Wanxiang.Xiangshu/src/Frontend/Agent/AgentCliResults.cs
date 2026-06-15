@@ -4,11 +4,11 @@ namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentCliChatResult(
     string assistantMessage,
-    string? externalSessionId)
+    string? agentSessionId)
 {
     public string AssistantMessage { get; } = assistantMessage;
 
-    public string? ExternalSessionId { get; } = externalSessionId;
+    public string? AgentSessionId { get; } = agentSessionId;
 }
 
 [SuppressMessage(

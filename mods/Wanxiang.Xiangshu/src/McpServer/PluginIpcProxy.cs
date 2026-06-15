@@ -18,7 +18,7 @@ internal static class PluginIpcProxy
         CancellationToken cancellationToken)
     {
         IpcEndpoint endpoint =
-            IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendSide)
+            IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendEndpointRole)
             ?? throw new McpException(
                 "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
 
@@ -33,21 +33,21 @@ internal static class PluginIpcProxy
         return "Intermediate reply sent.";
     }
 
-    public static async Task<string> ExecuteCSharpScriptAsync(
-        string side,
+    public static async Task<string> RunCSharpScriptAsync(
+        string targetSide,
         string script,
         string argumentsJson,
         CancellationToken cancellationToken)
     {
-        string normalizedSide = NormalizeSide(side);
+        string normalizedTargetSide = NormalizeTargetSide(targetSide);
         IpcEndpoint endpoint =
-            IpcEndpointRegistry.TryGetLiveEndpoint(normalizedSide)
+            IpcEndpointRegistry.TryGetLiveEndpoint(normalizedTargetSide)
             ?? throw new McpException(
-                $"No live Wanxiang.Xiangshu {normalizedSide} IPC endpoint was found. Start the game mod first.");
+                $"No live Wanxiang.Xiangshu {normalizedTargetSide} IPC endpoint was found. Start the game mod first.");
 
-        IpcExecuteScriptResponse response = await InvokeAsync<IpcExecuteScriptRequest, IpcExecuteScriptResponse>(
+        IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
-            new IpcExecuteScriptRequest
+            new IpcRunScriptRequest
             {
                 Script = script,
                 Arguments = ParseArgumentsJson(argumentsJson),
@@ -56,7 +56,7 @@ internal static class PluginIpcProxy
 
         return JsonSerializer.Serialize(
             response,
-            XiangshuMcpJsonContext.Default.IpcExecuteScriptResponse);
+            XiangshuMcpJsonContext.Default.IpcRunScriptResponse);
     }
 
     [SuppressMessage(
@@ -122,26 +122,26 @@ internal static class PluginIpcProxy
         }
     }
 
-    private static string NormalizeSide(string side)
+    private static string NormalizeTargetSide(string targetSide)
     {
-        if (string.IsNullOrWhiteSpace(side))
+        if (string.IsNullOrWhiteSpace(targetSide))
         {
-            throw new McpException("Side must be either 'frontend' or 'backend'.");
+            throw new McpException("targetSide must be either 'frontend' or 'backend'.");
         }
 
-        string trimmedSide = side.Trim();
+        string trimmedTargetSide = targetSide.Trim();
 
-        if (string.Equals(trimmedSide, IpcRuntime.FrontendSide, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(trimmedTargetSide, IpcRuntime.FrontendEndpointRole, StringComparison.OrdinalIgnoreCase))
         {
-            return IpcRuntime.FrontendSide;
+            return IpcRuntime.FrontendEndpointRole;
         }
 
-        if (string.Equals(trimmedSide, IpcRuntime.BackendSide, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(trimmedTargetSide, IpcRuntime.BackendEndpointRole, StringComparison.OrdinalIgnoreCase))
         {
-            return IpcRuntime.BackendSide;
+            return IpcRuntime.BackendEndpointRole;
         }
 
-        throw new McpException("Side must be either 'frontend' or 'backend'.");
+        throw new McpException("targetSide must be either 'frontend' or 'backend'.");
     }
 
     private static Dictionary<string, string> ParseArgumentsJson(string argumentsJson)
@@ -180,5 +180,5 @@ internal static class PluginIpcProxy
 [JsonSourceGenerationOptions(
     JsonSerializerDefaults.Web,
     WriteIndented = true)]
-[JsonSerializable(typeof(IpcExecuteScriptResponse))]
+[JsonSerializable(typeof(IpcRunScriptResponse))]
 internal sealed partial class XiangshuMcpJsonContext : JsonSerializerContext;

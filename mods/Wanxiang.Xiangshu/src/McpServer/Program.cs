@@ -64,7 +64,7 @@ try
     Uri address = GetListeningAddress(app);
     IpcEndpoint endpoint = new()
     {
-        Side = IpcRuntime.McpServerSide,
+        Role = IpcRuntime.McpServerEndpointRole,
         Transport = IpcRuntime.McpTransportName,
         Host = IpcRuntime.LoopbackHost,
         Path = IpcRuntime.McpPath,

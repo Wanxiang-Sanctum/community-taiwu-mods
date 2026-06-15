@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Wanxiang.Xiangshu.Ipc;
 
 [DataContract]
-public sealed class IpcExecuteScriptRequest
+public sealed class IpcRunScriptRequest
 {
     [DataMember(Order = 0)]
     public string Script { get; set; } = string.Empty;
@@ -14,7 +14,7 @@ public sealed class IpcExecuteScriptRequest
 }
 
 [DataContract]
-public sealed class IpcExecuteScriptResponse
+public sealed class IpcRunScriptResponse
 {
     [DataMember(Order = 0)]
     public string ReturnValueJson { get; set; } = string.Empty;

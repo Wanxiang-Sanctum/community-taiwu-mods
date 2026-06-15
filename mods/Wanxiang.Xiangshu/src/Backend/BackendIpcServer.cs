@@ -94,8 +94,8 @@ internal sealed class BackendIpcServer : IDisposable
             provider.GetRequiredService<TcpWorker>().StartReceiver();
             IpcEndpoint endpoint = new()
             {
-                Side = IpcRuntime.BackendSide,
-                Transport = IpcRuntime.TransportName,
+                Role = IpcRuntime.BackendEndpointRole,
+                Transport = IpcRuntime.IpcTransportName,
                 Host = IpcRuntime.LoopbackHost,
                 Port = port,
                 ProcessId = Environment.ProcessId,
@@ -122,15 +122,15 @@ internal sealed class BackendIpcServer : IDisposable
     {
         _ = services
             .AddSingleton(
-                new XiangshuScriptRunner(IpcRuntime.BackendSide))
-            .AddSingleton<IAsyncRequestHandlerCore<IpcExecuteScriptRequest, IpcExecuteScriptResponse>, BackendExecuteScriptHandler>()
-            .AddSingleton<IAsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>>(
-                provider => new AsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>(
-                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcExecuteScriptRequest, IpcExecuteScriptResponse>>(),
+                new XiangshuScriptRunner(IpcRuntime.BackendEndpointRole))
+            .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
+            .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(
+                provider => new AsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>(
+                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>>(),
                     provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
         AsyncRequestHandlerRegistory.Add(
-            typeof(IpcExecuteScriptRequest),
-            typeof(IpcExecuteScriptResponse),
+            typeof(IpcRunScriptRequest),
+            typeof(IpcRunScriptResponse),
             typeof(BackendExecuteScriptHandler));
     }
 
@@ -145,10 +145,10 @@ internal sealed class BackendIpcServer : IDisposable
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
 internal sealed class BackendExecuteScriptHandler(XiangshuScriptRunner scriptRunner)
-    : IAsyncRequestHandler<IpcExecuteScriptRequest, IpcExecuteScriptResponse>
+    : IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>
 {
-    public async ValueTask<IpcExecuteScriptResponse> InvokeAsync(
-        IpcExecuteScriptRequest request,
+    public async ValueTask<IpcRunScriptResponse> InvokeAsync(
+        IpcRunScriptRequest request,
         CancellationToken cancellationToken = default)
     {
         return await scriptRunner.ExecuteAsync(request, cancellationToken);

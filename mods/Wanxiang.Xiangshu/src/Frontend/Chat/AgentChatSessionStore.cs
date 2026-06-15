@@ -86,7 +86,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return new AgentChatSessionState(
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
-            NormalizeNullable(session.ExternalSessionId),
+            NormalizeNullable(session.AgentSessionId),
             Math.Max(session.LastMessageNumber, maxMessageNumber),
             messages);
     }
@@ -100,7 +100,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             UpdatedAtUtc = now,
             SessionId = state.SessionId,
             Adapter = state.Adapter,
-            ExternalSessionId = state.ExternalSessionId,
+            AgentSessionId = state.AgentSessionId,
             LastMessageNumber = state.LastMessageNumber,
             VisibleMessages =
             [
@@ -280,7 +280,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public string? Adapter { get; set; }
 
-        public string? ExternalSessionId { get; set; }
+        public string? AgentSessionId { get; set; }
 
         public int LastMessageNumber { get; set; }
 
@@ -304,7 +304,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 internal sealed class AgentChatSessionState(
     string sessionId,
     string adapter,
-    string? externalSessionId,
+    string? agentSessionId,
     int lastMessageNumber,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
@@ -312,7 +312,7 @@ internal sealed class AgentChatSessionState(
 
     public string Adapter { get; } = adapter;
 
-    public string? ExternalSessionId { get; } = externalSessionId;
+    public string? AgentSessionId { get; } = agentSessionId;
 
     public int LastMessageNumber { get; } = lastMessageNumber;
 

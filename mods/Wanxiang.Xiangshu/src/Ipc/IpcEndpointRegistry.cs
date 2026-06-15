@@ -127,10 +127,10 @@ public static class IpcEndpointRegistry
         ];
     }
 
-    public static IpcEndpoint? TryGetLiveEndpoint(string side)
+    public static IpcEndpoint? TryGetLiveEndpoint(string role)
     {
         return GetLiveEndpoints()
-            .Where(endpoint => string.Equals(endpoint.Side, side, StringComparison.OrdinalIgnoreCase))
+            .Where(endpoint => string.Equals(endpoint.Role, role, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(endpoint => endpoint.StartedAtUtc)
             .FirstOrDefault();
     }
@@ -259,14 +259,14 @@ public static class IpcEndpointRegistry
     private static bool IsSameEndpointSlot(IpcEndpoint left, IpcEndpoint right)
     {
         return left.ProcessId == right.ProcessId
-            && string.Equals(left.Side, right.Side, StringComparison.OrdinalIgnoreCase);
+            && string.Equals(left.Role, right.Role, StringComparison.OrdinalIgnoreCase);
     }
 
     private static IpcEndpoint CloneEndpoint(IpcEndpoint endpoint)
     {
         return new IpcEndpoint
         {
-            Side = endpoint.Side,
+            Role = endpoint.Role,
             Transport = endpoint.Transport,
             Host = endpoint.Host,
             Path = endpoint.Path,
@@ -330,7 +330,7 @@ internal sealed class IpcEndpointManifest
 
 public sealed class IpcEndpoint
 {
-    public string Side { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
 
     public string Transport { get; set; } = string.Empty;
 

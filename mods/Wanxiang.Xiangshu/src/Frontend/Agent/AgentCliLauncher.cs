@@ -55,7 +55,7 @@ internal sealed class AgentCliLauncher : IDisposable
             AgentProcessResult result = await RunInvocationAsync(
                     settings,
                     agentInput,
-                    turn.ExternalSessionId,
+                    turn.AgentSessionId,
                     tempFiles,
                     useChatReplySchema: true,
                     invocationToken);
@@ -82,7 +82,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
             return new AgentCliChatResult(
                 assistantMessage.Trim(),
-                ExtractExternalSessionId(result.Stdout));
+                ExtractAgentSessionId(result.Stdout));
         }
         finally
         {
@@ -127,7 +127,7 @@ internal sealed class AgentCliLauncher : IDisposable
     private async UniTask<AgentProcessResult> RunInvocationAsync(
         AgentSettings settings,
         string agentInput,
-        string? externalSessionId,
+        string? agentSessionId,
         AgentCliTempFiles tempFiles,
         bool useChatReplySchema,
         CancellationToken cancellationToken)
@@ -143,7 +143,7 @@ internal sealed class AgentCliLauncher : IDisposable
                 mcpUrl,
                 tempFiles,
                 agentInput,
-                externalSessionId,
+                agentSessionId,
                 useChatReplySchema);
 
             process = new Process
@@ -208,7 +208,7 @@ internal sealed class AgentCliLauncher : IDisposable
         string mcpUrl,
         AgentCliTempFiles tempFiles,
         string agentInput,
-        string? externalSessionId,
+        string? agentSessionId,
         bool useChatReplySchema)
     {
         ProcessStartInfo startInfo = new()
@@ -224,7 +224,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
         if (settings.Adapter == AgentAdapter.Claude)
         {
-            ConfigureClaude(startInfo, mcpUrl, tempFiles, agentInput, externalSessionId, useChatReplySchema);
+            ConfigureClaude(startInfo, mcpUrl, tempFiles, agentInput, agentSessionId, useChatReplySchema);
         }
         else
         {
@@ -236,7 +236,7 @@ internal sealed class AgentCliLauncher : IDisposable
                 mcpUrl,
                 settings.WorkingDirectory,
                 tempFiles.LastMessagePath,
-                externalSessionId,
+                agentSessionId,
                 outputSchemaPath);
         }
 
@@ -248,11 +248,11 @@ internal sealed class AgentCliLauncher : IDisposable
         string mcpUrl,
         string workingDirectory,
         string lastMessagePath,
-        string? externalSessionId,
+        string? agentSessionId,
         string? outputSchemaPath)
     {
         startInfo.ArgumentList.Add("exec");
-        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        if (!string.IsNullOrWhiteSpace(agentSessionId))
         {
             startInfo.ArgumentList.Add("resume");
         }
@@ -268,7 +268,7 @@ internal sealed class AgentCliLauncher : IDisposable
             startInfo.ArgumentList.Add(outputSchemaPath);
         }
 
-        if (string.IsNullOrWhiteSpace(externalSessionId))
+        if (string.IsNullOrWhiteSpace(agentSessionId))
         {
             startInfo.ArgumentList.Add("--cd");
             startInfo.ArgumentList.Add(workingDirectory);
@@ -276,9 +276,9 @@ internal sealed class AgentCliLauncher : IDisposable
 
         startInfo.ArgumentList.Add("--config");
         startInfo.ArgumentList.Add($"mcp_servers.xiangshu.url=\"{mcpUrl}\"");
-        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        if (!string.IsNullOrWhiteSpace(agentSessionId))
         {
-            startInfo.ArgumentList.Add(externalSessionId);
+            startInfo.ArgumentList.Add(agentSessionId);
         }
 
         startInfo.ArgumentList.Add("-");
@@ -289,16 +289,16 @@ internal sealed class AgentCliLauncher : IDisposable
         string mcpUrl,
         AgentCliTempFiles tempFiles,
         string agentInput,
-        string? externalSessionId,
+        string? agentSessionId,
         bool useChatReplySchema)
     {
         string mcpConfigPath = tempFiles.WriteClaudeMcpConfig(mcpUrl);
 
         startInfo.ArgumentList.Add("--print");
-        if (!string.IsNullOrWhiteSpace(externalSessionId))
+        if (!string.IsNullOrWhiteSpace(agentSessionId))
         {
             startInfo.ArgumentList.Add("--resume");
-            startInfo.ArgumentList.Add(externalSessionId);
+            startInfo.ArgumentList.Add(agentSessionId);
         }
 
         startInfo.ArgumentList.Add("--output-format");
@@ -357,7 +357,7 @@ internal sealed class AgentCliLauncher : IDisposable
 
         while (DateTimeOffset.UtcNow < deadline)
         {
-            IpcEndpoint? endpoint = IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.McpServerSide);
+            IpcEndpoint? endpoint = IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.McpServerEndpointRole);
 
             if (endpoint is not null)
             {
@@ -547,7 +547,7 @@ internal sealed class AgentCliLauncher : IDisposable
             : value.ToString(Formatting.None, []);
     }
 
-    private static string? ExtractExternalSessionId(string stdout)
+    private static string? ExtractAgentSessionId(string stdout)
     {
         string? sessionId = null;
 

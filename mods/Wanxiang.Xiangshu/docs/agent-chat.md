@@ -139,21 +139,21 @@ sidecar 和前端 Agent 会话。
 下一轮重新投递。这样即使当前 CLI 进程没有保存本轮上下文，Agent 仍能在新一轮输入里看到被中断的玩家消息
 和“且慢”。
 
-前端通过 `externalSessionId` 恢复本机 Agent 自己的会话；结构化回合输入承载本轮玩家消息和参与者信息。
+前端通过 `agentSessionId` 恢复本机 Agent 自己的会话；结构化回合输入承载本轮玩家消息和参与者信息。
 
 玩家也可以通过聊天窗口头部左侧的重置入口手动清空当前可见聊天消息。手动重置会新建本地投递会话、
-清空 `externalSessionId` 和等待投递的玩家消息。若手动重置发生在 CLI 调用期间，前端会取消当前轮，避免
+清空 `agentSessionId` 和等待投递的玩家消息。若手动重置发生在 CLI 调用期间，前端会取消当前轮，避免
 旧轮结果写回新会话。
 
 前端投递会话可以按这些核心字段理解。实现保存最小运行所需的数据：
 
 - `sessionId`：前端投递会话 id，由前端生成的 GUID-N 字符串。
 - `adapter`：`codex` 或 `claude`。
-- `externalSessionId`：CLI Agent 自己的可恢复会话 id；后续轮次用它恢复同一个本机 Agent 会话。
+- `agentSessionId`：CLI Agent 自己的可恢复会话 id；后续轮次用它恢复同一个本机 Agent 会话。
 - `visibleMessages`：游戏内可见对话记录，服务界面渲染和前端元数据。
 - `pendingMessages`：已经显示给玩家、尚未进入投递轮次，或因当前轮被中断而等待重投递的玩家消息。
 
-持久化快照保存 `sessionId`、`adapter`、`externalSessionId`、消息计数器和 `visibleMessages`；
+持久化快照保存 `sessionId`、`adapter`、`agentSessionId`、消息计数器和 `visibleMessages`；
 `pendingMessages` 是内存态。
 
 对话消息使用同一种内部模型。状态和错误进入会话推进、按钮状态或少量相枢说明；显示层使用当前太吾真实
@@ -218,6 +218,22 @@ CLI Agent
 
 脚本通道覆盖“提交脚本、执行、返回入口返回值 JSON/错误/诊断”。脚本以完全信任方式在目标插件进程内运行，
 编译时引用该进程已加载且有物理路径的程序集；稳定读写游戏状态的 facade 由前后端模块按侧端能力扩展。
+
+MCP 工具形态：
+
+```text
+xiangshu_run_csharp_script(
+  targetSide,
+  script,
+  argumentsJson
+)
+```
+
+参数语义：
+
+- `targetSide`：目标插件侧，取 `frontend` 或 `backend`。
+- `script`：完整 C# 编译单元，入口契约见下文。
+- `argumentsJson`：可选 JSON object，转为 `XiangshuScriptGlobals.Arguments`。
 
 脚本通道传递完整 C# 编译单元，不定义 statements/expression 模式，也不提供预置 `using` 列表。脚本自己
 声明 `using`、类型和入口；runner 只负责编译源码，并调用名为 `XiangshuScript` 的 public static 非泛型
@@ -294,12 +310,12 @@ codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --js
 ```
 
 结构化回合输入通过 stdin 传入。前端会话从 Codex JSONL 事件里的 `thread.started.thread_id` 捕获
-`externalSessionId`，并优先读取 `--output-last-message` 指定临时文件中的最终答复。
+`agentSessionId`，并优先读取 `--output-last-message` 指定临时文件中的最终答复。
 
-后续调用使用捕获到的 `externalSessionId` 恢复同一个 Codex 会话：
+后续调用使用捕获到的 `agentSessionId` 恢复同一个 Codex 会话：
 
 ```text
-codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --json --output-last-message <file> --output-schema <schema-file> --config 'mcp_servers.xiangshu.url="http://127.0.0.1:<port>/mcp"' <externalSessionId> -
+codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --json --output-last-message <file> --output-schema <schema-file> --config 'mcp_servers.xiangshu.url="http://127.0.0.1:<port>/mcp"' <agentSessionId> -
 ```
 
 注册相枢 MCP endpoint 时，适配器通过 `--config` 临时传入：

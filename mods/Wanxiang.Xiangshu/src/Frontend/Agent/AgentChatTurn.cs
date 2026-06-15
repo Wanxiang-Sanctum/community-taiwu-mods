@@ -1,12 +1,12 @@
 namespace Wanxiang.Xiangshu.Frontend.Agent;
 
 internal sealed class AgentChatTurn(
-    string? externalSessionId,
+    string? agentSessionId,
     string playerName,
     string assistantName,
     IReadOnlyList<string> playerMessages)
 {
-    public string? ExternalSessionId { get; } = externalSessionId;
+    public string? AgentSessionId { get; } = agentSessionId;
 
     public string PlayerName { get; } = playerName;
 
