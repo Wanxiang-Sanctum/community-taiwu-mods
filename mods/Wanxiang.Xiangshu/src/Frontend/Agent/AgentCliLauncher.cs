@@ -522,16 +522,58 @@ internal sealed class AgentCliLauncher : IDisposable
 
         foreach (string line in SplitLines(stdout))
         {
-            if (TryParseJsonLine(line, out JObject? jsonObject)
-                && jsonObject.TryGetValue("result", out JToken? value))
+            if (!TryParseJsonLine(line, out JObject? jsonObject))
             {
-                result = value.Type == JTokenType.String
-                    ? value.Value<string>()
-                    : value.ToString(Formatting.None, []);
+                continue;
+            }
+
+            if (TryReadClaudeStructuredOutput(jsonObject, out string? structuredOutput))
+            {
+                result = structuredOutput;
+                continue;
+            }
+
+            if (jsonObject.TryGetValue("result", out JToken? value))
+            {
+                string? candidate = ConvertClaudeResultToken(value);
+                if (!string.IsNullOrWhiteSpace(candidate))
+                {
+                    result = candidate;
+                }
             }
         }
 
-        return result is not null;
+        return !string.IsNullOrWhiteSpace(result);
+    }
+
+    private static bool TryReadClaudeStructuredOutput(
+        JObject jsonObject,
+        [NotNullWhen(true)]
+        out string? result)
+    {
+        result = null;
+
+        if (!jsonObject.TryGetValue("structured_output", out JToken? value)
+            && !jsonObject.TryGetValue("structuredOutput", out value))
+        {
+            return false;
+        }
+
+        string? candidate = ConvertClaudeResultToken(value);
+        if (string.IsNullOrWhiteSpace(candidate))
+        {
+            return false;
+        }
+
+        result = candidate;
+        return true;
+    }
+
+    private static string? ConvertClaudeResultToken(JToken value)
+    {
+        return value.Type == JTokenType.String
+            ? value.Value<string>()
+            : value.ToString(Formatting.None, []);
     }
 
     private static string? ExtractExternalSessionId(string stdout)
