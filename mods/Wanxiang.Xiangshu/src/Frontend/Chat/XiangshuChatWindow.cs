@@ -32,8 +32,14 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float HeaderResetButtonWidth = 58f;
     private const float HeaderResetButtonHeight = 40f;
     private const float HeaderCloseButtonSize = 40f;
-    private const float ScrollbarWidth = 10f;
-    private const float ScrollbarRightInset = 8f;
+    private const float HeaderWorkingIndicatorWidth = 118f;
+    private const float HeaderWorkingIndicatorHeight = 34f;
+    private const float ScrollbarReservedWidth = 34f;
+    private const float ScrollbarRailWidth = 16f;
+    private const float ScrollbarHandleWidth = 6f;
+    private const float ScrollbarRightInset = 9f;
+    private const float ScrollbarVerticalInset = 12f;
+    private const float ScrollbarHandleMarkWidth = 8f;
     private const float MessageRowHorizontalPadding = 14f;
     private const float MessageBubbleWidthRatio = 0.76f;
     private const float MinimumMessageBubbleWidth = 220f;
@@ -57,8 +63,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color ButtonColor = new(0.24f, 0.16f, 0.08f, 1f);
     private static readonly Color WorkingButtonColor = new(0.34f, 0.20f, 0.08f, 1f);
     private static readonly Color DisabledButtonColor = new(0.13f, 0.105f, 0.08f, 1f);
-    private static readonly Color ScrollbarTrackColor = new(0.03f, 0.027f, 0.024f, 0.72f);
-    private static readonly Color ScrollbarHandleColor = new(0.69f, 0.47f, 0.23f, 0.9f);
+    private static readonly Color WorkingIndicatorColor = new(0.125f, 0.079f, 0.039f, 0.86f);
+    private static readonly Color WorkingIndicatorLineColor = new(0.95f, 0.61f, 0.22f, 0.78f);
+    private static readonly Color ScrollbarTrackColor = new(0.018f, 0.015f, 0.012f, 0.46f);
+    private static readonly Color ScrollbarHandleColor = new(0.34f, 0.20f, 0.08f, 0.76f);
+    private static readonly Color ScrollbarHandleMarkColor = new(0.83f, 0.48f, 0.18f, 0.95f);
 
     private static TMP_FontAsset? s_gameFontAsset;
     private static Material? s_gameFontMaterial;
@@ -74,6 +83,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private Button? _sendButton;
     private CImage? _sendButtonImage;
     private TextMeshProUGUI? _sendButtonText;
+    private GameObject? _workingIndicator;
+    private TextMeshProUGUI? _workingIndicatorText;
     private ChatParticipantIdentity? _participants;
     private readonly List<LayoutElement> _messageBubbleLayouts = [];
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
@@ -163,6 +174,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         DrainSessionEvents();
         UpdateSendButtonState();
         UpdateInputFocusVisual();
+        UpdateWorkingIndicator();
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -663,6 +675,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
         titleLayout.flexibleWidth = 1f;
 
+        BuildWorkingIndicator(header.transform);
+
         Button close = CreateButton(
             "CloseButton",
             header.transform,
@@ -673,6 +687,42 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         HeaderDragHandle dragHandle = header.AddComponent<HeaderDragHandle>();
         dragHandle.Initialize(this);
+    }
+
+    private void BuildWorkingIndicator(Transform parent)
+    {
+        GameObject indicator = CreateChild("WorkingIndicator", parent);
+        _workingIndicator = indicator;
+        CImage indicatorImage = AddSolidImage(indicator, WorkingIndicatorColor);
+        indicatorImage.raycastTarget = false;
+        _ = SetFixedLayoutSize(
+            indicator,
+            HeaderWorkingIndicatorWidth,
+            HeaderWorkingIndicatorHeight);
+
+        GameObject accentLine = CreateChild("AccentLine", indicator.transform);
+        RectTransform accentLineRect = accentLine.GetComponent<RectTransform>();
+        accentLineRect.anchorMin = new Vector2(0f, 0f);
+        accentLineRect.anchorMax = new Vector2(1f, 0f);
+        accentLineRect.pivot = new Vector2(0.5f, 0f);
+        accentLineRect.anchoredPosition = new Vector2(0f, 2f);
+        accentLineRect.sizeDelta = new Vector2(-18f, 2f);
+        CImage accentLineImage = AddSolidImage(accentLine, WorkingIndicatorLineColor);
+        accentLineImage.raycastTarget = false;
+
+        _workingIndicatorText = CreateText(
+            "Label",
+            indicator.transform,
+            15f,
+            TextColor,
+            FontStyles.Bold);
+        _workingIndicatorText.text = "推演中";
+        _workingIndicatorText.alignment = TextAlignmentOptions.Center;
+        StretchToParent(_workingIndicatorText.rectTransform);
+        _workingIndicatorText.rectTransform.offsetMin = new Vector2(8f, 3f);
+        _workingIndicatorText.rectTransform.offsetMax = new Vector2(-8f, -2f);
+
+        indicator.SetActive(false);
     }
 
     private void BuildMessageArea(Transform parent)
@@ -691,7 +741,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         GameObject viewport = CreateChild("Viewport", scrollObject.transform);
         RectTransform viewportRect = viewport.GetComponent<RectTransform>();
         StretchToParent(viewportRect);
-        viewportRect.offsetMax = new Vector2(-(ScrollbarWidth + (ScrollbarRightInset * 2f)), 0f);
+        viewportRect.offsetMax = new Vector2(-ScrollbarReservedWidth, 0f);
         CImage viewportImage = AddSolidImage(viewport, new Color(0f, 0f, 0f, 0.08f));
         viewportImage.raycastTarget = false;
         viewport.AddComponent<Mask>().showMaskGraphic = false;
@@ -718,7 +768,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _scrollRect.content = _messageContent;
         _scrollRect.verticalScrollbar = BuildVerticalScrollbar(scrollObject.transform);
         _scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
-
     }
 
     private void BuildInputArea(Transform parent)
@@ -1081,6 +1130,36 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
     }
 
+    private void UpdateWorkingIndicator()
+    {
+        GameObject? indicator = _workingIndicator;
+
+        if (indicator is null)
+        {
+            return;
+        }
+
+        bool isWorking = _session?.IsWorking == true;
+
+        if (indicator.activeSelf != isWorking)
+        {
+            indicator.SetActive(isWorking);
+        }
+
+        if (!isWorking)
+        {
+            return;
+        }
+
+        if (_workingIndicatorText is { } indicatorText)
+        {
+            const int dotCount = 3;
+            const float dotStepSeconds = 0.34f;
+            int dots = ((int)(Time.unscaledTime / dotStepSeconds) % dotCount) + 1;
+            indicatorText.text = "推演中" + new string('.', dots);
+        }
+    }
+
     private void ScheduleScrollToBottom()
     {
         if (_scrollToBottomScheduled)
@@ -1183,35 +1262,40 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         trackRect.anchorMax = new Vector2(1f, 1f);
         trackRect.pivot = new Vector2(1f, 0.5f);
         trackRect.anchoredPosition = new Vector2(-ScrollbarRightInset, 0f);
-        trackRect.sizeDelta = new Vector2(ScrollbarWidth, -20f);
+        trackRect.sizeDelta = new Vector2(ScrollbarRailWidth, -(ScrollbarVerticalInset * 2f));
         CImage trackImage = AddSolidImage(track, ScrollbarTrackColor);
         trackImage.raycastTarget = true;
 
         Scrollbar scrollbar = track.AddComponent<Scrollbar>();
         scrollbar.direction = Scrollbar.Direction.BottomToTop;
-        scrollbar.transition = Selectable.Transition.ColorTint;
+        scrollbar.transition = Selectable.Transition.None;
 
         GameObject slidingArea = CreateChild("SlidingArea", track.transform);
         RectTransform slidingAreaRect = slidingArea.GetComponent<RectTransform>();
         StretchToParent(slidingAreaRect);
-        slidingAreaRect.offsetMin = new Vector2(1f, 4f);
-        slidingAreaRect.offsetMax = new Vector2(-1f, -4f);
+        const float horizontalSlidingInset = (ScrollbarRailWidth - ScrollbarHandleWidth) * 0.5f;
+        slidingAreaRect.offsetMin = new Vector2(horizontalSlidingInset, 5f);
+        slidingAreaRect.offsetMax = new Vector2(-horizontalSlidingInset, -5f);
 
         GameObject handle = CreateChild("Handle", slidingArea.transform);
         RectTransform handleRect = handle.GetComponent<RectTransform>();
         StretchToParent(handleRect);
-        CImage handleImage = AddSpriteImage(handle, ScrollbarHandleColor, ScrollbarHandleSprite);
+        CImage handleImage = AddSolidImage(handle, ScrollbarHandleColor);
         handleImage.raycastTarget = true;
+
+        GameObject handleMark = CreateChild("HandleMark", handle.transform);
+        RectTransform handleMarkRect = handleMark.GetComponent<RectTransform>();
+        handleMarkRect.anchorMin = new Vector2(0.5f, 0f);
+        handleMarkRect.anchorMax = new Vector2(0.5f, 1f);
+        handleMarkRect.pivot = new Vector2(0.5f, 0.5f);
+        handleMarkRect.anchoredPosition = Vector2.zero;
+        handleMarkRect.sizeDelta = new Vector2(ScrollbarHandleMarkWidth, 0f);
+        CImage handleMarkImage = AddSpriteImage(handleMark, ScrollbarHandleMarkColor, ScrollbarHandleSprite);
+        handleMarkImage.raycastTarget = false;
+        handleMarkImage.preserveAspect = true;
 
         scrollbar.targetGraphic = handleImage;
         scrollbar.handleRect = handleRect;
-
-        ColorBlock colors = scrollbar.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1.18f, 1.08f, 0.92f, 1f);
-        colors.pressedColor = new Color(0.82f, 0.71f, 0.55f, 1f);
-        colors.disabledColor = new Color(0.55f, 0.5f, 0.42f, 1f);
-        scrollbar.colors = colors;
         return scrollbar;
     }
 
