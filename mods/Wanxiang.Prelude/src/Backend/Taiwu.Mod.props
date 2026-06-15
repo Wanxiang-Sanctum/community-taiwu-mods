@@ -1,10 +1,7 @@
 <Project>
   <PropertyGroup>
     <TaiwuModSide>Backend</TaiwuModSide>
-    <TaiwuModPluginPackageDirectory
-    >Plugins/Backend</TaiwuModPluginPackageDirectory>
-    <TaiwuModCopyDependencyPackageDirectory
-    >Plugins/Backend</TaiwuModCopyDependencyPackageDirectory>
+    <TaiwuModPluginSubdirectory>Backend</TaiwuModPluginSubdirectory>
     <UsePublicizer>false</UsePublicizer>
   </PropertyGroup>
 

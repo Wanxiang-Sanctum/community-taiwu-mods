@@ -154,12 +154,13 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 
 ```xml
 <PropertyGroup>
-  <TaiwuModPluginPackageDirectory>Plugins/Frontend</TaiwuModPluginPackageDirectory>
-  <TaiwuModCopyDependencyPackageDirectory>Plugins/Frontend</TaiwuModCopyDependencyPackageDirectory>
+  <TaiwuModPluginSubdirectory>Frontend</TaiwuModPluginSubdirectory>
 </PropertyGroup>
 ```
 
-然后在 `Config.Lua` 中使用相对 `Plugins/` 的入口路径，例如
+`TaiwuModPluginSubdirectory` 是相对 `Plugins/` 的子目录，例如 `Frontend` 或
+`Frontend/Tools`，不要包含 `Plugins/` 前缀或首尾斜杠。留空时入口和复制依赖直接部署到 `Plugins/`。
+设置后，在 `Config.Lua` 中使用相对 `Plugins/` 的入口路径，例如
 `Frontend/MyMod.Frontend.dll`。这适合前后端或多个插件需要携带同名 DLL、且运行时必须按入口所在目录优先
 解析依赖的场景。原生加载器不会完整处理这种依赖解析需求；需要该能力的实际 Mod 应声明 `Wanxiang.Prelude`
 （万象引）为前置依赖。
@@ -181,8 +182,8 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 ```
 
 每个依赖选择一种动作。同一个 DLL 同时写进 `TaiwuModMergeDependency` 和
-`TaiwuModCopyDependency` 会报错；复制依赖默认写入 `Plugins/<DLL 文件名>`，设置
-`TaiwuModCopyDependencyPackageDirectory` 后写入该目录下。这两个依赖声明只表达太吾
+`TaiwuModCopyDependency` 会报错；复制依赖默认写入 `Plugins/<DLL 文件名>`，入口 DLL 部署到
+`Plugins/` 下的子目录时，复制依赖跟随入口 DLL 的目录。这两个依赖声明只表达太吾
 插件入口的 DLL 处理方式；非插件项目的运行时依赖应放在项目自己的发布目录中。
 
 `Include` 只写 DLL 文件名。`pack-mod` 不读取 NuGet 缓存路径或任意项目输出路径，而是在入口项目
@@ -192,7 +193,7 @@ MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
 入口项目输出目录，再用 `TaiwuModMergeDependency` 或 `TaiwuModCopyDependency` 声明打包动作。
 游戏或运行时已经提供的 DLL 作为外部运行时依赖处理。
 
-被合并的依赖默认会内部化，但不会重命名类型。内部化用于收窄合并依赖的可见 surface；类型重命名会破坏
+被合并的依赖默认会内部化，但不会重命名类型。内部化用于收窄合并依赖的可见范围；类型重命名会破坏
 反射、序列化、IPC/RPC 和脚本等按完整类型名建立的契约。
 
 需要关闭内部化时，在项目中设置：

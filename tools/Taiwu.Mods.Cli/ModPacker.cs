@@ -239,13 +239,7 @@ internal sealed class ModPacker(
 
         if (assembly.Options.InternalizeMergedDependencies)
         {
-            arguments.Add(string.IsNullOrEmpty(assembly.Options.InternalizeExcludeFile)
-                ? "/internalize"
-                : $"/internalize:{assembly.Options.InternalizeExcludeFile}");
-            if (assembly.Options.RenameInternalizedDependencies)
-            {
-                arguments.Add("/renameinternalized");
-            }
+            arguments.Add("/internalize");
         }
 
         if (assembly.Options.AllowDuplicateInternalizedResources)
@@ -313,9 +307,7 @@ internal sealed class ModPacker(
     {
         return new PackAssemblyOptions(
             bool.Parse(GetRequiredMetadata(output, "InternalizeMergedDependencies")),
-            bool.Parse(GetRequiredMetadata(output, "RenameInternalizedDependencies")),
             bool.Parse(GetRequiredMetadata(output, "AllowDuplicateInternalizedResources")),
-            GetOptionalExistingFile(output, "InternalizeExcludeFile"),
             output.Metadata.GetValueOrDefault("KeyFile"));
     }
 
@@ -385,20 +377,6 @@ internal sealed class ModPacker(
         return output.Metadata.TryGetValue(name, out string? value)
             ? value
             : throw new InvalidOperationException($"包产物缺少 '{name}'：{output.SourcePath}");
-    }
-
-    private static string? GetOptionalExistingFile(PackOutput output, string name)
-    {
-        if (!output.Metadata.TryGetValue(name, out string? path)
-            || string.IsNullOrWhiteSpace(path))
-        {
-            return null;
-        }
-
-        string fullPath = Path.GetFullPath(path);
-        return File.Exists(fullPath)
-            ? fullPath
-            : throw new InvalidOperationException($"包产物声明的文件不存在：{output.SourcePath}: {name}: {path}");
     }
 
     private static bool IsUnderDirectoryOrSame(string path, string directory)
@@ -490,8 +468,6 @@ internal sealed class ModPacker(
 
     private sealed record PackAssemblyOptions(
         bool InternalizeMergedDependencies,
-        bool RenameInternalizedDependencies,
         bool AllowDuplicateInternalizedResources,
-        string? InternalizeExcludeFile,
         string? KeyFile);
 }

@@ -1,17 +1,17 @@
 <Project>
   <PropertyGroup>
-    <TaiwuModPluginPackageDirectory
-      Condition="'$(TaiwuModPluginPackageDirectory)' == ''"
-    >Plugins</TaiwuModPluginPackageDirectory>
-    <_TaiwuModPluginPackageDirectory
-    >$([System.String]::Copy('$(TaiwuModPluginPackageDirectory)').Replace('\',
-      '/').Trim('/'))</_TaiwuModPluginPackageDirectory>
+    <_TaiwuPluginSubdirectory
+    >$([System.String]::Copy('$(TaiwuModPluginSubdirectory)').Replace('\',
+      '/'))</_TaiwuPluginSubdirectory>
+    <_TaiwuPluginEntryFolder>Plugins</_TaiwuPluginEntryFolder>
+    <_TaiwuPluginEntryFolder Condition="'$(_TaiwuPluginSubdirectory)' != ''"
+    >Plugins/$(_TaiwuPluginSubdirectory)</_TaiwuPluginEntryFolder>
   </PropertyGroup>
 
   <ItemGroup>
     <TaiwuModPackEntry
       Include="$(TargetPath)"
-      PackagePath="$(_TaiwuModPluginPackageDirectory)/$(TargetFileName)"
+      PackagePath="$(_TaiwuPluginEntryFolder)/$(TargetFileName)"
       Condition="'$(TaiwuModPackPluginEntry)' != 'false'"
     />
   </ItemGroup>
