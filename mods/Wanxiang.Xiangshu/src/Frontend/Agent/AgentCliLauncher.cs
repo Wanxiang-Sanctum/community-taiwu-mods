@@ -18,6 +18,8 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static readonly TimeSpan ProcessExitTimeout = TimeSpan.FromSeconds(2);
 
+    private const int MaxLogExcerptLength = 400;
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private readonly object _syncRoot = new();
@@ -26,7 +28,7 @@ internal sealed class AgentCliLauncher : IDisposable
     private CancellationTokenSource? _activeInvocationCancellation;
     private bool _disposed;
 
-    public async UniTask<AgentCliInvocationResult> InvokeChatAsync(
+    public async UniTask<AgentCliChatResult> InvokeChatAsync(
         AgentSettings settings,
         AgentChatTurn turn,
         CancellationToken cancellationToken)
@@ -60,24 +62,25 @@ internal sealed class AgentCliLauncher : IDisposable
 
             if (result.ExitCode != 0)
             {
-                string stderrSummary = string.IsNullOrWhiteSpace(result.Stderr)
-                    ? string.Empty
-                    : " Stderr: " + TrimForException(result.Stderr);
-                throw new InvalidOperationException(
-                    "The configured agent CLI exited with code "
-                    + result.ExitCode.ToString(CultureInfo.InvariantCulture)
-                    + "."
-                    + stderrSummary);
+                throw new AgentCliFailureException(
+                    reason: "nonzero-exit-code",
+                    message: "The configured agent CLI exited with code "
+                        + result.ExitCode.ToString(CultureInfo.InvariantCulture)
+                        + ".",
+                    exitCode: result.ExitCode,
+                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
-            string assistantMessage = ExtractAssistantMessage(settings.Adapter, result);
-
-            if (string.IsNullOrWhiteSpace(assistantMessage))
+            if (!TryExtractAssistantMessage(settings.Adapter, result, out string? assistantMessage))
             {
-                throw new InvalidOperationException("The configured agent CLI did not return a chat message.");
+                throw new AgentCliFailureException(
+                    reason: "invalid-chat-reply",
+                    message: "The configured agent CLI did not return a valid chat reply.",
+                    exitCode: null,
+                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
-            return new AgentCliInvocationResult(
+            return new AgentCliChatResult(
                 assistantMessage.Trim(),
                 ExtractExternalSessionId(result.Stdout));
         }
@@ -171,8 +174,6 @@ internal sealed class AgentCliLauncher : IDisposable
             await WaitForExitAsync(process, cancellationToken);
             string stdout = await stdoutTask;
             string stderr = await stderrTask;
-
-            LogInvocationResult(settings.Adapter, process.ExitCode, stdout, stderr);
 
             return new AgentProcessResult(
                 stdout,
@@ -417,33 +418,27 @@ internal sealed class AgentCliLauncher : IDisposable
             endpoint.Path);
     }
 
-    private static string ExtractAssistantMessage(
+    private static bool TryExtractAssistantMessage(
         AgentAdapter adapter,
-        AgentProcessResult result)
+        AgentProcessResult result,
+        [NotNullWhen(true)]
+        out string? assistantMessage)
     {
+        assistantMessage = null;
+
         if (adapter == AgentAdapter.Codex
             && !string.IsNullOrWhiteSpace(result.LastMessage))
         {
-            return ExtractChatReply(result.LastMessage);
+            return TryExtractChatReply(result.LastMessage, out assistantMessage);
         }
 
         if (adapter == AgentAdapter.Claude
             && TryExtractClaudeResult(result.Stdout, out string? claudeResult))
         {
-            return ExtractChatReply(claudeResult ?? string.Empty);
+            return TryExtractChatReply(claudeResult ?? string.Empty, out assistantMessage);
         }
 
-        return ExtractChatReply(result.Stdout);
-    }
-
-    private static string ExtractChatReply(string value)
-    {
-        if (TryExtractChatReply(value, out string? reply))
-        {
-            return reply;
-        }
-
-        throw new InvalidOperationException("The configured agent CLI did not return a valid chat reply.");
+        return TryExtractChatReply(result.Stdout, out assistantMessage);
     }
 
     private static bool TryExtractChatReply(
@@ -479,39 +474,15 @@ internal sealed class AgentCliLauncher : IDisposable
         return !string.IsNullOrWhiteSpace(reply);
     }
 
-    private static string TrimForException(string value)
+    private static string? CreateStderrExcerpt(string value)
     {
         string trimmed = value.Trim();
-        return trimmed.Length <= 400 ? trimmed : trimmed[..400];
-    }
-
-    private static void LogInvocationResult(
-        AgentAdapter adapter,
-        int exitCode,
-        string stdout,
-        string stderr)
-    {
-        if (exitCode == 0)
+        if (trimmed.Length == 0)
         {
-            Log.Info(
-                "agent invocation completed",
-                new
-                {
-                    adapter,
-                    stdoutLength = stdout.Length,
-                    stderrLength = stderr.Length,
-                });
-            return;
+            return null;
         }
 
-        Log.Error(
-            "agent invocation failed",
-            new
-            {
-                adapter,
-                exitCode,
-                stderr = TrimForException(stderr),
-            });
+        return trimmed.Length <= MaxLogExcerptLength ? trimmed : trimmed[..MaxLogExcerptLength];
     }
 
     private static bool TryExtractClaudeResult(
@@ -668,13 +639,6 @@ internal sealed class AgentCliLauncher : IDisposable
         {
             if (!process.HasExited)
             {
-                Log.Info(
-                    "killing agent CLI process",
-                    new
-                    {
-                        reason,
-                        process.Id,
-                    });
                 process.Kill();
                 if (!process.WaitForExit((int)ProcessExitTimeout.TotalMilliseconds))
                 {

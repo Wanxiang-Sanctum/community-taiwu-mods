@@ -95,6 +95,7 @@ public sealed class TaiwuLogger
             },
             Culture = CultureInfo.InvariantCulture,
             Formatting = Formatting.None,
+            NullValueHandling = NullValueHandling.Ignore,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         };
 

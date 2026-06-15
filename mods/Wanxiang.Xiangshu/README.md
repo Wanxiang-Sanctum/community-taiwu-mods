@@ -16,7 +16,7 @@
 脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。相枢不提供远程服务，也不把
 脚本能力包装成面向非受信输入的沙箱。
 
-对话、运行目录、脚本通道和 CLI 适配器的内部设计见 `docs/agent-chat.md`。
+对话、运行目录、脚本通道和 CLI 适配器的内部设计见 `docs/agent-chat.md`；日志策略见 `docs/logging.md`。
 
 ## 游戏内使用
 
@@ -50,7 +50,7 @@ IPC endpoint、MCP sidecar、运行数据目录和本机 Agent 会话。
 目录，而不是可编辑 Agent 资产。
 
 游戏进程内的运行信息进入太吾游戏日志系统。MCP sidecar 是独立进程，事件日志写入
-`.xiangshu-runtime/Diagnostics/McpServer/`。
+`.xiangshu-runtime/Diagnostics/McpServer/`。事件选择和上下文字段见 `docs/logging.md`。
 
 ## 开发
 
@@ -78,14 +78,14 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 
 ## 项目结构
 
-根 README 说明入口和所有权；对话运行设计见 `docs/agent-chat.md`，源码模块增长约定优先看对应目录下的
-`README.md`。
+根 README 说明入口和所有权；对话运行设计见 `docs/agent-chat.md`，日志策略见 `docs/logging.md`。源码模块
+增长约定优先看对应目录下的 `README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
 - `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、轻量静态语境和对应 CLI Agent 可发现的技能
   目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `docs/`：内部设计说明。
+- `docs/`：对话链路和日志策略等内部设计说明。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
 - `src/Backend/`：后端插件项目，负责后端 IPC 和后端侧脚本执行入口。
 - `src/Ipc/`：前端、后端和 MCP sidecar 共享的 contract 与 endpoint 辅助库。

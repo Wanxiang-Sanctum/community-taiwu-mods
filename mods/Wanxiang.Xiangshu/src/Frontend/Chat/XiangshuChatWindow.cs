@@ -114,7 +114,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         IsVisible = visible;
         gameObject.SetActive(visible);
-        LogVisibilityChange(visible);
 
         if (!visible)
         {
@@ -849,27 +848,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         raycaster.enabled = true;
         raycaster.TargetCamera = uiManager.UiCamera;
-    }
-
-    private void LogVisibilityChange(bool visible)
-    {
-        bool activeSelf = gameObject.activeSelf;
-        bool activeInHierarchy = gameObject.activeInHierarchy;
-
-        Log.Info(
-            "chat window visibility changed",
-            new
-            {
-                visible,
-                activeSelf,
-                activeInHierarchy,
-                parent = transform.parent?.name,
-                canvas = _panelRect?.GetComponentInParent<Canvas>()?.name,
-                panelWidth = _panelRect?.rect.width ?? 0f,
-                panelHeight = _panelRect?.rect.height ?? 0f,
-                panelX = _panelRect?.anchoredPosition.x ?? 0f,
-                panelY = _panelRect?.anchoredPosition.y ?? 0f,
-            });
     }
 
     private void ApplyPanelLayout()

@@ -33,7 +33,6 @@ IpcEndpointRegistry.ConfigureManifestPath(manifestFilePath);
 Serilog.Core.Logger fileLogger = CreateFileLogger(logFilePath);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddJsonConsole();
 builder.Logging.AddSerilog(fileLogger, dispose: false);
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 

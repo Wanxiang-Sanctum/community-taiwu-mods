@@ -44,12 +44,6 @@ internal static class XiangshuHotKeys
             ToggleChat,
         ];
         CommandKitBase.Init();
-        Log.Info(
-            "chat hotkey registered",
-            new
-            {
-                hotkey = "Ctrl+Backslash",
-            });
     }
 
     public static void PatchViewBottomUpdate(Harmony harmony)
@@ -62,8 +56,6 @@ internal static class XiangshuHotKeys
 
 internal static class FrontendHotkeyBridge
 {
-    private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
-
     private static FrontendPlugin? s_plugin;
     private static int s_lastHandledFrame = -1;
 
@@ -117,12 +109,6 @@ internal static class FrontendHotkeyBridge
             }
 
             s_lastHandledFrame = Time.frameCount;
-            Log.Info(
-                "chat hotkey accepted",
-                new
-                {
-                    frame = Time.frameCount,
-                });
             plugin.ToggleChatWindow();
         }
     }

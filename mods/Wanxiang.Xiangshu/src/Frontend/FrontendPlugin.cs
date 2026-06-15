@@ -145,7 +145,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         FrontendHotkeyBridge.Attach(this);
         _harmony = new Harmony("Wanxiang.Xiangshu.Frontend");
         XiangshuHotKeys.PatchViewBottomUpdate(_harmony);
-        Log.Info("frontend ViewBottom chat hotkey patch installed");
     }
 
     internal void ToggleChatWindow()
