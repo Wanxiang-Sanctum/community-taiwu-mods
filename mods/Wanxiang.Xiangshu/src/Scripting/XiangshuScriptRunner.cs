@@ -10,9 +10,11 @@ namespace Wanxiang.Xiangshu.Scripting;
 
 public sealed class XiangshuScriptRunner(string targetSide)
 {
-    private const string EntryTypeName = "XiangshuScript";
+    private const string EntryTypeSimpleName = "XiangshuScript";
     private const string AsyncEntryMethodName = "ExecuteAsync";
     private const string SyncEntryMethodName = "Execute";
+    private const string ScriptGlobalsFullName =
+        "Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals";
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -43,9 +45,9 @@ public sealed class XiangshuScriptRunner(string targetSide)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            EmitResultData emit = Compile(request.Script, cancellationToken);
-            diagnostics = emit.Diagnostics;
-            if (!emit.Succeeded || emit.AssemblyBytes is null)
+            ScriptCompilationResult compilationResult = Compile(request.Script, cancellationToken);
+            diagnostics = compilationResult.Diagnostics;
+            if (!compilationResult.Succeeded || compilationResult.AssemblyBytes is null)
             {
                 return CreateErrorResponse(
                     "Script compilation failed.",
@@ -53,7 +55,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
             }
 
             object? value = await InvokeAsync(
-                emit.AssemblyBytes,
+                compilationResult.AssemblyBytes,
                 new XiangshuScriptGlobals(
                     targetSide,
                     request.Arguments,
@@ -79,8 +81,17 @@ public sealed class XiangshuScriptRunner(string targetSide)
         }
     }
 
-    private static EmitResultData Compile(string source, CancellationToken cancellationToken)
+    private static ScriptCompilationResult Compile(string source, CancellationToken cancellationToken)
     {
+        CompilationReferenceSet referenceSet = CollectCompilationReferences();
+        if (!referenceSet.HasRequiredReferences)
+        {
+            return new ScriptCompilationResult(
+                false,
+                assemblyBytes: null,
+                referenceSet.Diagnostics);
+        }
+
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
             source,
             new CSharpParseOptions(LanguageVersion.Latest),
@@ -88,7 +99,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
         CSharpCompilation compilation = CSharpCompilation.Create(
             $"Wanxiang.Xiangshu.DynamicScript.{Guid.NewGuid():N}",
             [syntaxTree],
-            CollectReferences(),
+            referenceSet.References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 optimizationLevel: OptimizationLevel.Release,
@@ -100,6 +111,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
             cancellationToken: cancellationToken);
         string[] diagnostics =
         [
+            .. referenceSet.Diagnostics,
             .. emitResult.Diagnostics
                 .Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning)
                 .Select(static diagnostic => diagnostic.ToString()),
@@ -107,21 +119,116 @@ public sealed class XiangshuScriptRunner(string targetSide)
 
         if (!emitResult.Success)
         {
-            return new EmitResultData(false, assemblyBytes: null, diagnostics);
+            return new ScriptCompilationResult(false, assemblyBytes: null, diagnostics);
         }
 
-        return new EmitResultData(true, assemblyStream.ToArray(), diagnostics);
+        return new ScriptCompilationResult(true, assemblyStream.ToArray(), diagnostics);
     }
 
-    private static IEnumerable<MetadataReference> CollectReferences()
+    private static CompilationReferenceSet CollectCompilationReferences()
     {
-        return AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(static assembly => !assembly.IsDynamic)
-            .Select(static assembly => assembly.Location)
-            .Where(static location => !string.IsNullOrWhiteSpace(location) && File.Exists(location))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(static location => MetadataReference.CreateFromFile(location));
+        List<MetadataReference> references = [];
+        List<string> diagnostics = [];
+        HashSet<string> referencePaths = new(StringComparer.OrdinalIgnoreCase);
+
+        bool hasRequiredReferences = TryAddScriptGlobalsReference(
+            references,
+            referencePaths,
+            diagnostics);
+
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            TryAddLoadedAssemblyReference(
+                assembly,
+                references,
+                referencePaths);
+        }
+
+        return new CompilationReferenceSet(
+            hasRequiredReferences,
+            references,
+            diagnostics);
+    }
+
+    private static bool TryAddScriptGlobalsReference(
+        List<MetadataReference> references,
+        HashSet<string> referencePaths,
+        List<string> diagnostics)
+    {
+        Assembly assembly = typeof(XiangshuScriptGlobals).Assembly;
+        if (!TryGetAssemblyReferencePath(assembly, out string? referencePath))
+        {
+            diagnostics.Add(
+                $"The assembly that defines {ScriptGlobalsFullName} is not available "
+                + "as a file reference for dynamic compilation.");
+            return false;
+        }
+
+        if (TryAddMetadataReference(referencePath, references, referencePaths))
+        {
+            return true;
+        }
+
+        diagnostics.Add(
+            $"The assembly that defines {ScriptGlobalsFullName} could not be loaded "
+            + $"as a metadata reference from '{referencePath}'.");
+        return false;
+    }
+
+    private static void TryAddLoadedAssemblyReference(
+        Assembly assembly,
+        List<MetadataReference> references,
+        HashSet<string> referencePaths)
+    {
+        if (TryGetAssemblyReferencePath(assembly, out string? referencePath))
+        {
+            _ = TryAddMetadataReference(referencePath, references, referencePaths);
+        }
+    }
+
+    private static bool TryGetAssemblyReferencePath(
+        Assembly assembly,
+        [NotNullWhen(true)] out string? referencePath)
+    {
+        referencePath = null;
+
+        if (assembly.IsDynamic)
+        {
+            return false;
+        }
+
+        try
+        {
+            referencePath = assembly.Location;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+
+        return !string.IsNullOrWhiteSpace(referencePath) && File.Exists(referencePath);
+    }
+
+    private static bool TryAddMetadataReference(
+        string referencePath,
+        List<MetadataReference> references,
+        HashSet<string> referencePaths)
+    {
+        if (!referencePaths.Add(referencePath))
+        {
+            return true;
+        }
+
+        try
+        {
+            references.Add(MetadataReference.CreateFromFile(referencePath));
+            return true;
+        }
+        catch (Exception ex) when (ex is BadImageFormatException or IOException or UnauthorizedAccessException)
+        {
+            _ = referencePaths.Remove(referencePath);
+            return false;
+        }
     }
 
     private static async Task<object?> InvokeAsync(
@@ -152,7 +259,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
         if (candidates.Length > 1)
         {
             throw new InvalidOperationException(
-                $"Compiled script has multiple public static {EntryTypeName} entry types. Keep only one entry type.");
+                $"Compiled script has multiple public static {EntryTypeSimpleName} entry types. Keep only one entry type.");
         }
 
         throw new InvalidOperationException(GetEntryTypeContractMessage());
@@ -171,7 +278,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
                 .GetMethods(EntryMethodSearchFlags)
                 .Where(static method =>
                     IsEntryMethodName(method.Name)
-                    && HasGlobalsParameter(method)),
+                    && HasScriptGlobalsParameter(method)),
         ];
 
         if (candidates.Length == 1)
@@ -183,7 +290,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
         {
             throw new InvalidOperationException(
                 $"Compiled script has multiple matching entry methods. Keep only one {AsyncEntryMethodName}"
-                + $" or {SyncEntryMethodName} overload that takes XiangshuScriptGlobals.");
+                + $" or {SyncEntryMethodName} overload with one parameter whose type resolves to {ScriptGlobalsFullName}.");
         }
 
         throw new InvalidOperationException(GetEntryMethodContractMessage());
@@ -191,7 +298,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
 
     private static bool IsValidEntryType(Type type)
     {
-        return type.Name == EntryTypeName
+        return type.Name == EntryTypeSimpleName
             && type.IsClass
             && type.IsAbstract
             && type.IsSealed
@@ -204,7 +311,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
         return name is AsyncEntryMethodName or SyncEntryMethodName;
     }
 
-    private static bool HasGlobalsParameter(MethodInfo method)
+    private static bool HasScriptGlobalsParameter(MethodInfo method)
     {
         ParameterInfo[] parameters = method.GetParameters();
         return parameters.Length == 1
@@ -214,14 +321,14 @@ public sealed class XiangshuScriptRunner(string targetSide)
     private static string GetEntryTypeContractMessage()
     {
         return "Compiled script entry type contract was not satisfied. Define exactly one public static "
-            + $"non-generic class named {EntryTypeName}.";
+            + $"non-generic class named {EntryTypeSimpleName}.";
     }
 
     private static string GetEntryMethodContractMessage()
     {
         return "Compiled script entry method contract was not satisfied. Define exactly one public static "
-            + $"{EntryTypeName}.{AsyncEntryMethodName} or {EntryTypeName}.{SyncEntryMethodName} method with one "
-            + "XiangshuScriptGlobals parameter.";
+            + $"{EntryTypeSimpleName}.{AsyncEntryMethodName} or {EntryTypeSimpleName}.{SyncEntryMethodName} method with one "
+            + $"parameter whose type resolves to {ScriptGlobalsFullName}.";
     }
 
     private static async Task<object?> ResolveInvocationResultAsync(
@@ -309,7 +416,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
             : exception;
     }
 
-    private sealed class EmitResultData(
+    private sealed class ScriptCompilationResult(
         bool succeeded,
         byte[]? assemblyBytes,
         IReadOnlyList<string> diagnostics)
@@ -317,6 +424,18 @@ public sealed class XiangshuScriptRunner(string targetSide)
         public bool Succeeded { get; } = succeeded;
 
         public byte[]? AssemblyBytes { get; } = assemblyBytes;
+
+        public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
+    }
+
+    private sealed class CompilationReferenceSet(
+        bool hasRequiredReferences,
+        IReadOnlyList<MetadataReference> references,
+        IReadOnlyList<string> diagnostics)
+    {
+        public bool HasRequiredReferences { get; } = hasRequiredReferences;
+
+        public IReadOnlyList<MetadataReference> References { get; } = references;
 
         public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
     }
