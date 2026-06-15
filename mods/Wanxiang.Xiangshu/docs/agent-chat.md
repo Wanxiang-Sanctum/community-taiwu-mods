@@ -227,9 +227,10 @@ CLI Agent
 - 会修改游戏状态的脚本能力落在实际承载该 API 和线程边界的前端或后端插件中。
 - 玩家可见文本不属于脚本执行 contract；Agent 可以走最终答复，或显式调用中间答复工具。
 
-脚本通道覆盖“提交脚本、执行、返回入口返回值 JSON/错误/诊断”。脚本以完全信任方式在目标插件进程内运行，
-编译时显式引用定义脚本入口契约的程序集，并补充该进程已加载且有物理路径的程序集；稳定读写游戏状态的
-facade 由前后端模块按侧端能力扩展。
+脚本通道覆盖“提交脚本、执行、返回入口返回值 JSON/错误/诊断”。脚本以完全信任方式在目标插件进程内运行；
+稳定读写游戏状态的 facade 由前后端模块按侧端能力扩展。编译引用和临时程序集依赖解析属于
+`src/Scripting/` 的模块边界：前端或后端启动脚本运行器时传入本侧插件部署目录，运行器再结合运行时平台
+程序集和已加载程序集建立编译 metadata。这里不维护 DLL 清单；部署内容由入口项目和打包声明决定。
 
 MCP 工具形态：
 
@@ -244,14 +245,12 @@ xiangshu_run_csharp_script(
 参数语义：
 
 - `targetSide`：目标插件侧，取 `frontend` 或 `backend`。
-- `script`：完整 C# 编译单元，入口契约见下文。
+- `script`：完整 C# 编译单元。
 - `argumentsJson`：可选 JSON object，转为 `XiangshuScriptGlobals.Arguments`。
 
 脚本通道传递完整 C# 编译单元，不定义 statements/expression 模式，也不提供预置 `using` 列表。脚本自己
-声明 `using`、类型和入口；runner 只负责编译源码，并调用名为 `XiangshuScript` 的 public static 非泛型
-class 上的 public static `Execute` 或 `ExecuteAsync` 方法。入口接收一个来自
-`Wanxiang.Xiangshu.Scripting` 的 `XiangshuScriptGlobals` 参数，用来访问目标侧、调用参数和取消信号。若
-入口契约不满足，runner 返回统一的入口契约错误，而不是把它归类为 MCP 或 IPC 转发失败。
+声明 `using`、类型和入口；入口契约由 `src/Scripting/README.md` 维护。若入口契约不满足，runner 返回统一
+的入口契约错误，而不是把它归类为 MCP 或 IPC 转发失败。
 
 ## MCP 驱动的中间答复
 

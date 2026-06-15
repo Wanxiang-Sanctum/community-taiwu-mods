@@ -12,7 +12,9 @@ using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
-internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposable
+internal sealed class FrontendIpcServer(
+    AgentChatSession chatSession,
+    string pluginDirectory) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -113,7 +115,9 @@ internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposa
             });
         _ = builder.RegisterInstance(chatSession);
         _ = builder.RegisterInstance(
-            new XiangshuScriptRunner(IpcRuntime.FrontendEndpointRole));
+            new XiangshuScriptRunner(
+                IpcRuntime.FrontendEndpointRole,
+                [pluginDirectory]));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,
             IpcRunScriptResponse,

@@ -7,6 +7,8 @@ public static class XiangshuRuntimePaths
 {
     public const string DefaultAgentWorkingDirectoryName = "AgentWorkspace";
 
+    public const string PluginsDirectoryName = "Plugins";
+
     public const string RuntimeDirectoryName = ".xiangshu-runtime";
 
     public const string IpcManifestFileName = "ipc-endpoints.json";
@@ -55,6 +57,41 @@ public static class XiangshuRuntimePaths
         }
 
         return Path.GetFullPath(path);
+    }
+
+    public static string GetPluginDirectory(
+        string modDirectory,
+        string pluginDirectoryName)
+    {
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(modDirectory);
+        ArgumentNullException.ThrowIfNull(pluginDirectoryName);
+#else
+        if (modDirectory is null)
+        {
+            throw new ArgumentNullException(nameof(modDirectory));
+        }
+
+        if (pluginDirectoryName is null)
+        {
+            throw new ArgumentNullException(nameof(pluginDirectoryName));
+        }
+#endif
+
+        if (string.IsNullOrWhiteSpace(modDirectory))
+        {
+            throw new ArgumentException("Mod directory is required.", nameof(modDirectory));
+        }
+
+        if (string.IsNullOrWhiteSpace(pluginDirectoryName))
+        {
+            throw new ArgumentException("Plugin directory name is required.", nameof(pluginDirectoryName));
+        }
+
+        return Path.Combine(
+            Path.GetFullPath(modDirectory),
+            PluginsDirectoryName,
+            pluginDirectoryName);
     }
 
     public static string GetRuntimeDirectory(string agentWorkingDirectory)

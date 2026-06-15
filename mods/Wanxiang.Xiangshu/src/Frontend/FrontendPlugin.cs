@@ -19,6 +19,8 @@ namespace Wanxiang.Xiangshu.Frontend;
 [PluginConfig("Wanxiang.Xiangshu.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
+    private const string PluginDirectoryName = "Frontend";
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private FrontendIpcServer? _ipcServer;
@@ -48,7 +50,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
                 CurrentAgentSettings.Adapter,
                 ChatParticipantIdentity.AssistantName);
             _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
-            StartFrontendIpcServer(_chatSession);
+            StartFrontendIpcServer(_chatSession, CurrentAgentSettings.ModDirectory);
             InstallChatHotkey();
 
             StartMcpSidecar(CurrentAgentSettings);
@@ -124,10 +126,14 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         }
     }
 
-    private void StartFrontendIpcServer(AgentChatSession chatSession)
+    private void StartFrontendIpcServer(
+        AgentChatSession chatSession,
+        string modDirectory)
     {
         _ipcServer?.Dispose();
-        _ipcServer = new FrontendIpcServer(chatSession);
+        _ipcServer = new FrontendIpcServer(
+            chatSession,
+            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
         IpcEndpoint endpoint = _ipcServer.Start();
         Log.Info(
             "frontend IPC listening",

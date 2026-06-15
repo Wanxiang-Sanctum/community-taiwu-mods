@@ -90,7 +90,8 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 
 相枢依赖 `Wanxiang.Prelude`（万象引）提供共享运行时和按入口目录优先解析 DLL 的加载规则。发布时，将
 万象引的 Steam Workshop `FileId` 加入相枢的 `Dependencies`，确保万象引先于相枢加载。具体运行时清单由
-万象引和相枢各自的项目文件维护，根 README 不复制 DLL 清单。
+万象引和相枢各自的项目文件维护，根 README 不复制 DLL 清单。脚本编译和程序集解析的模块边界见
+`src/Scripting/README.md`。
 
 ## 项目结构
 

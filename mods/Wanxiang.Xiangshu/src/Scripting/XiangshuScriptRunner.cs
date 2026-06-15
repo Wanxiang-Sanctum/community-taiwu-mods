@@ -8,7 +8,7 @@ using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Scripting;
 
-public sealed class XiangshuScriptRunner(string targetSide)
+public sealed class XiangshuScriptRunner
 {
     private const string EntryTypeSimpleName = "XiangshuScript";
     private const string AsyncEntryMethodName = "ExecuteAsync";
@@ -16,11 +16,31 @@ public sealed class XiangshuScriptRunner(string targetSide)
     private const string ScriptGlobalsFullName =
         "Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals";
 
+    private readonly string _targetSide;
+    private readonly ScriptReferenceResolver _referenceResolver;
+
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
         Formatting = Formatting.Indented,
     };
+
+    public XiangshuScriptRunner(
+        string targetSide,
+        IEnumerable<string>? referenceDirectories = null)
+    {
+#if NET6_0_OR_GREATER
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetSide);
+#else
+        if (string.IsNullOrWhiteSpace(targetSide))
+        {
+            throw new ArgumentException("Target side is required.", nameof(targetSide));
+        }
+#endif
+
+        _targetSide = targetSide;
+        _referenceResolver = new ScriptReferenceResolver(referenceDirectories);
+    }
 
     [SuppressMessage(
         "Design",
@@ -57,7 +77,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
             object? value = await InvokeAsync(
                 compilationResult.AssemblyBytes,
                 new XiangshuScriptGlobals(
-                    targetSide,
+                    _targetSide,
                     request.Arguments,
                     cancellationToken),
                 cancellationToken);
@@ -81,15 +101,18 @@ public sealed class XiangshuScriptRunner(string targetSide)
         }
     }
 
-    private static ScriptCompilationResult Compile(string source, CancellationToken cancellationToken)
+    private ScriptCompilationResult Compile(string source, CancellationToken cancellationToken)
     {
-        CompilationReferenceSet referenceSet = CollectCompilationReferences();
-        if (!referenceSet.HasRequiredReferences)
+        CompilationReferences references =
+            _referenceResolver.CollectReferences(
+                typeof(XiangshuScriptGlobals).Assembly,
+                ScriptGlobalsFullName);
+        if (!references.HasRequiredReferences)
         {
             return new ScriptCompilationResult(
                 false,
                 assemblyBytes: null,
-                referenceSet.Diagnostics);
+                references.Diagnostics);
         }
 
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
@@ -99,7 +122,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
         CSharpCompilation compilation = CSharpCompilation.Create(
             $"Wanxiang.Xiangshu.DynamicScript.{Guid.NewGuid():N}",
             [syntaxTree],
-            referenceSet.References,
+            references.References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 optimizationLevel: OptimizationLevel.Release,
@@ -111,7 +134,7 @@ public sealed class XiangshuScriptRunner(string targetSide)
             cancellationToken: cancellationToken);
         string[] diagnostics =
         [
-            .. referenceSet.Diagnostics,
+            .. references.Diagnostics,
             .. emitResult.Diagnostics
                 .Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning)
                 .Select(static diagnostic => diagnostic.ToString()),
@@ -125,117 +148,13 @@ public sealed class XiangshuScriptRunner(string targetSide)
         return new ScriptCompilationResult(true, assemblyStream.ToArray(), diagnostics);
     }
 
-    private static CompilationReferenceSet CollectCompilationReferences()
-    {
-        List<MetadataReference> references = [];
-        List<string> diagnostics = [];
-        HashSet<string> referencePaths = new(StringComparer.OrdinalIgnoreCase);
-
-        bool hasRequiredReferences = TryAddScriptGlobalsReference(
-            references,
-            referencePaths,
-            diagnostics);
-
-        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            TryAddLoadedAssemblyReference(
-                assembly,
-                references,
-                referencePaths);
-        }
-
-        return new CompilationReferenceSet(
-            hasRequiredReferences,
-            references,
-            diagnostics);
-    }
-
-    private static bool TryAddScriptGlobalsReference(
-        List<MetadataReference> references,
-        HashSet<string> referencePaths,
-        List<string> diagnostics)
-    {
-        Assembly assembly = typeof(XiangshuScriptGlobals).Assembly;
-        if (!TryGetAssemblyReferencePath(assembly, out string? referencePath))
-        {
-            diagnostics.Add(
-                $"The assembly that defines {ScriptGlobalsFullName} is not available "
-                + "as a file reference for dynamic compilation.");
-            return false;
-        }
-
-        if (TryAddMetadataReference(referencePath, references, referencePaths))
-        {
-            return true;
-        }
-
-        diagnostics.Add(
-            $"The assembly that defines {ScriptGlobalsFullName} could not be loaded "
-            + $"as a metadata reference from '{referencePath}'.");
-        return false;
-    }
-
-    private static void TryAddLoadedAssemblyReference(
-        Assembly assembly,
-        List<MetadataReference> references,
-        HashSet<string> referencePaths)
-    {
-        if (TryGetAssemblyReferencePath(assembly, out string? referencePath))
-        {
-            _ = TryAddMetadataReference(referencePath, references, referencePaths);
-        }
-    }
-
-    private static bool TryGetAssemblyReferencePath(
-        Assembly assembly,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-
-        if (assembly.IsDynamic)
-        {
-            return false;
-        }
-
-        try
-        {
-            referencePath = assembly.Location;
-        }
-        catch (NotSupportedException)
-        {
-            return false;
-        }
-
-        return !string.IsNullOrWhiteSpace(referencePath) && File.Exists(referencePath);
-    }
-
-    private static bool TryAddMetadataReference(
-        string referencePath,
-        List<MetadataReference> references,
-        HashSet<string> referencePaths)
-    {
-        if (!referencePaths.Add(referencePath))
-        {
-            return true;
-        }
-
-        try
-        {
-            references.Add(MetadataReference.CreateFromFile(referencePath));
-            return true;
-        }
-        catch (Exception ex) when (ex is BadImageFormatException or IOException or UnauthorizedAccessException)
-        {
-            _ = referencePaths.Remove(referencePath);
-            return false;
-        }
-    }
-
-    private static async Task<object?> InvokeAsync(
+    private async Task<object?> InvokeAsync(
         byte[] assemblyBytes,
         XiangshuScriptGlobals globals,
         CancellationToken cancellationToken)
     {
+        using AssemblyResolutionScope resolutionScope =
+            _referenceResolver.CreateAssemblyResolutionScope();
         Assembly assembly = Assembly.Load(assemblyBytes);
         Type scriptType = FindEntryType(assembly);
         MethodInfo executeMethod = FindEntryMethod(scriptType);
@@ -424,18 +343,6 @@ public sealed class XiangshuScriptRunner(string targetSide)
         public bool Succeeded { get; } = succeeded;
 
         public byte[]? AssemblyBytes { get; } = assemblyBytes;
-
-        public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
-    }
-
-    private sealed class CompilationReferenceSet(
-        bool hasRequiredReferences,
-        IReadOnlyList<MetadataReference> references,
-        IReadOnlyList<string> diagnostics)
-    {
-        public bool HasRequiredReferences { get; } = hasRequiredReferences;
-
-        public IReadOnlyList<MetadataReference> References { get; } = references;
 
         public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
     }

@@ -18,4 +18,7 @@
 读取一次并注入运行时对象。工作目录、CLI 适配器、IPC manifest 和 MCP sidecar 由前端运行时启动流程
 统一重建；设置修改后由游戏重启生效。
 
+前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
+注入 `Ipc/` endpoint；脚本编译和程序集解析规则仍归 `src/Scripting/`。
+
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层。

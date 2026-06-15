@@ -14,6 +14,7 @@ namespace Wanxiang.Xiangshu.Backend;
 public sealed class BackendPlugin : TaiwuRemakePlugin
 {
     private const string AgentWorkingDirectoryKey = "AgentWorkingDirectory";
+    private const string PluginDirectoryName = "Backend";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
@@ -47,11 +48,13 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     {
         _ipcServer?.Dispose();
 
-        string workingDirectory = ReadAgentWorkingDirectory();
+        string modDirectory = DomainManager.Mod.GetModDirectory(ModIdStr);
+        string workingDirectory = ReadAgentWorkingDirectory(modDirectory);
         _ = Directory.CreateDirectory(workingDirectory);
         _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
         IpcEndpointRegistry.ConfigureForWorkingDirectory(workingDirectory);
-        _ipcServer = new BackendIpcServer();
+        _ipcServer = new BackendIpcServer(
+            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
         IpcEndpoint endpoint = _ipcServer.Start();
         Log.Info(
             "backend IPC listening",
@@ -63,9 +66,8 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
             });
     }
 
-    private string ReadAgentWorkingDirectory()
+    private string ReadAgentWorkingDirectory(string modDirectory)
     {
-        string modDirectory = DomainManager.Mod.GetModDirectory(ModIdStr);
         string value = XiangshuRuntimePaths.DefaultAgentWorkingDirectoryName;
         _ = DomainManager.Mod.GetSetting(ModIdStr, AgentWorkingDirectoryKey, ref value);
         return XiangshuRuntimePaths.ResolveAgentWorkingDirectory(modDirectory, value);
