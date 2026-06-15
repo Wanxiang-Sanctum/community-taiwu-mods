@@ -9,9 +9,10 @@ public static class XiangshuMessagePack
         MessagePackSerializerOptions.Standard.WithResolver(
             CompositeResolver.Create(
                 XiangshuIpcMessagePackResolver.Instance,
+                SourceGeneratedFormatterResolver.Instance,
                 BuiltinResolver.Instance,
                 DynamicGenericResolver.Instance));
 }
 
-[GeneratedMessagePackResolver]
+[global::MessagePack.GeneratedMessagePackResolverAttribute]
 internal sealed partial class XiangshuIpcMessagePackResolver;
