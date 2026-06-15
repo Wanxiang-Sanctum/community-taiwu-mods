@@ -1,13 +1,18 @@
-using System.Runtime.Serialization;
+using MessagePack;
 
 namespace Wanxiang.Xiangshu.Ipc;
 
-[DataContract]
-public sealed class IpcIntermediateReplyRequest
+[MessagePackObject]
+public sealed class IpcIntermediateReplyRequest(string content)
 {
-    [DataMember(Order = 0)]
-    public string Content { get; set; } = string.Empty;
+    [Key(0)]
+    public string Content { get; } =
+        content ?? throw new ArgumentNullException(nameof(content));
 }
 
-[DataContract]
-public sealed class IpcIntermediateReplyResponse;
+[MessagePackObject]
+public sealed class IpcIntermediateReplyResponse(bool delivered = true)
+{
+    [Key(0)]
+    public bool Delivered { get; } = delivered;
+}

@@ -1,31 +1,49 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
+using System.Collections.ObjectModel;
+using MessagePack;
 
 namespace Wanxiang.Xiangshu.Ipc;
 
-[DataContract]
-public sealed class IpcRunScriptRequest
+[MessagePackObject]
+public sealed class IpcRunScriptRequest(
+    string script,
+    IReadOnlyDictionary<string, string>? arguments)
 {
-    [DataMember(Order = 0)]
-    public string Script { get; set; } = string.Empty;
+    private static readonly IReadOnlyDictionary<string, string> EmptyArguments =
+        new ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string>(StringComparer.Ordinal));
 
-    [DataMember(Order = 1)]
-    public Dictionary<string, string> Arguments { get; set; } = [];
+    [Key(0)]
+    public string Script { get; } =
+        script ?? throw new ArgumentNullException(nameof(script));
+
+    [Key(1)]
+    public IReadOnlyDictionary<string, string> Arguments { get; } =
+        arguments is { Count: > 0 }
+            ? new ReadOnlyDictionary<string, string>(
+                new Dictionary<string, string>(arguments, StringComparer.Ordinal))
+            : EmptyArguments;
 }
 
-[DataContract]
-public sealed class IpcRunScriptResponse
+[MessagePackObject]
+public sealed class IpcRunScriptResponse(
+    string returnValueJson,
+    string error,
+    IReadOnlyList<string>? diagnostics)
 {
-    [DataMember(Order = 0)]
-    public string ReturnValueJson { get; set; } = string.Empty;
+    private static readonly IReadOnlyList<string> EmptyDiagnostics =
+        Array.AsReadOnly(Array.Empty<string>());
 
-    [DataMember(Order = 1)]
-    public string Error { get; set; } = string.Empty;
+    [Key(0)]
+    public string ReturnValueJson { get; } =
+        returnValueJson ?? throw new ArgumentNullException(nameof(returnValueJson));
 
-    [SuppressMessage(
-        "Design",
-        "CA1002:Do not expose generic lists",
-        Justification = "List<T> avoids MessagePack's trimmed dynamic Collection<T> formatter in the MCP sidecar.")]
-    [DataMember(Order = 2)]
-    public List<string> Diagnostics { get; set; } = [];
+    [Key(1)]
+    public string Error { get; } =
+        error ?? throw new ArgumentNullException(nameof(error));
+
+    [Key(2)]
+    public IReadOnlyList<string> Diagnostics { get; } =
+        diagnostics is { Count: > 0 }
+            ? Array.AsReadOnly([.. diagnostics])
+            : EmptyDiagnostics;
 }

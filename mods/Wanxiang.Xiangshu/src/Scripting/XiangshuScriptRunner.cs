@@ -37,18 +37,19 @@ public sealed class XiangshuScriptRunner(string targetSide)
         }
 #endif
 
-        IpcRunScriptResponse response = new();
+        IReadOnlyList<string> diagnostics = [];
 
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             EmitResultData emit = Compile(request.Script, cancellationToken);
-            response.Diagnostics.AddRange(emit.Diagnostics);
+            diagnostics = emit.Diagnostics;
             if (!emit.Succeeded || emit.AssemblyBytes is null)
             {
-                response.Error = "Script compilation failed.";
-                return response;
+                return CreateErrorResponse(
+                    "Script compilation failed.",
+                    diagnostics);
             }
 
             object? value = await InvokeAsync(
@@ -59,18 +60,23 @@ public sealed class XiangshuScriptRunner(string targetSide)
                     cancellationToken),
                 cancellationToken);
 
-            response.ReturnValueJson = SerializeReturnValueJson(value);
+            return new IpcRunScriptResponse(
+                SerializeReturnValueJson(value),
+                error: string.Empty,
+                diagnostics);
         }
         catch (OperationCanceledException)
         {
-            response.Error = "Script execution was canceled.";
+            return CreateErrorResponse(
+                "Script execution was canceled.",
+                diagnostics);
         }
         catch (Exception ex)
         {
-            response.Error = UnwrapInvocationException(ex).ToString();
+            return CreateErrorResponse(
+                UnwrapInvocationException(ex).ToString(),
+                diagnostics);
         }
-
-        return response;
     }
 
     private static EmitResultData Compile(string source, CancellationToken cancellationToken)
@@ -284,6 +290,16 @@ public sealed class XiangshuScriptRunner(string targetSide)
     private static string SerializeReturnValueJson(object? value)
     {
         return JsonConvert.SerializeObject(value, JsonSettings) ?? "null";
+    }
+
+    private static IpcRunScriptResponse CreateErrorResponse(
+        string error,
+        IReadOnlyList<string> diagnostics)
+    {
+        return new IpcRunScriptResponse(
+            returnValueJson: string.Empty,
+            error,
+            diagnostics);
     }
 
     private static Exception UnwrapInvocationException(Exception exception)

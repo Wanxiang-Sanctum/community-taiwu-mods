@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MessagePack.Resolvers;
 using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
@@ -24,10 +23,7 @@ internal static class PluginIpcProxy
 
         _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>(
             endpoint,
-            new IpcIntermediateReplyRequest
-            {
-                Content = content,
-            },
+            new IpcIntermediateReplyRequest(content),
             cancellationToken);
 
         return "Intermediate reply sent.";
@@ -47,11 +43,7 @@ internal static class PluginIpcProxy
 
         IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
-            new IpcRunScriptRequest
-            {
-                Script = script,
-                Arguments = ParseArgumentsJson(argumentsJson),
-            },
+            new IpcRunScriptRequest(script, ParseArgumentsJson(argumentsJson)),
             cancellationToken);
 
         return JsonSerializer.Serialize(
@@ -84,7 +76,7 @@ internal static class PluginIpcProxy
                 options =>
                 {
                     options.InstanceLifetime = InstanceLifetime.Singleton;
-                    options.MessagePackSerializerOptions = StandardResolver.Options;
+                    options.MessagePackSerializerOptions = XiangshuMessagePack.Options;
                 });
         _ = services
             .AddSingleton<IAsyncPublisher<IInterprocessKey, IInterprocessValue>>(

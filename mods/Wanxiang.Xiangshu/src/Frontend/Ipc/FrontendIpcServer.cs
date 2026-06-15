@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using Cysharp.Threading.Tasks;
-using MessagePack.Resolvers;
 using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
@@ -134,7 +133,7 @@ internal sealed class FrontendIpcServer(AgentChatSession chatSession) : IDisposa
             {
                 options.HostAsServer = true;
                 options.InstanceLifetime = InstanceLifetime.Singleton;
-                options.MessagePackSerializerOptions = StandardResolver.Options;
+                options.MessagePackSerializerOptions = XiangshuMessagePack.Options;
             });
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcRunScriptRequest,
