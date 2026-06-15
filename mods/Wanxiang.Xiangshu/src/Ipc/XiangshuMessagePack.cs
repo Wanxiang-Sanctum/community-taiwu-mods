@@ -9,9 +9,9 @@ public static class XiangshuMessagePack
         MessagePackSerializerOptions.Standard.WithResolver(
             CompositeResolver.Create(
                 XiangshuIpcMessagePackResolver.Instance,
-                SourceGeneratedFormatterResolver.Instance,
-                BuiltinResolver.Instance,
-                DynamicGenericResolver.Instance));
+                // MessagePipe exposes its IPC frame formatters through formatter attributes.
+                AttributeFormatterResolver.Instance,
+                BuiltinResolver.Instance));
 }
 
 [global::MessagePack.GeneratedMessagePackResolverAttribute]
