@@ -21,11 +21,11 @@ internal sealed class PluginTools
         Idempotent = false,
         ReadOnly = false)]
     [Description(
-        "Shows a short provisional Xiangshu message in the current in-game chat before the final reply. "
-        + "Use it when a turn needs multiple steps, long-running work, or an early player-visible acknowledgement. "
-        + "The content must be brief in-world Xiangshu text, with no MCP, IPC, CLI, log, or implementation details.")]
+        "Publishes a brief player-visible Xiangshu message in the current in-game chat while the turn is still running. "
+        + "Use it for multi-step or long-running work, or for an early acknowledgement before the final reply. "
+        + "Content must already be player-facing Xiangshu text and must not expose implementation details.")]
     public Task<string> SendIntermediateReplyAsync(
-        [Description("Brief player-visible text in Xiangshu's voice.")]
+        [Description("Brief player-visible Xiangshu text.")]
         string content,
         CancellationToken cancellationToken = default)
     {
@@ -40,9 +40,10 @@ internal sealed class PluginTools
         Idempotent = false,
         ReadOnly = false)]
     [Description(
-        "Runs fully trusted C# inside the live Wanxiang.Xiangshu frontend or backend plugin process. "
-        + "Use it when the answer or requested action needs current game/mod state that only plugin APIs can access. "
-        + "Do not use it for ordinary conversation or static knowledge. Mutate game/mod state only when the player intent is clear. "
+        "Executes a fully trusted C# compilation unit inside the live Wanxiang.Xiangshu frontend or backend plugin process. "
+        + "Use it when current game/mod state or a clearly requested action requires plugin APIs; "
+        + "do not use it for ordinary conversation or static knowledge. "
+        + "Mutate state only when the player's target and intent are clear. "
         + "The tool returns JSON with returnValueJson, error, and diagnostics; check error before relying on returnValueJson.")]
     public Task<string> ExecuteCSharpScriptAsync(
         [Description(

@@ -78,10 +78,12 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 
 ## 项目结构
 
-根 README 说明入口和所有权；模块内部增长约定优先看对应目录下的 `README.md`。
+根 README 说明入口和所有权；对话运行设计见 `docs/agent-chat.md`，源码模块增长约定优先看对应目录下的
+`README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
-- `AgentWorkspace/`：默认本机 Agent 工作区示例；内部入口和文件职责由该目录自己维护。
+- `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、轻量静态语境和对应 CLI Agent 可发现的技能
+  目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：内部设计说明。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
