@@ -30,7 +30,8 @@ internal sealed class AgentChatSession : IDisposable
     private readonly CancellationTokenSource _cancellation = new();
 
     private int _nextMessageId;
-    private bool _working;
+    private bool _dispatching;
+    private bool _dispatchPaused;
     private bool _disposed;
     private bool _cancellationDisposed;
     private int _sessionGeneration;
@@ -83,26 +84,14 @@ internal sealed class AgentChatSession : IDisposable
         PersistSnapshot();
     }
 
-    public bool IsWorking
+    public bool IsReplying
     {
         get
         {
             lock (_syncRoot)
             {
                 ThrowIfDisposedLocked();
-                return _working;
-            }
-        }
-    }
-
-    public bool CanRequestInterrupt
-    {
-        get
-        {
-            lock (_syncRoot)
-            {
-                ThrowIfDisposedLocked();
-                return _working && _activeDispatch is { InterruptRequested: false, ResetRequested: false };
+                return IsReplyingLocked();
             }
         }
     }
@@ -133,6 +122,7 @@ internal sealed class AgentChatSession : IDisposable
                 "user");
             _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
+            _dispatchPaused = false;
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
 
@@ -156,7 +146,8 @@ internal sealed class AgentChatSession : IDisposable
         {
             ThrowIfDisposedLocked();
 
-            if (!_working || _activeDispatch is not { InterruptRequested: false, ResetRequested: false } activeDispatch)
+            if (!_dispatching
+                || _activeDispatch is not { InterruptRequested: false, ResetRequested: false } activeDispatch)
             {
                 return false;
             }
@@ -168,7 +159,8 @@ internal sealed class AgentChatSession : IDisposable
                 InterruptMessage,
                 "user");
             _visibleMessages.Add(message);
-            RequeueInterruptedTurnLocked(activeDispatch.Messages, message);
+            _pendingMessages.Enqueue(message);
+            _dispatchPaused = true;
             activeDispatch.InterruptRequested = true;
             turnCancellation = activeDispatch.Cancellation;
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
@@ -185,19 +177,19 @@ internal sealed class AgentChatSession : IDisposable
         CancellationTokenSource? turnCancellation = null;
         string oldSessionId;
         string newSessionId;
-        bool wasWorking;
+        bool cancelledDispatch = false;
 
         lock (_syncRoot)
         {
             ThrowIfDisposedLocked();
 
             oldSessionId = _sessionId;
-            wasWorking = _working;
 
             if (_activeDispatch is { } activeDispatch)
             {
                 activeDispatch.ResetRequested = true;
                 turnCancellation = activeDispatch.Cancellation;
+                cancelledDispatch = true;
             }
 
             ResetCurrentSessionLocked();
@@ -215,7 +207,7 @@ internal sealed class AgentChatSession : IDisposable
             {
                 oldSessionId,
                 newSessionId,
-                wasWorking,
+                cancelledDispatch,
             });
 
         turnCancellation?.Cancel();
@@ -232,30 +224,6 @@ internal sealed class AgentChatSession : IDisposable
         {
             ThrowIfDisposedLocked();
             return [.. _visibleMessages];
-        }
-    }
-
-    private void RequeueInterruptedTurnLocked(
-        IReadOnlyList<AgentChatMessage> dispatchedMessages,
-        AgentChatMessage interruptMessage)
-    {
-        Queue<AgentChatMessage> requeuedMessages = new();
-
-        foreach (AgentChatMessage message in dispatchedMessages)
-        {
-            requeuedMessages.Enqueue(message);
-        }
-
-        while (_pendingMessages.Count > 0)
-        {
-            requeuedMessages.Enqueue(_pendingMessages.Dequeue());
-        }
-
-        requeuedMessages.Enqueue(interruptMessage);
-
-        while (requeuedMessages.Count > 0)
-        {
-            _pendingMessages.Enqueue(requeuedMessages.Dequeue());
         }
     }
 
@@ -303,7 +271,7 @@ internal sealed class AgentChatSession : IDisposable
             }
 
             _disposed = true;
-            disposeCancellation = !_working;
+            disposeCancellation = !_dispatching;
         }
 
         _cancellation.Cancel();
@@ -320,12 +288,12 @@ internal sealed class AgentChatSession : IDisposable
 
         lock (_syncRoot)
         {
-            if (_disposed || _working || _pendingMessages.Count == 0)
+            if (_disposed || _dispatching || !CanDispatchPendingLocked())
             {
                 return;
             }
 
-            _working = true;
+            _dispatching = true;
             stateChanged = true;
         }
 
@@ -536,7 +504,7 @@ internal sealed class AgentChatSession : IDisposable
 
         lock (_syncRoot)
         {
-            if (_pendingMessages.Count == 0)
+            if (!CanDispatchPendingLocked())
             {
                 dispatch = null;
             }
@@ -639,12 +607,12 @@ internal sealed class AgentChatSession : IDisposable
 
     private (bool DisposeCancellation, bool StateChanged) StopProcessingLocked()
     {
-        if (!_working)
+        if (!_dispatching)
         {
             return (_disposed && !_cancellationDisposed, StateChanged: false);
         }
 
-        _working = false;
+        _dispatching = false;
 
         return (_disposed && !_cancellationDisposed, StateChanged: true);
     }
@@ -732,6 +700,18 @@ internal sealed class AgentChatSession : IDisposable
         _nextMessageId = 0;
         _visibleMessages.Clear();
         _pendingMessages.Clear();
+        _dispatchPaused = false;
+    }
+
+    private bool CanDispatchPendingLocked()
+    {
+        return _pendingMessages.Count > 0 && !_dispatchPaused;
+    }
+
+    private bool IsReplyingLocked()
+    {
+        return _dispatching
+            && _activeDispatch is { InterruptRequested: false, ResetRequested: false };
     }
 
     private bool MatchesCurrentSessionLocked(TurnDispatch dispatch)
