@@ -21,7 +21,9 @@ Do not try to enumerate every UI action. Treat screenshotting, clicking, typing,
 4. Apply the narrowest frontend action that matches the player gesture.
 5. Verify through a fresh visual or frontend-state observation.
 
-Infer missing details from the visible state, current tool results, and the player's wording. Ask the player only when the intended target or consequence remains ambiguous, or when the next action may be irreversible and the player has not already accepted that consequence.
+Infer missing details from the visible state, current tool results, and the player's wording. Use read-only observation when it can
+resolve ambiguity. Ask the player only when the intended target or consequence remains ambiguous after that, or when the next action
+may be irreversible and the player has not already accepted that consequence.
 
 Closed sets are worth naming only when the runtime makes them closed: actual tool names exposed this turn, MCP content block types, target side names such as `frontend`/`backend`, and fixed Unity API event handlers. For open sets, write and follow decision rules instead of expanding lists.
 
@@ -245,7 +247,8 @@ Use this decision model:
 - If the target has an EventSystem handler, send the matching pointer/scroll/submit/cancel sequence to that handler.
 - If the target is a selected input field, modify the field type directly and invoke its change events when needed.
 - If a hotkey is implemented only through `Input.GetKeyDown`, prefer an equivalent visible UI control or a narrow frontend method call; mention the limitation only when the player asked about operation details.
-- If the action may be irreversible, verify intent or ask for confirmation unless the player's instruction already covers the consequence.
+- If the action may be irreversible, first verify from visible state, current tool results, and the player's wording that the consequence
+  is covered; ask for confirmation only when it remains uncovered.
 
 Minimal click sequence:
 
