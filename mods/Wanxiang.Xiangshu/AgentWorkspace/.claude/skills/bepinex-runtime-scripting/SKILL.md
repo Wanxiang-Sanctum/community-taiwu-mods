@@ -1,17 +1,17 @@
 ---
 name: bepinex-runtime-scripting
-description: "Use when drafting or revising Xiangshu runtime C# scripts that need the checked-in BepInEx helper API XML for reflection, detours, IL manipulation, metadata inspection, or runtime state edits. Do not use for ordinary conversation, MCP tool selection, static mod code edits, or broad game API discovery."
+description: "Use when drafting or revising Xiangshu runtime C# scripts that inspect or mutate live frontend or backend game state, especially scripts that need BepInEx helper namespaces for reflection, detours, IL manipulation, or metadata inspection. Do not use for ordinary conversation, deciding whether to call an MCP tool, static mod source edits, or broad game API cataloging."
 ---
 
 # BepInEx Runtime Scripting
 
 ## Scope
 
-Use this skill after the request already calls for a Xiangshu runtime C# script. Produce a complete compilation unit, choose helper APIs from the checked-in XML, orient game API use by runtime side, and keep mutations narrow.
+Use this skill only after the request already calls for a Xiangshu runtime C# script. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
 
 ## Script Entry Contract
 
-The MCP tool receives a complete C# compilation unit, not a statements snippet. Start from this entry shape and replace only the body with the requested work:
+The MCP tool receives a complete C# compilation unit, not a statements snippet. Declare required `using` directives and namespaces explicitly; the runner supplies no implicit `using` list. Use this as the minimum entry shape:
 
 ```csharp
 using Wanxiang.Xiangshu.Scripting;
@@ -30,14 +30,17 @@ public static class XiangshuScript
 
 The entry type may be inside a namespace, but its simple name must be `XiangshuScript`, and the script must define exactly one public static non-generic class with that simple name. Define exactly one public static `Execute` or `ExecuteAsync` method that takes one `XiangshuScriptGlobals` parameter; synchronous values, `Task`, and `Task<T>` are accepted. Use `globals.Arguments` for MCP arguments and `globals.CancellationToken` for cancellable work.
 
-## API Reference Files
+## BepInEx Helper Namespaces
 
-Before choosing helper APIs, read the XML that matches the script side:
+The script runner compiles against the target plugin side's deployment directory, trusted platform assemblies, and already loaded assemblies. For BepInEx-style low-level work, orient around these namespace families rather than looking for a broad `BepInEx.*` API surface:
 
-- Frontend: `references/taiwu-plugin-helper-api-0.84.58-test.netstandard2.1.xml`
-- Backend: `references/taiwu-plugin-helper-api-0.84.58-test.net8.0.xml`
+- `HarmonyLib`: `Harmony`, `HarmonyPatch`, `AccessTools`, `Traverse`, `CodeInstruction`, and patch/transpiler helpers. Prefer `AccessTools` for private or inherited members when direct typed access is not available.
+- `MonoMod.RuntimeDetour`: runtime `Hook`, `ILHook`, detour config, hook collections, and detour inspection. Use it only when the request needs an active runtime hook or detour.
+- `MonoMod.Cil`: `ILContext`, `ILCursor`, and IL editing helpers used with `ILHook` or transpiler-style work.
+- `MonoMod.Utils`: dynamic data, reflection helpers, and low-level utility types. Use it as a helper layer after a concrete type or member target is known.
+- `Mono.Cecil`, `Mono.Cecil.Cil`, and on backend also `Mono.Cecil.Rocks` plus symbol namespaces: assembly metadata and IL model inspection. Treat file rewrites as a separate explicit file-mutation task, not the normal runtime-script path.
 
-Use the XML's `availableAssemblies`, `assembly`, `type`, and member signatures as the API directory. Ignore package id metadata when choosing runtime APIs.
+Frontend scripts align with the Unity/netstandard side and should assume the common subset: Harmony, Mono.Cecil, MonoMod.RuntimeDetour, MonoMod.Cil, and MonoMod.Utils. Backend scripts align with the .NET backend side and can also use MonoMod.Core, MonoMod.ILHelpers, Cecil symbol support, and Cecil Rocks helpers when a task specifically needs them.
 
 ## Runtime Game API Orientation
 
@@ -57,17 +60,14 @@ When drafting the script body:
 
 - Decide the target side from the requested state or action.
 - Use the entry contract above as the outer shape.
-- Read the matching XML before selecting helper namespaces, types, overloads, or parameter shapes.
+- Prefer direct public game APIs. Choose helper namespaces from the BepInEx map above only when reflection, private access, hooks, IL work, or metadata inspection is part of the task.
 - Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.
-- Bind or inspect live game objects only after the helper API choice is known.
+- Bind or inspect live game objects only after the target side and helper approach are known.
 - Keep the body focused on the requested runtime state change.
 
 ## Runtime Discipline
 
-- Do not enumerate loaded assemblies to discover helper APIs already covered by the XML. Use runtime assembly lookup only to locate the actual assembly simple name for a known live type.
-- If a direct `using` or member call fails, report the missing assembly, namespace, type, or member in the tool result.
+- When a candidate helper or game member is uncertain, use a narrow read-only probe or compile diagnostics for that specific namespace, type, member, or overload. For unresolved candidates, return the unresolved assembly, namespace, type, or member names.
 - Read before writing, and return enough before/after data to verify the change.
 - Prefer the narrowest member write, method call, hook, or metadata read that represents the requested state change.
 - Preserve original values in the returned object when a change is reversible.
-- If the helper cannot find a type or member, return a structured explanation instead of guessing nearby names.
-- Do not expose helper names or reflection details in player-facing final text unless the player asked for mod development details.
