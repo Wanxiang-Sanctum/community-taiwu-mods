@@ -52,11 +52,7 @@ try
     logger = app.Services
         .GetRequiredService<ILoggerFactory>()
         .CreateLogger("Wanxiang.Xiangshu.McpServer");
-    McpServerLog.Starting(
-        logger,
-        Environment.ProcessId,
-        parentProcessId,
-        logFilePath);
+    McpServerLog.Starting(logger);
     _ = app.MapMcp(IpcRuntime.McpPath);
 
     await app.StartAsync();
@@ -74,17 +70,7 @@ try
     };
 
     using IpcEndpointRegistration registration = IpcEndpointRegistry.Register(endpoint);
-    if (logger.IsEnabled(LogLevel.Information))
-    {
-        string endpointAddress = IpcRuntime.FormatEndpointAddress(endpoint);
-        string manifestPath = IpcEndpointRegistry.ManifestPath;
-
-        McpServerLog.EndpointRegistered(
-            logger,
-            endpointAddress,
-            endpoint.Port,
-            manifestPath);
-    }
+    McpServerLog.EndpointRegistered(logger);
 
     IHostApplicationLifetime lifetime = app.Lifetime;
     Task parentWatchTask = StopWhenParentExitsAsync(
@@ -103,9 +89,7 @@ catch (Exception ex)
     {
         fileLogger.Fatal(
             ex,
-            "MCP server failed before the host logger was available; processId={ProcessId}; parentProcessId={ParentProcessId}.",
-            Environment.ProcessId,
-            parentProcessId);
+            "MCP server failed before the host logger was available.");
     }
     else
     {
@@ -145,7 +129,7 @@ static async Task StopWhenParentExitsAsync(
         return;
     }
 
-    McpServerLog.ParentExited(logger, parentProcessId);
+    McpServerLog.ParentExited(logger);
     lifetime.StopApplication();
 }
 
@@ -179,30 +163,20 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1000,
         Level = LogLevel.Information,
-        Message = "Starting MCP server; processId={ProcessId}; parentProcessId={ParentProcessId}; logFile={LogFile}.")]
-    public static partial void Starting(
-        MsLogger logger,
-        int processId,
-        int parentProcessId,
-        string logFile);
+        Message = "Starting MCP server.")]
+    public static partial void Starting(MsLogger logger);
 
     [LoggerMessage(
         EventId = 1001,
         Level = LogLevel.Information,
-        Message = "MCP endpoint registered; address={Address}; port={Port}; manifest={ManifestPath}.")]
-    public static partial void EndpointRegistered(
-        MsLogger logger,
-        string address,
-        int port,
-        string manifestPath);
+        Message = "MCP endpoint registered.")]
+    public static partial void EndpointRegistered(MsLogger logger);
 
     [LoggerMessage(
         EventId = 1002,
         Level = LogLevel.Information,
-        Message = "Parent process exited; parentProcessId={ParentProcessId}; stopping MCP server.")]
-    public static partial void ParentExited(
-        MsLogger logger,
-        int parentProcessId);
+        Message = "Parent process exited; stopping MCP server.")]
+    public static partial void ParentExited(MsLogger logger);
 
     [LoggerMessage(
         EventId = 1003,

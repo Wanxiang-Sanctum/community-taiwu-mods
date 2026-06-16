@@ -20,7 +20,6 @@ Log.Info(
     new
     {
         adapter = settings.Adapter,
-        workingDirectory = settings.WorkingDirectory,
     });
 
 Log.Error(ex, "MCP sidecar failed to start");
@@ -33,7 +32,7 @@ Log.Error(ex, "MCP sidecar failed to start");
 ## 输出形态
 
 ```text
-frontend plugin initialized | {"adapter":"Codex","workingDirectory":"AgentWorkspace"}
+frontend plugin initialized | {"adapter":"Codex"}
 ```
 
 异常会作为同一个 JSON 对象的 `exceptionType`、`exceptionMessage` 和 `exception` 字段输出。JSON 使用

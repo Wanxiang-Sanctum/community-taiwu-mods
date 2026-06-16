@@ -52,7 +52,7 @@ Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
 ```
 
 相枢启动 Codex/Claude 子进程时，会把 `agent.env` 中的字符串键值写入子进程环境。这些变量不传给游戏
-进程或 MCP sidecar，也不会写入相枢日志。
+进程或 MCP sidecar，也不会写入诊断日志。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、
 MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
@@ -60,14 +60,15 @@ MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 默认包内预置 `AgentWorkspace/`，作为可编辑的本机 Agent 工作区示例。配置到其它工作目录时，该目录由用户
 自行维护。
 
-## 运行数据与日志
+## 运行数据与诊断
 
 相枢把运行数据写入 `AgentWorkingDirectory/.xiangshu-runtime/`。这个目录由相枢运行时维护，用于 endpoint
 发现、聊天会话恢复、临时 CLI 协议文件和 MCP sidecar 事件日志。用户维护工作区时，应把它视为运行数据
-目录，而不是可编辑 Agent 资产。
+目录，而不是可编辑 Agent 资产或对话记录。
 
-游戏进程内的运行信息进入太吾游戏日志系统。MCP sidecar 是独立进程，事件日志写入
-`.xiangshu-runtime/Diagnostics/McpServer/`。事件选择和上下文字段见 `docs/logging.md`。
+游戏内可见对话不写入诊断日志。前端和后端插件只把启动边界、可恢复边界问题和失败原因写入太吾游戏日志；
+MCP sidecar 是独立进程，它的生命周期事件写入 `.xiangshu-runtime/Diagnostics/McpServer/`。事件选择、
+上下文字段和运行数据边界见 `docs/logging.md`。
 
 ## 开发
 
