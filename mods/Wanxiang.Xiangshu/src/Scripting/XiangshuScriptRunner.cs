@@ -45,7 +45,7 @@ public sealed class XiangshuScriptRunner
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Script errors are returned to the MCP caller as tool data instead of escaping the plugin IPC handler.")]
+        Justification = "Script exceptions and pre-invocation rejection reasons are returned through the IPC response union.")]
     public async Task<IpcRunScriptResponse> ExecuteAsync(
         IpcRunScriptRequest request,
         CancellationToken cancellationToken = default)
@@ -58,46 +58,42 @@ public sealed class XiangshuScriptRunner
             throw new ArgumentNullException(nameof(request));
         }
 #endif
-
-        IReadOnlyList<string> diagnostics = [];
-
+        bool entryInvoked = false;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             ScriptCompilationResult compilationResult = Compile(request.Script, cancellationToken);
-            diagnostics = compilationResult.Diagnostics;
-            if (!compilationResult.Succeeded || compilationResult.AssemblyBytes is null)
+            if (compilationResult is ScriptCompilationResult.Rejected rejected)
             {
-                return CreateErrorResponse(
-                    "Script compilation failed.",
-                    diagnostics);
+                return IpcRunScriptResponse.NotInvoked(rejected.Reason);
             }
 
+            ScriptCompilationResult.Compiled compiled = (ScriptCompilationResult.Compiled)compilationResult;
             object? value = await InvokeAsync(
-                compilationResult.AssemblyBytes,
+                compiled.AssemblyBytes,
                 new XiangshuScriptGlobals(
                     _targetSide,
                     request.Arguments,
                     cancellationToken),
+                () => entryInvoked = true,
                 cancellationToken);
 
-            return new IpcRunScriptResponse(
-                SerializeReturnValueJson(value),
-                error: string.Empty,
-                diagnostics);
+            return IpcRunScriptResponse.InvokedWithReturnValue(SerializeReturnValueJson(value));
         }
         catch (OperationCanceledException)
         {
-            return CreateErrorResponse(
-                "Script execution was canceled.",
-                diagnostics);
+            const string message = "Script execution was canceled.";
+            return entryInvoked
+                ? IpcRunScriptResponse.InvokedWithException(message)
+                : IpcRunScriptResponse.NotInvoked(message);
         }
         catch (Exception ex)
         {
-            return CreateErrorResponse(
-                UnwrapInvocationException(ex).ToString(),
-                diagnostics);
+            string message = UnwrapInvocationException(ex).ToString();
+            return entryInvoked
+                ? IpcRunScriptResponse.InvokedWithException(message)
+                : IpcRunScriptResponse.NotInvoked(message);
         }
     }
 
@@ -109,10 +105,8 @@ public sealed class XiangshuScriptRunner
                 ScriptGlobalsFullName);
         if (!references.HasRequiredReferences)
         {
-            return new ScriptCompilationResult(
-                false,
-                assemblyBytes: null,
-                references.Diagnostics);
+            return new ScriptCompilationResult.Rejected(
+                CreateCompilationRejectionReason(references.Issues));
         }
 
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
@@ -132,25 +126,26 @@ public sealed class XiangshuScriptRunner
         Microsoft.CodeAnalysis.Emit.EmitResult emitResult = compilation.Emit(
             assemblyStream,
             cancellationToken: cancellationToken);
-        string[] diagnostics =
-        [
-            .. references.Diagnostics,
-            .. emitResult.Diagnostics
-                .Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning)
-                .Select(static diagnostic => diagnostic.ToString()),
-        ];
-
         if (!emitResult.Success)
         {
-            return new ScriptCompilationResult(false, assemblyBytes: null, diagnostics);
+            string[] rejectionDetails =
+            [
+                .. references.Issues,
+                .. emitResult.Diagnostics
+                    .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+                    .Select(static diagnostic => diagnostic.ToString()),
+            ];
+
+            return new ScriptCompilationResult.Rejected(CreateCompilationRejectionReason(rejectionDetails));
         }
 
-        return new ScriptCompilationResult(true, assemblyStream.ToArray(), diagnostics);
+        return new ScriptCompilationResult.Compiled(assemblyStream.ToArray());
     }
 
     private async Task<object?> InvokeAsync(
         byte[] assemblyBytes,
         XiangshuScriptGlobals globals,
+        Action markEntryInvoked,
         CancellationToken cancellationToken)
     {
         using AssemblyResolutionScope resolutionScope =
@@ -159,8 +154,9 @@ public sealed class XiangshuScriptRunner
         Type scriptType = FindEntryType(assembly);
         MethodInfo executeMethod = FindEntryMethod(scriptType);
 
-        object? result = executeMethod.Invoke(null, [globals]);
-        return await ResolveInvocationResultAsync(result, cancellationToken);
+        markEntryInvoked();
+        object? entryReturnValue = executeMethod.Invoke(null, [globals]);
+        return await ResolveReturnValueAsync(entryReturnValue, cancellationToken);
     }
 
     private static Type FindEntryType(Assembly assembly)
@@ -178,7 +174,8 @@ public sealed class XiangshuScriptRunner
         if (candidates.Length > 1)
         {
             throw new InvalidOperationException(
-                $"Compiled script has multiple public static {EntryTypeSimpleName} entry types. Keep only one entry type.");
+                "The compiled script has multiple public static "
+                + $"{EntryTypeSimpleName} entry types. Keep only one entry type.");
         }
 
         throw new InvalidOperationException(GetEntryTypeContractMessage());
@@ -208,7 +205,8 @@ public sealed class XiangshuScriptRunner
         if (candidates.Length > 1)
         {
             throw new InvalidOperationException(
-                $"Compiled script has multiple matching entry methods. Keep only one {AsyncEntryMethodName}"
+                "The compiled script has multiple matching entry methods. "
+                + $"Keep only one {AsyncEntryMethodName}"
                 + $" or {SyncEntryMethodName} overload with one parameter whose type resolves to {ScriptGlobalsFullName}.");
         }
 
@@ -239,33 +237,33 @@ public sealed class XiangshuScriptRunner
 
     private static string GetEntryTypeContractMessage()
     {
-        return "Compiled script entry type contract was not satisfied. Define exactly one public static "
+        return "Entry type contract was not satisfied. Define exactly one public static "
             + $"non-generic class named {EntryTypeSimpleName}.";
     }
 
     private static string GetEntryMethodContractMessage()
     {
-        return "Compiled script entry method contract was not satisfied. Define exactly one public static "
+        return "Entry method contract was not satisfied. Define exactly one public static "
             + $"{EntryTypeSimpleName}.{AsyncEntryMethodName} or {EntryTypeSimpleName}.{SyncEntryMethodName} method with one "
             + $"parameter whose type resolves to {ScriptGlobalsFullName}.";
     }
 
-    private static async Task<object?> ResolveInvocationResultAsync(
-        object? result,
+    private static async Task<object?> ResolveReturnValueAsync(
+        object? returnValue,
         CancellationToken cancellationToken)
     {
-        if (result is null)
+        if (returnValue is null)
         {
             return null;
         }
 
-        if (result is Task task)
+        if (returnValue is Task task)
         {
             await WaitForTaskAsync(task, cancellationToken);
-            return ReadTaskResult(task);
+            return ReadTaskReturnValue(task);
         }
 
-        return result;
+        return returnValue;
     }
 
     private static async Task WaitForTaskAsync(
@@ -299,7 +297,7 @@ public sealed class XiangshuScriptRunner
         await task;
     }
 
-    private static object? ReadTaskResult(Task task)
+    private static object? ReadTaskReturnValue(Task task)
     {
         Type taskType = task.GetType();
         if (!taskType.IsGenericType)
@@ -318,14 +316,15 @@ public sealed class XiangshuScriptRunner
         return JsonConvert.SerializeObject(value, JsonSettings) ?? "null";
     }
 
-    private static IpcRunScriptResponse CreateErrorResponse(
-        string error,
-        IReadOnlyList<string> diagnostics)
+    private static string CreateCompilationRejectionReason(IReadOnlyList<string> details)
     {
-        return new IpcRunScriptResponse(
-            returnValueJson: string.Empty,
-            error,
-            diagnostics);
+        const string message = "Compilation could not produce an assembly.";
+        if (details.Count == 0)
+        {
+            return message;
+        }
+
+        return message + Environment.NewLine + string.Join(Environment.NewLine, details);
     }
 
     private static Exception UnwrapInvocationException(Exception exception)
@@ -335,16 +334,24 @@ public sealed class XiangshuScriptRunner
             : exception;
     }
 
-    private sealed class ScriptCompilationResult(
-        bool succeeded,
-        byte[]? assemblyBytes,
-        IReadOnlyList<string> diagnostics)
+    private abstract class ScriptCompilationResult
     {
-        public bool Succeeded { get; } = succeeded;
+        private ScriptCompilationResult()
+        {
+        }
 
-        public byte[]? AssemblyBytes { get; } = assemblyBytes;
+        public sealed class Compiled(byte[] assemblyBytes) : ScriptCompilationResult
+        {
+            public byte[] AssemblyBytes { get; } =
+                assemblyBytes ?? throw new ArgumentNullException(nameof(assemblyBytes));
+        }
 
-        public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
+        public sealed class Rejected(string reason) : ScriptCompilationResult
+        {
+            public string Reason { get; } =
+                reason ?? throw new ArgumentNullException(nameof(reason));
+        }
+
     }
 
 }

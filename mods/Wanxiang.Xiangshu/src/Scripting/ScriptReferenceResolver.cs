@@ -30,7 +30,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
 #endif
 
         List<MetadataReference> references = [];
-        List<string> diagnostics = [];
+        List<string> issues = [];
         HashSet<string> referencePaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> referenceAssemblyIdentities = new(StringComparer.OrdinalIgnoreCase);
 
@@ -43,7 +43,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             references,
             referencePaths,
             referenceAssemblyIdentities,
-            diagnostics);
+            issues);
 
         bool hasRequiredReferences = TryAddRequiredAssemblyReference(
             requiredAssembly,
@@ -51,7 +51,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             references,
             referencePaths,
             referenceAssemblyIdentities,
-            diagnostics);
+            issues);
 
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
@@ -65,7 +65,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         return new CompilationReferences(
             hasRequiredReferences,
             references,
-            diagnostics);
+            issues);
     }
 
     public AssemblyResolutionScope CreateAssemblyResolutionScope()
@@ -79,12 +79,12 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         List<MetadataReference> references,
         HashSet<string> referencePaths,
         HashSet<string> referenceAssemblyIdentities,
-        List<string> diagnostics)
+        List<string> issues)
     {
         if (!TryGetAssemblyReferencePath(assembly, out string? referencePath)
             && !TryFindReferenceDirectoryAssembly(assembly.GetName(), out referencePath))
         {
-            diagnostics.Add(
+            issues.Add(
                 $"The assembly that defines {assemblyDisplayName} is not available "
                 + "as a metadata reference for dynamic compilation.");
             return false;
@@ -99,7 +99,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             return true;
         }
 
-        diagnostics.Add(
+        issues.Add(
             $"The assembly that defines {assemblyDisplayName} could not be loaded "
             + $"as a metadata reference from '{referencePath}'.");
         return false;
@@ -171,13 +171,13 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         List<MetadataReference> references,
         HashSet<string> referencePaths,
         HashSet<string> referenceAssemblyIdentities,
-        List<string> diagnostics)
+        List<string> issues)
     {
         foreach (string referenceDirectory in _referenceDirectories)
         {
             if (!Directory.Exists(referenceDirectory))
             {
-                diagnostics.Add(
+                issues.Add(
                     $"Script reference directory does not exist: '{referenceDirectory}'.");
                 continue;
             }
@@ -301,11 +301,11 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
 internal sealed class CompilationReferences(
     bool hasRequiredReferences,
     IReadOnlyList<MetadataReference> references,
-    IReadOnlyList<string> diagnostics)
+    IReadOnlyList<string> issues)
 {
     public bool HasRequiredReferences { get; } = hasRequiredReferences;
 
     public IReadOnlyList<MetadataReference> References { get; } = references;
 
-    public IReadOnlyList<string> Diagnostics { get; } = diagnostics;
+    public IReadOnlyList<string> Issues { get; } = issues;
 }

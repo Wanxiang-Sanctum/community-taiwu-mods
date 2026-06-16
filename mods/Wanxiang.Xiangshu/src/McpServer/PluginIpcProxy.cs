@@ -46,9 +46,7 @@ internal static class PluginIpcProxy
             new IpcRunScriptRequest(script, ParseArgumentsJson(argumentsJson)),
             cancellationToken);
 
-        return JsonSerializer.Serialize(
-            response,
-            XiangshuMcpJsonContext.Default.IpcRunScriptResponse);
+        return FormatRunScriptToolResponse(response);
     }
 
     [SuppressMessage(
@@ -167,10 +165,98 @@ internal static class PluginIpcProxy
         }
     }
 
+    private static string FormatRunScriptToolResponse(IpcRunScriptResponse response)
+    {
+        RunScriptToolJson.Response toolResponse = response switch
+        {
+            IpcRunScriptNotInvokedResponse notInvoked =>
+                new RunScriptToolJson.NotInvokedResponse(notInvoked.Reason),
+
+            IpcRunScriptInvokedResponse
+            {
+                Outcome: IpcRunScriptExceptionOutcome exception,
+            } =>
+                new RunScriptToolJson.InvokedResponse(
+                    new RunScriptToolJson.ExceptionOutcome(exception.Message)),
+
+            IpcRunScriptInvokedResponse
+            {
+                Outcome: IpcRunScriptReturnValueOutcome returnValue,
+            } =>
+                new RunScriptToolJson.InvokedResponse(
+                    new RunScriptToolJson.ReturnValueOutcome(
+                        ParseReturnValueJson(returnValue.ReturnValueJson))),
+
+            _ => throw new InvalidOperationException("Unhandled script response union case."),
+        };
+
+        return RunScriptToolJson.Serialize(toolResponse);
+    }
+
+    private static JsonElement ParseReturnValueJson(string returnValueJson)
+    {
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(returnValueJson);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException ex)
+        {
+            throw new McpException("Script returned invalid JSON.", ex);
+        }
+    }
+
+}
+
+internal static class RunScriptToolJson
+{
+    public static string Serialize(Response response)
+    {
+        return JsonSerializer.Serialize(
+            response,
+            typeof(Response),
+            XiangshuMcpJsonContext.Default);
+    }
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+    [JsonDerivedType(typeof(NotInvokedResponse), "notInvoked")]
+    [JsonDerivedType(typeof(InvokedResponse), "invoked")]
+    internal abstract class Response;
+
+    internal sealed class NotInvokedResponse(string reason) : Response
+    {
+        public string Reason { get; } =
+            reason ?? throw new ArgumentNullException(nameof(reason));
+    }
+
+    internal sealed class InvokedResponse(
+        InvokedOutcome outcome) : Response
+    {
+        public InvokedOutcome Outcome { get; } =
+            outcome ?? throw new ArgumentNullException(nameof(outcome));
+    }
+
+    [
+        JsonPolymorphic(TypeDiscriminatorPropertyName = "kind"),
+        JsonDerivedType(typeof(ReturnValueOutcome), "returnValue"),
+        JsonDerivedType(typeof(ExceptionOutcome), "exception"),
+    ]
+    internal abstract class InvokedOutcome;
+
+    internal sealed class ReturnValueOutcome(JsonElement value) : InvokedOutcome
+    {
+        public JsonElement Value { get; } = value;
+    }
+
+    internal sealed class ExceptionOutcome(string message) : InvokedOutcome
+    {
+        public string Message { get; } =
+            message ?? throw new ArgumentNullException(nameof(message));
+    }
 }
 
 [JsonSourceGenerationOptions(
     JsonSerializerDefaults.Web,
     WriteIndented = true)]
-[JsonSerializable(typeof(IpcRunScriptResponse))]
+[JsonSerializable(typeof(RunScriptToolJson.Response))]
 internal sealed partial class XiangshuMcpJsonContext : JsonSerializerContext;

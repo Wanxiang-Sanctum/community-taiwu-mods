@@ -44,7 +44,8 @@ internal sealed class PluginTools
         + "Use it when current game/mod state or a clearly requested action requires plugin APIs; "
         + "do not use it for ordinary conversation or static knowledge. "
         + "Mutate state only when the player's target and intent are clear. "
-        + "The tool returns JSON with returnValueJson, error, and diagnostics; check error before relying on returnValueJson.")]
+        + "The tool returns JSON describing invocation facts: notInvoked(reason), invoked(returnValue(value)), "
+        + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
     public Task<string> RunCSharpScriptAsync(
         [Description(
             "Target plugin side: frontend for UI, chat window, and frontend runtime state; "
@@ -56,7 +57,7 @@ internal sealed class PluginTools
             + "public static non-generic XiangshuScript class with public static Execute or ExecuteAsync "
             + "taking Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals. "
             + "The host supplies the Wanxiang.Xiangshu.Scripting reference. "
-            + "The return value is serialized to JSON.")]
+            + "The entry return value is serialized to JSON.")]
         string script,
         [Description(
             "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
