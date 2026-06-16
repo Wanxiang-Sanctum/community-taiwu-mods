@@ -46,7 +46,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             _currentPath,
             new PersistedCurrentChatSession
             {
-                UpdatedAtUtc = now,
+                UpdatedAt = now,
                 CurrentSessionId = state.SessionId,
             });
     }
@@ -70,24 +70,27 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         string sessionId = NormalizeSessionId(session.SessionId, "sessionId", sessionPath);
 
+        DateTimeOffset sessionUpdatedAt = NormalizeTimestamp(session.UpdatedAtUtc ?? session.UpdatedAt);
         List<AgentChatMessage> messages = [];
-        int maxMessageNumber = 0;
+        int maxMessageOrdinal = 0;
 
         List<PersistedChatMessage> visibleMessages = session.VisibleMessages
             ?? throw new InvalidDataException($"Missing chat session field 'visibleMessages' in {sessionPath}.");
 
         foreach (PersistedChatMessage persistedMessage in visibleMessages)
         {
-            AgentChatMessage message = CreateMessage(persistedMessage, sessionPath);
+            AgentChatMessage message = CreateMessage(persistedMessage, sessionPath, sessionUpdatedAt);
             messages.Add(message);
-            maxMessageNumber = Math.Max(maxMessageNumber, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
+            maxMessageOrdinal = Math.Max(maxMessageOrdinal, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
         }
 
         return new AgentChatSessionState(
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.AgentSessionId),
-            Math.Max(session.LastMessageNumber, maxMessageNumber),
+            Math.Max(
+                Math.Max(session.LastMessageOrdinal, session.LastMessageNumber ?? 0),
+                maxMessageOrdinal),
             messages);
     }
 
@@ -97,11 +100,11 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         return new PersistedChatSession
         {
-            UpdatedAtUtc = now,
+            UpdatedAt = now,
             SessionId = state.SessionId,
             Adapter = state.Adapter,
             AgentSessionId = state.AgentSessionId,
-            LastMessageNumber = state.LastMessageNumber,
+            LastMessageOrdinal = state.LastMessageOrdinal,
             VisibleMessages =
             [
                 .. state.VisibleMessages.Select(CreatePersistedMessage),
@@ -114,6 +117,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return new PersistedChatMessage
         {
             Id = message.Id,
+            CreatedAt = message.CreatedAt.ToUniversalTime(),
             Role = message.Role == AgentChatRole.Assistant ? "assistant" : "user",
             SpeakerName = message.SpeakerName,
             Content = message.Content,
@@ -123,10 +127,12 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
     private static AgentChatMessage CreateMessage(
         PersistedChatMessage persistedMessage,
-        string sessionPath)
+        string sessionPath,
+        DateTimeOffset fallbackCreatedAt)
     {
         return new AgentChatMessage(
             NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
+            NormalizeTimestamp(persistedMessage.CreatedAt ?? fallbackCreatedAt),
             ParseRole(persistedMessage.Role, sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
@@ -265,16 +271,24 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return sessionId.ToString("N");
     }
 
+    private static DateTimeOffset NormalizeTimestamp(DateTimeOffset value)
+    {
+        return value == default ? DateTimeOffset.UtcNow : value.ToUniversalTime();
+    }
+
     private sealed class PersistedCurrentChatSession
     {
-        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public string CurrentSessionId { get; set; } = string.Empty;
     }
 
     private sealed class PersistedChatSession
     {
-        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        [JsonProperty("updatedAtUtc")]
+        public DateTimeOffset? UpdatedAtUtc { get; set; }
 
         public string SessionId { get; set; } = string.Empty;
 
@@ -282,7 +296,10 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public string? AgentSessionId { get; set; }
 
-        public int LastMessageNumber { get; set; }
+        public int LastMessageOrdinal { get; set; }
+
+        [JsonProperty("lastMessageNumber")]
+        public int? LastMessageNumber { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
     }
@@ -290,6 +307,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     private sealed class PersistedChatMessage
     {
         public string Id { get; set; } = string.Empty;
+
+        public DateTimeOffset? CreatedAt { get; set; }
 
         public string Role { get; set; } = string.Empty;
 
@@ -305,7 +324,7 @@ internal sealed class AgentChatSessionState(
     string sessionId,
     string adapter,
     string? agentSessionId,
-    int lastMessageNumber,
+    int lastMessageOrdinal,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
     public string SessionId { get; } = sessionId;
@@ -314,7 +333,7 @@ internal sealed class AgentChatSessionState(
 
     public string? AgentSessionId { get; } = agentSessionId;
 
-    public int LastMessageNumber { get; } = lastMessageNumber;
+    public int LastMessageOrdinal { get; } = lastMessageOrdinal;
 
     public IReadOnlyList<AgentChatMessage> VisibleMessages { get; } = visibleMessages;
 }

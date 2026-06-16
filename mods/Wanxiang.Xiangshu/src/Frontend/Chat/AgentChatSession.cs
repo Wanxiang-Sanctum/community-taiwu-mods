@@ -29,7 +29,7 @@ internal sealed class AgentChatSession : IDisposable
     private readonly Queue<AgentChatMessage> _pendingMessages = new();
     private readonly CancellationTokenSource _cancellation = new();
 
-    private int _nextMessageId;
+    private int _lastMessageOrdinal;
     private bool _dispatching;
     private bool _dispatchPaused;
     private bool _disposed;
@@ -77,7 +77,7 @@ internal sealed class AgentChatSession : IDisposable
         if (restoredState is not null)
         {
             _visibleMessages.AddRange(restoredState.VisibleMessages);
-            _nextMessageId = restoredState.LastMessageNumber;
+            _lastMessageOrdinal = restoredState.LastMessageOrdinal;
             _agentSessionId = restoredState.AgentSessionId;
         }
 
@@ -116,6 +116,7 @@ internal sealed class AgentChatSession : IDisposable
 
             message = new AgentChatMessage(
                 CreateMessageId(),
+                DateTimeOffset.UtcNow,
                 AgentChatRole.User,
                 trimmedSpeakerName,
                 trimmedContent,
@@ -154,6 +155,7 @@ internal sealed class AgentChatSession : IDisposable
 
             message = new AgentChatMessage(
                 CreateMessageId(),
+                DateTimeOffset.UtcNow,
                 AgentChatRole.User,
                 trimmedSpeakerName,
                 InterruptMessage,
@@ -248,6 +250,7 @@ internal sealed class AgentChatSession : IDisposable
 
             message = new AgentChatMessage(
                 CreateMessageId(),
+                DateTimeOffset.UtcNow,
                 AgentChatRole.Assistant,
                 _assistantName,
                 normalizedContent,
@@ -541,8 +544,13 @@ internal sealed class AgentChatSession : IDisposable
             AgentChatTurn turn = new(
                 _agentSessionId,
                 turnMessages[^1].SpeakerName,
-                _assistantName,
-                [.. turnMessages.Select(static message => message.Content)]);
+                [
+                    .. turnMessages.Select(
+                        static message => new AgentChatTurnMessage(
+                            message.Id,
+                            message.CreatedAt.ToUniversalTime(),
+                            message.Content)),
+                ]);
             turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(_cancellation.Token);
             TurnDispatch dispatch = new(
                 _sessionId,
@@ -652,6 +660,7 @@ internal sealed class AgentChatSession : IDisposable
 
             message = new AgentChatMessage(
                 CreateMessageId(),
+                DateTimeOffset.UtcNow,
                 AgentChatRole.Assistant,
                 _assistantName,
                 result.AssistantMessage,
@@ -680,6 +689,7 @@ internal sealed class AgentChatSession : IDisposable
 
             message = new AgentChatMessage(
                 CreateMessageId(),
+                DateTimeOffset.UtcNow,
                 AgentChatRole.Assistant,
                 _assistantName,
                 content,
@@ -697,7 +707,7 @@ internal sealed class AgentChatSession : IDisposable
         _sessionGeneration++;
         _sessionId = Guid.NewGuid().ToString("N");
         _agentSessionId = null;
-        _nextMessageId = 0;
+        _lastMessageOrdinal = 0;
         _visibleMessages.Clear();
         _pendingMessages.Clear();
         _dispatchPaused = false;
@@ -721,8 +731,8 @@ internal sealed class AgentChatSession : IDisposable
 
     private string CreateMessageId()
     {
-        _nextMessageId++;
-        return "message-" + _nextMessageId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _lastMessageOrdinal++;
+        return "message-" + _lastMessageOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private void PersistSnapshot()
@@ -770,7 +780,7 @@ internal sealed class AgentChatSession : IDisposable
             _sessionId,
             _adapterName,
             _agentSessionId,
-            _nextMessageId,
+            _lastMessageOrdinal,
             [.. _visibleMessages.Select(CloneMessage)]);
     }
 
@@ -778,6 +788,7 @@ internal sealed class AgentChatSession : IDisposable
     {
         return new AgentChatMessage(
             message.Id,
+            message.CreatedAt,
             message.Role,
             message.SpeakerName,
             message.Content,

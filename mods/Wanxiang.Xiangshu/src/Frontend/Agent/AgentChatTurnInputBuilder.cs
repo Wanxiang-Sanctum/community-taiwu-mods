@@ -12,33 +12,20 @@ internal static class AgentChatTurnInputBuilder
     public static string Build(AgentChatTurn turn)
     {
         AgentChatTurnInput input = new(
-            participants: new AgentChatTurnParticipants(
-                player: turn.PlayerName,
-                assistant: turn.AssistantName),
-            currentPlayerMessages: turn.PlayerMessages);
+            playerName: turn.PlayerName,
+            playerMessages: turn.PlayerMessages);
 
         return JsonConvert.SerializeObject(input, Formatting.Indented, JsonSettings);
     }
 }
 
 internal sealed class AgentChatTurnInput(
-    AgentChatTurnParticipants participants,
-    IReadOnlyList<string> currentPlayerMessages)
+    string playerName,
+    IReadOnlyList<AgentChatTurnMessage> playerMessages)
 {
-    [JsonProperty("participants")]
-    public AgentChatTurnParticipants Participants { get; } = participants;
+    [JsonProperty("playerName")]
+    public string PlayerName { get; } = playerName;
 
-    [JsonProperty("currentPlayerMessages")]
-    public IReadOnlyList<string> CurrentPlayerMessages { get; } = currentPlayerMessages;
-}
-
-internal sealed class AgentChatTurnParticipants(
-    string player,
-    string assistant)
-{
-    [JsonProperty("player")]
-    public string Player { get; } = player;
-
-    [JsonProperty("assistant")]
-    public string Assistant { get; } = assistant;
+    [JsonProperty("playerMessages")]
+    public IReadOnlyList<AgentChatTurnMessage> PlayerMessages { get; } = playerMessages;
 }
