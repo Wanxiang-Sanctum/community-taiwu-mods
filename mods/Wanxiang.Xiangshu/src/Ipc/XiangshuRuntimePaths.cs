@@ -5,7 +5,7 @@ namespace Wanxiang.Xiangshu.Ipc;
 
 public static class XiangshuRuntimePaths
 {
-    public const string DefaultAgentWorkingDirectoryName = "AgentWorkspace";
+    public const string DefaultAgentWorkingDirectoryName = "DefaultAgentWorkspace";
 
     public const string PluginsDirectoryName = "Plugins";
 

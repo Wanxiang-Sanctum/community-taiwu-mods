@@ -35,7 +35,7 @@ return {
       DisplayName = "工作目录",
       Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录随包提供示例工作区。",
       GroupName = "本机 Agent",
-      DefaultValue = "AgentWorkspace",
+      DefaultValue = "DefaultAgentWorkspace",
     },
   },
   SettingGroups = {

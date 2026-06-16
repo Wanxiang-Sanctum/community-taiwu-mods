@@ -1,9 +1,9 @@
-# 脚本能力上下文
+# 运行时脚本指引
 
 只有当前游戏、存档、界面或 mod 运行状态会影响回答，或玩家明确要求执行操作时，才使用本文件。普通闲谈、
 静态世界观解释和创作请求不要调用脚本工具。
 
-本文件描述默认相枢脚本能力的运行时语义。使用前先确认本轮存在脚本运行工具；工具名称、参数和副作用以
+本文件描述默认相枢脚本工具的运行时语义。使用前先确认本轮存在脚本运行工具；工具名称、参数和副作用以
 本轮实际工具说明为准。
 
 ## 运行工具边界
@@ -31,7 +31,7 @@
 - 外部工具服务进程不是脚本运行目标；它只负责把工具请求转给前端或后端。
 
 目标侧不确定时，先在最可能的一侧运行只读探测。不要靠有副作用的脚本试错。
-需要查询游戏机制、配置、本地化、模板/显示辅助或百晓册资料时，先读取 `KNOWLEDGE.md`，按直接入口缩小脚本范围。
+需要查询游戏机制、配置、本地化、模板/显示辅助或百晓册资料时，先读取 `GAME_KNOWLEDGE.md`，按直接入口缩小脚本范围。
 
 ## 脚本入口
 
@@ -91,7 +91,7 @@ public static class XiangshuScript
 
 - `Game.Views.*`、`Game.Components.*`：界面视图和 UI 组件。
 - `Game.Views.Encyclopedia.*`、`Game.Views.Encyclopedia.Views.*`：百晓册数据、搜索和面板入口；具体检索策略见
-  `KNOWLEDGE.md`。
+  `GAME_KNOWLEDGE.md`。
 - `FrameWork.UISystem`、`FrameWork.ModSystem`、`Game.CommandSystem`、`UICommon`：前端 UI、mod 和命令系统。
 - `GameData.GameDataBridge`、`GameData.GameDataBridge.UnityAdapter`、`GameDataExtensions`：前后端数据桥接和
   前端显示辅助。
@@ -124,7 +124,7 @@ public static class XiangshuScript
 ## 使用策略
 
 - 先读当前事实，再决定是否修改。
-- 查询游戏知识时，先走 `KNOWLEDGE.md` 中的配置、本地化、模板/显示辅助和百晓册入口；反射只用于定位缺失成员。
+- 查询游戏知识时，先走 `GAME_KNOWLEDGE.md` 中的配置、本地化、模板/显示辅助和百晓册入口；反射只用于定位缺失成员。
 - 让脚本返回紧凑、结构化的数据，再把结果转成玩家能理解的答复。
 - 编译失败时，依据 `reason` 收窄 using、类型名和目标侧。
 - 长任务需要先让玩家看见进展时，可以发送中间答复；中间答复必须已经是玩家可见的相枢文本，不暴露工具、
