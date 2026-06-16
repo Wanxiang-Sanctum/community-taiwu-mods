@@ -102,7 +102,7 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 
 - `Config.Lua`：游戏读取的 Mod 配置。
 - `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、按需读取的世界观/人设资料和对应 CLI Agent
-  可发现的技能目录。
+  可发现的技能目录；脚本执行和游戏知识检索等运行能力上下文放在其中的 `capabilities/`。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：对话链路、日志策略和默认 Agent 上下文来源等内部设计说明。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
