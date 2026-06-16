@@ -57,8 +57,8 @@ Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、
 MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 
-默认包内预置 `AgentWorkspace/`，作为可编辑的本机 Agent 工作区示例。配置到其它工作目录时，该目录由用户
-自行维护。
+默认包内预置 `AgentWorkspace/`，作为本机 Agent 工作区模板和可编辑示例。用户可以手工维护其中的人设、
+上下文和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它工作目录时，该目录由用户自行维护。
 
 ## 运行数据与诊断
 
@@ -101,10 +101,10 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 增长约定优先看对应目录下的 `README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
-- `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、轻量静态语境和对应 CLI Agent 可发现的技能
-  目录。
+- `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、按需读取的世界观/人设资料和对应 CLI Agent
+  可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `docs/`：对话链路和日志策略等内部设计说明。
+- `docs/`：对话链路、日志策略和默认 Agent 上下文来源等内部设计说明。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
 - `src/Backend/`：后端插件项目，负责后端 IPC 和后端侧脚本执行入口。
 - `src/Ipc/`：前端、后端和 MCP sidecar 共享的 contract 与 endpoint 辅助库。
