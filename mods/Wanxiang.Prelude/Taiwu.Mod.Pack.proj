@@ -1,0 +1,16 @@
+<Project>
+  <Import
+    Project="$([MSBuild]::GetPathOfFileAbove('Taiwu.Mods.Paths.props', '$(MSBuildThisFileDirectory)'))"
+  />
+  <Import Project="$(TaiwuModsModsDir)Taiwu.Mod.Pack.targets" />
+
+  <ItemGroup>
+    <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
+    <TaiwuModPackProject
+      Include="src/Frontend/Wanxiang.Prelude.Frontend.csproj"
+    />
+    <TaiwuModPackProject
+      Include="src/Backend/Wanxiang.Prelude.Backend.csproj"
+    />
+  </ItemGroup>
+</Project>

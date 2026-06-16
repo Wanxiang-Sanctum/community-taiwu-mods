@@ -12,7 +12,6 @@ internal static class Program
     private const string DefaultSharedTemplateRelativePath = "templates/shared";
     private const string DefaultModsRelativePath = "mods";
     private const string DefaultSharedRelativePath = "shared";
-    private const string PluginsDirectoryName = "Plugins";
     private const string SolutionFileName = "Taiwu.Mods.slnx";
     private const string ModsSolutionFolderName = "mods";
     private const string SharedSolutionFolderName = "shared";
@@ -23,8 +22,7 @@ internal static class Program
         {
             Command command = CommandLineOptions.CreateCommand(RunAsync);
             return await command.Parse(args)
-                .InvokeAsync(CreateInvocationConfiguration())
-                .ConfigureAwait(false);
+                .InvokeAsync(CreateInvocationConfiguration());
         }
         catch (OperationCanceledException)
         {
@@ -32,7 +30,7 @@ internal static class Program
         }
         catch (Exception ex) when (ShouldReportError(ex))
         {
-            return await ReportErrorAsync(ex).ConfigureAwait(false);
+            return await ReportErrorAsync(ex);
         }
     }
 
@@ -46,7 +44,7 @@ internal static class Program
 
     private static async Task<int> ReportErrorAsync(Exception ex)
     {
-        await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
+        await Console.Error.WriteLineAsync($"错误：{ex.Message}");
         return 1;
     }
 
@@ -84,18 +82,20 @@ internal static class Program
 
         if (Directory.Exists(modRoot) && !options.Force)
         {
-            throw new InvalidOperationException($"Mod directory already exists: {modRoot}. Pass --force to overwrite template files.");
+            throw new InvalidOperationException($"Mod 目录已存在：{modRoot}。如需覆盖模板文件，请传入 --force。");
         }
+
+        EnsureCanRegisterGeneratedProject(modRoot, repoRoot, "Mod");
 
         TemplateDirectory.Create(templateRoot, TemplateRenderer.ForMod(options.Name, DefaultModVersion)).CopyTo(modRoot, options.Force);
 
-        if (!options.SkipSolution && IsUnderDirectory(modRoot, repoRoot))
-        {
-            await AddProjectsToSolutionAsync(repoRoot, ModsSolutionFolderName, GetModProjectFullPaths(modsRoot, options.Name), cancellationToken)
-                .ConfigureAwait(false);
-        }
+        await AddProjectsToSolutionAsync(
+            repoRoot,
+            ModsSolutionFolderName,
+            GetModProjectFullPaths(modsRoot, options.Name),
+            cancellationToken);
 
-        Console.WriteLine($"Created mod '{options.Name}' at {modRoot}");
+        Console.WriteLine($"已创建 mod '{options.Name}'：{modRoot}");
     }
 
     private static async Task CreateSharedProjectAsync(CommandLineOptions options, CancellationToken cancellationToken)
@@ -110,18 +110,20 @@ internal static class Program
 
         if (Directory.Exists(projectRoot) && !options.Force)
         {
-            throw new InvalidOperationException($"Shared project directory already exists: {projectRoot}. Pass --force to overwrite template files.");
+            throw new InvalidOperationException($"内部共享项目目录已存在：{projectRoot}。如需覆盖模板文件，请传入 --force。");
         }
+
+        EnsureCanRegisterGeneratedProject(projectRoot, repoRoot, "内部共享项目");
 
         TemplateDirectory.Create(templateRoot, TemplateRenderer.ForSharedProject(options.Name, side, GetDefaultSharedProjectTargetFramework(side))).CopyTo(projectRoot, options.Force);
 
-        if (!options.SkipSolution && IsUnderDirectory(projectRoot, repoRoot))
-        {
-            await AddProjectsToSolutionAsync(repoRoot, SharedSolutionFolderName, [GetSharedProjectFullPath(sharedRoot, options.Name)], cancellationToken)
-                .ConfigureAwait(false);
-        }
+        await AddProjectsToSolutionAsync(
+            repoRoot,
+            SharedSolutionFolderName,
+            [GetSharedProjectFullPath(sharedRoot, options.Name)],
+            cancellationToken);
 
-        Console.WriteLine($"Created shared project '{options.Name}' at {projectRoot}");
+        Console.WriteLine($"已创建内部共享项目 '{options.Name}'：{projectRoot}");
     }
 
     private static Task AddProjectsToSolutionAsync(
@@ -185,8 +187,11 @@ internal static class Program
             .. fullProjectPaths.Select(fullProjectPath => GetRepoRelativePath(repoRoot, fullProjectPath)),
         ];
 
-        await ProcessRunner.RunAsync("dotnet", repoRoot, ["sln", SolutionFileName, "remove", .. projectPaths], cancellationToken)
-            .ConfigureAwait(false);
+        await ProcessRunner.RunAsync(
+            "dotnet",
+            repoRoot,
+            ["sln", SolutionFileName, "remove", .. projectPaths],
+            cancellationToken);
     }
 
     private static async Task PackModAsync(CommandLineOptions options, CancellationToken cancellationToken)
@@ -196,128 +201,32 @@ internal static class Program
         string repoRoot = Path.GetFullPath(options.RepoRoot);
         string modsRoot = Path.GetFullPath(options.ModsRoot ?? Path.Combine(repoRoot, DefaultModsRelativePath));
         string artifactsRoot = Path.GetFullPath(options.ArtifactsRoot ?? Path.Combine(repoRoot, "artifacts", "mods"));
-        string modRoot = Path.Combine(modsRoot, options.Name);
-        string packageRoot = Path.Combine(artifactsRoot, options.Name);
 
-        if (!Directory.Exists(modRoot))
-        {
-            throw new DirectoryNotFoundException($"Mod directory does not exist: {modRoot}");
-        }
-
-        string[] fullProjectPaths = GetModProjectFullPaths(modsRoot, options.Name);
-        foreach (string fullProjectPath in fullProjectPaths)
-        {
-            await ProcessRunner.RunAsync("dotnet", repoRoot, ["build", fullProjectPath, "--configuration", options.Configuration], cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        if (Directory.Exists(packageRoot))
-        {
-            Directory.Delete(packageRoot, recursive: true);
-        }
-
-        CopyPackageFiles(modRoot, packageRoot);
-        await CopyPluginOutputsAsync(repoRoot, fullProjectPaths, options.Configuration, packageRoot, cancellationToken)
-            .ConfigureAwait(false);
-        Console.WriteLine($"Packed mod '{options.Name}' to {packageRoot}");
-    }
-
-    private static void CopyPackageFiles(string modRoot, string packageRoot)
-    {
-        foreach (string sourcePath in Directory.EnumerateFiles(modRoot, "*", SearchOption.AllDirectories))
-        {
-            string relativePath = Path.GetRelativePath(modRoot, sourcePath);
-            if (ShouldExcludeFromPackage(relativePath))
-            {
-                continue;
-            }
-
-            string destinationPath = Path.Combine(packageRoot, relativePath);
-            string? destinationDirectory = Path.GetDirectoryName(destinationPath);
-            if (!string.IsNullOrEmpty(destinationDirectory))
-            {
-                _ = Directory.CreateDirectory(destinationDirectory);
-            }
-
-            File.Copy(sourcePath, destinationPath, overwrite: true);
-        }
-    }
-
-    private static bool ShouldExcludeFromPackage(string relativePath)
-    {
-        string normalizedPath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
-        string fileName = Path.GetFileName(normalizedPath);
-        return normalizedPath.StartsWith("src/", StringComparison.Ordinal)
-            || normalizedPath.StartsWith($"{PluginsDirectoryName}/", StringComparison.Ordinal)
-            || normalizedPath.StartsWith("bin/", StringComparison.Ordinal)
-            || normalizedPath.StartsWith("obj/", StringComparison.Ordinal)
-            || normalizedPath.Contains("/bin/", StringComparison.Ordinal)
-            || normalizedPath.Contains("/obj/", StringComparison.Ordinal)
-            || fileName is ".gitignore" or ".gitkeep" or "README.md";
-    }
-
-    private static async Task CopyPluginOutputsAsync(
-        string repoRoot,
-        IEnumerable<string> projectPaths,
-        string configuration,
-        string packageRoot,
-        CancellationToken cancellationToken)
-    {
-        foreach (string projectPath in projectPaths)
-        {
-            string outputPath = await GetProjectTargetDirectoryAsync(repoRoot, projectPath, configuration, cancellationToken)
-                .ConfigureAwait(false);
-
-            foreach (string sourcePath in Directory.EnumerateFiles(outputPath))
-            {
-                string extension = Path.GetExtension(sourcePath);
-                if (!PackagePluginOutputExtensions.Contains(extension))
-                {
-                    continue;
-                }
-
-                string destinationPath = Path.Combine(packageRoot, PluginsDirectoryName, Path.GetFileName(sourcePath));
-                string? destinationDirectory = Path.GetDirectoryName(destinationPath);
-                if (!string.IsNullOrEmpty(destinationDirectory))
-                {
-                    _ = Directory.CreateDirectory(destinationDirectory);
-                }
-
-                File.Copy(sourcePath, destinationPath, overwrite: true);
-            }
-        }
-    }
-
-    private static async Task<string> GetProjectTargetDirectoryAsync(
-        string repoRoot,
-        string projectPath,
-        string configuration,
-        CancellationToken cancellationToken)
-    {
-        string targetDirectory = await ProcessRunner.RunForOutputAsync(
-            "dotnet",
-            repoRoot,
-            ["msbuild", projectPath, "-getProperty:TargetDir", $"-p:Configuration={configuration}"],
-            cancellationToken).ConfigureAwait(false);
-
-        if (string.IsNullOrWhiteSpace(targetDirectory))
-        {
-            throw new InvalidOperationException($"Project TargetDir is empty: {projectPath}");
-        }
-
-        string projectDirectory = Path.GetDirectoryName(projectPath)
-            ?? throw new InvalidOperationException($"Project path has no directory: {projectPath}");
-
-        return Path.GetFullPath(targetDirectory, projectDirectory);
+        ModPacker packer = new(repoRoot, modsRoot, artifactsRoot, options.Configuration);
+        await packer.PackAsync(options.Name, cancellationToken);
     }
 
     private static string[] GetModProjectFullPaths(string modsRoot, string modName)
     {
+        string modRoot = Path.Combine(modsRoot, modName);
+        if (!Directory.Exists(modRoot))
+        {
+            throw new InvalidOperationException($"Mod 目录不存在：{modRoot}");
+        }
+
         return
         [
-            Path.Combine(modsRoot, modName, "src", "Frontend", $"{modName}.Frontend.csproj"),
-            Path.Combine(modsRoot, modName, "src", "Backend", $"{modName}.Backend.csproj"),
+            .. Directory.EnumerateFiles(modRoot, "*.csproj", SearchOption.AllDirectories)
+                .Where(static projectPath => !IsBuildOutputPath(projectPath))
+                .Order(StringComparer.OrdinalIgnoreCase),
         ];
+    }
+
+    private static bool IsBuildOutputPath(string path)
+    {
+        string normalizedPath = path.Replace(Path.DirectorySeparatorChar, '/');
+        return normalizedPath.Contains("/bin/", StringComparison.Ordinal)
+            || normalizedPath.Contains("/obj/", StringComparison.Ordinal);
     }
 
     private static string GetSharedProjectFullPath(string sharedRoot, string projectName)
@@ -325,18 +234,32 @@ internal static class Program
         return Path.Combine(sharedRoot, projectName, $"{projectName}.csproj");
     }
 
+    private static void EnsureCanRegisterGeneratedProject(
+        string projectRoot,
+        string repoRoot,
+        string projectKind)
+    {
+        if (IsUnderDirectory(projectRoot, repoRoot))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"{projectKind} 目录不在仓库根目录下，无法注册到解决方案：{projectRoot}");
+    }
+
     private static void ValidateNamespaceStyleIdentifier(string value, string valueName)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException($"{valueName} cannot be empty.");
+            throw new ArgumentException($"{valueName} 不能为空。");
         }
 
         foreach (string segment in value.Split('.'))
         {
             if (!SyntaxFacts.IsValidIdentifier(segment) || SyntaxFacts.GetKeywordKind(segment) != SyntaxKind.None)
             {
-                throw new ArgumentException($"{valueName} must be a C# namespace-style identifier, for example MyMod or MyCompany.MyMod.");
+                throw new ArgumentException($"{valueName} 必须是 C# 命名空间风格的标识符，例如 MyMod 或 MyCompany.MyMod。");
             }
         }
     }
@@ -351,7 +274,7 @@ internal static class Program
             }
         }
 
-        throw new ArgumentException("Shared project side must be Shared, Frontend, or Backend.");
+        throw new ArgumentException("--side 必须是 Shared、Frontend 或 Backend。");
     }
 
     private static string GetDefaultSharedProjectTargetFramework(SharedProjectSide side)
@@ -369,7 +292,7 @@ internal static class Program
     {
         if (!IsUnderDirectory(fullPath, repoRoot))
         {
-            throw new InvalidOperationException($"Project path is outside repository root: {fullPath}");
+            throw new InvalidOperationException($"项目路径不在仓库根目录下：{fullPath}");
         }
 
         return Path.GetRelativePath(repoRoot, fullPath).Replace(Path.DirectorySeparatorChar, '/');
@@ -382,11 +305,6 @@ internal static class Program
         return fullPath.StartsWith(fullDirectory, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static readonly HashSet<string> PackagePluginOutputExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".dll",
-        ".json",
-    };
 }
 
 internal enum SharedProjectSide

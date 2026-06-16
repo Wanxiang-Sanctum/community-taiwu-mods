@@ -55,7 +55,7 @@ internal sealed class TemplateRenderer
         Template template = Template.Parse(templateText, sourcePath);
         if (template.HasErrors)
         {
-            throw new InvalidOperationException(CreateErrorMessage("parse", sourcePath, template.Messages));
+            throw new InvalidOperationException(CreateParseErrorMessage(sourcePath, template.Messages));
         }
 
         TemplateContext context = CreateContext();
@@ -65,7 +65,7 @@ internal sealed class TemplateRenderer
         }
         catch (ScriptRuntimeException ex)
         {
-            throw new InvalidOperationException($"Failed to render template '{sourcePath}': {ex.Message}", ex);
+            throw new InvalidOperationException($"渲染模板失败 '{sourcePath}'：{ex.Message}", ex);
         }
     }
 
@@ -92,8 +92,8 @@ internal sealed class TemplateRenderer
         return context;
     }
 
-    private static string CreateErrorMessage(string operation, string sourcePath, IEnumerable<object> messages)
+    private static string CreateParseErrorMessage(string sourcePath, IEnumerable<object> messages)
     {
-        return $"Failed to {operation} template '{sourcePath}':{Environment.NewLine}{string.Join(Environment.NewLine, messages)}";
+        return $"解析模板失败 '{sourcePath}'：{Environment.NewLine}{string.Join(Environment.NewLine, messages)}";
     }
 }

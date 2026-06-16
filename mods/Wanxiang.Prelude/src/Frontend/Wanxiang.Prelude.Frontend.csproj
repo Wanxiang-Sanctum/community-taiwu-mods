@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
+    />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.MessagePipe" />
+    <PackageReference
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
+    />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.UniTask" />
+    <PackageReference Include="Taiwu.ModKit.Dependencies.VContainer" />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Frontend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

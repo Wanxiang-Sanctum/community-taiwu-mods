@@ -14,15 +14,14 @@ internal static class ProcessRunner
         CommandResult result = await CreateCommand(fileName, workingDirectory, arguments)
             .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
             .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
-            .ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .ExecuteAsync(cancellationToken);
 
         if (result.ExitCode == 0)
         {
             return;
         }
 
-        throw new InvalidOperationException($"{CreateDisplayCommand(fileName, arguments)} failed with exit code {result.ExitCode}.");
+        throw new InvalidOperationException($"命令执行失败（退出码 {result.ExitCode}）：{CreateDisplayCommand(fileName, arguments)}");
     }
 
     public static async Task<string> RunForOutputAsync(
@@ -32,14 +31,13 @@ internal static class ProcessRunner
         CancellationToken cancellationToken)
     {
         BufferedCommandResult result = await CreateCommand(fileName, workingDirectory, arguments)
-            .ExecuteBufferedAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .ExecuteBufferedAsync(cancellationToken);
 
         if (result.ExitCode != 0)
         {
             WriteIfNotEmpty(Console.Out, result.StandardOutput);
             WriteIfNotEmpty(Console.Error, result.StandardError);
-            throw new InvalidOperationException($"{CreateDisplayCommand(fileName, arguments)} failed with exit code {result.ExitCode}.");
+            throw new InvalidOperationException($"命令执行失败（退出码 {result.ExitCode}）：{CreateDisplayCommand(fileName, arguments)}");
         }
 
         return result.StandardOutput.Trim();

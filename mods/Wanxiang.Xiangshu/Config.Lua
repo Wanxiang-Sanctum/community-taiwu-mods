@@ -1,0 +1,57 @@
+return {
+  Title = "相枢",
+  Source = 0,
+  FileId = 0,
+  Version = "0.1.0",
+  GameVersion = "0.84.46-test",
+  Author = "Wanxiang Sanctum",
+  Description = "一个混沌的愿望回应 mod。可在游戏内与本机 Agent 对话，并通过 MCP 工具连接前后端脚本能力。",
+  WorkshopCover = nil,
+  Visibility = 0,
+  DefaultSettings = {
+    {
+      SettingType = "Dropdown",
+      Key = "AgentAdapter",
+      DisplayName = "本机 Agent",
+      Description = "选择相枢对话使用的本机 Agent。",
+      GroupName = "本机 Agent",
+      Options = {
+        "Codex CLI",
+        "Claude Code",
+      },
+      DefaultValue = 0,
+    },
+    {
+      SettingType = "InputField",
+      Key = "AgentCliPath",
+      DisplayName = "CLI 入口",
+      Description = "相枢启动本机 Agent 时使用的 CLI 命令名或可执行文件路径。留空时按所选 Agent 使用默认命令。",
+      GroupName = "本机 Agent",
+      DefaultValue = "",
+    },
+    {
+      SettingType = "InputField",
+      Key = "AgentWorkingDirectory",
+      DisplayName = "工作目录",
+      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录随包提供示例工作区。",
+      GroupName = "本机 Agent",
+      DefaultValue = "AgentWorkspace",
+    },
+  },
+  SettingGroups = {
+    "本机 Agent",
+  },
+  UpdateLogList = {},
+  ChangeConfig = false,
+  HasArchive = false,
+  NeedRestartWhenSettingChanged = true,
+  BackendPlugins = {
+    "Backend/Wanxiang.Xiangshu.Backend.dll",
+  },
+  BackendPatches = {},
+  FrontendPlugins = {
+    "Frontend/Wanxiang.Xiangshu.Frontend.dll",
+  },
+  FrontendPatches = {},
+  EventPackages = {},
+}

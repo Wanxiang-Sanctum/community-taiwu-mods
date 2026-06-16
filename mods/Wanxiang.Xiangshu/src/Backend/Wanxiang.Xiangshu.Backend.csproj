@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <MSBuildWarningsAsMessages
+    >$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
+    />
+  </ItemGroup>
+
+  <!-- Runtime DLLs are provided by Wanxiang.Prelude.Backend; this project only needs compile assets. -->
+  <ItemGroup>
+    <PackageReference
+      Include="MessagePack"
+      ExcludeAssets="runtime"
+      NoWarn="NU1903"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="MessagePipe"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="MessagePipe.Interprocess"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Backend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

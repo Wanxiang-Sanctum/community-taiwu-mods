@@ -1,13 +1,35 @@
 <Solution>
   <Folder Name="/mods/">
     <Project
-      Path="mods/Wanxiang.AsyncRelay/src/Backend/Wanxiang.AsyncRelay.Backend.csproj"
+      Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project
-      Path="mods/Wanxiang.AsyncRelay/src/Frontend/Wanxiang.AsyncRelay.Frontend.csproj"
+      Path="mods/Wanxiang.Prelude/src/Frontend/Wanxiang.Prelude.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Prelude/src/PluginLoading/Wanxiang.Prelude.PluginLoading.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Backend/Wanxiang.Xiangshu.Backend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Frontend/Wanxiang.Xiangshu.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
     />
   </Folder>
-  <Folder Name="/shared/" />
+  <Folder Name="/shared/">
+    <Project
+      Path="shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
+    />
+  </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Taiwu.Mods.Cli/Taiwu.Mods.Cli.csproj" />
   </Folder>

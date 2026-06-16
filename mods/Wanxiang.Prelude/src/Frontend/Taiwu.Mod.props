@@ -1,0 +1,40 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModSide>Frontend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Frontend</TaiwuModPluginSubdirectory>
+    <UsePublicizer>false</UsePublicizer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TaiwuModMergeDependency Include="Wanxiang.Prelude.PluginLoading.dll" />
+    <!-- Deployment list only. Prelude source marks preload roots; recursive
+         AssemblyRef loading reaches copied transitive DLLs. -->
+    <TaiwuModCopyDependency Include="MessagePack.Annotations.dll" />
+    <TaiwuModCopyDependency Include="MessagePack.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.Interprocess.dll" />
+    <TaiwuModCopyDependency Include="MessagePipe.VContainer.dll" />
+    <TaiwuModCopyDependency Include="Microsoft.CodeAnalysis.dll" />
+    <TaiwuModCopyDependency Include="Microsoft.CodeAnalysis.CSharp.dll" />
+    <TaiwuModCopyDependency Include="Microsoft.NET.StringTools.dll" />
+    <TaiwuModCopyDependency Include="System.Collections.Immutable.dll" />
+    <TaiwuModCopyDependency Include="System.Reflection.Metadata.dll" />
+    <TaiwuModCopyDependency Include="System.Text.Encoding.CodePages.dll" />
+    <TaiwuModCopyDependency Include="System.Threading.Tasks.Extensions.dll" />
+    <TaiwuModCopyDependency Include="UniTask.dll" />
+    <TaiwuModCopyDependency Include="UniTask.Linq.dll" />
+    <TaiwuModCopyDependency Include="UniTask.TextMeshPro.dll" />
+    <TaiwuModCopyDependency Include="UniTask.Addressables.dll" />
+    <TaiwuModCopyDependency Include="VContainer.dll" />
+  </ItemGroup>
+
+  <!--
+  <ItemGroup>
+    <Publicize
+      Include="Assembly-CSharp"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+  </ItemGroup>
+  -->
+</Project>
