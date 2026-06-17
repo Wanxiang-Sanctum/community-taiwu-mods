@@ -8,6 +8,8 @@
   对话入口。
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
+- `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/` 注入子进程，不持久化，
+  也不进入 endpoint manifest。
 - `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，并排除相枢聊天窗口。
 - `Settings/`：相枢本地设置文件读取，负责前端初始化时加载 `LocalSettings.json`。
 - `Sidecar/`：MCP server 进程生命周期，并把 sidecar 事件日志定向到
@@ -18,8 +20,8 @@
 职责时再新增同级目录。
 
 本机 Agent 配置读取入口是 `Agent/AgentSettings.cs`，但调用时机由 `FrontendPlugin.cs` 控制：初始化时
-读取一次并注入运行时对象。工作目录、CLI 适配器、IPC manifest 和 MCP sidecar 由前端运行时启动流程
-统一重建；设置修改后由游戏重启生效。
+读取一次并注入运行时对象。工作目录、CLI 适配器、IPC manifest、MCP sidecar 和 MCP bearer token 由前端
+运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
 注入 `Ipc/` endpoint；脚本编译和程序集解析规则仍归 `src/Scripting/`。

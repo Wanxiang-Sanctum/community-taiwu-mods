@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Sidecar;
@@ -8,13 +9,16 @@ namespace Wanxiang.Xiangshu.Frontend.Sidecar;
 internal sealed class McpSidecar(
     string modDirectory,
     string workingDirectory,
-    string manifestPath) : IDisposable
+    string manifestPath,
+    McpBearerToken bearerToken) : IDisposable
 {
     private const string McpServerBundleName = "Wanxiang.Xiangshu.McpServer";
 
     private const string McpServerExecutableName = "Wanxiang.Xiangshu.McpServer.exe";
 
     private Process? _process;
+    private readonly McpBearerToken _bearerToken = bearerToken
+        ?? throw new ArgumentNullException(nameof(bearerToken));
     private bool _disposed;
 
     public void Start()
@@ -50,6 +54,7 @@ internal sealed class McpSidecar(
         process.StartInfo.ArgumentList.Add(eventLogPath);
         process.StartInfo.ArgumentList.Add("--manifest-file");
         process.StartInfo.ArgumentList.Add(manifestPath);
+        process.StartInfo.Environment[IpcRuntime.McpBearerTokenEnvironmentVariable] = _bearerToken.Value;
 
         try
         {

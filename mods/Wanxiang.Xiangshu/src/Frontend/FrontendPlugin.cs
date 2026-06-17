@@ -7,6 +7,7 @@ using Wanxiang.Xiangshu.Frontend.Agent;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -26,6 +27,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private FrontendIpcServer? _ipcServer;
     private McpSidecar? _mcpSidecar;
     private AgentCliLauncher? _agentCliLauncher;
+    private McpBearerToken? _mcpBearerToken;
     private ChatParticipantIdentity? _chatParticipantIdentity;
     private AgentChatSession? _chatSession;
     private XiangshuChatWindow? _chatWindow;
@@ -41,7 +43,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             CurrentAgentSettings = AgentSettings.Load(ModIdStr);
             IpcEndpointRegistry.ConfigureForWorkingDirectory(CurrentAgentSettings.WorkingDirectory);
-            _agentCliLauncher = new AgentCliLauncher();
+            _mcpBearerToken = McpBearerToken.Create();
+            _agentCliLauncher = new AgentCliLauncher(_mcpBearerToken);
             _chatParticipantIdentity = new ChatParticipantIdentity();
             _chatSession = new AgentChatSession(
                 _agentCliLauncher,
@@ -86,6 +89,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _chatParticipantIdentity = null;
         _agentCliLauncher?.Dispose();
         _agentCliLauncher = null;
+        _mcpBearerToken = null;
         _mcpSidecar?.Dispose();
         _mcpSidecar = null;
         _ipcServer?.Dispose();
@@ -99,7 +103,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _mcpSidecar = new McpSidecar(
             settings.ModDirectory,
             settings.WorkingDirectory,
-            IpcEndpointRegistry.ManifestPath);
+            IpcEndpointRegistry.ManifestPath,
+            _mcpBearerToken ?? throw new InvalidOperationException("MCP bearer token is not initialized."));
 
         try
         {

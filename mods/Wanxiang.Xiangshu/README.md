@@ -14,7 +14,9 @@
 - 会话衔接：前端保存游戏内可见对话和外部 Agent 会话 id；长期上下文仍由本机 CLI Agent 自己维护。
 
 脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。它的信任边界是本机 Agent
-工作区、MCP sidecar 与游戏插件进程，不承担远程服务或非受信输入沙箱职责。
+工作区、MCP sidecar 与游戏插件进程，不承担远程服务或非受信输入沙箱职责。MCP sidecar 只在本机
+loopback 暴露工具服务；前端启动时生成本次运行的 MCP bearer token，并把它注入 sidecar 和 CLI Agent。
+endpoint manifest 只发布路由信息，token 不写入 manifest、聊天快照或诊断日志。
 
 对话、运行目录、脚本通道和 CLI 适配器的内部设计见 `docs/agent-chat.md`；日志策略见 `docs/logging.md`。
 

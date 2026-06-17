@@ -5,13 +5,15 @@ using System.Globalization;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Settings;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
 
-internal sealed class AgentCliLauncher : IDisposable
+internal sealed class AgentCliLauncher(
+    McpBearerToken bearerToken) : IDisposable
 {
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
 
@@ -23,6 +25,8 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
+    private readonly McpBearerToken _mcpBearerToken = bearerToken
+        ?? throw new ArgumentNullException(nameof(bearerToken));
     private readonly object _syncRoot = new();
 
     private Process? _process;
@@ -145,7 +149,8 @@ internal sealed class AgentCliLauncher : IDisposable
                 tempFiles,
                 agentInput,
                 agentSessionId,
-                useChatReplySchema);
+                useChatReplySchema,
+                _mcpBearerToken);
 
             process = new Process
             {
@@ -210,7 +215,8 @@ internal sealed class AgentCliLauncher : IDisposable
         AgentCliTempFiles tempFiles,
         string agentInput,
         string? agentSessionId,
-        bool useChatReplySchema)
+        bool useChatReplySchema,
+        McpBearerToken bearerToken)
     {
         ProcessStartInfo startInfo = new()
         {
@@ -223,10 +229,18 @@ internal sealed class AgentCliLauncher : IDisposable
             CreateNoWindow = true,
         };
         ApplyEnvironmentVariables(startInfo, settings.EnvironmentVariables);
+        startInfo.Environment[IpcRuntime.McpBearerTokenEnvironmentVariable] = bearerToken.Value;
 
         if (settings.Adapter == AgentAdapter.Claude)
         {
-            ConfigureClaude(startInfo, mcpUrl, tempFiles, agentInput, agentSessionId, useChatReplySchema);
+            ConfigureClaude(
+                startInfo,
+                mcpUrl,
+                bearerToken,
+                tempFiles,
+                agentInput,
+                agentSessionId,
+                useChatReplySchema);
         }
         else
         {
@@ -288,6 +302,9 @@ internal sealed class AgentCliLauncher : IDisposable
 
         startInfo.ArgumentList.Add("--config");
         startInfo.ArgumentList.Add($"mcp_servers.xiangshu.url=\"{mcpUrl}\"");
+        startInfo.ArgumentList.Add("--config");
+        startInfo.ArgumentList.Add(
+            $"mcp_servers.xiangshu.bearer_token_env_var=\"{IpcRuntime.McpBearerTokenEnvironmentVariable}\"");
         if (!string.IsNullOrWhiteSpace(agentSessionId))
         {
             startInfo.ArgumentList.Add(agentSessionId);
@@ -299,12 +316,13 @@ internal sealed class AgentCliLauncher : IDisposable
     private static void ConfigureClaude(
         ProcessStartInfo startInfo,
         string mcpUrl,
+        McpBearerToken bearerToken,
         AgentCliTempFiles tempFiles,
         string agentInput,
         string? agentSessionId,
         bool useChatReplySchema)
     {
-        string mcpConfigPath = tempFiles.WriteClaudeMcpConfig(mcpUrl);
+        string mcpConfigPath = tempFiles.WriteClaudeMcpConfig(mcpUrl, bearerToken);
 
         startInfo.ArgumentList.Add("--print");
         if (!string.IsNullOrWhiteSpace(agentSessionId))

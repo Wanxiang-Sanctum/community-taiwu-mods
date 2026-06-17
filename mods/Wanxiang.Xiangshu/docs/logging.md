@@ -23,8 +23,9 @@
 CLI 成功回复由界面状态或可见消息体现。
 
 日志上下文只保留排障所需的稳定事实。正常边界日志只记录模块状态和少量低基数字段，例如适配器类型。进程
-id、端口、绝对运行路径、manifest 路径、单次事件日志路径、耗时、消息数量和会话 id 由运行数据或当前进程
-状态承担。玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr 和外部 Agent 会话 id 原文留在各自所属边界。
+id、端口、绝对运行路径、manifest 路径、单次事件日志路径、耗时、消息数量、会话 id 和 MCP bearer token 由
+运行数据、当前进程状态或运行期内存承担。玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr、MCP
+bearer token 原文和外部 Agent 会话 id 原文留在各自所属边界。
 
 按运行边界分级：
 
@@ -42,6 +43,9 @@ CLI 调用失败时，游戏日志可以记录适配器、CLI 会话模式（`ne
 MCP sidecar 事件日志用于确认独立进程是否完成启动、注册 endpoint、跟随父进程退出、正常停止或异常失败。
 MCP 工具调用统计和 endpoint manifest 内容由各自运行数据承载。事件消息保持紧凑；需要查看当前 endpoint 时，
 以 `.xiangshu-runtime/ipc-endpoints.json` 为准。
+
+MCP bearer token 只存在于前端、sidecar 和 CLI 子进程的本次运行环境或临时协议文件中。日志可以记录 sidecar
+启动失败或请求被拒绝的边界事实，但不记录 token 值。
 
 ## 共享日志库边界
 

@@ -1,6 +1,6 @@
 using System.Text;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
@@ -8,6 +8,11 @@ namespace Wanxiang.Xiangshu.Frontend.Agent;
 internal sealed class AgentCliTempFiles : IDisposable
 {
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
+    private static readonly JsonSerializerSettings JsonSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+    };
 
     public const string ChatReplySchemaJson =
         """
@@ -51,20 +56,24 @@ internal sealed class AgentCliTempFiles : IDisposable
         return new AgentCliTempFiles(directory);
     }
 
-    public string WriteClaudeMcpConfig(string mcpUrl)
+    public string WriteClaudeMcpConfig(
+        string mcpUrl,
+        McpBearerToken bearerToken)
     {
-        JObject config = new(
-            new JProperty(
-                "mcpServers",
-                new JObject(
-                    new JProperty(
-                        "xiangshu",
-                        new JObject(
-                            new JProperty("type", "http"),
-                            new JProperty("url", mcpUrl))))));
+        ClaudeMcpConfig config = new(
+            new Dictionary<string, ClaudeMcpServerConfig>
+            {
+                ["xiangshu"] = new(
+                    type: "http",
+                    url: mcpUrl,
+                    headers: new Dictionary<string, string>
+                    {
+                        [IpcRuntime.McpAuthorizationHeaderName] = bearerToken.AuthorizationHeaderValue,
+                    }),
+            });
         File.WriteAllText(
             McpConfigPath,
-            config.ToString(Formatting.Indented, []),
+            JsonConvert.SerializeObject(config, Formatting.Indented, JsonSettings),
             Utf8NoBom);
         return McpConfigPath;
     }
@@ -98,4 +107,26 @@ internal sealed class AgentCliTempFiles : IDisposable
         {
         }
     }
+}
+
+internal sealed class ClaudeMcpConfig(
+    IReadOnlyDictionary<string, ClaudeMcpServerConfig> mcpServers)
+{
+    [JsonProperty("mcpServers")]
+    public IReadOnlyDictionary<string, ClaudeMcpServerConfig> McpServers { get; } = mcpServers;
+}
+
+internal sealed class ClaudeMcpServerConfig(
+    string type,
+    string url,
+    IReadOnlyDictionary<string, string> headers)
+{
+    [JsonProperty("type")]
+    public string Type { get; } = type;
+
+    [JsonProperty("url")]
+    public string Url { get; } = url;
+
+    [JsonProperty("headers")]
+    public IReadOnlyDictionary<string, string> Headers { get; } = headers;
 }
