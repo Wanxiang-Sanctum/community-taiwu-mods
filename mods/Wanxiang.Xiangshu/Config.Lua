@@ -3,7 +3,7 @@ return {
   Source = 0,
   FileId = 0,
   Version = "0.1.0",
-  GameVersion = "0.84.46-test",
+  GameVersion = "1.0.1",
   Author = "Wanxiang Sanctum",
   Description = "一个混沌的愿望回应 mod。可在游戏内与本机 Agent 对话，并通过 MCP 工具连接前后端脚本能力。",
   WorkshopCover = nil,
