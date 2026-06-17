@@ -59,7 +59,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
                 new
                 {
                     adapter = CurrentAgentSettings.Adapter,
-                    workingDirectory = CurrentAgentSettings.WorkingDirectory,
                 });
         }
         catch (Exception ex)
@@ -104,15 +103,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
         try
         {
-            McpSidecarLaunch launch = _mcpSidecar.Start();
-            Log.Info(
-                "MCP sidecar started",
-                new
-                {
-                    processId = launch.ProcessId,
-                    logDirectory = launch.LogDirectory,
-                    eventLog = launch.EventLogPath,
-                });
+            _mcpSidecar.Start();
+            Log.Info("MCP sidecar started");
         }
         catch (Exception ex) when (ex is FileNotFoundException
             or Win32Exception
@@ -134,15 +126,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _ipcServer = new FrontendIpcServer(
             chatSession,
             XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
-        IpcEndpoint endpoint = _ipcServer.Start();
-        Log.Info(
-            "frontend IPC listening",
-            new
-            {
-                endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
-                processId = endpoint.ProcessId,
-                manifest = IpcEndpointRegistry.ManifestPath,
-            });
+        _ = _ipcServer.Start();
+        Log.Info("frontend IPC ready");
     }
 
     private void InstallChatHotkey()

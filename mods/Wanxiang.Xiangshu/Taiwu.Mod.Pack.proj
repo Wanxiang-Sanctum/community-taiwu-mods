@@ -7,8 +7,8 @@
   <ItemGroup>
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
     <TaiwuModPackDirectory
-      Include="AgentWorkspace"
-      PackagePath="AgentWorkspace"
+      Include="DefaultAgentWorkspace"
+      PackagePath="DefaultAgentWorkspace"
     />
     <TaiwuModPackProject
       Include="src/Frontend/Wanxiang.Xiangshu.Frontend.csproj"

@@ -9,10 +9,12 @@
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
 - `Settings/`：相枢本地设置文件读取，负责前端初始化时加载 `LocalSettings.json`。
-- `Sidecar/`：MCP server 进程生命周期，并把独立进程日志定向到 `.xiangshu-runtime/Diagnostics/McpServer/`。
+- `Sidecar/`：MCP server 进程生命周期，并把 sidecar 事件日志定向到
+  `.xiangshu-runtime/Diagnostics/McpServer/`。
 
-依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 可以调用 `Agent/` 投递一个对话轮次；`Agent/`
-接收自己的 turn DTO。新增前端能力时优先放入既有职责目录；出现新的运行职责时再新增同级目录。
+依赖方向从 `FrontendPlugin.cs` 指向各子模块。`Chat/` 维护前端会话和待投递消息，并把一个对话轮次交给
+`Agent/`；`Agent/` 只负责把该轮次转换为 CLI 调用。新增前端能力时优先放入既有职责目录；出现新的运行
+职责时再新增同级目录。
 
 本机 Agent 配置读取入口是 `Agent/AgentSettings.cs`，但调用时机由 `FrontendPlugin.cs` 控制：初始化时
 读取一次并注入运行时对象。工作目录、CLI 适配器、IPC manifest 和 MCP sidecar 由前端运行时启动流程
@@ -21,4 +23,5 @@
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
 注入 `Ipc/` endpoint；脚本编译和程序集解析规则仍归 `src/Scripting/`。
 
-前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层。
+前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
+事件选择和字段取舍归 `docs/logging.md`。

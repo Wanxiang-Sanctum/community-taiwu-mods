@@ -24,7 +24,8 @@
 关闭相枢聊天窗口。
 
 玩家发送消息后，前端会使用启动时加载的本机 Agent 配置投递一个对话轮次。Agent 工作期间，发送入口会
-切换为“且慢”；玩家点击后，当前 CLI 调用会被取消，未完成的本轮玩家消息会与“且慢”一起进入下一轮投递。
+切换为“且慢”；玩家点击后，当前回应会立刻中断，聊天流追加“且慢”。这条“且慢”不会单独交给 Agent，
+而会在玩家下一次发送普通消息时一起进入新的投递。
 
 聊天窗口头部提供重置入口。重置会清空当前游戏内可见对话，并新建本地投递会话。
 
@@ -35,7 +36,7 @@
 - `AgentAdapter`：选择 `Codex CLI` 或 `Claude Code`。
 - `AgentCliPath`：本机 Agent CLI 的命令名或可执行文件路径；留空时使用当前 Agent 的默认命令。
 - `AgentWorkingDirectory`：本机 Agent 的工作目录；相对路径会解析到相枢 Mod 目录下，默认是
-  `AgentWorkspace`。
+  `DefaultAgentWorkspace`。
 
 本地进阶设置不放进太吾 Mod 配置界面，也不属于 Agent 工作区。如果需要给 CLI Agent 传环境变量，在相枢
 Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
@@ -51,22 +52,24 @@ Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
 ```
 
 相枢启动 Codex/Claude 子进程时，会把 `agent.env` 中的字符串键值写入子进程环境。这些变量不传给游戏
-进程或 MCP sidecar，也不会写入相枢日志。
+进程或 MCP sidecar，也不会写入诊断日志。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、
 MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 
-默认包内预置 `AgentWorkspace/`，作为可编辑的本机 Agent 工作区示例。配置到其它工作目录时，该目录由用户
-自行维护。
+默认包内预置 `DefaultAgentWorkspace/`，作为本机 Agent 的默认工作区和可编辑示例。用户可以手工维护其中的
+人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它工作目录时，
+该目录由用户自行维护。
 
-## 运行数据与日志
+## 运行数据与诊断
 
 相枢把运行数据写入 `AgentWorkingDirectory/.xiangshu-runtime/`。这个目录由相枢运行时维护，用于 endpoint
 发现、聊天会话恢复、临时 CLI 协议文件和 MCP sidecar 事件日志。用户维护工作区时，应把它视为运行数据
-目录，而不是可编辑 Agent 资产。
+目录，而不是可编辑 Agent 资产或对话记录。
 
-游戏进程内的运行信息进入太吾游戏日志系统。MCP sidecar 是独立进程，事件日志写入
-`.xiangshu-runtime/Diagnostics/McpServer/`。事件选择和上下文字段见 `docs/logging.md`。
+游戏内可见对话不写入诊断日志。前端和后端插件只把启动边界、可恢复边界问题和失败原因写入太吾游戏日志；
+MCP sidecar 是独立进程，它的生命周期事件写入 `.xiangshu-runtime/Diagnostics/McpServer/`。事件选择、
+上下文字段和运行数据边界见 `docs/logging.md`。
 
 ## 开发
 
@@ -84,8 +87,8 @@ dotnet build mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.cs
 dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Xiangshu
 ```
 
-`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、`AgentWorkspace/`、前后端入口 DLL，以及 MCP
-sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xiangshu/`。前端插件从
+`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、`DefaultAgentWorkspace/`、前后端入口 DLL，以及
+MCP sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xiangshu/`。前端插件从
 `Processes/Wanxiang.Xiangshu.McpServer/Wanxiang.Xiangshu.McpServer.exe` 启动 sidecar。
 
 相枢依赖 `Wanxiang.Prelude`（万象引）提供共享运行时和按入口目录优先解析 DLL 的加载规则。发布时，将
@@ -99,10 +102,11 @@ sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.Xian
 增长约定优先看对应目录下的 `README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
-- `AgentWorkspace/`：默认本机 Agent 工作区示例，包含入口上下文、轻量静态语境和对应 CLI Agent 可发现的技能
-  目录。
+- `DefaultAgentWorkspace/`：默认本机 Agent 工作区内容；其中 `persona/`
+  放相枢口吻和玩家可见边界，`lore/` 放按需读取的世界观资料，`tool-guides/` 放脚本执行和游戏知识检索
+  指引，并保留对应 CLI Agent 可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `docs/`：对话链路和日志策略等内部设计说明。
+- `docs/`：对话链路、日志策略和默认 Agent 工作区来源等内部设计说明。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
 - `src/Backend/`：后端插件项目，负责后端 IPC 和后端侧脚本执行入口。
 - `src/Ipc/`：前端、后端和 MCP sidecar 共享的 contract 与 endpoint 辅助库。

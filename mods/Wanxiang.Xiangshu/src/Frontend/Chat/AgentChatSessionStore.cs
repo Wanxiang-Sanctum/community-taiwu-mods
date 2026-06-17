@@ -8,6 +8,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 internal sealed class AgentChatSessionStore(string workingDirectory)
 {
+    private const string MessageIdPrefix = "message-";
+
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     private static readonly JsonSerializerSettings JsonSettings = new()
@@ -46,7 +48,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             _currentPath,
             new PersistedCurrentChatSession
             {
-                UpdatedAtUtc = now,
+                UpdatedAt = now,
                 CurrentSessionId = state.SessionId,
             });
     }
@@ -71,7 +73,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         string sessionId = NormalizeSessionId(session.SessionId, "sessionId", sessionPath);
 
         List<AgentChatMessage> messages = [];
-        int maxMessageNumber = 0;
+        int highestMessageOrdinal = 0;
 
         List<PersistedChatMessage> visibleMessages = session.VisibleMessages
             ?? throw new InvalidDataException($"Missing chat session field 'visibleMessages' in {sessionPath}.");
@@ -80,14 +82,20 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         {
             AgentChatMessage message = CreateMessage(persistedMessage, sessionPath);
             messages.Add(message);
-            maxMessageNumber = Math.Max(maxMessageNumber, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
+            highestMessageOrdinal = Math.Max(
+                highestMessageOrdinal,
+                ParseMessageOrdinal(message.Id, sessionPath));
         }
+
+        int lastMessageOrdinal = session.LastMessageOrdinal
+            ?? throw new InvalidDataException($"Missing chat session field 'lastMessageOrdinal' in {sessionPath}.");
+        ValidateLastMessageOrdinal(lastMessageOrdinal, highestMessageOrdinal, sessionPath);
 
         return new AgentChatSessionState(
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.AgentSessionId),
-            Math.Max(session.LastMessageNumber, maxMessageNumber),
+            lastMessageOrdinal,
             messages);
     }
 
@@ -97,11 +105,11 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         return new PersistedChatSession
         {
-            UpdatedAtUtc = now,
+            UpdatedAt = now,
             SessionId = state.SessionId,
             Adapter = state.Adapter,
             AgentSessionId = state.AgentSessionId,
-            LastMessageNumber = state.LastMessageNumber,
+            LastMessageOrdinal = state.LastMessageOrdinal,
             VisibleMessages =
             [
                 .. state.VisibleMessages.Select(CreatePersistedMessage),
@@ -114,6 +122,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return new PersistedChatMessage
         {
             Id = message.Id,
+            CreatedAt = message.CreatedAt.ToUniversalTime(),
             Role = message.Role == AgentChatRole.Assistant ? "assistant" : "user",
             SpeakerName = message.SpeakerName,
             Content = message.Content,
@@ -127,6 +136,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         return new AgentChatMessage(
             NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
+            NormalizeRequiredTimestamp(persistedMessage.CreatedAt, "message.createdAt", sessionPath),
             ParseRole(persistedMessage.Role, sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
@@ -199,40 +209,26 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return normalized.Length == 0 ? null : normalized;
     }
 
-    private static int ParseRequiredOrdinal(
-        string value,
-        string prefix,
+    private static int ParseMessageOrdinal(
+        string messageId,
         string path)
     {
-        return TryParseOrdinal(value, prefix, out int ordinal)
-            ? ordinal
-            : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
-    }
-
-    private static bool TryParseOrdinal(
-        string value,
-        string prefix,
-        out int ordinal)
-    {
-        ordinal = 0;
-
-        if (!value.StartsWith(prefix, StringComparison.Ordinal))
+        if (!messageId.StartsWith(MessageIdPrefix, StringComparison.Ordinal))
         {
-            return false;
+            throw new InvalidDataException($"Invalid chat message id '{messageId}' in {path}.");
         }
 
         if (!int.TryParse(
-            value[prefix.Length..],
+            messageId[MessageIdPrefix.Length..],
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out int parsedOrdinal)
-            || parsedOrdinal < 0)
+            || parsedOrdinal <= 0)
         {
-            return false;
+            throw new InvalidDataException($"Invalid chat message id '{messageId}' in {path}.");
         }
 
-        ordinal = parsedOrdinal;
-        return true;
+        return parsedOrdinal;
     }
 
     private static string NormalizeRequired(
@@ -265,16 +261,47 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return sessionId.ToString("N");
     }
 
+    private static void ValidateLastMessageOrdinal(
+        int lastMessageOrdinal,
+        int highestMessageOrdinal,
+        string path)
+    {
+        if (lastMessageOrdinal < 0)
+        {
+            throw new InvalidDataException(
+                $"Invalid chat session field 'lastMessageOrdinal' in {path}.");
+        }
+
+        if (lastMessageOrdinal < highestMessageOrdinal)
+        {
+            throw new InvalidDataException(
+                $"Invalid chat session field 'lastMessageOrdinal' in {path}.");
+        }
+    }
+
+    private static DateTimeOffset NormalizeRequiredTimestamp(
+        DateTimeOffset? value,
+        string fieldName,
+        string path)
+    {
+        if (value is null || value.Value == default)
+        {
+            throw new InvalidDataException($"Missing chat session field '{fieldName}' in {path}.");
+        }
+
+        return value.Value.ToUniversalTime();
+    }
+
     private sealed class PersistedCurrentChatSession
     {
-        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public string CurrentSessionId { get; set; } = string.Empty;
     }
 
     private sealed class PersistedChatSession
     {
-        public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public string SessionId { get; set; } = string.Empty;
 
@@ -282,7 +309,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public string? AgentSessionId { get; set; }
 
-        public int LastMessageNumber { get; set; }
+        public int? LastMessageOrdinal { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
     }
@@ -290,6 +317,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     private sealed class PersistedChatMessage
     {
         public string Id { get; set; } = string.Empty;
+
+        public DateTimeOffset? CreatedAt { get; set; }
 
         public string Role { get; set; } = string.Empty;
 
@@ -305,7 +334,7 @@ internal sealed class AgentChatSessionState(
     string sessionId,
     string adapter,
     string? agentSessionId,
-    int lastMessageNumber,
+    int lastMessageOrdinal,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
     public string SessionId { get; } = sessionId;
@@ -314,7 +343,7 @@ internal sealed class AgentChatSessionState(
 
     public string? AgentSessionId { get; } = agentSessionId;
 
-    public int LastMessageNumber { get; } = lastMessageNumber;
+    public int LastMessageOrdinal { get; } = lastMessageOrdinal;
 
     public IReadOnlyList<AgentChatMessage> VisibleMessages { get; } = visibleMessages;
 }

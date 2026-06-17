@@ -32,8 +32,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float HeaderResetButtonWidth = 58f;
     private const float HeaderResetButtonHeight = 40f;
     private const float HeaderCloseButtonSize = 40f;
-    private const float HeaderWorkingIndicatorWidth = 118f;
-    private const float HeaderWorkingIndicatorHeight = 34f;
+    private const float HeaderReplyIndicatorWidth = 118f;
+    private const float HeaderReplyIndicatorHeight = 34f;
     private const float ScrollbarReservedWidth = 34f;
     private const float ScrollbarRailWidth = 16f;
     private const float ScrollbarHandleWidth = 6f;
@@ -61,10 +61,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color TextColor = new(0.92f, 0.88f, 0.78f, 1f);
     private static readonly Color MutedTextColor = new(0.67f, 0.62f, 0.52f, 1f);
     private static readonly Color ButtonColor = new(0.24f, 0.16f, 0.08f, 1f);
-    private static readonly Color WorkingButtonColor = new(0.34f, 0.20f, 0.08f, 1f);
+    private static readonly Color InterruptButtonColor = new(0.34f, 0.20f, 0.08f, 1f);
     private static readonly Color DisabledButtonColor = new(0.13f, 0.105f, 0.08f, 1f);
-    private static readonly Color WorkingIndicatorColor = new(0.125f, 0.079f, 0.039f, 0.86f);
-    private static readonly Color WorkingIndicatorLineColor = new(0.95f, 0.61f, 0.22f, 0.78f);
+    private static readonly Color ReplyIndicatorColor = new(0.125f, 0.079f, 0.039f, 0.86f);
+    private static readonly Color ReplyIndicatorLineColor = new(0.95f, 0.61f, 0.22f, 0.78f);
     private static readonly Color ScrollbarTrackColor = new(0.018f, 0.015f, 0.012f, 0.46f);
     private static readonly Color ScrollbarHandleColor = new(0.34f, 0.20f, 0.08f, 0.76f);
     private static readonly Color ScrollbarHandleMarkColor = new(0.83f, 0.48f, 0.18f, 0.95f);
@@ -83,8 +83,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private Button? _sendButton;
     private CImage? _sendButtonImage;
     private TextMeshProUGUI? _sendButtonText;
-    private GameObject? _workingIndicator;
-    private TextMeshProUGUI? _workingIndicatorText;
+    private GameObject? _replyIndicator;
+    private TextMeshProUGUI? _replyIndicatorText;
     private ChatParticipantIdentity? _participants;
     private readonly List<LayoutElement> _messageBubbleLayouts = [];
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
@@ -174,7 +174,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         DrainSessionEvents();
         UpdateSendButtonState();
         UpdateInputFocusVisual();
-        UpdateWorkingIndicator();
+        UpdateReplyIndicator();
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -186,7 +186,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             && !Input.GetKey(KeyCode.LeftShift)
             && !Input.GetKey(KeyCode.RightShift)
-            && _session?.IsWorking != true)
+            && _session?.IsReplying != true)
         {
             SendCurrentInput();
         }
@@ -257,9 +257,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        if (_session.IsWorking)
+        if (_session.IsReplying)
         {
-            InterruptCurrentAgentReply();
+            InterruptReply();
             return;
         }
 
@@ -303,7 +303,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         FocusInputField();
     }
 
-    private void InterruptCurrentAgentReply()
+    private void InterruptReply()
     {
         if (_session is null)
         {
@@ -354,16 +354,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        bool isWorking = _session?.IsWorking == true;
+        bool isReplying = _session?.IsReplying == true;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
 
-        if (isWorking)
+        if (isReplying)
         {
-            bool canInterrupt = isPlayerReady && _session?.CanRequestInterrupt == true;
-            sendButton.interactable = canInterrupt;
-            sendButtonImage.color = canInterrupt ? WorkingButtonColor : DisabledButtonColor;
-            sendButtonText.text = canInterrupt ? "且慢" : "止息中";
-            sendButtonText.color = canInterrupt ? TextColor : MutedTextColor;
+            sendButton.interactable = isPlayerReady;
+            sendButtonImage.color = isPlayerReady ? InterruptButtonColor : DisabledButtonColor;
+            sendButtonText.text = isPlayerReady ? "且慢" : "止息中";
+            sendButtonText.color = isPlayerReady ? TextColor : MutedTextColor;
             return;
         }
 
@@ -675,7 +674,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
         titleLayout.flexibleWidth = 1f;
 
-        BuildWorkingIndicator(header.transform);
+        BuildReplyIndicator(header.transform);
 
         Button close = CreateButton(
             "CloseButton",
@@ -689,16 +688,16 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         dragHandle.Initialize(this);
     }
 
-    private void BuildWorkingIndicator(Transform parent)
+    private void BuildReplyIndicator(Transform parent)
     {
-        GameObject indicator = CreateChild("WorkingIndicator", parent);
-        _workingIndicator = indicator;
-        CImage indicatorImage = AddSolidImage(indicator, WorkingIndicatorColor);
+        GameObject indicator = CreateChild("ReplyIndicator", parent);
+        _replyIndicator = indicator;
+        CImage indicatorImage = AddSolidImage(indicator, ReplyIndicatorColor);
         indicatorImage.raycastTarget = false;
         _ = SetFixedLayoutSize(
             indicator,
-            HeaderWorkingIndicatorWidth,
-            HeaderWorkingIndicatorHeight);
+            HeaderReplyIndicatorWidth,
+            HeaderReplyIndicatorHeight);
 
         GameObject accentLine = CreateChild("AccentLine", indicator.transform);
         RectTransform accentLineRect = accentLine.GetComponent<RectTransform>();
@@ -707,20 +706,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         accentLineRect.pivot = new Vector2(0.5f, 0f);
         accentLineRect.anchoredPosition = new Vector2(0f, 2f);
         accentLineRect.sizeDelta = new Vector2(-18f, 2f);
-        CImage accentLineImage = AddSolidImage(accentLine, WorkingIndicatorLineColor);
+        CImage accentLineImage = AddSolidImage(accentLine, ReplyIndicatorLineColor);
         accentLineImage.raycastTarget = false;
 
-        _workingIndicatorText = CreateText(
+        _replyIndicatorText = CreateText(
             "Label",
             indicator.transform,
             15f,
             TextColor,
             FontStyles.Bold);
-        _workingIndicatorText.text = "推演中";
-        _workingIndicatorText.alignment = TextAlignmentOptions.Center;
-        StretchToParent(_workingIndicatorText.rectTransform);
-        _workingIndicatorText.rectTransform.offsetMin = new Vector2(8f, 3f);
-        _workingIndicatorText.rectTransform.offsetMax = new Vector2(-8f, -2f);
+        _replyIndicatorText.text = "推演中";
+        _replyIndicatorText.alignment = TextAlignmentOptions.Center;
+        StretchToParent(_replyIndicatorText.rectTransform);
+        _replyIndicatorText.rectTransform.offsetMin = new Vector2(8f, 3f);
+        _replyIndicatorText.rectTransform.offsetMax = new Vector2(-8f, -2f);
 
         indicator.SetActive(false);
     }
@@ -1130,28 +1129,28 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
     }
 
-    private void UpdateWorkingIndicator()
+    private void UpdateReplyIndicator()
     {
-        GameObject? indicator = _workingIndicator;
+        GameObject? indicator = _replyIndicator;
 
         if (indicator is null)
         {
             return;
         }
 
-        bool isWorking = _session?.IsWorking == true;
+        bool isReplying = _session?.IsReplying == true;
 
-        if (indicator.activeSelf != isWorking)
+        if (indicator.activeSelf != isReplying)
         {
-            indicator.SetActive(isWorking);
+            indicator.SetActive(isReplying);
         }
 
-        if (!isWorking)
+        if (!isReplying)
         {
             return;
         }
 
-        if (_workingIndicatorText is { } indicatorText)
+        if (_replyIndicatorText is { } indicatorText)
         {
             const int dotCount = 3;
             const float dotStepSeconds = 0.34f;

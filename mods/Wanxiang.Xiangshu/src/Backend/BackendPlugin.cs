@@ -55,15 +55,8 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         IpcEndpointRegistry.ConfigureForWorkingDirectory(workingDirectory);
         _ipcServer = new BackendIpcServer(
             XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
-        IpcEndpoint endpoint = _ipcServer.Start();
-        Log.Info(
-            "backend IPC listening",
-            new
-            {
-                endpoint = IpcRuntime.FormatEndpointAddress(endpoint),
-                processId = endpoint.ProcessId,
-                manifest = IpcEndpointRegistry.ManifestPath,
-            });
+        _ = _ipcServer.Start();
+        Log.Info("backend IPC ready");
     }
 
     private string ReadAgentWorkingDirectory(string modDirectory)

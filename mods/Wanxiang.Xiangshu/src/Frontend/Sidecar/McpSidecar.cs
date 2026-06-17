@@ -17,7 +17,7 @@ internal sealed class McpSidecar(
     private Process? _process;
     private bool _disposed;
 
-    public McpSidecarLaunch Start()
+    public void Start()
     {
         ThrowIfDisposed();
 
@@ -59,11 +59,6 @@ internal sealed class McpSidecar(
             }
 
             _process = process;
-
-            return new McpSidecarLaunch(
-                process.Id,
-                logDirectory,
-                eventLogPath);
         }
         catch
         {
@@ -122,17 +117,4 @@ internal sealed class McpSidecar(
             throw new ObjectDisposedException(nameof(McpSidecar));
         }
     }
-
-}
-
-internal sealed class McpSidecarLaunch(
-    int processId,
-    string logDirectory,
-    string eventLogPath)
-{
-    public int ProcessId { get; } = processId;
-
-    public string LogDirectory { get; } = logDirectory;
-
-    public string EventLogPath { get; } = eventLogPath;
 }

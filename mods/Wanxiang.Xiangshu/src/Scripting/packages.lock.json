@@ -34,11 +34,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[0.84.63-test, )",
-        "resolved": "0.84.63-test",
-        "contentHash": "G13LfSY4wOzwrC2rvRqNOoUYfouCF864BM1MMm7yy9OVm1uG8HKlQLTAtIbRbSMchIW7GOohpcFipEJvcvrUMg==",
+        "requested": "[0.84.72-test, )",
+        "resolved": "0.84.72-test",
+        "contentHash": "Eq2p4KUeUP7EDQx+SGqwOB/BH0LuA0KuI9MifOuXMLbiIgjhMKaRbgLK/ZMrMNSTyMHoLwI3wzF9kWO8bI8UUg==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[0.84.63-test]"
+          "Taiwu.ModKit.References.Plugin": "[0.84.72-test]"
         }
       },
       "Microsoft.CodeAnalysis.Analyzers": {
@@ -127,9 +127,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[0.84.63-test, )",
-        "resolved": "0.84.63-test",
-        "contentHash": "Qx7leuKj7yJ7dpJU2u+YsSDne1fFEARqzp4l/Mw2oOIN3HVrPCNXKHvEwDH8nznyFKqfeyJwyVFuxsttD+BXJQ=="
+        "requested": "[0.84.72-test, )",
+        "resolved": "0.84.72-test",
+        "contentHash": "5/48UUL7kmTR3vn6ImCc/JPEXDCf3Q4EIfwjR/qhv+gPHZlMmK09KOPjMjrMcBSAhVDqhLQch0GCs4viLVeu1w=="
       }
     },
     "net8.0": {
@@ -159,11 +159,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[0.84.63-test, )",
-        "resolved": "0.84.63-test",
-        "contentHash": "G13LfSY4wOzwrC2rvRqNOoUYfouCF864BM1MMm7yy9OVm1uG8HKlQLTAtIbRbSMchIW7GOohpcFipEJvcvrUMg==",
+        "requested": "[0.84.72-test, )",
+        "resolved": "0.84.72-test",
+        "contentHash": "Eq2p4KUeUP7EDQx+SGqwOB/BH0LuA0KuI9MifOuXMLbiIgjhMKaRbgLK/ZMrMNSTyMHoLwI3wzF9kWO8bI8UUg==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[0.84.63-test]"
+          "Taiwu.ModKit.References.Plugin": "[0.84.72-test]"
         }
       },
       "Microsoft.CodeAnalysis.Analyzers": {
@@ -199,9 +199,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[0.84.63-test, )",
-        "resolved": "0.84.63-test",
-        "contentHash": "Qx7leuKj7yJ7dpJU2u+YsSDne1fFEARqzp4l/Mw2oOIN3HVrPCNXKHvEwDH8nznyFKqfeyJwyVFuxsttD+BXJQ=="
+        "requested": "[0.84.72-test, )",
+        "resolved": "0.84.72-test",
+        "contentHash": "5/48UUL7kmTR3vn6ImCc/JPEXDCf3Q4EIfwjR/qhv+gPHZlMmK09KOPjMjrMcBSAhVDqhLQch0GCs4viLVeu1w=="
       }
     }
   }

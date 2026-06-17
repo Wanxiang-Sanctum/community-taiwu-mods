@@ -2,12 +2,15 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 internal sealed class AgentChatMessage(
     string id,
+    DateTimeOffset createdAt,
     AgentChatRole role,
     string speakerName,
     string content,
     string origin)
 {
     public string Id { get; } = id;
+
+    public DateTimeOffset CreatedAt { get; } = createdAt;
 
     public AgentChatRole Role { get; } = role;
 
