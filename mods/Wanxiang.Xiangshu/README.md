@@ -21,8 +21,9 @@
 ## 文档入口
 
 `docs/README.md` 是源码维护者的内部设计文档入口，指向对话链路、日志策略和默认 Agent 工作区来源说明。
-`DefaultAgentWorkspace/AGENTS.md` 是组包后运行中的本机 Agent 指令入口；其中的 `persona/`、`lore/`、
-`tool-guides/` 和技能目录应保持自包含，不依赖源码维护文档。源码模块边界优先看对应 `src/*/README.md`。
+`DefaultAgentWorkspace/AGENTS.md` 是组包后运行中的本机 Agent 指令入口，承担基础相枢身份、口吻和玩家
+可见边界；其中的 `persona/`、`lore/`、`tool-guides/` 和技能目录应保持自包含，不依赖源码维护文档。源码
+模块边界优先看对应 `src/*/README.md`。
 
 ## 游戏内使用
 
@@ -64,8 +65,8 @@ Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
 MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 
 默认包内预置 `DefaultAgentWorkspace/`，作为本机 Agent 的默认工作区和可编辑示例。用户可以手工维护其中的
-人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它工作目录时，
-该目录由用户自行维护。
+入口指令、人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它
+工作目录时，该目录由用户自行维护。
 
 源码仓库中默认工作区资料的来源和维护边界见 `docs/agent-context-sources.md`。发布后的
 `DefaultAgentWorkspace/` 以包内文件作为完整工作区；源码维护时使用
@@ -112,9 +113,9 @@ MCP sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.
 `README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
-- `DefaultAgentWorkspace/`：默认本机 Agent 工作区内容；其中 `persona/`
-  放相枢口吻和玩家可见边界，`lore/` 放按需读取的世界观资料，`tool-guides/` 放脚本执行和游戏知识检索
-  指引，并保留对应 CLI Agent 可发现的技能目录。
+- `DefaultAgentWorkspace/`：默认本机 Agent 工作区内容；其中 `AGENTS.md` 放基础相枢身份、口吻、玩家可见
+  边界和读取路由，`persona/` 放更细的人设校准，`lore/` 放按需读取的世界观资料，`tool-guides/` 放脚本执行
+  和游戏知识检索指引，并保留对应 CLI Agent 可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：对话链路、日志策略和默认 Agent 工作区来源等内部设计说明；入口见 `docs/README.md`。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。

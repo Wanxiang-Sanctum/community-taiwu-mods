@@ -11,8 +11,9 @@
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照。生成快照提供检索、跳转和
 观察变化的开发期证据；需要更新快照时运行该仓库中对应工具重新生成。
 
-`DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录玩家可见身份、语气
-和失败说明。资料来源索引由本文维护。
+`DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界。
+`DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录扩展校准资料，用于
+身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
 `DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。脚本入口、结果形态和工具边界以
 相枢源码里的脚本执行器和工具声明为依据；游戏知识检索入口以
@@ -58,9 +59,11 @@ Agent 视角的说法。
 
 1. 静态世界观先在 `taiwu-modkit/game/text` 和 `taiwu-modkit/game/src` 中检索相关关键词；运行工具指引先核对
    相枢源码中的脚本执行器和工具声明，再按需要查游戏生成快照。
-2. 判断新增资料属于人设口吻、基础世界观、相枢深入资料、运行工具指引，还是属于本文的来源说明。
-3. 将稳定概念、回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或
-   `DefaultAgentWorkspace/lore/`。大段文本和完整清单留在游戏镜像中。
+2. 判断新增资料属于基础角色契约、扩展人设校准、基础世界观、相枢深入资料、运行工具指引，还是属于本文的
+   来源说明。
+3. 将每次答复都需要的基础角色契约写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、世界观稳定概念、
+   回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或 `DefaultAgentWorkspace/lore/`。大段文本和
+   完整清单留在游戏镜像中。
 4. 涉及脚本工具、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
    `DefaultAgentWorkspace/tool-guides/`；保留检索路线和边界，具体任务脚本留给运行时按当前请求目标生成。
 5. 更新本文的来源表或维护说明，确保以后能回到权威源码和快照重新核对。
@@ -69,8 +72,8 @@ Agent 视角的说法。
 
 `DefaultAgentWorkspace/` 面向源码维护；组包后的同名目录面向运行中的本机 Agent。包内的
 `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`、`tool-guides/`、`.agents/skills/` 和 `.claude/skills/` 是
-稳定默认资产；它们告诉 Agent 如何回答、如何读取上下文、哪些运行目录由相枢运行时维护。源码维护规则归本文和
-`docs/README.md` 索引的其它维护文档。
+稳定默认资产。`AGENTS.md` 是入口文件，承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
+人设、世界观、工具和技能资料。源码维护规则归本文和 `docs/README.md` 索引的其它维护文档。
 
 Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录可以不存在，不放入默认包内容；它
 承担工作记录边界。来源索引由本文维护，静态世界观资料由 `DefaultAgentWorkspace/lore/` 维护，运行数据由
@@ -78,7 +81,8 @@ Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 
 ## 新内容放置
 
-- 相枢身份、口吻、失败说明和玩家可见边界归入 `DefaultAgentWorkspace/persona/README.md`。
+- 每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界归入 `DefaultAgentWorkspace/AGENTS.md`。
+- 更细的相枢身份关系、口吻浓淡、失败说明、剧透边界和表达范式归入 `DefaultAgentWorkspace/persona/README.md`。
 - 太吾、伏虞剑柄、剑冢、相枢爪牙、入邪、入魔、传承等基础概念归入
   `DefaultAgentWorkspace/lore/WORLD_BASELINE.md`。
 - 相枢本体、化身、侵袭进度、剑冢结构、魔血、焕心、三魔等深入资料归入
@@ -100,7 +104,8 @@ Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 
 - 某个词条、工具参数或入口方法只增加少量说明，放入现有叶子文件更清楚。
 - 内容是当前版本的完整清单、枚举数值或 API 成员表，权威来源应继续留在游戏镜像或源码中。
-- 内容是回答风格偏好，归入 `DefaultAgentWorkspace/persona/README.md`。
+- 内容是每次答复都必须遵循的身份或口吻边界，归入 `DefaultAgentWorkspace/AGENTS.md`。
+- 内容是扩展回答风格偏好，归入 `DefaultAgentWorkspace/persona/README.md`。
 
 ## 检索关键词
 

@@ -18,5 +18,5 @@
 - `WORLD_BASELINE.md`：告诉你如何解释基础概念。
 - `XIANGSHU.md`：告诉你如何处理基础概念之外的相枢专题资料。
 
-本目录只提供答复时需要的静态世界观资料。人设口吻归 `persona/`，维护流程和来源索引归 `docs/`，运行期
-记录归 `.xiangshu-runtime/`。
+本目录提供答复时需要的静态世界观资料。基础人设口吻由 `AGENTS.md` 承担，更细的人设校准由 `persona/`
+维护；维护流程和来源索引归 `docs/`，运行期记录归 `.xiangshu-runtime/`。
