@@ -8,6 +8,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 internal sealed class AgentChatSessionStore(string workingDirectory)
 {
+    private const string MessageIdPrefix = "message-";
+
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     private static readonly JsonSerializerSettings JsonSettings = new()
@@ -70,27 +72,30 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         string sessionId = NormalizeSessionId(session.SessionId, "sessionId", sessionPath);
 
-        DateTimeOffset sessionUpdatedAt = NormalizeTimestamp(session.UpdatedAtUtc ?? session.UpdatedAt);
         List<AgentChatMessage> messages = [];
-        int maxMessageOrdinal = 0;
+        int highestMessageOrdinal = 0;
 
         List<PersistedChatMessage> visibleMessages = session.VisibleMessages
             ?? throw new InvalidDataException($"Missing chat session field 'visibleMessages' in {sessionPath}.");
 
         foreach (PersistedChatMessage persistedMessage in visibleMessages)
         {
-            AgentChatMessage message = CreateMessage(persistedMessage, sessionPath, sessionUpdatedAt);
+            AgentChatMessage message = CreateMessage(persistedMessage, sessionPath);
             messages.Add(message);
-            maxMessageOrdinal = Math.Max(maxMessageOrdinal, ParseRequiredOrdinal(message.Id, "message-", sessionPath));
+            highestMessageOrdinal = Math.Max(
+                highestMessageOrdinal,
+                ParseMessageOrdinal(message.Id, sessionPath));
         }
+
+        int lastMessageOrdinal = session.LastMessageOrdinal
+            ?? throw new InvalidDataException($"Missing chat session field 'lastMessageOrdinal' in {sessionPath}.");
+        ValidateLastMessageOrdinal(lastMessageOrdinal, highestMessageOrdinal, sessionPath);
 
         return new AgentChatSessionState(
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.AgentSessionId),
-            Math.Max(
-                Math.Max(session.LastMessageOrdinal, session.LastMessageNumber ?? 0),
-                maxMessageOrdinal),
+            lastMessageOrdinal,
             messages);
     }
 
@@ -127,12 +132,11 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
     private static AgentChatMessage CreateMessage(
         PersistedChatMessage persistedMessage,
-        string sessionPath,
-        DateTimeOffset fallbackCreatedAt)
+        string sessionPath)
     {
         return new AgentChatMessage(
             NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
-            NormalizeTimestamp(persistedMessage.CreatedAt ?? fallbackCreatedAt),
+            NormalizeRequiredTimestamp(persistedMessage.CreatedAt, "message.createdAt", sessionPath),
             ParseRole(persistedMessage.Role, sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
@@ -205,40 +209,26 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return normalized.Length == 0 ? null : normalized;
     }
 
-    private static int ParseRequiredOrdinal(
-        string value,
-        string prefix,
+    private static int ParseMessageOrdinal(
+        string messageId,
         string path)
     {
-        return TryParseOrdinal(value, prefix, out int ordinal)
-            ? ordinal
-            : throw new InvalidDataException($"Invalid chat session ordinal '{value}' in {path}.");
-    }
-
-    private static bool TryParseOrdinal(
-        string value,
-        string prefix,
-        out int ordinal)
-    {
-        ordinal = 0;
-
-        if (!value.StartsWith(prefix, StringComparison.Ordinal))
+        if (!messageId.StartsWith(MessageIdPrefix, StringComparison.Ordinal))
         {
-            return false;
+            throw new InvalidDataException($"Invalid chat message id '{messageId}' in {path}.");
         }
 
         if (!int.TryParse(
-            value[prefix.Length..],
+            messageId[MessageIdPrefix.Length..],
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out int parsedOrdinal)
-            || parsedOrdinal < 0)
+            || parsedOrdinal <= 0)
         {
-            return false;
+            throw new InvalidDataException($"Invalid chat message id '{messageId}' in {path}.");
         }
 
-        ordinal = parsedOrdinal;
-        return true;
+        return parsedOrdinal;
     }
 
     private static string NormalizeRequired(
@@ -271,9 +261,35 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return sessionId.ToString("N");
     }
 
-    private static DateTimeOffset NormalizeTimestamp(DateTimeOffset value)
+    private static void ValidateLastMessageOrdinal(
+        int lastMessageOrdinal,
+        int highestMessageOrdinal,
+        string path)
     {
-        return value == default ? DateTimeOffset.UtcNow : value.ToUniversalTime();
+        if (lastMessageOrdinal < 0)
+        {
+            throw new InvalidDataException(
+                $"Invalid chat session field 'lastMessageOrdinal' in {path}.");
+        }
+
+        if (lastMessageOrdinal < highestMessageOrdinal)
+        {
+            throw new InvalidDataException(
+                $"Invalid chat session field 'lastMessageOrdinal' in {path}.");
+        }
+    }
+
+    private static DateTimeOffset NormalizeRequiredTimestamp(
+        DateTimeOffset? value,
+        string fieldName,
+        string path)
+    {
+        if (value is null || value.Value == default)
+        {
+            throw new InvalidDataException($"Missing chat session field '{fieldName}' in {path}.");
+        }
+
+        return value.Value.ToUniversalTime();
     }
 
     private sealed class PersistedCurrentChatSession
@@ -287,19 +303,13 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     {
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-        [JsonProperty("updatedAtUtc")]
-        public DateTimeOffset? UpdatedAtUtc { get; set; }
-
         public string SessionId { get; set; } = string.Empty;
 
         public string? Adapter { get; set; }
 
         public string? AgentSessionId { get; set; }
 
-        public int LastMessageOrdinal { get; set; }
-
-        [JsonProperty("lastMessageNumber")]
-        public int? LastMessageNumber { get; set; }
+        public int? LastMessageOrdinal { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
     }
