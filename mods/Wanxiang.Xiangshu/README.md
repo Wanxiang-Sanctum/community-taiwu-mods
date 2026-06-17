@@ -68,6 +68,9 @@ MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 入口指令、人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它
 工作目录时，该目录由用户自行维护。
 
+运行中的 Agent 如需写会话草稿、任务记录或本地经验，使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个
+目录不随默认包创建，也不是发布资料或运行数据。
+
 源码仓库中默认工作区资料的来源和维护边界见 `docs/agent-context-sources.md`。发布后的
 `DefaultAgentWorkspace/` 以包内文件作为完整工作区；源码维护时使用
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 快照核对资料来源。

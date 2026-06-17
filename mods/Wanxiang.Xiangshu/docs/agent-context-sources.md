@@ -3,9 +3,10 @@
 本文面向源码仓库维护，是 `docs/README.md` 索引的默认工作区来源说明。源码中的 `DefaultAgentWorkspace/`
 是默认工作区内容源，组包后输出为包内同名目录；包内工作区以随包发布的文件作为完整输入。
 
-本文只记录默认工作区资料如何回溯到游戏观察快照。本仓库内的相枢目录维护默认工作区内容和放置规则；
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 维护游戏观察快照的生成工具和快照更新方式。快照正文
-保留在 `taiwu-modkit`，完整协议或工具语义保留在相枢对应源码模块中。
+本文记录默认工作区资料如何回溯到游戏观察快照，以及本地工作记录、默认资产和运行数据的边界。本仓库内的
+相枢目录维护默认工作区内容和放置规则；
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 维护游戏观察快照的生成工具和快照更新方式。
+快照正文保留在 `taiwu-modkit`，完整协议或工具语义保留在相枢对应源码模块中。
 
 `DefaultAgentWorkspace/lore/` 中的世界观资料派生自同一开发工作区中的
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照。生成快照提供检索、跳转和
@@ -59,8 +60,8 @@ Agent 视角的说法。
 
 1. 静态世界观先在 `taiwu-modkit/game/text` 和 `taiwu-modkit/game/src` 中检索相关关键词；运行工具指引先核对
    相枢源码中的脚本执行器和工具声明，再按需要查游戏生成快照。
-2. 判断新增资料属于基础角色契约、扩展人设校准、基础世界观、相枢深入资料、运行工具指引，还是属于本文的
-   来源说明。
+2. 判断新增内容属于当前任务工作记录、本地经验、基础角色契约、扩展人设校准、基础世界观、相枢深入资料、
+   运行工具指引，还是属于本文的来源说明。
 3. 将每次答复都需要的基础角色契约写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、世界观稳定概念、
    回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或 `DefaultAgentWorkspace/lore/`。大段文本和
    完整清单留在游戏镜像中。
@@ -75,9 +76,18 @@ Agent 视角的说法。
 稳定默认资产。`AGENTS.md` 是入口文件，承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
 人设、世界观、工具和技能资料。源码维护规则归本文和 `docs/README.md` 索引的其它维护文档。
 
-Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录可以不存在，不放入默认包内容；它
-承担工作记录边界。来源索引由本文维护，静态世界观资料由 `DefaultAgentWorkspace/lore/` 维护，运行数据由
-`.xiangshu-runtime/` 维护。
+Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录可以不存在，不放入默认包内容；它
+承担会话草稿和本地经验的记录边界。来源索引由本文维护，静态世界观资料由 `DefaultAgentWorkspace/lore/`
+维护，运行数据由 `.xiangshu-runtime/` 维护。
+
+源码中的 `DefaultAgentWorkspace/` 是发布内容源；`pack-mod` 会复制其中的目录内容。源码树里出现
+`.xiangshu-notes/` 或 `.xiangshu-runtime/` 时，应把它们视为本机运行痕迹并移出或清理，而不是用仓库级
+忽略规则隐藏。这样本地记录和运行数据不会被误当成默认工作区资产或随包发布。
+
+运行中的具体写入纪律由 `DefaultAgentWorkspace/AGENTS.md` 的“工作区边界”维护。本文只记录源码维护视角：
+`.xiangshu-notes/` 中的内容只有在已经稳定到应随默认工作区发布，且维护者明确要更新默认工作区配置时，才按
+下面的放置规则改写进稳定资产。改写后仍需说明事实归属、来源和边界，避免把一次任务的工作记录伪装成默认
+规则。
 
 ## 新内容放置
 
@@ -95,6 +105,8 @@ Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 - 配置、本地化、模板/显示辅助、百晓册和反射边界归入 `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
 - Agent 技能触发、脚本草拟纪律或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
   `.claude/skills/*/SKILL.md`；同名技能默认保持内容一致。
+- 当前任务计划、待验证事实、临时脚本思路和本地经验归入 `AgentWorkingDirectory/.xiangshu-notes/`；这个
+  目录不随默认包创建，也不作为默认工作区发布资料。
 
 新增默认工作区文件应满足这些条件：
 

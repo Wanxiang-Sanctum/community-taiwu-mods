@@ -26,4 +26,5 @@
 - `RUNTIME_SCRIPTING.md`：说明默认相枢脚本工具的使用方式、前后端运行环境差异、入口契约和常见运行时锚点。
 
 本目录提供运行工具使用指引。基础玩家可见人设由 `AGENTS.md` 承担，更细的人设校准由 `persona/` 维护；
-世界观资料归 `lore/`，运行期记录归 `.xiangshu-runtime/`，源码维护流程归 `docs/`。
+世界观资料归 `lore/`，Agent 工作记录归 `.xiangshu-notes/`，相枢运行数据归 `.xiangshu-runtime/`，源码维护流程
+归 `docs/`。
