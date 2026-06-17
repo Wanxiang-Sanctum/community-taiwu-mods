@@ -7,6 +7,7 @@ using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
+using Wanxiang.Xiangshu.Frontend.PlayerView;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -128,6 +129,11 @@ internal sealed class FrontendIpcServer(
             IpcIntermediateReplyResponse,
             FrontendIntermediateReplyHandler>(
             options);
+        _ = builder.RegisterAsyncRequestHandler<
+            IpcCapturePlayerViewRequest,
+            IpcCapturePlayerViewResponse,
+            FrontendCapturePlayerViewHandler>(
+            options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
         MessagePipeInterprocessOptions tcpOptions = messagePipeBuilder.AddTcpInterprocess(
@@ -146,6 +152,10 @@ internal sealed class FrontendIpcServer(
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcIntermediateReplyRequest,
             IpcIntermediateReplyResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            IpcCapturePlayerViewRequest,
+            IpcCapturePlayerViewResponse>(
             tcpOptions);
     }
 
@@ -187,5 +197,20 @@ internal sealed class FrontendIntermediateReplyHandler(AgentChatSession chatSess
         chatSession.AddIntermediateReply(request.Content);
 
         return UniTask.FromResult(new IpcIntermediateReplyResponse());
+    }
+}
+
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "MessagePipe constructs request handlers through DI and reflection.")]
+internal sealed class FrontendCapturePlayerViewHandler
+    : IAsyncRequestHandler<IpcCapturePlayerViewRequest, IpcCapturePlayerViewResponse>
+{
+    public async UniTask<IpcCapturePlayerViewResponse> InvokeAsync(
+        IpcCapturePlayerViewRequest _,
+        CancellationToken cancellationToken = default)
+    {
+        return await PlayerViewScreenshot.CaptureAsync(cancellationToken);
     }
 }

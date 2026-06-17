@@ -8,6 +8,7 @@
   对话入口。
 - `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
+- `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，并排除相枢聊天窗口。
 - `Settings/`：相枢本地设置文件读取，负责前端初始化时加载 `LocalSettings.json`。
 - `Sidecar/`：MCP server 进程生命周期，并把 sidecar 事件日志定向到
   `.xiangshu-runtime/Diagnostics/McpServer/`。

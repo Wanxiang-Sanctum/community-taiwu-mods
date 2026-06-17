@@ -3,8 +3,9 @@
 `src/McpServer/` 是游戏外 MCP sidecar。前端插件负责启动它；它启动后注册自己的 MCP endpoint，并把
 生命周期事件写入 `.xiangshu-runtime/Diagnostics/McpServer/`。
 
-MCP 工具承担两类路由：把 C# 脚本请求转发到前端或后端 IPC endpoint，以及把中间答复请求转发到前端聊天
-会话。endpoint 可用性在工具调用时检查。
+MCP 工具承担三类路由：把 C# 脚本请求转发到前端或后端 IPC endpoint，把中间答复请求转发到前端聊天
+会话，以及把玩家视图截图工具转发到前端 `PlayerView/` 边界并返回 MCP image content。endpoint 可用性在
+工具调用时检查。
 
 事件日志只确认 sidecar 启动、endpoint 注册、父进程退出、停止和失败，不承担 MCP 工具调用统计。
 

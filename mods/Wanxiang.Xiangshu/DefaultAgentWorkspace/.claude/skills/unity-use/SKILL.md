@@ -1,6 +1,6 @@
 ---
 name: unity-use
-description: "Use when Xiangshu needs player-view observation or interaction with the live Unity frontend, including visual state, screen-coordinate targeting, UI gesture replay, selected-control state, or player-visible verification. Use with live Xiangshu frontend MCP/runtime tools. Do not use for backend state edits, static game knowledge, ordinary conversation, or source-code maintenance."
+description: "Use when Xiangshu needs to observe or act through the player's live Unity frontend view, including screenshots, screen-coordinate targeting, UI gesture replay, selected-control state, or player-visible verification. Use with live Xiangshu frontend MCP/runtime tools. Do not use for backend state edits, static game knowledge, ordinary conversation, or source-code maintenance."
 ---
 
 # Unity Use
@@ -31,7 +31,7 @@ Closed sets are worth naming only when the runtime makes them closed: actual too
 
 Prefer tools in this order:
 
-1. A dedicated Xiangshu frontend MCP tool for the exact player-view operation.
+1. A dedicated Xiangshu frontend MCP tool for the exact player-view operation; use `xiangshu_capture_player_view` for screenshots.
 2. `xiangshu_run_csharp_script` on `frontend` with a complete C# compilation unit.
 3. A narrow frontend method call or reflection probe when EventSystem replay cannot express the action.
 4. Backend read-only verification after the frontend action, if persisted state matters.
@@ -40,24 +40,26 @@ Use `tool-guides/RUNTIME_SCRIPTING.md` before drafting runtime scripts if it has
 
 ## Observation Policy
 
-Screenshots are visual context, so a screenshot tool should return MCP `image` content with `mimeType: image/png` as the primary result. A saved file path is a cache or fallback, not proof that the model has seen the image.
+Screenshots are visual context, so a screenshot tool should return MCP `image` content with `mimeType: image/png` as the primary result. Use `xiangshu_capture_player_view` as the zero-configuration full-screen native PNG capture; do not ask for crop, size, scale, or quality before the first visual observation. A saved file path is a cache or fallback, not proof that the model has seen the image.
+
+Treat Xiangshu's own chat window as agent chrome, not ordinary game UI. Its root GameObject is named `Wanxiang.Xiangshu.ChatWindow`. Exclude that root from screenshots, hit probes, and pointer target selection unless the player is explicitly operating the Xiangshu chat window or diagnosing chat UI behavior. Runtime scripts must not hide, deactivate, or refocus it merely to make ordinary game observation possible.
 
 Use this fallback ladder:
 
-1. Dedicated screenshot MCP tool returning image content plus compact metadata.
-2. Dedicated screenshot MCP tool returning a resource or resource link that the client can load.
-3. Runtime script saving PNG to disk, followed by a real local-image viewing capability.
-4. Structured frontend probes, such as raycast hits or selected object state, when pixels cannot be inspected.
+1. `xiangshu_capture_player_view`, returning full-screen native PNG image content.
+2. Another dedicated screenshot MCP tool returning image content, a resource, or a resource link that the client can load.
+3. Structured frontend probes, such as raycast hits or selected object state, when pixels cannot be inspected.
+4. Runtime script image capture only as a last resort; do not hide, deactivate, or refocus Xiangshu chat UI to make that script work.
 
-If storage is enabled, keep only a bounded recent cache under `.xiangshu-runtime/player-view/` and return dimensions: image width/height, `Screen.width`, and `Screen.height`.
+Because the dedicated screenshot tool captures full-screen native PNG, the PNG's intrinsic pixel dimensions are the Unity screen coordinate bounds for that observation.
 
 ## Coordinate Rules
 
-Unity screen coordinates use bottom-left origin: `(0, 0)` at bottom-left and `(Screen.width, Screen.height)` at top-right. Many image viewers report top-left image coordinates. Convert before acting:
+Unity screen coordinates use bottom-left origin: `(0, 0)` at bottom-left and the screenshot image dimensions at top-right for `xiangshu_capture_player_view` results. Many image viewers report top-left image coordinates. Convert before acting:
 
 ```csharp
 float unityX = imageX;
-float unityY = Screen.height - imageY;
+float unityY = imageHeight - imageY;
 ```
 
 Prefer target centers over edges. Return the point, origin, screen size, and hit/selection evidence from probes so the next action uses the same coordinate frame.
@@ -81,88 +83,11 @@ public static class XiangshuScript
 }
 ```
 
-Use `globals.Arguments` for coordinates, text, path options, and mode flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON; if no MCP image/resource path exists, save a PNG and inspect it through a real local image-viewing capability, or fall back to structured frontend probes.
-
-## Screenshot Fallback Pattern
-
-Use this only when no screenshot MCP image/resource tool is available. Capture after rendering finishes, save PNG, then inspect the saved image with an actual image-viewing tool before deciding where to click.
-
-```csharp
-using System;
-using System.Collections;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Wanxiang.Xiangshu.Scripting;
-
-public static class XiangshuScript
-{
-    public static async Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
-    {
-        await UniTask.SwitchToMainThread(globals.CancellationToken);
-        string path = globals.Arguments.TryGetValue("path", out string? p) && !string.IsNullOrWhiteSpace(p)
-            ? p
-            : Path.Combine(Path.GetTempPath(), "xiangshu-unity-use", $"view-{DateTime.UtcNow:yyyyMMdd-HHmmss-fff}.png");
-        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
-
-        TaskCompletionSource<object?> done = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        GameObject hostObject = new("Xiangshu.UnityUse.Screenshot");
-        UnityEngine.Object.DontDestroyOnLoad(hostObject);
-        Host host = hostObject.AddComponent<Host>();
-        host.StartCoroutine(Capture(path, host, done, globals.CancellationToken));
-
-        using (globals.CancellationToken.Register(() => done.TrySetCanceled()))
-        {
-            return await done.Task;
-        }
-    }
-
-    private static IEnumerator Capture(string path, Host host, TaskCompletionSource<object?> done, CancellationToken token)
-    {
-        yield return new WaitForEndOfFrame();
-        Texture2D? texture = null;
-        try
-        {
-            token.ThrowIfCancellationRequested();
-            texture = ScreenCapture.CaptureScreenshotAsTexture(1);
-            byte[] png = texture.EncodeToPNG();
-            File.WriteAllBytes(path, png);
-            done.TrySetResult(new
-            {
-                path,
-                width = texture.width,
-                height = texture.height,
-                screenWidth = Screen.width,
-                screenHeight = Screen.height,
-                bytes = png.Length,
-            });
-        }
-        catch (Exception ex)
-        {
-            done.TrySetException(ex);
-        }
-        finally
-        {
-            if (texture is not null)
-            {
-                UnityEngine.Object.Destroy(texture);
-            }
-
-            UnityEngine.Object.Destroy(host.gameObject);
-        }
-    }
-
-    private sealed class Host : MonoBehaviour
-    {
-    }
-}
-```
+Use `globals.Arguments` for coordinates, text, path options, and mode flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON; use the dedicated screenshot tool for visual observation, or fall back to structured frontend probes.
 
 ## Target Probe Pattern
 
-Before acting on screen coordinates, raycast the point through Unity's current EventSystem. Use the ordered hits to decide whether the target matches the visible intent.
+Before acting on screen coordinates, raycast the point through Unity's current EventSystem. Use the ordered hits to decide whether the target matches the visible intent. The probe filters out Xiangshu chat-window hits by default; pass `includeXiangshuChat=true` only when the chat window is the requested target.
 
 ```csharp
 using System;
@@ -177,6 +102,8 @@ using Wanxiang.Xiangshu.Scripting;
 
 public static class XiangshuScript
 {
+    private const string XiangshuChatRootName = "Wanxiang.Xiangshu.ChatWindow";
+
     public static async Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
     {
         await UniTask.SwitchToMainThread(globals.CancellationToken);
@@ -191,11 +118,17 @@ public static class XiangshuScript
 
         List<RaycastResult> hits = new();
         es.RaycastAll(eventData, hits);
+        bool includeXiangshuChat = ShouldIncludeXiangshuChat(globals);
+        List<RaycastResult> visibleHits = includeXiangshuChat
+            ? hits
+            : hits.Where(hit => !IsUnderXiangshuChatWindow(hit.gameObject)).ToList();
+
         return new
         {
             point = new { x = point.x, y = point.y },
             screen = new { width = Screen.width, height = Screen.height },
-            hits = hits.Take(12).Select((hit, index) => new
+            ignoredXiangshuChatHits = hits.Count - visibleHits.Count,
+            hits = visibleHits.Take(12).Select((hit, index) => new
             {
                 index,
                 path = PathOf(hit.gameObject),
@@ -224,6 +157,26 @@ public static class XiangshuScript
         return new Vector2(x, y);
     }
 
+    private static bool ShouldIncludeXiangshuChat(XiangshuScriptGlobals globals)
+    {
+        return globals.Arguments.TryGetValue("includeXiangshuChat", out string? value)
+            && bool.TryParse(value, out bool parsed)
+            && parsed;
+    }
+
+    private static bool IsUnderXiangshuChatWindow(GameObject gameObject)
+    {
+        for (Transform? current = gameObject.transform; current is not null; current = current.parent)
+        {
+            if (current.name == XiangshuChatRootName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static string PathOf(GameObject gameObject)
     {
         List<string> names = new();
@@ -246,11 +199,12 @@ Use this decision model:
 
 - If the target has an EventSystem handler, send the matching pointer/scroll/submit/cancel sequence to that handler.
 - If the target is a selected input field, modify the field type directly and invoke its change events when needed.
+- If the player is targeting ordinary game UI, ignore raycast hits under `Wanxiang.Xiangshu.ChatWindow`; include that root only when the player is explicitly operating the Xiangshu chat window.
 - If a hotkey is implemented only through `Input.GetKeyDown`, prefer an equivalent visible UI control or a narrow frontend method call; mention the limitation only when the player asked about operation details.
 - If the action may be irreversible, first verify from visible state, current tool results, and the player's wording that the consequence
   is covered; ask for confirmation only when it remains uncovered.
 
-Minimal click sequence:
+Minimal click sequence. Reuse the `IsUnderXiangshuChatWindow` helper from the target probe pattern, and set `includeXiangshuChat` only when the requested target is the Xiangshu chat window:
 
 ```csharp
 PointerEventData eventData = new(eventSystem)
@@ -266,7 +220,9 @@ PointerEventData eventData = new(eventSystem)
 };
 
 eventSystem.RaycastAll(eventData, hits);
-RaycastResult hit = hits.FirstOrDefault();
+bool includeXiangshuChat = false;
+RaycastResult hit = hits.FirstOrDefault(hit =>
+    includeXiangshuChat || !IsUnderXiangshuChatWindow(hit.gameObject));
 GameObject? target = hit.gameObject;
 if (target is not null)
 {

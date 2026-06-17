@@ -14,6 +14,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     Justification = "Unity constructs this MonoBehaviour through GameObject.AddComponent at runtime.")]
 internal sealed class XiangshuChatWindow : MonoBehaviour
 {
+    internal const string RootGameObjectName = "Wanxiang.Xiangshu.ChatWindow";
+
     private const string HeaderIconSprite = "map_icon_xiangshu";
     private const string HeaderPortraitTexturePath =
         "RemakeResources/Textures/GameLineScroll/npcface_image_2001_0";
@@ -46,6 +48,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PreferredMessageBubbleWidth = 430f;
     private const float MaximumMessageBubbleWidth = 460f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
+    private const int ChatCanvasSortingOrder = 32000;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
@@ -97,6 +100,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private Vector2 _panelDragStartPointer;
     private Vector2 _panelDragStartOffset;
     private bool _panelDragActive;
+    private Camera? _boundUiCamera;
 
     public bool IsVisible { get; private set; }
 
@@ -104,7 +108,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         AgentChatSession session,
         ChatParticipantIdentity participants)
     {
-        GameObject root = new("Wanxiang.Xiangshu.ChatWindow", typeof(RectTransform));
+        GameObject root = new(
+            RootGameObjectName,
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(CanvasScaler),
+            typeof(ConchShipGraphicRaycaster));
         DontDestroyOnLoad(root);
         XiangshuChatWindow window = root.AddComponent<XiangshuChatWindow>();
         window.Initialize(session, participants);
@@ -133,7 +142,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        transform.SetAsLastSibling();
         _participants?.Refresh();
         DrainSessionEvents();
         ScheduleScrollToBottom();
@@ -168,6 +176,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         if (IsVisible)
         {
+            _ = TryConfigureRootCanvas(logWarning: false);
             _participants?.Refresh();
         }
 
@@ -842,31 +851,16 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private bool EnsureUiBuilt()
     {
+        if (!TryConfigureRootCanvas(logWarning: true))
+        {
+            return false;
+        }
+
         if (_uiBuilt)
         {
             return true;
         }
 
-        UIManager uiManager = UIManager.Instance;
-
-        if (uiManager is null)
-        {
-            Log.Warning("chat window cannot build because UIManager is unavailable");
-            return false;
-        }
-
-        RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop)
-            ?? uiManager.GetLayer(UILayer.LayerPopUp);
-
-        if (layer is null)
-        {
-            Log.Warning("chat window cannot build because no Taiwu UI layer is available");
-            return false;
-        }
-
-        transform.SetParent(layer, worldPositionStays: false);
-        transform.SetAsLastSibling();
-        EnsureLayerRaycaster(layer, uiManager);
         CaptureGameTextStyle();
         BuildUi();
         ReplayVisibleMessages();
@@ -874,28 +868,64 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return true;
     }
 
-    private static void EnsureLayerRaycaster(
-        RectTransform layer,
-        UIManager uiManager)
+    private bool TryConfigureRootCanvas(bool logWarning)
     {
-        Canvas canvas = layer.GetComponentInParent<Canvas>();
+        UIManager uiManager = UIManager.Instance;
+
+        if (uiManager is null)
+        {
+            if (logWarning)
+            {
+                Log.Warning("chat window cannot build because UIManager is unavailable");
+            }
+
+            return false;
+        }
+
+        Camera uiCamera = uiManager.UiCamera;
+
+        if (uiCamera is null)
+        {
+            if (logWarning)
+            {
+                Log.Warning("chat window cannot build because UIManager has no UI camera");
+            }
+
+            return false;
+        }
+
+        if (_boundUiCamera == uiCamera)
+        {
+            return true;
+        }
+
+        Canvas canvas = GetComponent<Canvas>();
 
         if (canvas is null)
         {
-            Log.Warning(
-                "chat window cannot attach raycaster because no parent canvas was found",
-                new
-                {
-                    layer = layer.name,
-                });
-            return;
+            if (logWarning)
+            {
+                Log.Warning("chat window cannot build because no root canvas was found");
+            }
+
+            return false;
         }
 
-        ConchShipGraphicRaycaster raycaster = canvas.GetComponent<ConchShipGraphicRaycaster>();
-        raycaster ??= canvas.gameObject.AddComponent<ConchShipGraphicRaycaster>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = uiCamera;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = ChatCanvasSortingOrder;
 
+        CanvasScaler scaler = GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(2560f, 1440f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+
+        ConchShipGraphicRaycaster raycaster = GetComponent<ConchShipGraphicRaycaster>();
         raycaster.enabled = true;
-        raycaster.TargetCamera = uiManager.UiCamera;
+        raycaster.TargetCamera = uiCamera;
+        _boundUiCamera = uiCamera;
+        return true;
     }
 
     private void ApplyPanelLayout()
@@ -986,9 +1016,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return rootRect.rect.size;
         }
 
-        return transform.parent is RectTransform parentRect
-            ? parentRect.rect.size
-            : Vector2.zero;
+        if (transform.parent is RectTransform parentRect)
+        {
+            return parentRect.rect.size;
+        }
+
+        return new Vector2(Screen.width, Screen.height);
     }
 
     private static float GetPanelMargin(float availableSize)
