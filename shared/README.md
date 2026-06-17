@@ -8,6 +8,15 @@
 本目录 README 说明共享项目的共同边界。共享库自己的 API、事件选择、运行时部署建议和维护入口由
 `shared/<ProjectName>/README.md` 维护；引用它的 mod 负责决定是否合并、复制或不部署该 DLL。
 
+## 文档入口
+
+| 目录 | 角色 | 继续阅读 |
+| --- | --- | --- |
+| `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
+
+新增或移除内部共享项目时，同步更新这张入口表。表中只保留选择信息；共享库 API、事件选择和部署建议留在项目
+自己的 README 里。
+
 新建内部共享项目：
 
 ```powershell

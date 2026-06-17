@@ -8,9 +8,12 @@
 
 ## 文档边界
 
-仓库根 README 负责说明仓库入口、跨目录约定和外部依赖关系。具体 mod 的玩法、运行链路、工作区内容、源码模块和
-维护入口由对应 `mods/<ModName>/README.md` 及其子目录 README 维护；内部共享项目由
-`shared/<ProjectName>/README.md` 维护。
+仓库根 README 负责说明仓库身份、常用命令、跨目录约定和外部依赖关系。目录级 README 负责各自的共同规则：
+`mods/README.md` 说明所有 mod 的组包和插件规则，`shared/README.md` 说明内部共享项目边界，
+`templates/README.md` 说明模板变量和渲染规则，`tools/README.md` 说明仓库维护工具的实现入口。
+
+具体 mod 的玩法、运行链路、工作区内容、源码模块和维护入口由对应 `mods/<ModName>/README.md` 及其子目录
+README 维护；内部共享项目自己的 API、部署建议和维护入口由 `shared/<ProjectName>/README.md` 维护。
 
 本仓库按两种方式使用 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit)：
 
@@ -112,7 +115,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiw
   约定见 `mods/README.md`。
 - `shared/`：内部共享项目目录。共享边界、目标框架和项目级配置入口见 `shared/README.md`。
 - `templates/`：命令行工具创建项目时使用的 Scriban 模板。模板维护约定见 `templates/README.md`。
-- `tools/Taiwu.Mods.Cli/`：创建 mod、内部共享项目、取消解决方案注册和打包可部署目录的命令行工具。
+- `tools/`：创建 mod、内部共享项目、取消解决方案注册和打包可部署目录的命令行工具，工具文档关系见
+  `tools/README.md`。
 - `.github/workflows/`：GitHub Actions 工作流，覆盖 PR 验证和 mod release 打包。
 - `artifacts/mods/`：`pack-mod` 输出的可部署目录。
 - `Taiwu.Mods.Paths.props`：仓库级 MSBuild 路径 alias，供子目录 props 和项目引用稳定目录。

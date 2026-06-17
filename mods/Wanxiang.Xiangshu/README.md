@@ -18,6 +18,12 @@
 
 对话、运行目录、脚本通道和 CLI 适配器的内部设计见 `docs/agent-chat.md`；日志策略见 `docs/logging.md`。
 
+## 文档入口
+
+`docs/README.md` 是源码维护者的内部设计文档入口，指向对话链路、日志策略和默认 Agent 工作区来源说明。
+`DefaultAgentWorkspace/AGENTS.md` 是组包后运行中的本机 Agent 指令入口；其中的 `persona/`、`lore/`、
+`tool-guides/` 和技能目录应保持自包含，不依赖源码维护文档。源码模块边界优先看对应 `src/*/README.md`。
+
 ## 游戏内使用
 
 默认热键是 `Ctrl+Backslash`（`Ctrl+\`）。进入存档并回到可操作的主界面/地图交互后，按下热键可打开或
@@ -102,15 +108,15 @@ MCP sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.
 
 ## 项目结构
 
-根 README 说明入口和所有权；对话运行设计见 `docs/agent-chat.md`，日志策略见 `docs/logging.md`。源码模块
-增长约定优先看对应目录下的 `README.md`。
+根 README 说明入口和所有权；内部设计导航见 `docs/README.md`。源码模块增长约定优先看对应目录下的
+`README.md`。
 
 - `Config.Lua`：游戏读取的 Mod 配置。
 - `DefaultAgentWorkspace/`：默认本机 Agent 工作区内容；其中 `persona/`
   放相枢口吻和玩家可见边界，`lore/` 放按需读取的世界观资料，`tool-guides/` 放脚本执行和游戏知识检索
   指引，并保留对应 CLI Agent 可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `docs/`：对话链路、日志策略和默认 Agent 工作区来源等内部设计说明。
+- `docs/`：对话链路、日志策略和默认 Agent 工作区来源等内部设计说明；入口见 `docs/README.md`。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
 - `src/Backend/`：后端插件项目，负责后端 IPC 和后端侧脚本执行入口。
 - `src/Ipc/`：前端、后端和 MCP sidecar 共享的 contract 与 endpoint 辅助库。

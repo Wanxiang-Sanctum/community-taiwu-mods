@@ -5,6 +5,16 @@ Mod 源码目录。
 每个一级子目录是一个独立 Mod。目录级 README 维护所有 mod 共同遵守的组包、插件入口、引用和部署规则；
 具体玩法、运行链路和源码模块边界由各 mod 自己的 README 维护。
 
+## 文档入口
+
+| 目录 | 角色 | 继续阅读 |
+| --- | --- | --- |
+| `Wanxiang.Prelude/` | 万象系 Mod 的前置引导层。 | `Wanxiang.Prelude/README.md` |
+| `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` |
+
+新增或移除一级 mod 目录时，同步更新这张入口表。表中只保留选择信息；玩法、配置、运行链路和源码模块说明留在
+对应 mod 的 README 里。
+
 新建 Mod：
 
 ```powershell
