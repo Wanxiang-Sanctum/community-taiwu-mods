@@ -71,16 +71,15 @@ Probe results should include:
 
 ## Chat Window Guard
 
-For actions derived from player-view coordinates, run the target probe and action replay inside a short chat-window guard that disables enabled `BaseRaycaster` and `Canvas` components under `Wanxiang.Xiangshu.ChatWindow`, then restores them in `Dispose`/`finally`. Do not span awaits, long-running work, or unrelated probes while the guard is active.
+For actions derived from player-view coordinates, run the target probe and action replay inside a short chat-window guard that temporarily suppresses the `CanvasGroup` on each active `Wanxiang.Xiangshu.ChatWindow` root, then restores it in `Dispose`/`finally`. Save and restore `alpha`, `blocksRaycasts`, and `interactable`; do not disable canvases, raycasters, or parent objects. Do not span awaits, long-running work, or unrelated probes while the guard is active.
 
-Use `System`, `System.Collections.Generic`, `UnityEngine`, and `UnityEngine.EventSystems` at the top of the compilation unit. Place this helper type inside the complete `frontend` script's `XiangshuScript` class when acting on player-view coordinates:
+Use `System`, `System.Collections.Generic`, and `UnityEngine` at the top of the compilation unit for the helper. Action scripts usually also need `UnityEngine.EventSystems`. Place this helper type inside the complete `frontend` script's `XiangshuScript` class when acting on player-view coordinates:
 
 ```csharp
 private sealed class XiangshuChatWindowGuard : IDisposable
 {
     private const string RootName = "Wanxiang.Xiangshu.ChatWindow";
-    private readonly List<Canvas> _canvases = new();
-    private readonly List<BaseRaycaster> _raycasters = new();
+    private readonly List<CanvasGroupState> _states = new();
 
     public XiangshuChatWindowGuard(bool suppress)
     {
@@ -96,23 +95,16 @@ private sealed class XiangshuChatWindowGuard : IDisposable
                 continue;
             }
 
-            foreach (BaseRaycaster raycaster in root.GetComponentsInChildren<BaseRaycaster>(includeInactive: true))
+            CanvasGroup group = root.GetComponent<CanvasGroup>();
+            if (group == null)
             {
-                if (raycaster.enabled)
-                {
-                    raycaster.enabled = false;
-                    _raycasters.Add(raycaster);
-                }
+                continue;
             }
 
-            foreach (Canvas canvas in root.GetComponentsInChildren<Canvas>(includeInactive: true))
-            {
-                if (canvas.enabled)
-                {
-                    canvas.enabled = false;
-                    _canvases.Add(canvas);
-                }
-            }
+            _states.Add(new CanvasGroupState(group, group.alpha, group.blocksRaycasts, group.interactable));
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
         }
 
         Canvas.ForceUpdateCanvases();
@@ -120,23 +112,37 @@ private sealed class XiangshuChatWindowGuard : IDisposable
 
     public void Dispose()
     {
-        for (int i = _canvases.Count - 1; i >= 0; i--)
+        for (int i = _states.Count - 1; i >= 0; i--)
         {
-            if (_canvases[i] != null)
+            CanvasGroupState state = _states[i];
+            if (state.Group != null)
             {
-                _canvases[i].enabled = true;
-            }
-        }
-
-        for (int i = _raycasters.Count - 1; i >= 0; i--)
-        {
-            if (_raycasters[i] != null)
-            {
-                _raycasters[i].enabled = true;
+                state.Group.alpha = state.Alpha;
+                state.Group.blocksRaycasts = state.BlocksRaycasts;
+                state.Group.interactable = state.Interactable;
             }
         }
 
         Canvas.ForceUpdateCanvases();
+    }
+
+    private readonly struct CanvasGroupState
+    {
+        public CanvasGroupState(CanvasGroup group, float alpha, bool blocksRaycasts, bool interactable)
+        {
+            Group = group;
+            Alpha = alpha;
+            BlocksRaycasts = blocksRaycasts;
+            Interactable = interactable;
+        }
+
+        public CanvasGroup Group { get; }
+
+        public float Alpha { get; }
+
+        public bool BlocksRaycasts { get; }
+
+        public bool Interactable { get; }
     }
 }
 ```
@@ -151,7 +157,7 @@ using (new XiangshuChatWindowGuard(suppress: !includeXiangshuChat))
 }
 ```
 
-If the script cannot reliably restore the chat window, do not perform a coordinate-based operation. Use a direct UI/game-object call that does not depend on screen hit testing, or ask the player to close the chat window first.
+If the script cannot keep the guard inside a synchronous `using`/`finally` boundary, do not perform a coordinate-based operation. Use a direct UI/game-object call that does not depend on screen hit testing.
 
 ## Action Rules
 

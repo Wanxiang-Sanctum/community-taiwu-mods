@@ -34,7 +34,6 @@ internal static class PlayerViewScreenshot
             throw new InvalidOperationException("No active screen camera is available for player-view screenshot.");
         }
 
-        List<Canvas> disabledChatWindowCanvases = DisableChatWindowCanvases();
         RenderTexture renderTexture = RenderTexture.GetTemporary(
             width,
             height,
@@ -46,6 +45,7 @@ internal static class PlayerViewScreenshot
             TextureFormat.RGB24,
             mipChain: false);
         RenderTexture? previousActive = RenderTexture.active;
+        IDisposable chatWindowExclusion = XiangshuChatWindow.BeginPlayerViewCaptureExclusion();
 
         try
         {
@@ -77,43 +77,11 @@ internal static class PlayerViewScreenshot
                 camera.targetTexture = null;
             }
 
-            RestoreCanvases(disabledChatWindowCanvases);
+            chatWindowExclusion.Dispose();
+            Canvas.ForceUpdateCanvases();
             RenderTexture.active = previousActive;
             RenderTexture.ReleaseTemporary(renderTexture);
             UnityEngine.Object.Destroy(texture);
-        }
-    }
-
-    private static List<Canvas> DisableChatWindowCanvases()
-    {
-        List<Canvas> disabledCanvases = [];
-
-        foreach (GameObject gameObject in Resources.FindObjectsOfTypeAll<GameObject>())
-        {
-            if (gameObject.name != XiangshuChatWindow.RootGameObjectName
-                || !gameObject.activeInHierarchy)
-            {
-                continue;
-            }
-
-            foreach (Canvas canvas in gameObject.GetComponentsInChildren<Canvas>(includeInactive: true))
-            {
-                if (canvas.enabled)
-                {
-                    canvas.enabled = false;
-                    disabledCanvases.Add(canvas);
-                }
-            }
-        }
-
-        return disabledCanvases;
-    }
-
-    private static void RestoreCanvases(List<Canvas> canvases)
-    {
-        foreach (Canvas canvas in canvases)
-        {
-            canvas.enabled = true;
         }
     }
 }
