@@ -1,5 +1,4 @@
-using Game.Views.Bottom;
-using HarmonyLib;
+using System;
 using UnityEngine;
 using Wanxiang.Taiwu.Logging;
 
@@ -46,87 +45,89 @@ internal static class XiangshuHotKeys
         CommandKitBase.Init();
     }
 
-    public static void PatchViewBottomUpdate(Harmony harmony)
+    public static bool CanOpenChatInCurrentUi()
     {
-        _ = harmony
-            .CreateClassProcessor(typeof(ViewBottomUpdatePatch))
-            .Patch();
+        UIManager uiManager = UIManager.Instance;
+        if (uiManager is null)
+        {
+            return false;
+        }
+
+        return uiManager.IsFocusElement(UIElement.StateMainWorld)
+            || uiManager.IsFocusElement(UIElement.WorldMap)
+            || uiManager.IsFocusElement(UIElement.Bottom);
+    }
+
+    public static bool IsToggleChatPressed(bool ignoreBlockHotKey)
+    {
+        return ToggleChat.Check(
+            UIElement.Bottom,
+            holdCheck: false,
+            downCheck: true,
+            isIgnoreBlockHotKey: ignoreBlockHotKey,
+            fnKeyCheckNone: false,
+            isIgnoreElement: true);
     }
 }
 
-internal static class FrontendHotkeyBridge
+internal sealed class FrontendHotkeyDriver : IDisposable
 {
-    private static FrontendPlugin? s_plugin;
-    private static int s_lastHandledFrame = -1;
+    private readonly YieldHelper _yieldHelper;
+    private FrontendPlugin? _plugin;
+    private bool _disposed;
 
-    public static void Attach(FrontendPlugin plugin)
+    public static FrontendHotkeyDriver Create(FrontendPlugin plugin)
     {
-        s_plugin = plugin;
+        YieldHelper yieldHelper = SingletonObject.getInstance<YieldHelper>();
+        FrontendHotkeyDriver driver = new(plugin, yieldHelper);
+        yieldHelper.StartUpdate(driver.Update);
+        return driver;
     }
 
-    public static void Detach(FrontendPlugin plugin)
+    private FrontendHotkeyDriver(
+        FrontendPlugin plugin,
+        YieldHelper yieldHelper)
     {
-        if (ReferenceEquals(s_plugin, plugin))
-        {
-            s_plugin = null;
-        }
+        _yieldHelper = yieldHelper;
+        _plugin = plugin;
     }
 
-    public static void OnViewBottomUpdate(ViewBottom viewBottom)
+    public void Dispose()
     {
-        if (!viewBottom.Interactable)
+        if (_disposed)
         {
             return;
         }
 
-        CheckAndLaunch();
+        _disposed = true;
+        _plugin = null;
+        _yieldHelper.StopUpdate(Update);
     }
 
-    private static void CheckAndLaunch()
+    private void Update(float _)
     {
-        FrontendPlugin? plugin = s_plugin;
+        if (_disposed)
+        {
+            return;
+        }
+
+        FrontendPlugin? plugin = _plugin;
         if (plugin is null)
         {
             return;
         }
 
-        if (!plugin.IsChatWindowVisible && !CanTriggerInCurrentUi())
+        bool chatWindowVisible = plugin.IsChatWindowVisible;
+        if (!chatWindowVisible && !XiangshuHotKeys.CanOpenChatInCurrentUi())
         {
             return;
         }
 
-        if (XiangshuHotKeys.ToggleChat.Check(
-                UIElement.Bottom,
-                holdCheck: false,
-                downCheck: false,
-                isIgnoreBlockHotKey: plugin.IsChatWindowVisible,
-                fnKeyCheckNone: false,
-                isIgnoreElement: true))
+        if (!XiangshuHotKeys.IsToggleChatPressed(ignoreBlockHotKey: chatWindowVisible))
         {
-            if (s_lastHandledFrame == Time.frameCount)
-            {
-                return;
-            }
-
-            s_lastHandledFrame = Time.frameCount;
-            plugin.ToggleChatWindow();
+            return;
         }
-    }
 
-    private static bool CanTriggerInCurrentUi()
-    {
-        UIManager uiManager = UIManager.Instance;
-        return uiManager.IsFocusElement(UIElement.StateMainWorld)
-            || uiManager.IsFocusElement(UIElement.WorldMap)
-            || uiManager.IsFocusElement(UIElement.Bottom);
-    }
-}
-
-[HarmonyPatch(typeof(ViewBottom), "Update")]
-internal static class ViewBottomUpdatePatch
-{
-    public static void Postfix(ViewBottom __instance)
-    {
-        FrontendHotkeyBridge.OnViewBottomUpdate(__instance);
+        plugin.ToggleChatWindow();
     }
 }

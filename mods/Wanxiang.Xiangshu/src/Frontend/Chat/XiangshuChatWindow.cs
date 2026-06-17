@@ -13,6 +13,7 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "Unity constructs this MonoBehaviour through GameObject.AddComponent at runtime.")]
 [RequireComponent(typeof(Canvas))]
+[RequireComponent(typeof(CanvasScaler))]
 [RequireComponent(typeof(ConchShipGraphicRaycaster))]
 [RequireComponent(typeof(CanvasGroup))]
 internal sealed class XiangshuChatWindow : MonoBehaviour
@@ -52,6 +53,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MaximumMessageBubbleWidth = 460f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
     private const int CanvasSortingOrder = 32000;
+    private static readonly Vector2 CanvasReferenceResolution = new(2560f, 1440f);
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -84,6 +86,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private ScrollRect? _scrollRect;
     private DisableHotkeyInputField? _inputField;
     private Canvas? _rootCanvas;
+    private CanvasScaler? _rootCanvasScaler;
     private ConchShipGraphicRaycaster? _rootRaycaster;
     private CanvasGroup? _rootCanvasGroup;
     private CImage? _inputFieldImage;
@@ -116,6 +119,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             RootGameObjectName,
             typeof(RectTransform),
             typeof(Canvas),
+            typeof(CanvasScaler),
             typeof(ConchShipGraphicRaycaster),
             typeof(CanvasGroup));
         DontDestroyOnLoad(root);
@@ -182,6 +186,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _session = session;
         _participants = participants;
         _rootCanvas = GetRequiredRootComponent<Canvas>();
+        _rootCanvasScaler = GetRequiredRootComponent<CanvasScaler>();
         _rootRaycaster = GetRequiredRootComponent<ConchShipGraphicRaycaster>();
         _rootCanvasGroup = GetRequiredRootComponent<CanvasGroup>();
         _participants.PlayerNameChanged += UpdatePlayerSpeakerLabels;
@@ -959,6 +964,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         canvas.worldCamera = uiCamera;
         canvas.overrideSorting = true;
         canvas.sortingOrder = CanvasSortingOrder;
+
+        CanvasScaler scaler = _rootCanvasScaler
+            ?? throw new InvalidOperationException("Xiangshu chat window root CanvasScaler is not initialized.");
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = CanvasReferenceResolution;
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
 
         ConchShipGraphicRaycaster raycaster = _rootRaycaster
             ?? throw new InvalidOperationException("Xiangshu chat window root raycaster is not initialized.");

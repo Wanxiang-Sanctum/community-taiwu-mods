@@ -6,7 +6,7 @@
 - `Agent/`：本机 Agent 设置、CLI 进程调用、结构化投递输入构造、结果解析，以及 CLI 所需的临时协议文件。
 - `Chat/`：前端投递会话状态、会话快照持久化、可见聊天消息/事件模型，以及挂载在游戏 UI 层的聊天窗口；
   它维护单一对话入口，并提供玩家视图捕获时排除自身的边界。
-- `HotKeys/`：游戏热键注册、Harmony 桥接和打开聊天界面所需的 UI 焦点判断。
+- `HotKeys/`：游戏热键注册、前端热键驱动，以及打开聊天界面所需的 UI 焦点判断。
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行能力也放在这个边界。
 - `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/` 注入子进程，不持久化，
   也不进入 endpoint manifest。

@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using HarmonyLib;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
@@ -31,7 +30,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private ChatParticipantIdentity? _chatParticipantIdentity;
     private AgentChatSession? _chatSession;
     private XiangshuChatWindow? _chatWindow;
-    private Harmony? _harmony;
+    private FrontendHotkeyDriver? _hotkeyDriver;
 
     internal AgentSettings? CurrentAgentSettings { get; private set; }
 
@@ -78,9 +77,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
-        _harmony?.UnpatchSelf();
-        _harmony = null;
-        FrontendHotkeyBridge.Detach(this);
+        _hotkeyDriver?.Dispose();
+        _hotkeyDriver = null;
         _chatWindow?.DestroyWindow();
         _chatWindow = null;
         _chatSession?.Dispose();
@@ -138,9 +136,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private void InstallChatHotkey()
     {
         XiangshuHotKeys.RegisterWithGameCommandKit();
-        FrontendHotkeyBridge.Attach(this);
-        _harmony = new Harmony("Wanxiang.Xiangshu.Frontend");
-        XiangshuHotKeys.PatchViewBottomUpdate(_harmony);
+        _hotkeyDriver?.Dispose();
+        _hotkeyDriver = FrontendHotkeyDriver.Create(this);
     }
 
     internal void ToggleChatWindow()
