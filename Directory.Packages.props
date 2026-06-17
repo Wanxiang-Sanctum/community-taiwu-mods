@@ -4,7 +4,7 @@
     <MessagePipeVersion>1.8.2</MessagePipeVersion>
     <RoslynatorVersion>4.15.0</RoslynatorVersion>
     <TaiwuGameUnityVersion>2022.3.62f2</TaiwuGameUnityVersion>
-    <TaiwuModKitReferencesVersion>0.84.63-test</TaiwuModKitReferencesVersion>
+    <TaiwuModKitReferencesVersion>0.84.72-test</TaiwuModKitReferencesVersion>
   </PropertyGroup>
 
   <ItemGroup>
