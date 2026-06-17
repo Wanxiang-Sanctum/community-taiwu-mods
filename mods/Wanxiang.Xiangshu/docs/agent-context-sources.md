@@ -12,7 +12,9 @@
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照。生成快照提供检索、跳转和
 观察变化的开发期证据；需要更新快照时运行该仓库中对应工具重新生成。
 
-`DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界。
+`DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界，包括本 mod
+的愿望回应前提：相枢被迫满足太吾传人的愿望，难以实现的愿望会被相枢趁机扭曲兑现，且扭曲本身不主动向
+太吾传人揭示。
 `DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录扩展校准资料，用于
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
