@@ -935,13 +935,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return false;
         }
 
-        if (transform.parent != layer)
-        {
-            transform.SetParent(layer, worldPositionStays: false);
-            StretchToParent((RectTransform)transform);
-            transform.SetAsLastSibling();
-        }
-
         Camera uiCamera = uiManager.UiCamera;
 
         if (uiCamera is null)
@@ -951,8 +944,27 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return false;
         }
 
+        AttachToGameUiLayer(layer);
         ConfigureRootCanvas(uiCamera);
         return true;
+    }
+
+    private void AttachToGameUiLayer(RectTransform layer)
+    {
+        bool shouldSyncLayer = transform.parent != layer
+            || gameObject.layer != layer.gameObject.layer;
+
+        if (transform.parent != layer)
+        {
+            transform.SetParent(layer, worldPositionStays: false);
+            StretchToParent((RectTransform)transform);
+            transform.SetAsLastSibling();
+        }
+
+        if (shouldSyncLayer)
+        {
+            SetLayerRecursively(transform, layer.gameObject.layer);
+        }
     }
 
     private void ConfigureRootCanvas(Camera uiCamera)
@@ -1283,9 +1295,24 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         string name,
         Transform parent)
     {
-        GameObject child = new(name, typeof(RectTransform));
+        GameObject child = new(name, typeof(RectTransform))
+        {
+            layer = parent.gameObject.layer,
+        };
         child.transform.SetParent(parent, worldPositionStays: false);
         return child;
+    }
+
+    private static void SetLayerRecursively(
+        Transform root,
+        int layer)
+    {
+        root.gameObject.layer = layer;
+
+        foreach (Transform child in root)
+        {
+            SetLayerRecursively(child, layer);
+        }
     }
 
     private static TextMeshProUGUI CreateText(
@@ -1403,7 +1430,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         string name,
         Transform parent)
     {
-        GameObject child = new(name, typeof(RectTransform));
+        GameObject child = new(name, typeof(RectTransform))
+        {
+            layer = parent.gameObject.layer,
+        };
         child.SetActive(false);
         child.transform.SetParent(parent, worldPositionStays: false);
         return child;
