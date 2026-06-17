@@ -15,8 +15,8 @@
 `DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录扩展校准资料，用于
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
-`DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。脚本入口、结果形态和工具边界以
-相枢源码里的脚本执行器和工具声明为依据；游戏知识检索入口以
+`DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。玩家视图观察边界、脚本入口、
+结果形态和工具边界以相枢源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照中的稳定
 namespace、类型和成员为核对来源。默认工作区记录能帮助运行 Agent 选入口、定目标侧、减少反射探索的锚点；
 完整 API 清单、协议说明或不稳定枚举表保留在源码和生成快照中。
@@ -64,7 +64,7 @@ Agent 视角的说法。
 3. 将每次答复都需要的基础角色契约写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、世界观稳定概念、
    回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或 `DefaultAgentWorkspace/lore/`。大段文本和
    完整清单留在游戏镜像中。
-4. 涉及脚本工具、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
+4. 涉及脚本工具、玩家视图观察、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
    `DefaultAgentWorkspace/tool-guides/`；保留检索路线和边界，具体任务脚本留给运行时按当前请求目标生成。
 5. 更新本文的来源表或维护说明，确保以后能回到权威源码和快照重新核对。
 
@@ -87,7 +87,9 @@ Agent 侧临时记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   `DefaultAgentWorkspace/lore/WORLD_BASELINE.md`。
 - 相枢本体、化身、侵袭进度、剑冢结构、魔血、焕心、三魔等深入资料归入
   `DefaultAgentWorkspace/lore/XIANGSHU.md`。
-- 运行工具指引入口和按需读取路由归入 `DefaultAgentWorkspace/tool-guides/README.md`。
+- 运行工具指引入口、事实来源选择和按需读取路由归入 `DefaultAgentWorkspace/tool-guides/README.md`。
+- 玩家视图截图、可见事实、可见结果验证和可见/权威状态差异归入
+  `DefaultAgentWorkspace/tool-guides/PLAYER_VIEW.md`。
 - 脚本工具目标侧、运行环境、入口契约、结果判断和运行时锚点归入
   `DefaultAgentWorkspace/tool-guides/RUNTIME_SCRIPTING.md`。
 - 配置、本地化、模板/显示辅助、百晓册和反射边界归入 `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。

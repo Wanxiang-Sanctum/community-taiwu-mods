@@ -114,8 +114,8 @@ MCP sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.
 
 - `Config.Lua`：游戏读取的 Mod 配置。
 - `DefaultAgentWorkspace/`：默认本机 Agent 工作区内容；其中 `AGENTS.md` 放基础相枢身份、口吻、玩家可见
-  边界和读取路由，`persona/` 放更细的人设校准，`lore/` 放按需读取的世界观资料，`tool-guides/` 放脚本执行
-  和游戏知识检索指引，并保留对应 CLI Agent 可发现的技能目录。
+  边界和读取路由，`persona/` 放更细的人设校准，`lore/` 放按需读取的世界观资料，`tool-guides/` 放玩家视图
+  观察、脚本执行和游戏知识检索指引，并保留对应 CLI Agent 可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：对话链路、日志策略和默认 Agent 工作区来源等内部设计说明；入口见 `docs/README.md`。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、本机 Agent 投递、前端 IPC 和 sidecar 生命周期。
