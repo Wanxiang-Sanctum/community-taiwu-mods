@@ -37,9 +37,11 @@ Use `tool-guides/RUNTIME_SCRIPTING.md` before drafting runtime scripts if it has
 
 ## Frontend Boundaries
 
-Treat Xiangshu's own chat window as agent chrome, not ordinary game UI. Its root GameObject is named `Wanxiang.Xiangshu.ChatWindow`. Ignore that root in hit probes and pointer target selection unless the player is explicitly operating the Xiangshu chat window or diagnosing chat UI behavior.
+Treat Xiangshu's own chat window as agent chrome, not ordinary game UI. Its root GameObject is named `Wanxiang.Xiangshu.ChatWindow`. The player-view screenshot tool excludes that window for observation, but real frontend pointer and keyboard operations do not automatically pass through it.
 
-Runtime scripts must not hide, deactivate, or refocus the chat window to make ordinary game operations easier. The player-view screenshot tool already handles chat-window exclusion for observation; this skill handles the action that follows.
+Use `includeXiangshuChat=true` only when the player is explicitly operating the Xiangshu chat window or diagnosing chat UI behavior. For normal game/UI targets, suppress chat-window hit testing with the guard below instead of filtering chat hits after raycast.
+
+For non-chat operations, also treat `EventSystem.current.currentSelectedGameObject` under `Wanxiang.Xiangshu.ChatWindow` as chat chrome. Clear selection or select the intended target before submit, cancel, text input, or hotkey-equivalent events; do not infer that the chat input is the player target just because it was focused by the conversation.
 
 ## Coordinates
 
@@ -50,21 +52,106 @@ float unityX = imageX;
 float unityY = imageHeight - imageY;
 ```
 
-Prefer target centers over edges. When probing a target, return the point, origin, screen size, ignored chat-window hit count, and ordered hit/selection evidence so a follow-up action uses the same coordinate frame.
+Prefer target centers over edges. When probing a target, return the point, origin, screen size, whether the chat-window guard was active, and ordered hit/selection evidence so a follow-up action uses the same coordinate frame.
 
 ## Target Probes
 
 Before acting on screen coordinates, raycast the point through Unity's current EventSystem. Use the ordered hits to confirm that the target matches the player intent and to find the relevant handler.
 
+For normal game/UI targets, run the raycast probe inside `XiangshuChatWindowGuard(suppress: true)` so the probe sees the same surface as the player-view screenshot.
+
 Probe results should include:
 
 - the input point and coordinate origin;
 - `Screen.width` and `Screen.height`;
-- the first useful raycast hits after filtering `Wanxiang.Xiangshu.ChatWindow`;
+- whether `XiangshuChatWindowGuard` was active;
+- the first useful raycast hits;
 - click, scroll, drag, submit, or selectable handlers found through `ExecuteEvents.GetEventHandler<T>`;
 - the currently selected GameObject when selected-control state matters.
 
-Use `includeXiangshuChat=true` only when the chat window is the requested target.
+## Chat Window Guard
+
+For actions derived from player-view coordinates, run the target probe and action replay inside a short chat-window guard that disables enabled `BaseRaycaster` and `Canvas` components under `Wanxiang.Xiangshu.ChatWindow`, then restores them in `Dispose`/`finally`. Do not span awaits, long-running work, or unrelated probes while the guard is active.
+
+Use `System`, `System.Collections.Generic`, `UnityEngine`, and `UnityEngine.EventSystems` at the top of the compilation unit. Place this helper type inside the complete `frontend` script's `XiangshuScript` class when acting on player-view coordinates:
+
+```csharp
+private sealed class XiangshuChatWindowGuard : IDisposable
+{
+    private const string RootName = "Wanxiang.Xiangshu.ChatWindow";
+    private readonly List<Canvas> _canvases = new();
+    private readonly List<BaseRaycaster> _raycasters = new();
+
+    public XiangshuChatWindowGuard(bool suppress)
+    {
+        if (!suppress)
+        {
+            return;
+        }
+
+        foreach (GameObject root in Resources.FindObjectsOfTypeAll<GameObject>())
+        {
+            if (root.name != RootName || !root.activeInHierarchy)
+            {
+                continue;
+            }
+
+            foreach (BaseRaycaster raycaster in root.GetComponentsInChildren<BaseRaycaster>(includeInactive: true))
+            {
+                if (raycaster.enabled)
+                {
+                    raycaster.enabled = false;
+                    _raycasters.Add(raycaster);
+                }
+            }
+
+            foreach (Canvas canvas in root.GetComponentsInChildren<Canvas>(includeInactive: true))
+            {
+                if (canvas.enabled)
+                {
+                    canvas.enabled = false;
+                    _canvases.Add(canvas);
+                }
+            }
+        }
+
+        Canvas.ForceUpdateCanvases();
+    }
+
+    public void Dispose()
+    {
+        for (int i = _canvases.Count - 1; i >= 0; i--)
+        {
+            if (_canvases[i] != null)
+            {
+                _canvases[i].enabled = true;
+            }
+        }
+
+        for (int i = _raycasters.Count - 1; i >= 0; i--)
+        {
+            if (_raycasters[i] != null)
+            {
+                _raycasters[i].enabled = true;
+            }
+        }
+
+        Canvas.ForceUpdateCanvases();
+    }
+}
+```
+
+Wrap the coordinate probe and action replay:
+
+```csharp
+bool includeXiangshuChat = false;
+using (new XiangshuChatWindowGuard(suppress: !includeXiangshuChat))
+{
+    // Raycast, choose the target, replay the requested UI action, and collect before/after facts here.
+}
+```
+
+If the script cannot reliably restore the chat window, do not perform a coordinate-based operation. Use a direct UI/game-object call that does not depend on screen hit testing, or ask the player to close the chat window first.
 
 ## Action Rules
 
@@ -78,7 +165,7 @@ Use this decision model:
 - If no EventSystem path represents the operation, call the smallest frontend API that performs the same player-visible command.
 - If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
 
-Minimal click event-replay fragment, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and supply the surrounding script context, target point, hit list, chat-window filter helper, and Unity main-thread switch from the current operation:
+Minimal click event-replay fragment, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and supply the surrounding script context, target point, hit list, chat-window guard, and Unity main-thread switch from the current operation:
 
 ```csharp
 PointerEventData eventData = new(eventSystem)
@@ -93,25 +180,28 @@ PointerEventData eventData = new(eventSystem)
     useDragThreshold = true,
 };
 
-eventSystem.RaycastAll(eventData, hits);
-RaycastResult hit = hits.FirstOrDefault(hit => includeXiangshuChat || !IsUnderXiangshuChatWindow(hit.gameObject));
-GameObject? target = hit.gameObject;
-if (target is not null)
+using (new XiangshuChatWindowGuard(suppress: !includeXiangshuChat))
 {
-    eventData.pointerCurrentRaycast = hit;
-    eventData.pointerPressRaycast = hit;
-    eventData.rawPointerPress = target;
-    GameObject? press = ExecuteEvents.ExecuteHierarchy(target, eventData, ExecuteEvents.pointerDownHandler)
-        ?? ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
-    if (press is not null)
+    eventSystem.RaycastAll(eventData, hits);
+    if (hits.Count > 0)
     {
-        eventData.pointerPress = press;
-        eventData.pointerClick = press;
-        eventSystem.SetSelectedGameObject(press, eventData);
-        ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerUpHandler);
-        if (ReferenceEquals(ExecuteEvents.GetEventHandler<IPointerClickHandler>(target), press))
+        RaycastResult hit = hits[0];
+        GameObject target = hit.gameObject;
+        eventData.pointerCurrentRaycast = hit;
+        eventData.pointerPressRaycast = hit;
+        eventData.rawPointerPress = target;
+        GameObject press = ExecuteEvents.ExecuteHierarchy(target, eventData, ExecuteEvents.pointerDownHandler)
+            ?? ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
+        if (press != null)
         {
-            ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerClickHandler);
+            eventData.pointerPress = press;
+            eventData.pointerClick = press;
+            eventSystem.SetSelectedGameObject(press, eventData);
+            ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerUpHandler);
+            if (ReferenceEquals(ExecuteEvents.GetEventHandler<IPointerClickHandler>(target), press))
+            {
+                ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerClickHandler);
+            }
         }
     }
 }
