@@ -2,7 +2,10 @@
 
 Mod 源码目录。
 
-每个一级子目录是一个独立 Mod。新建 Mod：
+每个一级子目录是一个独立 Mod。目录级 README 维护所有 mod 共同遵守的组包、插件入口、引用和部署规则；
+具体玩法、运行链路和源码模块边界由各 mod 自己的 README 维护。
+
+新建 Mod：
 
 ```powershell
 dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
@@ -109,12 +112,16 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 
 只有维护新的组包 helper，或项目不使用仓库默认项目组包目标时，才需要直接关心
 `ResolveTaiwuModPackOutputs`。这是 `pack-mod` 读取项目包产物的 MSBuild 边界；CLI 使用
-MSBuild 目标结果 JSON，不要求项目生成额外清单文件。
+MSBuild 目标结果 JSON 作为项目包产物清单。
 
 ## Taiwu 引用和 Publicizer
 
 插件项目默认引用 `Taiwu.ModKit.References.Plugin`。需要访问更宽的游戏 API 时，再按实际代码需要
 添加 `Taiwu.ModKit.References.Frontend` 或 `Taiwu.ModKit.References.Backend` 等引用包。
+
+这些 `Taiwu.ModKit.References.*` 包由 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的
+引用包工具生成和发布；包拆分原则、DLL 选择和发布目标归该仓库的工具配置维护。本仓库选择需要引用的包，并在仓库根
+`Directory.Packages.props` 固定版本。
 
 插件项目默认具备编译期 Publicizer 支持，但不会自动公开化游戏 DLL。需要在编译期访问游戏 DLL
 的非 public API 时，在 `Taiwu.Mod.props` 中声明具体 `Publicize` 项；只声明实际需要的程序集、类型或成员。

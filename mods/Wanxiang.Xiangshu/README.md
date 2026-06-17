@@ -13,8 +13,8 @@
 - 本机工具服务：前端拉起 MCP sidecar；sidecar 通过本机 IPC 把工具请求路由到前端或后端插件进程。
 - 会话衔接：前端保存游戏内可见对话和外部 Agent 会话 id；长期上下文仍由本机 CLI Agent 自己维护。
 
-脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。相枢不提供远程服务，也不把
-脚本能力包装成面向非受信输入的沙箱。
+脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。它的信任边界是本机 Agent
+工作区、MCP sidecar 与游戏插件进程，不承担远程服务或非受信输入沙箱职责。
 
 对话、运行目录、脚本通道和 CLI 适配器的内部设计见 `docs/agent-chat.md`；日志策略见 `docs/logging.md`。
 
@@ -61,6 +61,10 @@ MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它工作目录时，
 该目录由用户自行维护。
 
+源码仓库中默认工作区资料的来源和维护边界见 `docs/agent-context-sources.md`。发布后的
+`DefaultAgentWorkspace/` 以包内文件作为完整工作区；源码维护时使用
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 快照核对资料来源。
+
 ## 运行数据与诊断
 
 相枢把运行数据写入 `AgentWorkingDirectory/.xiangshu-runtime/`。这个目录由相枢运行时维护，用于 endpoint
@@ -93,7 +97,7 @@ MCP sidecar 的发布目录组装到仓库根目录的 `artifacts/mods/Wanxiang.
 
 相枢依赖 `Wanxiang.Prelude`（万象引）提供共享运行时和按入口目录优先解析 DLL 的加载规则。发布时，将
 万象引的 Steam Workshop `FileId` 加入相枢的 `Dependencies`，确保万象引先于相枢加载。具体运行时清单由
-万象引和相枢各自的项目文件维护，根 README 不复制 DLL 清单。脚本编译和程序集解析的模块边界见
+万象引和相枢各自的项目文件维护；脚本编译和程序集解析的模块边界见
 `src/Scripting/README.md`。
 
 ## 项目结构
