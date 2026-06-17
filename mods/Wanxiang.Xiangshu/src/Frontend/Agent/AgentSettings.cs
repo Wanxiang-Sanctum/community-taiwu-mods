@@ -3,12 +3,6 @@ using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent;
 
-internal enum AgentAdapter
-{
-    Codex = 0,
-    Claude = 1,
-}
-
 internal sealed class AgentSettings
 {
     public const string DefaultWorkingDirectoryName = XiangshuRuntimePaths.DefaultAgentWorkingDirectoryName;
@@ -71,6 +65,11 @@ internal sealed class AgentSettings
             return AgentAdapter.Claude;
         }
 
+        if (value == (int)AgentAdapter.CodeBuddy)
+        {
+            return AgentAdapter.CodeBuddy;
+        }
+
         return AgentAdapter.Codex;
     }
 
@@ -82,7 +81,7 @@ internal sealed class AgentSettings
         _ = TryGetSetting(modIdStr, AgentCliPathKey, ref value);
 
         return string.IsNullOrWhiteSpace(value)
-            ? GetDefaultCommandPath(adapter)
+            ? GetDefaultCommandName(adapter)
             : value.Trim();
     }
 
@@ -101,14 +100,9 @@ internal sealed class AgentSettings
         return XiangshuRuntimePaths.ResolveAgentWorkingDirectory(modDirectory, value);
     }
 
-    private static string GetDefaultCommandPath(AgentAdapter adapter)
+    private static string GetDefaultCommandName(AgentAdapter adapter)
     {
-        if (adapter == AgentAdapter.Claude)
-        {
-            return "claude";
-        }
-
-        return "codex";
+        return AgentAdapterNames.GetDefaultCommandName(adapter);
     }
 
     private static string GetModDirectory(string modIdStr)

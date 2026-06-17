@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Ipc;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 
 internal sealed class AgentCliTempFiles : IDisposable
 {
@@ -56,16 +56,16 @@ internal sealed class AgentCliTempFiles : IDisposable
         return new AgentCliTempFiles(directory);
     }
 
-    public string WriteClaudeMcpConfig(
-        string mcpUrl,
+    public string WriteHttpMcpConfig(
+        string mcpServerUrl,
         McpBearerToken bearerToken)
     {
-        ClaudeMcpConfig config = new(
-            new Dictionary<string, ClaudeMcpServerConfig>
+        HttpMcpConfig config = new(
+            new Dictionary<string, HttpMcpServerConfig>
             {
                 ["xiangshu"] = new(
                     type: "http",
-                    url: mcpUrl,
+                    url: mcpServerUrl,
                     headers: new Dictionary<string, string>
                     {
                         [IpcRuntime.McpAuthorizationHeaderName] = bearerToken.AuthorizationHeaderValue,
@@ -109,14 +109,14 @@ internal sealed class AgentCliTempFiles : IDisposable
     }
 }
 
-internal sealed class ClaudeMcpConfig(
-    IReadOnlyDictionary<string, ClaudeMcpServerConfig> mcpServers)
+internal sealed class HttpMcpConfig(
+    IReadOnlyDictionary<string, HttpMcpServerConfig> mcpServers)
 {
     [JsonProperty("mcpServers")]
-    public IReadOnlyDictionary<string, ClaudeMcpServerConfig> McpServers { get; } = mcpServers;
+    public IReadOnlyDictionary<string, HttpMcpServerConfig> McpServers { get; } = mcpServers;
 }
 
-internal sealed class ClaudeMcpServerConfig(
+internal sealed class HttpMcpServerConfig(
     string type,
     string url,
     IReadOnlyDictionary<string, string> headers)

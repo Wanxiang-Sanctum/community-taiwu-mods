@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Turn;
 
 internal static class AgentChatTurnInputBuilder
 {

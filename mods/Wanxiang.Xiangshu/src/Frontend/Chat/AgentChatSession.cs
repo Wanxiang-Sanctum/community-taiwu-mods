@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using Cysharp.Threading.Tasks;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
+using Wanxiang.Xiangshu.Frontend.Agent.Cli;
+using Wanxiang.Xiangshu.Frontend.Agent.Turn;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -20,7 +22,7 @@ internal sealed class AgentChatSession : IDisposable
     private readonly AgentCliLauncher _agentCliLauncher;
     private readonly Func<AgentSettings?> _settingsProvider;
     private readonly AgentChatSessionStore? _sessionStore;
-    private readonly string _adapterName;
+    private readonly string _adapterKey;
     private readonly string _assistantName;
     private readonly ConcurrentQueue<AgentChatSessionEvent> _events = new();
     private readonly object _syncRoot = new();
@@ -50,7 +52,7 @@ internal sealed class AgentChatSession : IDisposable
         _settingsProvider = settingsProvider
             ?? throw new ArgumentNullException(nameof(settingsProvider));
         _sessionStore = sessionStore;
-        _adapterName = GetAdapterName(adapter);
+        _adapterKey = GetAdapterKey(adapter);
         _assistantName = string.IsNullOrWhiteSpace(assistantName)
             ? ChatParticipantIdentity.AssistantName
             : assistantName.Trim();
@@ -58,14 +60,14 @@ internal sealed class AgentChatSession : IDisposable
         AgentChatSessionState? restoredState = _sessionStore?.LoadCurrent();
 
         if (restoredState is not null
-            && !string.Equals(restoredState.Adapter, _adapterName, StringComparison.OrdinalIgnoreCase))
+            && !string.Equals(restoredState.Adapter, _adapterKey, StringComparison.OrdinalIgnoreCase))
         {
             Log.Info(
                 "chat session reset because agent adapter changed",
                 new
                 {
-                    restoredAdapter = restoredState.Adapter,
-                    currentAdapter = _adapterName,
+                    restoredAdapterKey = restoredState.Adapter,
+                    currentAdapterKey = _adapterKey,
                 });
             restoredState = null;
         }
@@ -412,7 +414,7 @@ internal sealed class AgentChatSession : IDisposable
     {
         return new
         {
-            adapter = _adapterName,
+            adapter = _adapterKey,
         };
     }
 
@@ -424,8 +426,8 @@ internal sealed class AgentChatSession : IDisposable
         {
             return new
             {
-                adapter = _adapterName,
-                cliSessionMode = GetCliSessionMode(dispatch),
+                adapter = _adapterKey,
+                agentSessionMode = GetAgentSessionMode(dispatch),
                 cliFailureReason = cliFailure.Reason,
                 cliExitCode = cliFailure.ExitCode,
                 cliStderrExcerpt = cliFailure.StderrExcerpt,
@@ -434,11 +436,11 @@ internal sealed class AgentChatSession : IDisposable
 
         return new
         {
-            adapter = _adapterName,
+            adapter = _adapterKey,
         };
     }
 
-    private static string GetCliSessionMode(TurnDispatch dispatch)
+    private static string GetAgentSessionMode(TurnDispatch dispatch)
     {
         return string.IsNullOrWhiteSpace(dispatch.Turn.AgentSessionId)
             ? "new"
@@ -720,7 +722,7 @@ internal sealed class AgentChatSession : IDisposable
     {
         return new AgentChatSessionState(
             _sessionId,
-            _adapterName,
+            _adapterKey,
             _agentSessionId,
             _lastMessageOrdinal,
             [.. _visibleMessages.Select(CloneMessage)]);
@@ -737,9 +739,9 @@ internal sealed class AgentChatSession : IDisposable
             message.Origin);
     }
 
-    private static string GetAdapterName(AgentAdapter adapter)
+    private static string GetAdapterKey(AgentAdapter adapter)
     {
-        return adapter == AgentAdapter.Claude ? "claude" : "codex";
+        return AgentAdapterNames.GetKey(adapter);
     }
 
     private static string NormalizeMessageContent(string? value)

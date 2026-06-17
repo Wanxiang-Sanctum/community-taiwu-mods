@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
+using Wanxiang.Xiangshu.Frontend.Agent.Cli;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;

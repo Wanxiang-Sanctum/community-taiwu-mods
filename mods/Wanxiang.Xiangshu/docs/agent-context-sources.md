@@ -24,9 +24,9 @@
 namespace、类型和成员为核对来源。默认工作区记录能帮助运行 Agent 选入口、定目标侧、减少反射探索的锚点；
 完整 API 清单、协议说明或不稳定枚举表保留在源码和生成快照中。
 
-`DefaultAgentWorkspace/.agents/skills/` 和 `DefaultAgentWorkspace/.claude/skills/` 分别服务 Codex CLI 与
-Claude Code 的技能发现。当前同名技能内容保持一致；需要调整技能触发或执行规则时，同时更新两份副本，除非某个
-CLI 的发现机制或工具能力确实需要分叉。
+`DefaultAgentWorkspace/.agents/skills/` 与 `DefaultAgentWorkspace/.claude/skills/` 服务不同 CLI Agent 的技能发现；
+当前适配器到入口文件、技能目录的对应关系由 `agent-cli-adapters.md` 维护。当前同名技能内容保持一致；需要调整
+技能触发或执行规则时，同时更新两份副本，除非某个 CLI 的发现机制或工具能力确实需要分叉。
 
 默认工作区文件会被 CLI Agent 作为持续工作区配置读取；组包后的同名目录以随包内容作为完整输入。写这些文件时，措辞应说明
 事实归属；需要描述运行时事实时，按所有权选择更明确的锚点：
@@ -75,7 +75,7 @@ Agent 视角的说法。
 
 `DefaultAgentWorkspace/` 面向源码维护；组包后的同名目录面向运行中的本机 Agent。包内的
 `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`、`tool-guides/`、`.agents/skills/` 和 `.claude/skills/` 是
-稳定默认资产。`AGENTS.md` 是入口文件，承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
+稳定默认资产。`AGENTS.md` 承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
 人设、世界观、工具和技能资料。源码维护规则归本文和 `docs/README.md` 索引的其它维护文档。
 
 Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录可以不存在，不放入默认包内容；它
