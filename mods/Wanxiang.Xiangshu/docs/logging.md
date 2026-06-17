@@ -13,19 +13,18 @@
 - MCP sidecar 事件日志：游戏外独立进程的生命周期边界，写入
   `AgentWorkingDirectory/.xiangshu-runtime/Diagnostics/McpServer/` 下的紧凑 JSON 事件日志。
 
-`.xiangshu-runtime/` 下的 endpoint manifest、聊天会话快照和临时协议文件是运行数据，不是日志策略的输出
-目标。需要恢复、路由或定位当前 endpoint 时，以对应运行数据为准，不把这些事实复制成日志事件。
+`.xiangshu-runtime/` 下的 endpoint manifest、聊天会话快照和临时协议文件是运行数据；日志策略只处理事件
+记录。恢复、路由或定位当前 endpoint 时，以对应运行数据为准。
 
 ## 游戏进程日志
 
-游戏进程日志用于回答“mod 是否启动到关键边界”以及“失败卡在哪个边界”。它不承担对话记录、交互轨迹或统计
-分析职责。正常热键触发、聊天窗口显隐、手动重置、玩家主动中断和每轮 CLI 成功回复不写游戏日志；这些事件
-已经由界面状态或可见消息体现。
+游戏进程日志用于回答“mod 是否启动到关键边界”以及“失败卡在哪个边界”。对话记录、交互轨迹和统计分析由
+界面状态、可见消息或专门运行数据承担。正常热键触发、聊天窗口显隐、手动重置、玩家主动中断和每个投递轮次的
+CLI 成功回复由界面状态或可见消息体现。
 
 日志上下文只保留排障所需的稳定事实。正常边界日志只记录模块状态和少量低基数字段，例如适配器类型。进程
 id、端口、绝对运行路径、manifest 路径、单次事件日志路径、耗时、消息数量和会话 id 由运行数据或当前进程
-状态承担，不作为游戏日志字段。玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr 和外部 Agent 会话 id
-原文不进入游戏日志。
+状态承担。玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr 和外部 Agent 会话 id 原文留在各自所属边界。
 
 按运行边界分级：
 
@@ -41,8 +40,8 @@ CLI 调用失败时，游戏日志可以记录适配器、CLI 会话模式（`ne
 ## MCP sidecar 事件日志
 
 MCP sidecar 事件日志用于确认独立进程是否完成启动、注册 endpoint、跟随父进程退出、正常停止或异常失败。
-它不做 MCP 工具调用统计，也不复制 endpoint manifest 的内容。事件消息不重复记录端口、进程号、manifest
-路径或日志文件路径；需要查看当前 endpoint 时，以 `.xiangshu-runtime/ipc-endpoints.json` 为准。
+MCP 工具调用统计和 endpoint manifest 内容由各自运行数据承载。事件消息保持紧凑；需要查看当前 endpoint 时，
+以 `.xiangshu-runtime/ipc-endpoints.json` 为准。
 
 ## 共享日志库边界
 
