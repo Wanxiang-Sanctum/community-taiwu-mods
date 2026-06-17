@@ -12,6 +12,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "Unity constructs this MonoBehaviour through GameObject.AddComponent at runtime.")]
+[RequireComponent(typeof(Canvas))]
+[RequireComponent(typeof(ConchShipGraphicRaycaster))]
 [RequireComponent(typeof(CanvasGroup))]
 internal sealed class XiangshuChatWindow : MonoBehaviour
 {
@@ -49,6 +51,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PreferredMessageBubbleWidth = 430f;
     private const float MaximumMessageBubbleWidth = 460f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
+    private const int CanvasSortingOrder = 32000;
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -80,6 +83,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private RectTransform? _messageContent;
     private ScrollRect? _scrollRect;
     private DisableHotkeyInputField? _inputField;
+    private Canvas? _rootCanvas;
+    private ConchShipGraphicRaycaster? _rootRaycaster;
     private CanvasGroup? _rootCanvasGroup;
     private CImage? _inputFieldImage;
     private Outline? _inputFocusOutline;
@@ -107,7 +112,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         AgentChatSession session,
         ChatParticipantIdentity participants)
     {
-        GameObject root = new(RootGameObjectName, typeof(RectTransform), typeof(CanvasGroup));
+        GameObject root = new(
+            RootGameObjectName,
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(ConchShipGraphicRaycaster),
+            typeof(CanvasGroup));
         DontDestroyOnLoad(root);
         XiangshuChatWindow window = root.AddComponent<XiangshuChatWindow>();
         window.Initialize(session, participants);
@@ -171,10 +181,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         _session = session;
         _participants = participants;
-        _rootCanvasGroup = GetComponent<CanvasGroup>();
+        _rootCanvas = GetRequiredRootComponent<Canvas>();
+        _rootRaycaster = GetRequiredRootComponent<ConchShipGraphicRaycaster>();
+        _rootCanvasGroup = GetRequiredRootComponent<CanvasGroup>();
         _participants.PlayerNameChanged += UpdatePlayerSpeakerLabels;
         IsVisible = false;
         gameObject.SetActive(false);
+    }
+
+    private T GetRequiredRootComponent<T>()
+        where T : Component
+    {
+        return GetComponent<T>()
+            ?? throw new InvalidOperationException(
+                $"Xiangshu chat window root is missing required {typeof(T).Name} component.");
     }
 
     private VisibilityState ExcludeFromPlayerViewCapture()
@@ -872,14 +892,14 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private bool EnsureUiBuilt()
     {
+        if (!EnsureAttachedToGameUi())
+        {
+            return false;
+        }
+
         if (_uiBuilt)
         {
             return true;
-        }
-
-        if (!TryAttachToGameUiLayer())
-        {
-            return false;
         }
 
         CaptureGameTextStyle();
@@ -889,7 +909,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return true;
     }
 
-    private bool TryAttachToGameUiLayer()
+    private bool EnsureAttachedToGameUi()
     {
         UIManager uiManager = UIManager.Instance;
 
@@ -910,9 +930,40 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return false;
         }
 
-        transform.SetParent(layer, worldPositionStays: false);
-        transform.SetAsLastSibling();
+        if (transform.parent != layer)
+        {
+            transform.SetParent(layer, worldPositionStays: false);
+            StretchToParent((RectTransform)transform);
+            transform.SetAsLastSibling();
+        }
+
+        Camera uiCamera = uiManager.UiCamera;
+
+        if (uiCamera is null)
+        {
+            Log.Warning("chat window cannot build because UIManager has no UI camera");
+
+            return false;
+        }
+
+        ConfigureRootCanvas(uiCamera);
         return true;
+    }
+
+    private void ConfigureRootCanvas(Camera uiCamera)
+    {
+        Canvas canvas = _rootCanvas
+            ?? throw new InvalidOperationException("Xiangshu chat window root Canvas is not initialized.");
+
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = uiCamera;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = CanvasSortingOrder;
+
+        ConchShipGraphicRaycaster raycaster = _rootRaycaster
+            ?? throw new InvalidOperationException("Xiangshu chat window root raycaster is not initialized.");
+        raycaster.enabled = true;
+        raycaster.TargetCamera = uiCamera;
     }
 
     private void ApplyPanelLayout()
