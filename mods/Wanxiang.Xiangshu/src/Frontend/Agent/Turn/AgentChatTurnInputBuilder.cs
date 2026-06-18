@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Wanxiang.Xiangshu.Frontend.Agent.Turn;
 
@@ -6,6 +7,10 @@ internal static class AgentChatTurnInputBuilder
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
+        Converters =
+        {
+            new StringEnumConverter { AllowIntegerValues = false },
+        },
         NullValueHandling = NullValueHandling.Ignore,
     };
 

@@ -48,17 +48,18 @@ internal sealed class AgentCliInvocation(
 
 internal static class AgentCliAdapters
 {
-    private static readonly IAgentCliAdapter Codex = new CodexCliAdapter();
-    private static readonly IAgentCliAdapter Claude = new ClaudeCliAdapter();
-    private static readonly IAgentCliAdapter CodeBuddy = new CodeBuddyCliAdapter();
+    private static readonly IAgentCliAdapter CodexAdapter = new CodexCliAdapter();
+    private static readonly IAgentCliAdapter ClaudeAdapter = new ClaudeCliAdapter();
+    private static readonly IAgentCliAdapter CodeBuddyAdapter = new CodeBuddyCliAdapter();
 
     public static IAgentCliAdapter Get(AgentAdapter adapter)
     {
-        return (int)adapter switch
+        return adapter switch
         {
-            (int)AgentAdapter.Claude => Claude,
-            (int)AgentAdapter.CodeBuddy => CodeBuddy,
-            _ => Codex,
+            AgentAdapter.Codex => CodexAdapter,
+            AgentAdapter.Claude => ClaudeAdapter,
+            AgentAdapter.CodeBuddy => CodeBuddyAdapter,
+            _ => throw new ArgumentOutOfRangeException(nameof(adapter), adapter, null),
         };
     }
 }

@@ -1,3 +1,5 @@
+using System.Runtime.Serialization;
+
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 internal sealed class AgentChatMessage(
@@ -6,7 +8,7 @@ internal sealed class AgentChatMessage(
     AgentChatRole role,
     string speakerName,
     string content,
-    string origin)
+    AgentChatMessageOrigin origin)
 {
     public string Id { get; } = id;
 
@@ -18,29 +20,29 @@ internal sealed class AgentChatMessage(
 
     public string Content { get; } = content;
 
-    public string Origin { get; } = origin;
+    public AgentChatMessageOrigin Origin { get; } = origin;
 }
 
 internal enum AgentChatRole
 {
+    [EnumMember(Value = "user")]
     User = 0,
+
+    [EnumMember(Value = "assistant")]
     Assistant = 1,
 }
 
-internal static class AgentChatRoleNames
+internal enum AgentChatMessageOrigin
 {
-    public const string User = "user";
+    [EnumMember(Value = "user")]
+    User = 0,
 
-    public const string Assistant = "assistant";
-}
+    [EnumMember(Value = "agent")]
+    Agent = 1,
 
-internal static class AgentChatMessageOrigins
-{
-    public const string User = "user";
+    [EnumMember(Value = "agent-intermediate")]
+    AgentIntermediate = 2,
 
-    public const string Agent = "agent";
-
-    public const string AgentIntermediate = "agent-intermediate";
-
-    public const string Runtime = "runtime";
+    [EnumMember(Value = "runtime")]
+    Runtime = 3,
 }

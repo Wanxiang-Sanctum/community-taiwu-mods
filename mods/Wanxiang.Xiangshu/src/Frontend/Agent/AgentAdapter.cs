@@ -9,23 +9,36 @@ internal enum AgentAdapter
 
 internal static class AgentAdapterNames
 {
+    public static AgentAdapter FromSettingValueOrDefault(int value)
+    {
+        return value switch
+        {
+            (int)AgentAdapter.Codex => AgentAdapter.Codex,
+            (int)AgentAdapter.Claude => AgentAdapter.Claude,
+            (int)AgentAdapter.CodeBuddy => AgentAdapter.CodeBuddy,
+            _ => AgentAdapter.Codex,
+        };
+    }
+
     public static string GetDefaultCommandName(AgentAdapter adapter)
     {
-        return (int)adapter switch
+        return adapter switch
         {
-            (int)AgentAdapter.Claude => "claude",
-            (int)AgentAdapter.CodeBuddy => "codebuddy",
-            _ => "codex",
+            AgentAdapter.Codex => "codex",
+            AgentAdapter.Claude => "claude",
+            AgentAdapter.CodeBuddy => "codebuddy",
+            _ => throw new ArgumentOutOfRangeException(nameof(adapter), adapter, null),
         };
     }
 
     public static string GetKey(AgentAdapter adapter)
     {
-        return (int)adapter switch
+        return adapter switch
         {
-            (int)AgentAdapter.Claude => "claude",
-            (int)AgentAdapter.CodeBuddy => "codebuddy",
-            _ => "codex",
+            AgentAdapter.Codex => "codex",
+            AgentAdapter.Claude => "claude",
+            AgentAdapter.CodeBuddy => "codebuddy",
+            _ => throw new ArgumentOutOfRangeException(nameof(adapter), adapter, null),
         };
     }
 }

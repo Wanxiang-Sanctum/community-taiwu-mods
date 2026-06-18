@@ -140,7 +140,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.User,
                 trimmedSpeakerName,
                 trimmedContent,
-                AgentChatMessageOrigins.User);
+                AgentChatMessageOrigin.User);
             _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
             _dispatchPaused = false;
@@ -180,7 +180,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.User,
                 trimmedSpeakerName,
                 InterruptMessage,
-                AgentChatMessageOrigins.User);
+                AgentChatMessageOrigin.User);
             _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
             _dispatchPaused = true;
@@ -265,7 +265,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.Assistant,
                 _assistantName,
                 normalizedContent,
-                AgentChatMessageOrigins.AgentIntermediate);
+                AgentChatMessageOrigin.AgentIntermediate);
             _visibleMessages.Add(message);
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
@@ -525,7 +525,7 @@ internal sealed class AgentChatSession : IDisposable
                         static message => new AgentChatTurnMessage(
                             message.Id,
                             message.CreatedAt.ToUniversalTime(),
-                            GetTurnMessageRoleName(message),
+                            message.Role,
                             message.Origin,
                             message.Content)),
                 ]);
@@ -677,7 +677,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.Assistant,
                 _assistantName,
                 content,
-                AgentChatMessageOrigins.Runtime);
+                AgentChatMessageOrigin.Runtime);
             _visibleMessages.Add(message);
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
             _events.Enqueue(AgentChatSessionEvent.StateChanged());
@@ -687,11 +687,11 @@ internal sealed class AgentChatSession : IDisposable
         return true;
     }
 
-    private static string GetAgentResultOrigin(AgentCliChatResult result)
+    private static AgentChatMessageOrigin GetAgentResultOrigin(AgentCliChatResult result)
     {
         return result.IsProtocolFallback
-            ? AgentChatMessageOrigins.Runtime
-            : AgentChatMessageOrigins.Agent;
+            ? AgentChatMessageOrigin.Runtime
+            : AgentChatMessageOrigin.Agent;
     }
 
     private bool TryAddRuntimeAssistantMessage(
@@ -713,7 +713,7 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.Assistant,
                 _assistantName,
                 content,
-                AgentChatMessageOrigins.Runtime);
+                AgentChatMessageOrigin.Runtime);
             _visibleMessages.Add(message);
             _pendingMessages.Enqueue(message);
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
@@ -841,13 +841,6 @@ internal sealed class AgentChatSession : IDisposable
         }
 
         throw new InvalidOperationException("A chat turn dispatch requires at least one user message.");
-    }
-
-    private static string GetTurnMessageRoleName(AgentChatMessage message)
-    {
-        return message.Role == AgentChatRole.Assistant
-            ? AgentChatRoleNames.Assistant
-            : AgentChatRoleNames.User;
     }
 
     private void ThrowIfDisposedLocked()

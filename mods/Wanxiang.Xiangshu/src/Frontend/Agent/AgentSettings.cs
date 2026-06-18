@@ -60,17 +60,7 @@ internal sealed class AgentSettings
         int value = 0;
         _ = TryGetSetting(modIdStr, AgentAdapterKey, ref value);
 
-        if (value == (int)AgentAdapter.Claude)
-        {
-            return AgentAdapter.Claude;
-        }
-
-        if (value == (int)AgentAdapter.CodeBuddy)
-        {
-            return AgentAdapter.CodeBuddy;
-        }
-
-        return AgentAdapter.Codex;
+        return AgentAdapterNames.FromSettingValueOrDefault(value);
     }
 
     private static string ReadCommandPath(
