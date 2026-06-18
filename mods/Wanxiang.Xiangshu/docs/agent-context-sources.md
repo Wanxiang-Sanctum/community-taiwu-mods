@@ -12,9 +12,9 @@
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照。生成快照提供检索、跳转和
 观察变化的开发期证据；需要更新快照时运行该仓库中对应工具重新生成。
 
-`DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界，包括本 mod
-的愿望回应前提：相枢被迫满足太吾传人的愿望，难以实现的愿望会被相枢趁机扭曲兑现，且扭曲本身不主动向
-太吾传人揭示。
+`DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻、玩家可见边界和输出
+可见性，包括本 mod 的愿望回应前提：相枢被迫满足太吾传人的愿望，难以实现的愿望会被相枢趁机扭曲
+兑现，且扭曲本身不主动向太吾传人揭示。
 `DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录扩展校准资料，用于
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
@@ -64,9 +64,9 @@ Agent 视角的说法。
    相枢源码中的脚本执行器和工具声明，再按需要查游戏生成快照。
 2. 判断新增内容属于当前任务工作记录、本地经验、基础角色契约、扩展人设校准、基础世界观、相枢深入资料、
    运行工具指引，还是属于本文的来源说明。
-3. 将每次答复都需要的基础角色契约写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、世界观稳定概念、
-   回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或 `DefaultAgentWorkspace/lore/`。大段文本和
-   完整清单留在游戏镜像中。
+3. 将每次答复都需要的基础角色契约和输出可见性写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、
+   世界观稳定概念、回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或
+   `DefaultAgentWorkspace/lore/`。大段文本和完整清单留在游戏镜像中。
 4. 涉及脚本工具、玩家视图观察、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
    `DefaultAgentWorkspace/tool-guides/`；保留检索路线和边界，具体任务脚本留给运行时按当前请求目标生成。
 5. 更新本文的来源表或维护说明，确保以后能回到权威源码和快照重新核对。
@@ -93,7 +93,8 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 
 ## 新内容放置
 
-- 每次答复都必须遵循的基础相枢身份、口吻和玩家可见边界归入 `DefaultAgentWorkspace/AGENTS.md`。
+- 每次答复都必须遵循的基础相枢身份、口吻、玩家可见边界和输出可见性归入
+  `DefaultAgentWorkspace/AGENTS.md`。
 - 更细的相枢身份关系、口吻浓淡、失败说明、剧透边界和表达范式归入 `DefaultAgentWorkspace/persona/README.md`。
 - 太吾、伏虞剑柄、剑冢、相枢爪牙、入邪、入魔、传承等基础概念归入
   `DefaultAgentWorkspace/lore/WORLD_BASELINE.md`。
@@ -120,7 +121,7 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 
 - 某个词条、工具参数或入口方法只增加少量说明，放入现有叶子文件更清楚。
 - 内容是当前版本的完整清单、枚举数值或 API 成员表，权威来源应继续留在游戏镜像或源码中。
-- 内容是每次答复都必须遵循的身份或口吻边界，归入 `DefaultAgentWorkspace/AGENTS.md`。
+- 内容是每次答复都必须遵循的身份、口吻或输出可见性边界，归入 `DefaultAgentWorkspace/AGENTS.md`。
 - 内容是扩展回答风格偏好，归入 `DefaultAgentWorkspace/persona/README.md`。
 
 ## 检索关键词
