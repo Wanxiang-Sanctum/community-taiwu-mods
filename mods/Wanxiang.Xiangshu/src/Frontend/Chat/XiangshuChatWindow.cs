@@ -241,7 +241,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             && !Input.GetKey(KeyCode.LeftShift)
             && !Input.GetKey(KeyCode.RightShift)
-            && _session?.IsReplying != true)
+            && _session?.IsReplying != true
+            && _session?.RequiresReset != true)
         {
             SendCurrentInput();
         }
@@ -318,12 +319,17 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
+        if (_session.RequiresReset)
+        {
+            return;
+        }
+
         SendCurrentInput();
     }
 
     private void SendCurrentInput()
     {
-        if (_session is null || _inputField is null)
+        if (_session is null || _inputField is null || _session.RequiresReset)
         {
             return;
         }
@@ -360,7 +366,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private void InterruptReply()
     {
-        if (_session is null)
+        if (_session?.RequiresReset != false)
         {
             return;
         }
@@ -410,7 +416,21 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         bool isReplying = _session?.IsReplying == true;
+        bool requiresReset = _session?.RequiresReset == true;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
+
+        inputField.interactable = !requiresReset;
+
+        if (requiresReset)
+        {
+            inputField.DeactivateInputField();
+            SetInputFocused(focused: false);
+            sendButton.interactable = false;
+            sendButtonImage.color = DisabledButtonColor;
+            sendButtonText.text = "须重置";
+            sendButtonText.color = MutedTextColor;
+            return;
+        }
 
         if (isReplying)
         {
@@ -1159,7 +1179,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void FocusInputField()
     {
         DisableHotkeyInputField? inputField = _inputField;
-        if (inputField?.gameObject.activeInHierarchy != true)
+        if (_session?.RequiresReset == true
+            || inputField?.gameObject.activeInHierarchy != true)
         {
             return;
         }
@@ -1185,7 +1206,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         DisableHotkeyInputField? inputField = _inputField;
-        if (!IsVisible || inputField?.gameObject.activeInHierarchy != true)
+        if (!IsVisible
+            || _session?.RequiresReset == true
+            || inputField?.gameObject.activeInHierarchy != true)
         {
             return;
         }
@@ -1198,7 +1221,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private void UpdateInputFocusVisual()
     {
-        bool focused = _inputField?.isFocused == true;
+        bool focused = _session?.RequiresReset != true
+            && _inputField?.isFocused == true;
 
         if (_inputFocused == focused)
         {
@@ -1214,7 +1238,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         if (_inputFieldImage is { } inputFieldImage)
         {
-            inputFieldImage.color = focused ? FocusedInputColor : InputColor;
+            Color inputColor = focused ? FocusedInputColor : InputColor;
+            inputFieldImage.color = _session?.RequiresReset == true
+                ? DisabledButtonColor
+                : inputColor;
         }
 
         if (_inputFocusOutline is { } inputFocusOutline)

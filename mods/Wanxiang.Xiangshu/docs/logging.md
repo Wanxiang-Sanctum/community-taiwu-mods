@@ -31,8 +31,8 @@ bearer token 原文和外部 Agent 会话 id 原文留在各自所属边界。
 
 - `Info`：前端/后端 IPC、MCP sidecar 等启动边界；设置更新但需重启生效；适配器切换导致本地会话重建。
 - `Warning`：可恢复但会影响功能的边界问题，例如热键 id 冲突、UI 层不可用、资源加载失败或 Agent 设置缺失。
-- `Error`：插件初始化失败、MCP sidecar 启动失败、CLI 退出码非零、CLI 回复格式无效、会话快照清理失败或
-  异步 UI 任务异常。
+- `Error`：插件初始化失败、MCP sidecar 启动失败、CLI 退出码非零、CLI 明确错误结果、首轮缺少可恢复会话 id、
+  会话快照清理失败或异步 UI 任务异常。
 
 CLI 调用失败时，游戏日志可以记录适配器、CLI 会话模式（`new` 或 `resumed`）、失败原因、退出码（如有）和
 截断后的 stderr 片段。外部 Agent 会话 id 只用于恢复 CLI 会话；需要区分首次调用和恢复调用时，只记录

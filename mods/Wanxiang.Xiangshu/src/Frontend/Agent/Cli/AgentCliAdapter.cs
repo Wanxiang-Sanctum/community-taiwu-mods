@@ -12,6 +12,8 @@ internal interface IAgentCliAdapter
         ProcessStartInfo startInfo,
         AgentCliInvocation invocation);
 
+    bool HasExplicitErrorResult(AgentProcessResult result);
+
     bool TryExtractAssistantMessage(
         AgentProcessResult result,
         [NotNullWhen(true)]

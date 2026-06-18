@@ -15,6 +15,7 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
 internal sealed class AgentChatSession : IDisposable
 {
     private const string FailureMessage = "此刻诸机不应，稍后再问。";
+    private const string ResetRequiredMessage = "此番回声未能系住，此局已断。按下重置，再来问我。";
     private const string InterruptMessage = "且慢";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
@@ -39,6 +40,7 @@ internal sealed class AgentChatSession : IDisposable
     private TurnDispatch? _activeDispatch;
     private string _sessionId;
     private string? _agentSessionId;
+    private bool _requiresReset;
 
     public AgentChatSession(
         AgentCliLauncher agentCliLauncher,
@@ -79,6 +81,7 @@ internal sealed class AgentChatSession : IDisposable
             _visibleMessages.AddRange(restoredState.VisibleMessages);
             _lastMessageOrdinal = restoredState.LastMessageOrdinal;
             _agentSessionId = restoredState.AgentSessionId;
+            _requiresReset = restoredState.RequiresReset;
         }
 
         PersistSnapshot();
@@ -92,6 +95,18 @@ internal sealed class AgentChatSession : IDisposable
             {
                 ThrowIfDisposedLocked();
                 return IsReplyingLocked();
+            }
+        }
+    }
+
+    public bool RequiresReset
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                ThrowIfDisposedLocked();
+                return _requiresReset;
             }
         }
     }
@@ -113,6 +128,11 @@ internal sealed class AgentChatSession : IDisposable
         lock (_syncRoot)
         {
             ThrowIfDisposedLocked();
+
+            if (_requiresReset)
+            {
+                return;
+            }
 
             message = new AgentChatMessage(
                 CreateMessageId(),
@@ -148,6 +168,7 @@ internal sealed class AgentChatSession : IDisposable
             ThrowIfDisposedLocked();
 
             if (!_dispatching
+                || _requiresReset
                 || _activeDispatch is not { InterruptRequested: false, ResetRequested: false } activeDispatch)
             {
                 return false;
@@ -232,7 +253,8 @@ internal sealed class AgentChatSession : IDisposable
                 throw new InvalidOperationException("Intermediate reply content is required.");
             }
 
-            if (_activeDispatch is not { InterruptRequested: false, ResetRequested: false })
+            if (_requiresReset
+                || _activeDispatch is not { InterruptRequested: false, ResetRequested: false })
             {
                 return;
             }
@@ -395,7 +417,10 @@ internal sealed class AgentChatSession : IDisposable
                         ex,
                         "chat agent invocation failed",
                         CreateFailureLogContext(dispatch, ex));
-                    _ = TryAddAssistantMessage(dispatch, FailureMessage, "session");
+
+                    _ = IsResetRequiredFailure(ex)
+                        ? TryEnterResetRequiredState(dispatch, ResetRequiredMessage)
+                        : TryAddAssistantMessage(dispatch, FailureMessage, "session");
                 }
             }
         }
@@ -445,6 +470,11 @@ internal sealed class AgentChatSession : IDisposable
         return string.IsNullOrWhiteSpace(dispatch.Turn.AgentSessionId)
             ? "new"
             : "resumed";
+    }
+
+    private static bool IsResetRequiredFailure(Exception exception)
+    {
+        return exception is AgentCliFailureException { Reason: "missing-agent-session-id" };
     }
 
     private TurnDispatch? TakeNextDispatch()
@@ -608,13 +638,53 @@ internal sealed class AgentChatSession : IDisposable
                 AgentChatRole.Assistant,
                 _assistantName,
                 result.AssistantMessage,
-                "agent");
+                GetAssistantMessageOrigin(result));
             _visibleMessages.Add(message);
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
 
         PersistSnapshot();
         return true;
+    }
+
+    private bool TryEnterResetRequiredState(
+        TurnDispatch dispatch,
+        string content)
+    {
+        AgentChatMessage message;
+
+        lock (_syncRoot)
+        {
+            if (!MatchesCurrentSessionLocked(dispatch))
+            {
+                return false;
+            }
+
+            _requiresReset = true;
+            _pendingMessages.Clear();
+            _dispatchPaused = true;
+
+            message = new AgentChatMessage(
+                CreateMessageId(),
+                DateTimeOffset.UtcNow,
+                AgentChatRole.Assistant,
+                _assistantName,
+                content,
+                "session");
+            _visibleMessages.Add(message);
+            _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
+            _events.Enqueue(AgentChatSessionEvent.StateChanged());
+        }
+
+        PersistSnapshot();
+        return true;
+    }
+
+    private static string GetAssistantMessageOrigin(AgentCliChatResult result)
+    {
+        return result.IsProtocolFallback
+            ? "session"
+            : "agent";
     }
 
     private bool TryAddAssistantMessage(
@@ -655,11 +725,12 @@ internal sealed class AgentChatSession : IDisposable
         _visibleMessages.Clear();
         _pendingMessages.Clear();
         _dispatchPaused = false;
+        _requiresReset = false;
     }
 
     private bool CanDispatchPendingLocked()
     {
-        return _pendingMessages.Count > 0 && !_dispatchPaused;
+        return _pendingMessages.Count > 0 && !_dispatchPaused && !_requiresReset;
     }
 
     private bool IsReplyingLocked()
@@ -724,6 +795,7 @@ internal sealed class AgentChatSession : IDisposable
             _sessionId,
             _adapterKey,
             _agentSessionId,
+            _requiresReset,
             _lastMessageOrdinal,
             [.. _visibleMessages.Select(CloneMessage)]);
     }

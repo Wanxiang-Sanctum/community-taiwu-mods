@@ -63,6 +63,12 @@ internal sealed class CodexCliAdapter : IAgentCliAdapter
             && AgentCliJson.TryExtractChatReply(result.LastMessage, out assistantMessage);
     }
 
+    public bool HasExplicitErrorResult(AgentProcessResult result)
+    {
+        _ = result;
+        return false;
+    }
+
     public string? ExtractAgentSessionId(AgentProcessResult result)
     {
         return AgentCliJson.ExtractCodexThreadId(result.Stdout);

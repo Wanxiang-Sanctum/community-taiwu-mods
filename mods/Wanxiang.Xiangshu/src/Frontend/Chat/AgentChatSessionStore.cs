@@ -95,6 +95,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.AgentSessionId),
+            session.RequiresReset,
             lastMessageOrdinal,
             messages);
     }
@@ -109,6 +110,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             SessionId = state.SessionId,
             Adapter = state.Adapter,
             AgentSessionId = state.AgentSessionId,
+            RequiresReset = state.RequiresReset,
             LastMessageOrdinal = state.LastMessageOrdinal,
             VisibleMessages =
             [
@@ -309,6 +311,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public string? AgentSessionId { get; set; }
 
+        public bool RequiresReset { get; set; }
+
         public int? LastMessageOrdinal { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
@@ -334,6 +338,7 @@ internal sealed class AgentChatSessionState(
     string sessionId,
     string adapter,
     string? agentSessionId,
+    bool requiresReset,
     int lastMessageOrdinal,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
@@ -342,6 +347,8 @@ internal sealed class AgentChatSessionState(
     public string Adapter { get; } = adapter;
 
     public string? AgentSessionId { get; } = agentSessionId;
+
+    public bool RequiresReset { get; } = requiresReset;
 
     public int LastMessageOrdinal { get; } = lastMessageOrdinal;
 

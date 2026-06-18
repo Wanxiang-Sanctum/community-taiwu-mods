@@ -43,6 +43,11 @@ internal abstract class PrintModeStreamJsonCliAdapter : IAgentCliAdapter
         return AgentCliJson.TryExtractStreamJsonChatReply(result.Stdout, out assistantMessage);
     }
 
+    public bool HasExplicitErrorResult(AgentProcessResult result)
+    {
+        return AgentCliJson.HasStreamJsonErrorResult(result.Stdout);
+    }
+
     public string? ExtractAgentSessionId(AgentProcessResult result)
     {
         return AgentCliJson.ExtractStreamJsonSessionId(result.Stdout);

@@ -15,6 +15,8 @@ namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 internal sealed class AgentCliLauncher(
     McpBearerToken bearerToken) : IDisposable
 {
+    private const string ProtocolFallbackMessage = "方才回声散乱，未能凝成清楚答复。再问我一次。";
+
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
 
     private static readonly TimeSpan McpEndpointPollInterval = TimeSpan.FromMilliseconds(250);
@@ -78,11 +80,11 @@ internal sealed class AgentCliLauncher(
                     stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
-            if (!adapter.TryExtractAssistantMessage(result, out string? assistantMessage))
+            if (adapter.HasExplicitErrorResult(result))
             {
                 throw new AgentCliFailureException(
-                    reason: "invalid-chat-reply",
-                    message: "The configured agent CLI did not return a valid chat reply.",
+                    reason: "agent-error-result",
+                    message: "The configured agent CLI returned an error result.",
                     exitCode: null,
                     stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
@@ -98,9 +100,11 @@ internal sealed class AgentCliLauncher(
                     stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
+            bool extractedReply = adapter.TryExtractAssistantMessage(result, out string? assistantMessage);
             return new AgentCliChatResult(
-                assistantMessage.Trim(),
-                agentSessionId);
+                (assistantMessage ?? ProtocolFallbackMessage).Trim(),
+                agentSessionId,
+                isProtocolFallback: !extractedReply);
         }
         finally
         {

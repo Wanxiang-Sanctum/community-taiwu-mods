@@ -41,7 +41,8 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 - 对话对象固定显示为“相枢”。
 - 对话窗口渲染玩家和相枢已经发送出来的消息。
-- `idle`、`replying`、`failed`、`reset` 等状态或事件驱动会话推进、发送按钮状态和必要的相枢说明。
+- `idle`、`replying`、`interrupted`、`failed`、`requires-reset`、`reset` 等状态或事件驱动会话推进、
+  发送按钮状态和必要的相枢说明。
 - 玩家输入框承担自然语言输入；命令行、会话管理和工具调用细节留在内部链路。
 - 运行边界和失败原因按日志策略进入游戏日志或 MCP sidecar 事件日志；可见失败说明仍由对话流承载。
 
@@ -83,7 +84,8 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 相枢身份由默认工作区入口指令和游戏内显示层固定，不作为投递输入字段投递；扩展人设资料只细化表达。前端
 捕获适配器返回的外部会话 id 后，在后续投递轮次通过对应 CLI 的 resume 参数恢复同一个外部会话。
-首轮 CLI 调用如果没有返回可恢复会话 id，前端把它视为 CLI 协议失败，而不是降级成无上下文的后续投递。
+首轮 CLI 调用如果没有返回可恢复会话 id，前端把它视为 CLI 协议失败，并把当前聊天会话置为必须重置状态，
+不降级成无上下文的后续投递。
 
 前端要求 CLI Agent 的最终输出符合一个最小 JSON Schema：
 
@@ -93,8 +95,9 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 }
 ```
 
-各适配器通过对应 CLI 支持的结构化输出参数传入同一 schema。前端提取 `reply` 写回会话；CLI 失败按日志策略
-记录。需要告知玩家时，前端写入少量固定的相枢文本说明。具体参数见 `agent-cli-adapters.md`。
+各适配器通过对应 CLI 支持的结构化输出参数传入同一 schema。前端只把成功提取到的 `reply`、协议内固定说明、
+失败说明或必须重置说明写入可见对话；CLI 参数和提取细节由 `agent-cli-adapters.md` 维护。非零退出码和 CLI
+明确错误结果仍按失败边界处理；首轮缺少可恢复会话 id 进入必须重置状态。
 
 ## Mod 运行数据目录
 
@@ -159,13 +162,14 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 - `sessionId`：前端投递会话 id，由前端生成的 GUID-N 字符串。
 - `adapter`：CLI 适配器持久化 key，用于判断恢复快照是否属于当前适配器。
 - `agentSessionId`：CLI Agent 自己的可恢复会话 id；后续投递轮次用它恢复同一个本机 Agent 会话。
+- `requiresReset`：当前本地会话是否因首轮缺少可恢复会话 id 而不可继续；为 `true` 时只能重置。
 - `lastMessageOrdinal`：当前会话已分配的最后一个消息序号。
 - `visibleMessages`：游戏内可见对话记录，供界面渲染和会话恢复使用。
 - `pendingMessages`：已经显示给玩家、尚未进入投递轮次的玩家消息；“且慢”会暂停队列，直到下一条普通玩家
   消息触发投递。
 
-持久化快照保存 `sessionId`、`adapter`、`agentSessionId`、`lastMessageOrdinal` 和 `visibleMessages`。
-`pendingMessages` 是内存态。
+持久化快照保存 `sessionId`、`adapter`、`agentSessionId`、`requiresReset`、`lastMessageOrdinal` 和
+`visibleMessages`。`pendingMessages` 是内存态。
 
 跨游戏重启继续聊天依赖持久化的 `agentSessionId` 和可见消息快照；重启后前端会启动新的 MCP sidecar，
 生成新的 bearer token，并在下一轮 CLI resume 调用中注入新的 endpoint 和 token。正在投递的 CLI 进程和
@@ -181,7 +185,7 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 - `content`：消息文本；`role = "assistant"` 时显示为相枢消息，`role = "user"` 时保留玩家原文。
 - `origin`：`user`、`agent`、`agent-intermediate` 或 `session`。`agent` 表示 CLI 最终 assistant 输出；
   `agent-intermediate` 表示 Agent 通过 MCP 中间答复工具写入的消息；`session` 表示前端会话写入的少量固定
-  说明，例如适配器启动失败。
+  说明，例如失败说明、协议内固定说明或必须重置说明。
 
 每个投递轮次对应一次 CLI Agent 调用。CLI 最终答复和 MCP 中间答复按产出顺序追加到可见对话记录。
 
@@ -191,17 +195,19 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 消息：
 
 - 玩家消息：玩家发送后立即追加到对话流。
-- 相枢消息：在 CLI 最终答复、MCP 中间答复工具或前端固定说明产出文本时追加。
+- 相枢消息：在 CLI 最终答复、MCP 中间答复工具或前端会话固定说明产出文本时追加。
 - `idle`：当前没有运行中的 CLI 调用，发送入口提交新玩家消息。
 - `replying`：CLI 正在生成回复，发送按钮切换为可点击的“且慢”中断入口。
 - `interrupted`：玩家点击“且慢”后，当前 CLI 调用被切断，发送入口回到普通输入；前端等待下一条普通玩家
   消息触发后续投递。
-- `failed`：如果需要让玩家知道失败，前端会话追加一条 `origin = "session"` 的相枢固定文本说明；失败细节
-  按日志策略处理。
+- `failed`：如果需要让玩家知道失败，前端会话追加一条 `origin = "session"` 的失败说明；失败细节按日志
+  策略处理。
+- `requires-reset`：首轮没有取得可恢复会话 id 时，前端追加一条 `origin = "session"` 的必须重置说明，并
+  禁用输入和发送；玩家只能点击重置。
 - `reset`：玩家手动重置时，前端清空可见聊天消息并新建本地会话。
 
-错误说明以相枢消息进入对话流；运行边界和失败原因按日志策略处理。前端固定说明在界面上显示为相枢气泡，
-元数据保留 `origin = "session"`。
+失败说明、协议内固定说明和必须重置说明都以相枢消息进入对话流；运行边界和失败原因按日志策略处理。前端
+会话固定说明在界面上显示为相枢气泡，元数据保留 `origin = "session"`。
 
 界面身份表达保留两个锚点：窗口头部显示相枢身份，消息气泡内显示说话人名称。玩家通过热键、输入框、
 发送按钮和已有对话流理解主交互。
@@ -301,8 +307,9 @@ MCP 工具归 MCP server，游戏状态修改归前端或后端脚本能力。
 
 前端启动 CLI 进程时，把 `AgentWorkingDirectory` 设为进程工作目录；该目录是本机 Agent 的受信工作区。
 CLI 启动参数负责选择完全信任式非交互模式，并传入会话恢复、MCP 配置和结构化输出约束。聊天 UI 只接收
-最终相枢文本或失败说明；如果 CLI 因环境约束异常退出、被阻断或没有返回所需协议字段，前端会话按 `failed`
-映射成相枢文本答复。
+最终相枢文本、协议内固定说明、失败说明或必须重置说明。非零退出码和 CLI 明确错误结果映射为 `failed`；
+首轮没有返回可恢复会话 id 映射为 `requires-reset`；正常结束但未取得可显示 `reply` 时，前端按
+`agent-cli-adapters.md` 定义的协议追加固定说明。
 
 当前适配器清单、默认命令、工作区入口、会话 id 来源、最终答复来源和命令形态由 `agent-cli-adapters.md`
 维护。新增 Agent 只有改变本章描述的投递模型、运行数据所有权或玩家可见行为时，才需要修改本文件。
