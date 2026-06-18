@@ -26,3 +26,21 @@ internal enum AgentChatRole
     User = 0,
     Assistant = 1,
 }
+
+internal static class AgentChatRoleNames
+{
+    public const string User = "user";
+
+    public const string Assistant = "assistant";
+}
+
+internal static class AgentChatMessageOrigins
+{
+    public const string User = "user";
+
+    public const string Agent = "agent";
+
+    public const string AgentIntermediate = "agent-intermediate";
+
+    public const string Runtime = "runtime";
+}

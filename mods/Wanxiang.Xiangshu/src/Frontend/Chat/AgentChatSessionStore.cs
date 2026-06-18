@@ -125,7 +125,9 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         {
             Id = message.Id,
             CreatedAt = message.CreatedAt.ToUniversalTime(),
-            Role = message.Role == AgentChatRole.Assistant ? "assistant" : "user",
+            Role = message.Role == AgentChatRole.Assistant
+                ? AgentChatRoleNames.Assistant
+                : AgentChatRoleNames.User,
             SpeakerName = message.SpeakerName,
             Content = message.Content,
             Origin = message.Origin,
@@ -139,27 +141,43 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return new AgentChatMessage(
             NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
             NormalizeRequiredTimestamp(persistedMessage.CreatedAt, "message.createdAt", sessionPath),
-            ParseRole(persistedMessage.Role, sessionPath),
+            ParseMessageRole(persistedMessage.Role, sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
-            NormalizeRequired(persistedMessage.Origin, "message.origin", sessionPath));
+            ParseMessageOrigin(persistedMessage.Origin, sessionPath));
     }
 
-    private static AgentChatRole ParseRole(
+    private static AgentChatRole ParseMessageRole(
         string? role,
         string sessionPath)
     {
-        if (string.Equals(role?.Trim(), "assistant", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role?.Trim(), AgentChatRoleNames.Assistant, StringComparison.OrdinalIgnoreCase))
         {
             return AgentChatRole.Assistant;
         }
 
-        if (string.Equals(role?.Trim(), "user", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role?.Trim(), AgentChatRoleNames.User, StringComparison.OrdinalIgnoreCase))
         {
             return AgentChatRole.User;
         }
 
         throw new InvalidDataException($"Invalid chat message role in {sessionPath}.");
+    }
+
+    private static string ParseMessageOrigin(
+        string? origin,
+        string sessionPath)
+    {
+        string normalizedOrigin = NormalizeRequired(origin, "message.origin", sessionPath);
+
+        return normalizedOrigin switch
+        {
+            AgentChatMessageOrigins.User
+                or AgentChatMessageOrigins.Agent
+                or AgentChatMessageOrigins.AgentIntermediate
+                or AgentChatMessageOrigins.Runtime => normalizedOrigin,
+            _ => throw new InvalidDataException($"Invalid chat message origin in {sessionPath}."),
+        };
     }
 
     private string GetSessionPath(string sessionId)

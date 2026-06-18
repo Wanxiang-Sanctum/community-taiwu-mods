@@ -34,7 +34,7 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 ## 玩家体验边界
 
-玩家可见层始终是“玩家与相枢对话”。前端可以在内部维护 `session`、`origin` 等协议字段；界面呈现双方
+玩家可见层始终是“玩家与相枢对话”。前端维护 `session`、`origin` 等协议字段；界面呈现双方
 已经发出的消息和必要的相枢文本说明。
 
 可见交互遵循这些规则：
@@ -63,20 +63,33 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 用户可以在该工作区手工维护自己的人设、世界观资料、工具指引、设置和 Agent 技能；运行中的 Agent 把这些
 文件作为工作区配置读取。如果用户把 `AgentWorkingDirectory` 指向其它目录，该目录由用户自行维护。
 
-内部投递给 CLI Agent 的每个投递输入只描述当前投递轮次的玩家消息。历史对话由 CLI Agent 自己的可恢复会话维护。
+内部投递给 CLI Agent 的每个投递输入只描述当前投递轮次需要交给 Agent 会话的新可见消息。历史对话由 CLI
+Agent 自己的可恢复会话维护。
 
 - `playerName`：当前玩家说话人的显示名，由前端读取当前太吾角色真实姓名。
-- `playerMessages`：当前投递轮次待投递的玩家消息，按进入前端会话的顺序排列。每条消息包含 `id`、`sentAt` 和
-  `content`。`id` 是当前前端会话内的消息句柄，格式为 `message-<ordinal>`；`sentAt` 写入 UTC 时间。
+- `turnMessages`：当前投递轮次待投递的可见消息，按进入前端会话的顺序排列。每条消息包含 `id`、`sentAt`、
+  `role`、`origin` 和 `content`。`id` 是当前前端会话内的消息句柄，格式为 `message-<ordinal>`；
+  `sentAt` 写入 UTC 时间；`role` 取 `user` 或 `assistant`；`origin` 保留消息来源。
+- `origin = "runtime"` 的 assistant 消息表示相枢运行时已经显示给玩家的说明，例如协议内固定说明或失败说明。它不是本机
+  Agent 自己生成的上一条答复，但玩家已经看见，应作为对话事实承接。
 
 ```json
 {
   "playerName": "太吾",
-  "playerMessages": [
+  "turnMessages": [
     {
       "id": "message-1",
       "sentAt": "2026-06-16T12:34:56.789+00:00",
-      "content": "且慢"
+      "role": "assistant",
+      "origin": "runtime",
+      "content": "方才回声散乱，未能凝成清楚答复。再问我一次。"
+    },
+    {
+      "id": "message-2",
+      "sentAt": "2026-06-16T12:35:10.123+00:00",
+      "role": "user",
+      "origin": "user",
+      "content": "那你重新答一次。"
     }
   ]
 }
@@ -147,8 +160,11 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 ## 会话投递模型
 
-玩家消息提交后，前端立即把它加入游戏内可见对话记录，并放入待投递队列。CLI Agent 空闲时，队列中的消息
-组成一个投递轮次；CLI Agent 正在生成回复时，发送入口切换为“且慢”中断入口。
+玩家消息提交后，前端立即把它加入游戏内可见对话记录，并放入待投递队列。CLI Agent 空闲且待投递队列中
+包含玩家消息时，队列中的消息组成一个投递轮次；CLI Agent 正在生成回复时，发送入口切换为“且慢”中断入口。
+
+除必须重置说明外，相枢运行时写入的可见固定说明会进入待投递队列。它不单独触发 CLI 调用；下一条普通玩家
+消息提交后，前端把这些 `origin = "runtime"` 的 assistant 消息和新玩家消息按可见顺序一起投递。
 
 “且慢”会作为玩家消息进入可见对话记录，并取消当前 CLI 调用。它不会立刻单独投递；前端会暂停待投递队列，
 直到玩家发出下一条普通消息，再把“且慢”和新消息一起组成下一轮输入。已经交给 CLI 的输入归 CLI 会话处理，
@@ -165,8 +181,8 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 - `requiresReset`：当前本地会话是否因首轮缺少可恢复会话 id 而不可继续；为 `true` 时只能重置。
 - `lastMessageOrdinal`：当前会话已分配的最后一个消息序号。
 - `visibleMessages`：游戏内可见对话记录，供界面渲染和会话恢复使用。
-- `pendingMessages`：已经显示给玩家、尚未进入投递轮次的玩家消息；“且慢”会暂停队列，直到下一条普通玩家
-  消息触发投递。
+- `pendingMessages`：已经显示给玩家、尚未进入投递轮次的消息；包含玩家消息，以及等待下一条玩家消息一起送出
+  的 `origin = "runtime"` 相枢运行时固定说明。“且慢”会暂停队列。
 
 持久化快照保存 `sessionId`、`adapter`、`agentSessionId`、`requiresReset`、`lastMessageOrdinal` 和
 `visibleMessages`。`pendingMessages` 是内存态。
@@ -183,9 +199,9 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 - `speakerName`：界面显示的说话人名称。
 - `createdAt`：消息进入前端可见对话记录的 UTC 时间。
 - `content`：消息文本；`role = "assistant"` 时显示为相枢消息，`role = "user"` 时保留玩家原文。
-- `origin`：`user`、`agent`、`agent-intermediate` 或 `session`。`agent` 表示 CLI 最终 assistant 输出；
-  `agent-intermediate` 表示 Agent 通过 MCP 中间答复工具写入的消息；`session` 表示前端会话写入的少量固定
-  说明，例如失败说明、协议内固定说明或必须重置说明。
+- `origin`：`user`、`agent`、`agent-intermediate` 或 `runtime`。`agent` 表示 CLI 最终 assistant 输出；
+  `agent-intermediate` 表示 Agent 通过 MCP 中间答复工具写入的消息；`runtime` 表示相枢运行时写入的少量
+  固定说明，例如失败说明、协议内固定说明或必须重置说明。
 
 每个投递轮次对应一次 CLI Agent 调用。CLI 最终答复和 MCP 中间答复按产出顺序追加到可见对话记录。
 
@@ -195,19 +211,20 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 消息：
 
 - 玩家消息：玩家发送后立即追加到对话流。
-- 相枢消息：在 CLI 最终答复、MCP 中间答复工具或前端会话固定说明产出文本时追加。
+- 相枢消息：在 CLI 最终答复、MCP 中间答复工具或运行时固定说明产出文本时追加。
 - `idle`：当前没有运行中的 CLI 调用，发送入口提交新玩家消息。
 - `replying`：CLI 正在生成回复，发送按钮切换为可点击的“且慢”中断入口。
 - `interrupted`：玩家点击“且慢”后，当前 CLI 调用被切断，发送入口回到普通输入；前端等待下一条普通玩家
   消息触发后续投递。
-- `failed`：如果需要让玩家知道失败，前端会话追加一条 `origin = "session"` 的失败说明；失败细节按日志
+- `failed`：如果需要让玩家知道失败，前端会话追加一条 `origin = "runtime"` 的失败说明；失败细节按日志
   策略处理。
-- `requires-reset`：首轮没有取得可恢复会话 id 时，前端追加一条 `origin = "session"` 的必须重置说明，并
+- `requires-reset`：首轮没有取得可恢复会话 id 时，前端追加一条 `origin = "runtime"` 的必须重置说明，并
   禁用输入和发送；玩家只能点击重置。
 - `reset`：玩家手动重置时，前端清空可见聊天消息并新建本地会话。
 
-失败说明、协议内固定说明和必须重置说明都以相枢消息进入对话流；运行边界和失败原因按日志策略处理。前端
-会话固定说明在界面上显示为相枢气泡，元数据保留 `origin = "session"`。
+失败说明、协议内固定说明和必须重置说明都以相枢消息进入对话流；运行边界和失败原因按日志策略处理。相枢
+运行时固定说明在界面上显示为相枢气泡，元数据保留 `origin = "runtime"`。除必须重置说明外，运行时固定
+说明会在下一条玩家消息触发投递时进入 CLI 输入。
 
 界面身份表达保留两个锚点：窗口头部显示相枢身份，消息气泡内显示说话人名称。玩家通过热键、输入框、
 发送按钮和已有对话流理解主交互。
