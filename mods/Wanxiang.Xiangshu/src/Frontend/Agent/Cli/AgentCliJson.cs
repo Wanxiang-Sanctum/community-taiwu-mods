@@ -46,16 +46,17 @@ internal static class AgentCliJson
             return false;
         }
 
+        StreamJsonEvent? resultEvent = null;
         foreach (StreamJsonEvent streamEvent in events)
         {
-            if (streamEvent.IsSuccessfulResult()
-                && streamEvent.TryExtractChatReply(out string? eventReply))
+            if (streamEvent.IsSuccessfulResult())
             {
-                reply = eventReply;
+                resultEvent = streamEvent;
             }
         }
 
-        return !string.IsNullOrWhiteSpace(reply);
+        return resultEvent is not null
+            && resultEvent.TryExtractStructuredOutputReply(out reply);
     }
 
     public static string? ExtractStreamJsonSessionId(string stdout)
@@ -221,9 +222,6 @@ internal static class AgentCliJson
         [JsonProperty("structured_output")]
         public JToken? StructuredOutput { get; set; }
 
-        [JsonProperty("result")]
-        public JToken? Result { get; set; }
-
         [JsonProperty("session_id")]
         public string? SessionId { get; set; }
 
@@ -239,14 +237,11 @@ internal static class AgentCliJson
                 && IsError == false;
         }
 
-        public bool TryExtractChatReply(
+        public bool TryExtractStructuredOutputReply(
             [NotNullWhen(true)]
             out string? reply)
         {
-            return AgentCliJson.TryExtractChatReply(
-                    StructuredOutput,
-                    out reply)
-                || AgentCliJson.TryExtractChatReply(Result, out reply);
+            return AgentCliJson.TryExtractChatReply(StructuredOutput, out reply);
         }
     }
 

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using Wanxiang.Xiangshu.Frontend.Agent;
 using Wanxiang.Xiangshu.Frontend.Agent.Turn;
@@ -241,6 +242,9 @@ internal sealed class AgentCliLauncher(
             RedirectStandardInput = adapter.RedirectStandardInput,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardInputEncoding = Encoding.UTF8,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
             CreateNoWindow = true,
         };
         ApplyEnvironmentVariables(startInfo, settings.EnvironmentVariables);

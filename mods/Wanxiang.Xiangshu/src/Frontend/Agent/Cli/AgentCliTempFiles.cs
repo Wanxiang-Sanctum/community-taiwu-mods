@@ -14,21 +14,6 @@ internal sealed class AgentCliTempFiles : IDisposable
         NullValueHandling = NullValueHandling.Ignore,
     };
 
-    public const string ChatReplySchemaJson =
-        """
-        {
-          "type": "object",
-          "properties": {
-            "reply": {
-              "type": "string",
-              "minLength": 1
-            }
-          },
-          "required": ["reply"],
-          "additionalProperties": false
-        }
-        """;
-
     private readonly string _directory;
 
     private AgentCliTempFiles(string directory)
@@ -80,7 +65,7 @@ internal sealed class AgentCliTempFiles : IDisposable
 
     public string WriteChatReplySchema()
     {
-        File.WriteAllText(ChatReplySchemaPath, ChatReplySchemaJson, Utf8NoBom);
+        File.WriteAllText(ChatReplySchemaPath, AgentCliChatReplySchema.CreateIndentedJson(), Utf8NoBom);
         return ChatReplySchemaPath;
     }
 

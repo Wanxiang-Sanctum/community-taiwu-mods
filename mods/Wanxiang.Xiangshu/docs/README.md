@@ -6,8 +6,8 @@
 
 - `agent-chat.md`：游戏内对话、本机 CLI Agent、MCP sidecar、脚本通道、中间答复和运行数据目录的运行设计。它说明
   默认工作区在对话链路中的运行契约，不维护默认工作区资料来源、放置规则或具体 CLI 命令清单。
-- `agent-cli-adapters.md`：本机 CLI Agent 适配器清单、命令形态、会话恢复字段和新增适配器时的更新边界。它不重复
-  游戏内对话、MCP sidecar 或脚本通道的完整运行模型。
+- `agent-cli-adapters.md`：本机 CLI Agent 适配器清单、命令形态、工作区入口、会话 id 来源、最终答复来源和新增
+  适配器时的更新边界。它不重复游戏内对话、MCP sidecar 或脚本通道的完整运行模型。
 - `logging.md`：游戏日志、MCP sidecar 事件日志和可见对话的分工。它不维护共享日志库 API，也不复制运行数据文件格式。
 - `agent-context-sources.md`：`DefaultAgentWorkspace/` 资料如何回溯到游戏观察快照，新资料应放到哪里，以及本地
   工作记录、默认资产和运行数据如何分界。它不替代运行中的 `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`

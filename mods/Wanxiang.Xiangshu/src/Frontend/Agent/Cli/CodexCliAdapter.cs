@@ -57,13 +57,10 @@ internal sealed class CodexCliAdapter : IAgentCliAdapter
         [NotNullWhen(true)]
         out string? assistantMessage)
     {
-        if (!string.IsNullOrWhiteSpace(result.LastMessage)
-            && AgentCliJson.TryExtractChatReply(result.LastMessage, out assistantMessage))
-        {
-            return true;
-        }
+        assistantMessage = null;
 
-        return AgentCliJson.TryExtractChatReply(result.Stdout, out assistantMessage);
+        return !string.IsNullOrWhiteSpace(result.LastMessage)
+            && AgentCliJson.TryExtractChatReply(result.LastMessage, out assistantMessage);
     }
 
     public string? ExtractAgentSessionId(AgentProcessResult result)

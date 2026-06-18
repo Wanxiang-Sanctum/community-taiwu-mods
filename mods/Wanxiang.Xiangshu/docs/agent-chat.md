@@ -5,7 +5,7 @@
 相枢的对话入口由前端插件负责。玩家界面呈现为与 NPC “相枢”的连续对话；前端负责游戏内消息、投递状态
 和 CLI 调用，本机 Agent 自己维护长期会话上下文。交互以流畅度优先：前端启动 CLI Agent 时默认使用对应
 适配器的完全信任式非交互执行方式，让一次游戏内投递轮次收束为一条相枢最终回应。具体 CLI 清单、命令形态、
-会话字段和默认工作区入口见 `agent-cli-adapters.md`。
+工作区入口、会话 id 来源和最终答复来源见 `agent-cli-adapters.md`。
 
 游戏内投递协议归前端会话所有；长期上下文归本机 Agent 会话所有。MCP server 的职责是作为相枢暴露给
 本机 Agent 的工具服务：前端在启动 CLI Agent 时，把当前相枢 MCP endpoint 注册给 Agent；Agent 需要
@@ -107,8 +107,8 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 - `ipc-endpoints.json`：前端、后端和 MCP server 共同使用的本机 endpoint manifest。
 - `Diagnostics/McpServer/`：MCP sidecar 生命周期事件日志目录。
-- `Temp/AgentCli/`：前端启动 CLI Agent 时使用的短生命周期协议文件目录，例如结构化输出、最后消息和 MCP
-  配置所需文件；需要写入临时 MCP config 的适配器会在其中包含本次运行的 `Authorization: Bearer ...`
+- `Temp/AgentCli/`：前端启动 CLI Agent 时使用的短生命周期协议文件目录，例如 JSON Schema、Codex
+  last-message 和 MCP config；需要写入临时 MCP config 的适配器会在其中包含本次运行的 `Authorization: Bearer ...`
   header。单次调用结束后删除对应调用子目录。
 - `ChatSessions/`：当前聊天会话选择和可恢复快照。文件格式是相枢前端的内部恢复数据。
 
@@ -296,17 +296,16 @@ Agent 调用仍归前端投递会话与本机 CLI 会话。
 
 ## CLI 适配器边界
 
-适配器的边界是“把一个投递轮次交给真实本机 CLI Agent，并返回最终答复”。MCP 工具归 MCP server，游戏状态
-修改归前端或后端脚本能力。
+本节只记录对话链路依赖的适配器边界：前端把一个投递轮次交给本机 CLI Agent，等待最终答复或协议失败；
+MCP 工具归 MCP server，游戏状态修改归前端或后端脚本能力。
 
-适配器启动 CLI 进程时，必须把进程工作目录设置为 `AgentWorkingDirectory`。进程工作目录是主工作区来源；
-命令行参数只补充各 CLI 额外需要的会话参数、MCP 配置和结构化输出约束。适配器默认使用各 CLI 的完全信任式
-非交互参数；`AgentWorkingDirectory` 是本机 Agent 的受信工作区。权限/信任选择在 CLI 启动参数中完成，
-聊天 UI 接收最终 JSON 答复或失败说明。如果 CLI 因环境约束异常退出或被阻断，前端会话按 `failed` 映射成
-相枢文本答复。
+前端启动 CLI 进程时，把 `AgentWorkingDirectory` 设为进程工作目录；该目录是本机 Agent 的受信工作区。
+CLI 启动参数负责选择完全信任式非交互模式，并传入会话恢复、MCP 配置和结构化输出约束。聊天 UI 只接收
+最终相枢文本或失败说明；如果 CLI 因环境约束异常退出、被阻断或没有返回所需协议字段，前端会话按 `failed`
+映射成相枢文本答复。
 
-当前适配器清单、默认命令、工作区入口、会话恢复字段和命令形态由 `agent-cli-adapters.md` 维护。新增 Agent
-只有改变本章描述的投递模型、运行数据所有权或玩家可见行为时，才需要修改本文件。
+当前适配器清单、默认命令、工作区入口、会话 id 来源、最终答复来源和命令形态由 `agent-cli-adapters.md`
+维护。新增 Agent 只有改变本章描述的投递模型、运行数据所有权或玩家可见行为时，才需要修改本文件。
 
 当前适配使用进程边界处理回合控制。玩家“且慢”通过取消 CLI 进程实现。长连接 transport、SDK streaming 或
 ACP 等其它接入方式实际改接时再进入适配器设计。

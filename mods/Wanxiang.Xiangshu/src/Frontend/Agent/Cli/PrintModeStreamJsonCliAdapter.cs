@@ -5,7 +5,7 @@ namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 
 internal abstract class PrintModeStreamJsonCliAdapter : IAgentCliAdapter
 {
-    public bool RedirectStandardInput => false;
+    public bool RedirectStandardInput => true;
 
     public void ConfigureStartInfo(
         ProcessStartInfo startInfo,
@@ -31,10 +31,8 @@ internal abstract class PrintModeStreamJsonCliAdapter : IAgentCliAdapter
         if (invocation.RequireChatReplySchema)
         {
             startInfo.ArgumentList.Add("--json-schema");
-            startInfo.ArgumentList.Add(AgentCliTempFiles.ChatReplySchemaJson);
+            startInfo.ArgumentList.Add(AgentCliChatReplySchema.CreateCompactJson());
         }
-
-        startInfo.ArgumentList.Add(invocation.TurnInputJson);
     }
 
     public bool TryExtractAssistantMessage(
