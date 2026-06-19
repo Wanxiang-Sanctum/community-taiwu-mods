@@ -102,6 +102,16 @@
 | `FrontendPatches` | string list | 前端 patch 清单字段。 |
 | `EventPackages` | string list | 事件包 DLL 清单。后端会从 Mod 的 `Events/` 目录加载这些事件包。 |
 
+## Description 格式边界
+
+`Description` 是太吾读取和写回的 Mod 简介字段；上传时会同步为 Steam Workshop item 描述。Workshop 页面渲染这段文本时
+使用 Steam 社区格式，涉及可用标签、解析差异和字符限制时，参考 Steam 社区指南
+[`Comprehensive Formatting Help`](https://steamcommunity.com/sharedfiles/filedetails/?id=2807121939) 中的
+UGC description/summary 条目。
+
+本文只记录太吾如何读取和同步该字段，不维护 BBCode 标签、解析差异或限制清单。具体 Mod 的简介文案仍由各自的
+`Config.Lua` 维护；展示效果以 Steam 实际编辑或预览结果为准。
+
 ## DefaultSettings
 
 每个设置项都有这些公共字段：
