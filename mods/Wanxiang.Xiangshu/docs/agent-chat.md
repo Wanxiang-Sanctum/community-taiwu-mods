@@ -48,20 +48,21 @@ Agent 调用。endpoint manifest 只发布路由信息；token 不写入 manifes
 
 ## Agent 工作区与投递输入
 
-默认打包目录预置一个自包含的 `DefaultAgentWorkspace/`，作为相枢的默认本机 Agent 工作区配置和自定义示范。
+默认打包目录预置一个自包含的 `DefaultAgentWorkspace/`，作为相枢的默认本机 Agent 工作区配置和默认起点。
 本节只记录运行时契约：CLI Agent 的进程工作目录就是这个工作区，运行时数据集中写入
 `.xiangshu-runtime/`，默认工作区文件必须能在包内独立被读取。
 
 默认工作区的读取路由由工作区入口文件和子目录 README 维护；源码维护时的资料来源、放置规则和快照核对路径见
 `agent-context-sources.md`。运行设计文档不复制默认工作区的入口、资料和技能目录清单，只约束它们在对话链路
-中的职责：入口指令提供基础相枢身份、口吻、玩家可见边界和输出可见性；资料和工具指引细化按需读取；Agent 技能目录由
-具体 CLI 的发现机制读取。各 CLI Agent 使用哪个入口文件和技能目录由 `agent-cli-adapters.md` 维护。
+中的职责：入口指令提供基础相枢身份、口吻、玩家可见边界和输出可见性；资料、工具指引和初始运行经验帮助
+Agent 理解相枢、太吾和可用运行工具；Agent 技能目录由具体 CLI 的发现机制读取。各 CLI Agent 使用哪个入口文件和
+技能目录由 `agent-cli-adapters.md` 维护。
 
 `.xiangshu-notes/` 是可选本机工作记录目录，用于会话草稿和本地经验，默认包不创建它。`.xiangshu-runtime/`
 是相枢前端插件和 MCP server 维护的运行数据目录，不属于可编辑 Agent 资产。
 
-用户可以在该工作区手工维护自己的人设、世界观资料、工具指引、设置和 Agent 技能；运行中的 Agent 把这些
-文件作为工作区配置读取。如果用户把 `AgentWorkingDirectory` 指向其它目录，该目录由用户自行维护。
+用户可以先复用默认工作区，再手工维护自己的人设、世界观资料、工具指引、设置和 Agent 技能；运行中的
+Agent 把这些文件作为工作区配置读取。如果用户把 `AgentWorkingDirectory` 指向其它目录，该目录由用户自行维护。
 
 内部投递给 CLI Agent 的每个投递输入只描述当前投递轮次需要交给 Agent 会话的新可见消息。历史对话由 CLI
 Agent 自己的可恢复会话维护。

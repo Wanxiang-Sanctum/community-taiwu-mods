@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
+    <TaiwuModPackFile Include="Cover.jpg" PackagePath="Cover.jpg" />
+    <TaiwuModPackFile Include="DetailImage.png" PackagePath="DetailImage.png" />
     <TaiwuModPackDirectory
       Include="DefaultAgentWorkspace"
       PackagePath="DefaultAgentWorkspace"
