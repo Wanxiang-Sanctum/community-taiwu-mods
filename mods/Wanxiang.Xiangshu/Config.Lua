@@ -6,8 +6,12 @@ return {
   GameVersion = "1.0.1",
   Author = "Wanxiang Sanctum",
   Description = "一个混沌的愿望回应 mod。可在游戏内与本机 Agent 对话，并通过 MCP 工具连接前后端脚本能力。",
-  WorkshopCover = nil,
-  Visibility = 0,
+  TagList = {
+    "Extensions",
+  },
+  Dependencies = {
+    3747731025,
+  },
   DefaultSettings = {
     {
       SettingType = "Dropdown",
@@ -36,17 +40,11 @@ return {
       DefaultValue = "DefaultAgentWorkspace",
     },
   },
-  UpdateLogList = {},
-  ChangeConfig = false,
-  HasArchive = false,
   NeedRestartWhenSettingChanged = true,
   BackendPlugins = {
     "Backend/Wanxiang.Xiangshu.Backend.dll",
   },
-  BackendPatches = {},
   FrontendPlugins = {
     "Frontend/Wanxiang.Xiangshu.Frontend.dll",
   },
-  FrontendPatches = {},
-  EventPackages = {},
 }
