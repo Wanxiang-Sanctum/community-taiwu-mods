@@ -22,6 +22,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 ```
 
 新建后，Mod 目录包含游戏读取的 `Config.Lua`、项目内 README，以及前端和后端两个插件项目。
+太吾游戏读取 `Config.Lua` 以及同步 Steam Workshop 字段的通用语义见仓库级文档
+[`docs/taiwu-game-steam-config-lua.md`](../docs/taiwu-game-steam-config-lua.md)。
 
 ```text
 mods/MyMod/
@@ -129,7 +131,7 @@ MSBuild 目标结果 JSON 作为项目包产物清单。
 插件项目默认引用 `Taiwu.ModKit.References.Plugin`。需要访问更宽的游戏 API 时，再按实际代码需要
 添加 `Taiwu.ModKit.References.Frontend` 或 `Taiwu.ModKit.References.Backend` 等引用包。
 
-这些 `Taiwu.ModKit.References.*` 包由 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的
+这些 `Taiwu.ModKit.References.*` 包由 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的
 引用包工具生成和发布；包拆分原则、DLL 选择和发布目标归该仓库的工具配置维护。本仓库选择需要引用的包，并在仓库根
 `Directory.Packages.props` 固定版本。
 

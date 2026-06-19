@@ -44,5 +44,5 @@ shared/MyCompany.Taiwu.Shared/
 `.csproj` 中显式添加 `Krafs.Publicizer` 引用、启用 `UsePublicizer`，并声明具体 `Publicize` 项。
 
 `Taiwu.ModKit.References.*` 包的生成、分类和发布归
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 维护；共享项目通过稳定包 ID 和本仓库固定版本引用
-这些包，DLL 清单以 `taiwu-modkit` 的工具配置为准。
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库维护；共享项目通过稳定包 ID 和本仓库固定版本
+引用这些包，DLL 清单以该仓库的工具配置为准。
