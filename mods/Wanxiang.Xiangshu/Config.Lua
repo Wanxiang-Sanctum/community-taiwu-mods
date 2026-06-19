@@ -52,6 +52,9 @@ return {
 [h2]开源地址[/h2]
 https://github.com/Wanxiang-Sanctum/community-taiwu-mods
 ]=],
+  DetailImageList = {
+    "DetailImage.png",
+  },
   TagList = {
     "Extensions",
   },
