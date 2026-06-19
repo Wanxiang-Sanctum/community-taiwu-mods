@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using ModelContextProtocol.Server;
+using ModelContextProtocol.Protocol;
+using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.McpServer;
 
@@ -69,5 +71,27 @@ internal sealed class PluginTools
             script,
             argumentsJson,
             cancellationToken);
+    }
+
+    [McpServerTool(
+        Name = "xiangshu_capture_player_view",
+        Destructive = false,
+        Idempotent = false,
+        ReadOnly = true)]
+    [Description(
+        "Captures the current full-screen, native-resolution player-visible Unity frontend view as PNG image content. "
+        + "Use it before screen-coordinate targeting, UI inspection, or visual verification. "
+        + "The capture excludes the Xiangshu chat window without changing its visible state or input focus.")]
+    public async Task<CallToolResult> CapturePlayerViewAsync(CancellationToken cancellationToken = default)
+    {
+        IpcCapturePlayerViewResponse response = await PluginIpcProxy.CapturePlayerViewAsync(cancellationToken);
+
+        return new CallToolResult
+        {
+            Content =
+            [
+                ImageContentBlock.FromBytes(response.PngBytes, "image/png"),
+            ],
+        };
     }
 }

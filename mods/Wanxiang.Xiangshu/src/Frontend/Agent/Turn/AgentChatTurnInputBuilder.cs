@@ -1,11 +1,16 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Turn;
 
 internal static class AgentChatTurnInputBuilder
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
+        Converters =
+        {
+            new StringEnumConverter { AllowIntegerValues = false },
+        },
         NullValueHandling = NullValueHandling.Ignore,
     };
 
@@ -13,7 +18,7 @@ internal static class AgentChatTurnInputBuilder
     {
         AgentChatTurnInput input = new(
             playerName: turn.PlayerName,
-            playerMessages: turn.PlayerMessages);
+            turnMessages: turn.Messages);
 
         return JsonConvert.SerializeObject(input, Formatting.Indented, JsonSettings);
     }
@@ -21,11 +26,11 @@ internal static class AgentChatTurnInputBuilder
 
 internal sealed class AgentChatTurnInput(
     string playerName,
-    IReadOnlyList<AgentChatTurnMessage> playerMessages)
+    IReadOnlyList<AgentChatTurnMessage> turnMessages)
 {
     [JsonProperty("playerName")]
     public string PlayerName { get; } = playerName;
 
-    [JsonProperty("playerMessages")]
-    public IReadOnlyList<AgentChatTurnMessage> PlayerMessages { get; } = playerMessages;
+    [JsonProperty("turnMessages")]
+    public IReadOnlyList<AgentChatTurnMessage> TurnMessages { get; } = turnMessages;
 }

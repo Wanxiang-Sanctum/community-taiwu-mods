@@ -12,8 +12,14 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "Unity constructs this MonoBehaviour through GameObject.AddComponent at runtime.")]
+[RequireComponent(typeof(Canvas))]
+[RequireComponent(typeof(CanvasScaler))]
+[RequireComponent(typeof(ConchShipGraphicRaycaster))]
+[RequireComponent(typeof(CanvasGroup))]
 internal sealed class XiangshuChatWindow : MonoBehaviour
 {
+    internal const string RootGameObjectName = "Wanxiang.Xiangshu.ChatWindow";
+
     private const string HeaderIconSprite = "map_icon_xiangshu";
     private const string HeaderPortraitTexturePath =
         "RemakeResources/Textures/GameLineScroll/npcface_image_2001_0";
@@ -46,7 +52,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PreferredMessageBubbleWidth = 430f;
     private const float MaximumMessageBubbleWidth = 460f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
-
+    private const int CanvasSortingOrder = 32000;
+    private static readonly Vector2 CanvasReferenceResolution = new(2560f, 1440f);
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -78,6 +85,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private RectTransform? _messageContent;
     private ScrollRect? _scrollRect;
     private DisableHotkeyInputField? _inputField;
+    private Canvas? _rootCanvas;
+    private CanvasScaler? _rootCanvasScaler;
+    private ConchShipGraphicRaycaster? _rootRaycaster;
+    private CanvasGroup? _rootCanvasGroup;
     private CImage? _inputFieldImage;
     private Outline? _inputFocusOutline;
     private Button? _sendButton;
@@ -104,7 +115,13 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         AgentChatSession session,
         ChatParticipantIdentity participants)
     {
-        GameObject root = new("Wanxiang.Xiangshu.ChatWindow", typeof(RectTransform));
+        GameObject root = new(
+            RootGameObjectName,
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(CanvasScaler),
+            typeof(ConchShipGraphicRaycaster),
+            typeof(CanvasGroup));
         DontDestroyOnLoad(root);
         XiangshuChatWindow window = root.AddComponent<XiangshuChatWindow>();
         window.Initialize(session, participants);
@@ -140,6 +157,23 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         FocusInputField();
     }
 
+    internal static IDisposable BeginPlayerViewCaptureExclusion()
+    {
+        List<VisibilityState> visibilityStates = [];
+
+        foreach (XiangshuChatWindow window in Resources.FindObjectsOfTypeAll<XiangshuChatWindow>())
+        {
+            if (!window.IsVisible || !window.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            visibilityStates.Add(window.ExcludeFromPlayerViewCapture());
+        }
+
+        return new PlayerViewCaptureExclusionScope(visibilityStates);
+    }
+
     public void DestroyWindow()
     {
         Destroy(gameObject);
@@ -151,9 +185,30 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         _session = session;
         _participants = participants;
+        _rootCanvas = GetRequiredRootComponent<Canvas>();
+        _rootCanvasScaler = GetRequiredRootComponent<CanvasScaler>();
+        _rootRaycaster = GetRequiredRootComponent<ConchShipGraphicRaycaster>();
+        _rootCanvasGroup = GetRequiredRootComponent<CanvasGroup>();
         _participants.PlayerNameChanged += UpdatePlayerSpeakerLabels;
         IsVisible = false;
         gameObject.SetActive(false);
+    }
+
+    private T GetRequiredRootComponent<T>()
+        where T : Component
+    {
+        return GetComponent<T>()
+            ?? throw new InvalidOperationException(
+                $"Xiangshu chat window root is missing required {typeof(T).Name} component.");
+    }
+
+    private VisibilityState ExcludeFromPlayerViewCapture()
+    {
+        CanvasGroup canvasGroup = _rootCanvasGroup
+            ?? throw new InvalidOperationException("Xiangshu chat window root CanvasGroup is not initialized.");
+        VisibilityState state = new(canvasGroup, canvasGroup.alpha);
+        canvasGroup.alpha = 0f;
+        return state;
     }
 
     [SuppressMessage(
@@ -186,7 +241,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             && !Input.GetKey(KeyCode.LeftShift)
             && !Input.GetKey(KeyCode.RightShift)
-            && _session?.IsReplying != true)
+            && _session?.IsReplying != true
+            && _session?.RequiresReset != true)
         {
             SendCurrentInput();
         }
@@ -263,12 +319,17 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
+        if (_session.RequiresReset)
+        {
+            return;
+        }
+
         SendCurrentInput();
     }
 
     private void SendCurrentInput()
     {
-        if (_session is null || _inputField is null)
+        if (_session is null || _inputField is null || _session.RequiresReset)
         {
             return;
         }
@@ -305,7 +366,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private void InterruptReply()
     {
-        if (_session is null)
+        if (_session?.RequiresReset != false)
         {
             return;
         }
@@ -355,7 +416,21 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         bool isReplying = _session?.IsReplying == true;
+        bool requiresReset = _session?.RequiresReset == true;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
+
+        inputField.interactable = !requiresReset;
+
+        if (requiresReset)
+        {
+            inputField.DeactivateInputField();
+            SetInputFocused(focused: false);
+            sendButton.interactable = false;
+            sendButtonImage.color = DisabledButtonColor;
+            sendButtonText.text = "须重置";
+            sendButtonText.color = MutedTextColor;
+            return;
+        }
 
         if (isReplying)
         {
@@ -842,16 +917,31 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private bool EnsureUiBuilt()
     {
+        if (!EnsureAttachedToGameUi())
+        {
+            return false;
+        }
+
         if (_uiBuilt)
         {
             return true;
         }
 
+        CaptureGameTextStyle();
+        BuildUi();
+        ReplayVisibleMessages();
+        _uiBuilt = true;
+        return true;
+    }
+
+    private bool EnsureAttachedToGameUi()
+    {
         UIManager uiManager = UIManager.Instance;
 
         if (uiManager is null)
         {
             Log.Warning("chat window cannot build because UIManager is unavailable");
+
             return false;
         }
 
@@ -861,41 +951,62 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (layer is null)
         {
             Log.Warning("chat window cannot build because no Taiwu UI layer is available");
+
             return false;
         }
 
-        transform.SetParent(layer, worldPositionStays: false);
-        transform.SetAsLastSibling();
-        EnsureLayerRaycaster(layer, uiManager);
-        CaptureGameTextStyle();
-        BuildUi();
-        ReplayVisibleMessages();
-        _uiBuilt = true;
+        Camera uiCamera = uiManager.UiCamera;
+
+        if (uiCamera is null)
+        {
+            Log.Warning("chat window cannot build because UIManager has no UI camera");
+
+            return false;
+        }
+
+        AttachToGameUiLayer(layer);
+        ConfigureRootCanvas(uiCamera);
         return true;
     }
 
-    private static void EnsureLayerRaycaster(
-        RectTransform layer,
-        UIManager uiManager)
+    private void AttachToGameUiLayer(RectTransform layer)
     {
-        Canvas canvas = layer.GetComponentInParent<Canvas>();
+        bool shouldSyncLayer = transform.parent != layer
+            || gameObject.layer != layer.gameObject.layer;
 
-        if (canvas is null)
+        if (transform.parent != layer)
         {
-            Log.Warning(
-                "chat window cannot attach raycaster because no parent canvas was found",
-                new
-                {
-                    layer = layer.name,
-                });
-            return;
+            transform.SetParent(layer, worldPositionStays: false);
+            StretchToParent((RectTransform)transform);
+            transform.SetAsLastSibling();
         }
 
-        ConchShipGraphicRaycaster raycaster = canvas.GetComponent<ConchShipGraphicRaycaster>();
-        raycaster ??= canvas.gameObject.AddComponent<ConchShipGraphicRaycaster>();
+        if (shouldSyncLayer)
+        {
+            SetLayerRecursively(transform, layer.gameObject.layer);
+        }
+    }
 
+    private void ConfigureRootCanvas(Camera uiCamera)
+    {
+        Canvas canvas = _rootCanvas
+            ?? throw new InvalidOperationException("Xiangshu chat window root Canvas is not initialized.");
+
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = uiCamera;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = CanvasSortingOrder;
+
+        CanvasScaler scaler = _rootCanvasScaler
+            ?? throw new InvalidOperationException("Xiangshu chat window root CanvasScaler is not initialized.");
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = CanvasReferenceResolution;
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+
+        ConchShipGraphicRaycaster raycaster = _rootRaycaster
+            ?? throw new InvalidOperationException("Xiangshu chat window root raycaster is not initialized.");
         raycaster.enabled = true;
-        raycaster.TargetCamera = uiManager.UiCamera;
+        raycaster.TargetCamera = uiCamera;
     }
 
     private void ApplyPanelLayout()
@@ -986,9 +1097,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return rootRect.rect.size;
         }
 
-        return transform.parent is RectTransform parentRect
-            ? parentRect.rect.size
-            : Vector2.zero;
+        if (transform.parent is RectTransform parentRect)
+        {
+            return parentRect.rect.size;
+        }
+
+        return new Vector2(Screen.width, Screen.height);
     }
 
     private static float GetPanelMargin(float availableSize)
@@ -1065,7 +1179,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void FocusInputField()
     {
         DisableHotkeyInputField? inputField = _inputField;
-        if (inputField?.gameObject.activeInHierarchy != true)
+        if (_session?.RequiresReset == true
+            || inputField?.gameObject.activeInHierarchy != true)
         {
             return;
         }
@@ -1091,7 +1206,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         DisableHotkeyInputField? inputField = _inputField;
-        if (!IsVisible || inputField?.gameObject.activeInHierarchy != true)
+        if (!IsVisible
+            || _session?.RequiresReset == true
+            || inputField?.gameObject.activeInHierarchy != true)
         {
             return;
         }
@@ -1104,7 +1221,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private void UpdateInputFocusVisual()
     {
-        bool focused = _inputField?.isFocused == true;
+        bool focused = _session?.RequiresReset != true
+            && _inputField?.isFocused == true;
 
         if (_inputFocused == focused)
         {
@@ -1120,7 +1238,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         if (_inputFieldImage is { } inputFieldImage)
         {
-            inputFieldImage.color = focused ? FocusedInputColor : InputColor;
+            Color inputColor = focused ? FocusedInputColor : InputColor;
+            inputFieldImage.color = _session?.RequiresReset == true
+                ? DisabledButtonColor
+                : inputColor;
         }
 
         if (_inputFocusOutline is { } inputFocusOutline)
@@ -1201,9 +1322,24 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         string name,
         Transform parent)
     {
-        GameObject child = new(name, typeof(RectTransform));
+        GameObject child = new(name, typeof(RectTransform))
+        {
+            layer = parent.gameObject.layer,
+        };
         child.transform.SetParent(parent, worldPositionStays: false);
         return child;
+    }
+
+    private static void SetLayerRecursively(
+        Transform root,
+        int layer)
+    {
+        root.gameObject.layer = layer;
+
+        foreach (Transform child in root)
+        {
+            SetLayerRecursively(child, layer);
+        }
     }
 
     private static TextMeshProUGUI CreateText(
@@ -1321,7 +1457,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         string name,
         Transform parent)
     {
-        GameObject child = new(name, typeof(RectTransform));
+        GameObject child = new(name, typeof(RectTransform))
+        {
+            layer = parent.gameObject.layer,
+        };
         child.SetActive(false);
         child.transform.SetParent(parent, worldPositionStays: false);
         return child;
@@ -1487,6 +1626,40 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         public void OnEndDrag(PointerEventData eventData)
         {
             _window?.EndPanelDrag();
+        }
+    }
+
+    private readonly struct VisibilityState(
+        CanvasGroup group,
+        float alpha)
+    {
+        public CanvasGroup Group { get; } = group;
+
+        public float Alpha { get; } = alpha;
+    }
+
+    private sealed class PlayerViewCaptureExclusionScope(List<VisibilityState> visibilityStates) : IDisposable
+    {
+        private List<VisibilityState>? _visibilityStates = visibilityStates;
+
+        public void Dispose()
+        {
+            List<VisibilityState>? statesToRestore = _visibilityStates;
+            if (statesToRestore is null)
+            {
+                return;
+            }
+
+            _visibilityStates = null;
+
+            for (int index = statesToRestore.Count - 1; index >= 0; index--)
+            {
+                VisibilityState state = statesToRestore[index];
+                if (state.Group is { } group)
+                {
+                    group.alpha = state.Alpha;
+                }
+            }
         }
     }
 }

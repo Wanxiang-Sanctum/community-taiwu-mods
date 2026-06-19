@@ -8,6 +8,8 @@
     <PublishTrimmed>true</PublishTrimmed>
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- Keep Windows 10 compatibility scoped to the sidecar host. -->
+    <CETCompat>false</CETCompat>
     <InvariantGlobalization>true</InvariantGlobalization>
     <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
     <TaiwuModPublishPackagePath

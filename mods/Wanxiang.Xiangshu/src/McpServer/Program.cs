@@ -1,8 +1,12 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +25,16 @@ string logFilePath = builder.Configuration["log-file"]
     ?? Path.Combine(AppContext.BaseDirectory, "Wanxiang.Xiangshu.McpServer.log");
 string manifestFilePath = builder.Configuration["manifest-file"]
     ?? throw new InvalidOperationException("--manifest-file is required.");
+string bearerToken = Environment.GetEnvironmentVariable(IpcRuntime.McpBearerTokenEnvironmentVariable)
+    ?? throw new InvalidOperationException(
+        IpcRuntime.McpBearerTokenEnvironmentVariable + " environment variable is required.");
 string? logDirectory = Path.GetDirectoryName(logFilePath);
+
+if (string.IsNullOrWhiteSpace(bearerToken))
+{
+    throw new InvalidOperationException(
+        IpcRuntime.McpBearerTokenEnvironmentVariable + " environment variable cannot be empty.");
+}
 
 if (!string.IsNullOrEmpty(logDirectory))
 {
@@ -53,6 +66,11 @@ try
         .GetRequiredService<ILoggerFactory>()
         .CreateLogger("Wanxiang.Xiangshu.McpServer");
     McpServerLog.Starting(logger);
+    _ = app.Use(
+        (context, next) => AuthorizeMcpRequestAsync(
+            context,
+            next,
+            bearerToken));
     _ = app.MapMcp(IpcRuntime.McpPath);
 
     await app.StartAsync();
@@ -144,6 +162,103 @@ static bool IsProcessRunning(int processId)
     {
         return false;
     }
+}
+
+static async Task AuthorizeMcpRequestAsync(
+    HttpContext context,
+    Func<Task> next,
+    string bearerToken)
+{
+    if (context.Request.Path != IpcRuntime.McpPath)
+    {
+        await next();
+        return;
+    }
+
+    if (!IsOriginAllowed(context.Request))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
+    }
+
+    if (!HasExpectedBearerToken(context.Request, bearerToken))
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        context.Response.Headers.WWWAuthenticate = "Bearer realm=\"xiangshu-mcp\"";
+        return;
+    }
+
+    await next();
+}
+
+static bool IsOriginAllowed(HttpRequest request)
+{
+    if (!request.Headers.TryGetValue("Origin", out Microsoft.Extensions.Primitives.StringValues origins))
+    {
+        return true;
+    }
+
+    if (origins.Count != 1)
+    {
+        return false;
+    }
+
+    return IsLocalHttpOrigin(origins[0]);
+}
+
+static bool IsLocalHttpOrigin(string? origin)
+{
+    return !string.IsNullOrWhiteSpace(origin)
+        && Uri.TryCreate(origin, UriKind.Absolute, out Uri? uri)
+        && string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+        && IsLoopbackHost(uri.Host);
+}
+
+static bool IsLoopbackHost(string host)
+{
+    return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+        || (IPAddress.TryParse(host, out IPAddress? address) && IPAddress.IsLoopback(address));
+}
+
+static bool HasExpectedBearerToken(
+    HttpRequest request,
+    string expectedToken)
+{
+    if (!request.Headers.TryGetValue(
+            IpcRuntime.McpAuthorizationHeaderName,
+            out Microsoft.Extensions.Primitives.StringValues authorizationHeaders))
+    {
+        return false;
+    }
+
+    if (authorizationHeaders.Count != 1)
+    {
+        return false;
+    }
+
+    return MatchesBearerToken(authorizationHeaders[0], expectedToken);
+}
+
+static bool MatchesBearerToken(
+    string? authorizationHeader,
+    string expectedToken)
+{
+    if (!AuthenticationHeaderValue.TryParse(authorizationHeader, out AuthenticationHeaderValue? header)
+        || !string.Equals(
+            header.Scheme,
+            IpcRuntime.BearerScheme,
+            StringComparison.OrdinalIgnoreCase)
+        || string.IsNullOrWhiteSpace(header.Parameter))
+    {
+        return false;
+    }
+
+    string actualToken = header.Parameter.Trim();
+    byte[] actualBytes = Encoding.UTF8.GetBytes(actualToken);
+    byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
+
+    return actualBytes.Length == expectedBytes.Length
+        && CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
 }
 
 static Serilog.Core.Logger CreateFileLogger(string logFilePath)

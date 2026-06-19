@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -15,6 +16,10 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        Converters =
+        {
+            new StringEnumConverter { AllowIntegerValues = false },
+        },
         NullValueHandling = NullValueHandling.Ignore,
     };
 
@@ -95,6 +100,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             sessionId,
             NormalizeRequired(session.Adapter, "adapter", sessionPath),
             NormalizeNullable(session.AgentSessionId),
+            session.RequiresReset,
             lastMessageOrdinal,
             messages);
     }
@@ -109,6 +115,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             SessionId = state.SessionId,
             Adapter = state.Adapter,
             AgentSessionId = state.AgentSessionId,
+            RequiresReset = state.RequiresReset,
             LastMessageOrdinal = state.LastMessageOrdinal,
             VisibleMessages =
             [
@@ -123,7 +130,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         {
             Id = message.Id,
             CreatedAt = message.CreatedAt.ToUniversalTime(),
-            Role = message.Role == AgentChatRole.Assistant ? "assistant" : "user",
+            Role = message.Role,
             SpeakerName = message.SpeakerName,
             Content = message.Content,
             Origin = message.Origin,
@@ -137,27 +144,10 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         return new AgentChatMessage(
             NormalizeRequired(persistedMessage.Id, "message.id", sessionPath),
             NormalizeRequiredTimestamp(persistedMessage.CreatedAt, "message.createdAt", sessionPath),
-            ParseRole(persistedMessage.Role, sessionPath),
+            NormalizeRequiredEnum(persistedMessage.Role, "message.role", sessionPath),
             NormalizeRequired(persistedMessage.SpeakerName, "message.speakerName", sessionPath),
             NormalizeRequired(persistedMessage.Content, "message.content", sessionPath),
-            NormalizeRequired(persistedMessage.Origin, "message.origin", sessionPath));
-    }
-
-    private static AgentChatRole ParseRole(
-        string? role,
-        string sessionPath)
-    {
-        if (string.Equals(role?.Trim(), "assistant", StringComparison.OrdinalIgnoreCase))
-        {
-            return AgentChatRole.Assistant;
-        }
-
-        if (string.Equals(role?.Trim(), "user", StringComparison.OrdinalIgnoreCase))
-        {
-            return AgentChatRole.User;
-        }
-
-        throw new InvalidDataException($"Invalid chat message role in {sessionPath}.");
+            NormalizeRequiredEnum(persistedMessage.Origin, "message.origin", sessionPath));
     }
 
     private string GetSessionPath(string sessionId)
@@ -186,8 +176,15 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             throw new InvalidDataException($"Chat session file is empty: {path}");
         }
 
-        return JsonConvert.DeserializeObject<T>(json, JsonSettings)
-            ?? throw new InvalidDataException($"Chat session file is not a JSON object: {path}");
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(json, JsonSettings)
+                ?? throw new InvalidDataException($"Chat session file is not a JSON object: {path}");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException($"Invalid chat session JSON in {path}.", ex);
+        }
     }
 
     private static void WriteJson(
@@ -244,6 +241,20 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         }
 
         return normalized;
+    }
+
+    private static T NormalizeRequiredEnum<T>(
+        T? value,
+        string fieldName,
+        string path)
+        where T : struct, Enum
+    {
+        if (value is null)
+        {
+            throw new InvalidDataException($"Missing chat session field '{fieldName}' in {path}.");
+        }
+
+        return value.Value;
     }
 
     private static string NormalizeSessionId(
@@ -309,6 +320,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public string? AgentSessionId { get; set; }
 
+        public bool RequiresReset { get; set; }
+
         public int? LastMessageOrdinal { get; set; }
 
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
@@ -320,13 +333,13 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
 
         public DateTimeOffset? CreatedAt { get; set; }
 
-        public string Role { get; set; } = string.Empty;
+        public AgentChatRole? Role { get; set; }
 
         public string SpeakerName { get; set; } = string.Empty;
 
         public string Content { get; set; } = string.Empty;
 
-        public string Origin { get; set; } = string.Empty;
+        public AgentChatMessageOrigin? Origin { get; set; }
     }
 }
 
@@ -334,6 +347,7 @@ internal sealed class AgentChatSessionState(
     string sessionId,
     string adapter,
     string? agentSessionId,
+    bool requiresReset,
     int lastMessageOrdinal,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
@@ -342,6 +356,8 @@ internal sealed class AgentChatSessionState(
     public string Adapter { get; } = adapter;
 
     public string? AgentSessionId { get; } = agentSessionId;
+
+    public bool RequiresReset { get; } = requiresReset;
 
     public int LastMessageOrdinal { get; } = lastMessageOrdinal;
 

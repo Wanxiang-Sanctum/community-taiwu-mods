@@ -7,7 +7,10 @@
 - 定义 MessagePipe 请求/响应 DTO。
 - 定义受信脚本执行请求、脚本输入，以及脚本运行响应的嵌套 MessagePack 判别联合：
   `notInvoked(reason)` 或 `invoked(returnValue | exception)`。
+- 定义玩家前端视图截图请求和 PNG 响应；这里只承载跨进程协议，截图语义归前端 `PlayerView/`。
 - 维护前端、后端和 MCP server 的 endpoint manifest 注册与发现；manifest 用 endpoint `role` 区分进程角色。
+- 定义 MCP sidecar、前端和 CLI 适配器共享的 transport、path、header 和环境变量名称；请求门禁由
+  `src/McpServer/` 执行。
 - 提供相枢运行目录、插件部署目录和本机 loopback endpoint 辅助方法。
 
 这个模块只描述跨进程协议和共享基础设施。前端 UI、后端游戏逻辑、MCP 工具语义和本机 Agent 调用由对应

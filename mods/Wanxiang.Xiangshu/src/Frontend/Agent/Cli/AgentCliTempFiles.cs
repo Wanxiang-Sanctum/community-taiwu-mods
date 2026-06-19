@@ -1,28 +1,18 @@
 using System.Text;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Ipc;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 
 internal sealed class AgentCliTempFiles : IDisposable
 {
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-    public const string ChatReplySchemaJson =
-        """
-        {
-          "type": "object",
-          "properties": {
-            "reply": {
-              "type": "string",
-              "minLength": 1
-            }
-          },
-          "required": ["reply"],
-          "additionalProperties": false
-        }
-        """;
+    private static readonly JsonSerializerSettings JsonSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+    };
 
     private readonly string _directory;
 
@@ -51,27 +41,31 @@ internal sealed class AgentCliTempFiles : IDisposable
         return new AgentCliTempFiles(directory);
     }
 
-    public string WriteClaudeMcpConfig(string mcpUrl)
+    public string WriteHttpMcpConfig(
+        string mcpServerUrl,
+        McpBearerToken bearerToken)
     {
-        JObject config = new(
-            new JProperty(
-                "mcpServers",
-                new JObject(
-                    new JProperty(
-                        "xiangshu",
-                        new JObject(
-                            new JProperty("type", "http"),
-                            new JProperty("url", mcpUrl))))));
+        HttpMcpConfig config = new(
+            new Dictionary<string, HttpMcpServerConfig>
+            {
+                ["xiangshu"] = new(
+                    type: "http",
+                    url: mcpServerUrl,
+                    headers: new Dictionary<string, string>
+                    {
+                        [IpcRuntime.McpAuthorizationHeaderName] = bearerToken.AuthorizationHeaderValue,
+                    }),
+            });
         File.WriteAllText(
             McpConfigPath,
-            config.ToString(Formatting.Indented, []),
+            JsonConvert.SerializeObject(config, Formatting.Indented, JsonSettings),
             Utf8NoBom);
         return McpConfigPath;
     }
 
     public string WriteChatReplySchema()
     {
-        File.WriteAllText(ChatReplySchemaPath, ChatReplySchemaJson, Utf8NoBom);
+        File.WriteAllText(ChatReplySchemaPath, AgentCliChatReplySchema.CreateIndentedJson(), Utf8NoBom);
         return ChatReplySchemaPath;
     }
 
@@ -98,4 +92,26 @@ internal sealed class AgentCliTempFiles : IDisposable
         {
         }
     }
+}
+
+internal sealed class HttpMcpConfig(
+    IReadOnlyDictionary<string, HttpMcpServerConfig> mcpServers)
+{
+    [JsonProperty("mcpServers")]
+    public IReadOnlyDictionary<string, HttpMcpServerConfig> McpServers { get; } = mcpServers;
+}
+
+internal sealed class HttpMcpServerConfig(
+    string type,
+    string url,
+    IReadOnlyDictionary<string, string> headers)
+{
+    [JsonProperty("type")]
+    public string Type { get; } = type;
+
+    [JsonProperty("url")]
+    public string Url { get; } = url;
+
+    [JsonProperty("headers")]
+    public IReadOnlyDictionary<string, string> Headers { get; } = headers;
 }

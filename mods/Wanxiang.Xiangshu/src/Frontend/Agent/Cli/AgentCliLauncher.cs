@@ -1,18 +1,22 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text;
 using Cysharp.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Wanxiang.Xiangshu.Frontend.Agent;
+using Wanxiang.Xiangshu.Frontend.Agent.Turn;
+using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Settings;
 using Wanxiang.Xiangshu.Ipc;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 
-internal sealed class AgentCliLauncher : IDisposable
+internal sealed class AgentCliLauncher(
+    McpBearerToken bearerToken) : IDisposable
 {
+    private const string ProtocolFallbackMessage = "方才回声散乱，未能凝成清楚答复。再问我一次。";
+
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
 
     private static readonly TimeSpan McpEndpointPollInterval = TimeSpan.FromMilliseconds(250);
@@ -23,6 +27,8 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
+    private readonly McpBearerToken _mcpBearerToken = bearerToken
+        ?? throw new ArgumentNullException(nameof(bearerToken));
     private readonly object _syncRoot = new();
 
     private Process? _process;
@@ -51,14 +57,16 @@ internal sealed class AgentCliLauncher : IDisposable
             await UniTask.SwitchToThreadPool();
             invocationToken.ThrowIfCancellationRequested();
 
-            string agentInput = AgentChatTurnInputBuilder.Build(turn);
+            string turnInputJson = AgentChatTurnInputBuilder.Build(turn);
             using AgentCliTempFiles tempFiles = AgentCliTempFiles.Create(settings.WorkingDirectory);
+            IAgentCliAdapter adapter = AgentCliAdapters.Get(settings.Adapter);
             AgentProcessResult result = await RunInvocationAsync(
                     settings,
-                    agentInput,
+                    adapter,
+                    turnInputJson,
                     turn.AgentSessionId,
                     tempFiles,
-                    useChatReplySchema: true,
+                    requireChatReplySchema: true,
                     invocationToken);
 
             if (result.ExitCode != 0)
@@ -72,18 +80,31 @@ internal sealed class AgentCliLauncher : IDisposable
                     stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
-            if (!TryExtractAssistantMessage(settings.Adapter, result, out string? assistantMessage))
+            if (adapter.HasExplicitErrorResult(result))
             {
                 throw new AgentCliFailureException(
-                    reason: "invalid-chat-reply",
-                    message: "The configured agent CLI did not return a valid chat reply.",
+                    reason: "agent-error-result",
+                    message: "The configured agent CLI returned an error result.",
                     exitCode: null,
                     stderrExcerpt: CreateStderrExcerpt(result.Stderr));
             }
 
+            string? agentSessionId = adapter.ExtractAgentSessionId(result);
+            if (string.IsNullOrWhiteSpace(turn.AgentSessionId)
+                && string.IsNullOrWhiteSpace(agentSessionId))
+            {
+                throw new AgentCliFailureException(
+                    reason: "missing-agent-session-id",
+                    message: "The configured agent CLI did not return a resumable session id.",
+                    exitCode: null,
+                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
+            }
+
+            bool extractedReply = adapter.TryExtractAssistantMessage(result, out string? assistantMessage);
             return new AgentCliChatResult(
-                assistantMessage.Trim(),
-                ExtractAgentSessionId(result.Stdout));
+                (assistantMessage ?? ProtocolFallbackMessage).Trim(),
+                agentSessionId,
+                isProtocolFallback: !extractedReply);
         }
         finally
         {
@@ -127,10 +148,11 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private async UniTask<AgentProcessResult> RunInvocationAsync(
         AgentSettings settings,
-        string agentInput,
+        IAgentCliAdapter adapter,
+        string turnInputJson,
         string? agentSessionId,
         AgentCliTempFiles tempFiles,
-        bool useChatReplySchema,
+        bool requireChatReplySchema,
         CancellationToken cancellationToken)
     {
         Process? process = null;
@@ -138,14 +160,16 @@ internal sealed class AgentCliLauncher : IDisposable
         try
         {
             IpcEndpoint mcpEndpoint = await WaitForMcpEndpointAsync(cancellationToken);
-            string mcpUrl = BuildMcpUrl(mcpEndpoint);
+            string mcpServerUrl = BuildMcpServerUrl(mcpEndpoint);
             ProcessStartInfo startInfo = BuildStartInfo(
                 settings,
-                mcpUrl,
+                adapter,
+                mcpServerUrl,
                 tempFiles,
-                agentInput,
+                turnInputJson,
                 agentSessionId,
-                useChatReplySchema);
+                requireChatReplySchema,
+                _mcpBearerToken);
 
             process = new Process
             {
@@ -163,9 +187,9 @@ internal sealed class AgentCliLauncher : IDisposable
                 _process = process;
             }
 
-            if (settings.Adapter == AgentAdapter.Codex)
+            if (adapter.RedirectStandardInput)
             {
-                await process.StandardInput.WriteAsync(agentInput);
+                await process.StandardInput.WriteAsync(turnInputJson);
                 process.StandardInput.Close();
             }
 
@@ -206,41 +230,40 @@ internal sealed class AgentCliLauncher : IDisposable
 
     private static ProcessStartInfo BuildStartInfo(
         AgentSettings settings,
-        string mcpUrl,
+        IAgentCliAdapter adapter,
+        string mcpServerUrl,
         AgentCliTempFiles tempFiles,
-        string agentInput,
+        string turnInputJson,
         string? agentSessionId,
-        bool useChatReplySchema)
+        bool requireChatReplySchema,
+        McpBearerToken bearerToken)
     {
         ProcessStartInfo startInfo = new()
         {
             FileName = settings.CommandPath,
             WorkingDirectory = settings.WorkingDirectory,
             UseShellExecute = false,
-            RedirectStandardInput = settings.Adapter == AgentAdapter.Codex,
+            RedirectStandardInput = adapter.RedirectStandardInput,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardInputEncoding = Encoding.UTF8,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
             CreateNoWindow = true,
         };
         ApplyEnvironmentVariables(startInfo, settings.EnvironmentVariables);
+        startInfo.Environment[IpcRuntime.McpBearerTokenEnvironmentVariable] = bearerToken.Value;
 
-        if (settings.Adapter == AgentAdapter.Claude)
-        {
-            ConfigureClaude(startInfo, mcpUrl, tempFiles, agentInput, agentSessionId, useChatReplySchema);
-        }
-        else
-        {
-            string? outputSchemaPath = useChatReplySchema
-                ? tempFiles.WriteChatReplySchema()
-                : null;
-            ConfigureCodex(
-                startInfo,
-                mcpUrl,
-                settings.WorkingDirectory,
-                tempFiles.LastMessagePath,
+        adapter.ConfigureStartInfo(
+            startInfo,
+            new AgentCliInvocation(
+                settings,
+                mcpServerUrl,
+                tempFiles,
+                turnInputJson,
                 agentSessionId,
-                outputSchemaPath);
-        }
+                requireChatReplySchema,
+                bearerToken));
 
         return startInfo;
     }
@@ -253,79 +276,6 @@ internal sealed class AgentCliLauncher : IDisposable
         {
             startInfo.Environment[variable.Name] = variable.Value;
         }
-    }
-
-    private static void ConfigureCodex(
-        ProcessStartInfo startInfo,
-        string mcpUrl,
-        string workingDirectory,
-        string lastMessagePath,
-        string? agentSessionId,
-        string? outputSchemaPath)
-    {
-        startInfo.ArgumentList.Add("exec");
-        if (!string.IsNullOrWhiteSpace(agentSessionId))
-        {
-            startInfo.ArgumentList.Add("resume");
-        }
-
-        startInfo.ArgumentList.Add("--dangerously-bypass-approvals-and-sandbox");
-        startInfo.ArgumentList.Add("--skip-git-repo-check");
-        startInfo.ArgumentList.Add("--json");
-        startInfo.ArgumentList.Add("--output-last-message");
-        startInfo.ArgumentList.Add(lastMessagePath);
-        if (outputSchemaPath is not null)
-        {
-            startInfo.ArgumentList.Add("--output-schema");
-            startInfo.ArgumentList.Add(outputSchemaPath);
-        }
-
-        if (string.IsNullOrWhiteSpace(agentSessionId))
-        {
-            startInfo.ArgumentList.Add("--cd");
-            startInfo.ArgumentList.Add(workingDirectory);
-        }
-
-        startInfo.ArgumentList.Add("--config");
-        startInfo.ArgumentList.Add($"mcp_servers.xiangshu.url=\"{mcpUrl}\"");
-        if (!string.IsNullOrWhiteSpace(agentSessionId))
-        {
-            startInfo.ArgumentList.Add(agentSessionId);
-        }
-
-        startInfo.ArgumentList.Add("-");
-    }
-
-    private static void ConfigureClaude(
-        ProcessStartInfo startInfo,
-        string mcpUrl,
-        AgentCliTempFiles tempFiles,
-        string agentInput,
-        string? agentSessionId,
-        bool useChatReplySchema)
-    {
-        string mcpConfigPath = tempFiles.WriteClaudeMcpConfig(mcpUrl);
-
-        startInfo.ArgumentList.Add("--print");
-        if (!string.IsNullOrWhiteSpace(agentSessionId))
-        {
-            startInfo.ArgumentList.Add("--resume");
-            startInfo.ArgumentList.Add(agentSessionId);
-        }
-
-        startInfo.ArgumentList.Add("--output-format");
-        startInfo.ArgumentList.Add("stream-json");
-        startInfo.ArgumentList.Add("--verbose");
-        startInfo.ArgumentList.Add("--dangerously-skip-permissions");
-        startInfo.ArgumentList.Add("--mcp-config");
-        startInfo.ArgumentList.Add(mcpConfigPath);
-        if (useChatReplySchema)
-        {
-            startInfo.ArgumentList.Add("--json-schema");
-            startInfo.ArgumentList.Add(AgentCliTempFiles.ChatReplySchemaJson);
-        }
-
-        startInfo.ArgumentList.Add(agentInput);
     }
 
     private bool TryBeginInvocation(
@@ -420,7 +370,7 @@ internal sealed class AgentCliLauncher : IDisposable
         }
     }
 
-    private static string BuildMcpUrl(IpcEndpoint endpoint)
+    private static string BuildMcpServerUrl(IpcEndpoint endpoint)
     {
         return string.Concat(
             "http://",
@@ -428,62 +378,6 @@ internal sealed class AgentCliLauncher : IDisposable
             ":",
             endpoint.Port.ToString(CultureInfo.InvariantCulture),
             endpoint.Path);
-    }
-
-    private static bool TryExtractAssistantMessage(
-        AgentAdapter adapter,
-        AgentProcessResult result,
-        [NotNullWhen(true)]
-        out string? assistantMessage)
-    {
-        assistantMessage = null;
-
-        if (adapter == AgentAdapter.Codex
-            && !string.IsNullOrWhiteSpace(result.LastMessage))
-        {
-            return TryExtractChatReply(result.LastMessage, out assistantMessage);
-        }
-
-        if (adapter == AgentAdapter.Claude
-            && TryExtractClaudeResult(result.Stdout, out string? claudeResult))
-        {
-            return TryExtractChatReply(claudeResult ?? string.Empty, out assistantMessage);
-        }
-
-        return TryExtractChatReply(result.Stdout, out assistantMessage);
-    }
-
-    private static bool TryExtractChatReply(
-        string value,
-        [NotNullWhen(true)]
-        out string? reply)
-    {
-        reply = null;
-
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return false;
-        }
-
-        try
-        {
-            return TryExtractChatReply(JToken.Parse(value), out reply);
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
-
-    private static bool TryExtractChatReply(
-        JToken token,
-        [NotNullWhen(true)]
-        out string? reply)
-    {
-        reply = token is JObject jsonObject
-            ? jsonObject["reply"]?.Value<string>()?.Trim()
-            : null;
-        return !string.IsNullOrWhiteSpace(reply);
     }
 
     private static string? CreateStderrExcerpt(string value)
@@ -495,147 +389,6 @@ internal sealed class AgentCliLauncher : IDisposable
         }
 
         return trimmed.Length <= MaxLogExcerptLength ? trimmed : trimmed[..MaxLogExcerptLength];
-    }
-
-    private static bool TryExtractClaudeResult(
-        string stdout,
-        out string? result)
-    {
-        result = null;
-
-        foreach (string line in SplitLines(stdout))
-        {
-            if (!TryParseJsonLine(line, out JObject? jsonObject))
-            {
-                continue;
-            }
-
-            if (TryReadClaudeStructuredOutput(jsonObject, out string? structuredOutput))
-            {
-                result = structuredOutput;
-                continue;
-            }
-
-            if (jsonObject.TryGetValue("result", out JToken? value))
-            {
-                string? candidate = ConvertClaudeResultToken(value);
-                if (!string.IsNullOrWhiteSpace(candidate))
-                {
-                    result = candidate;
-                }
-            }
-        }
-
-        return !string.IsNullOrWhiteSpace(result);
-    }
-
-    private static bool TryReadClaudeStructuredOutput(
-        JObject jsonObject,
-        [NotNullWhen(true)]
-        out string? result)
-    {
-        result = null;
-
-        if (!jsonObject.TryGetValue("structured_output", out JToken? value)
-            && !jsonObject.TryGetValue("structuredOutput", out value))
-        {
-            return false;
-        }
-
-        string? candidate = ConvertClaudeResultToken(value);
-        if (string.IsNullOrWhiteSpace(candidate))
-        {
-            return false;
-        }
-
-        result = candidate;
-        return true;
-    }
-
-    private static string? ConvertClaudeResultToken(JToken value)
-    {
-        return value.Type == JTokenType.String
-            ? value.Value<string>()
-            : value.ToString(Formatting.None, []);
-    }
-
-    private static string? ExtractAgentSessionId(string stdout)
-    {
-        string? sessionId = null;
-
-        foreach (string line in SplitLines(stdout))
-        {
-            if (!TryParseJsonLine(line, out JObject? jsonObject))
-            {
-                continue;
-            }
-
-            if (TryReadString(jsonObject, "session_id", out string? value)
-                || TryReadString(jsonObject, "sessionId", out value)
-                || TryReadFirstDescendantString(jsonObject, "thread_id", out value)
-                || TryReadFirstDescendantString(jsonObject, "threadId", out value))
-            {
-                sessionId = value;
-            }
-        }
-
-        return sessionId;
-    }
-
-    private static IEnumerable<string> SplitLines(string value)
-    {
-        using StringReader reader = new(value);
-
-        while (reader.ReadLine() is { } line)
-        {
-            yield return line;
-        }
-    }
-
-    private static bool TryParseJsonLine(
-        string line,
-        [NotNullWhen(true)]
-        out JObject? jsonObject)
-    {
-        try
-        {
-            jsonObject = JObject.Parse(line);
-            return true;
-        }
-        catch (JsonException)
-        {
-            jsonObject = null;
-            return false;
-        }
-    }
-
-    private static bool TryReadString(
-        JObject jsonObject,
-        string propertyName,
-        out string? value)
-    {
-        value = jsonObject[propertyName]?.Value<string>();
-        return !string.IsNullOrWhiteSpace(value);
-    }
-
-    private static bool TryReadFirstDescendantString(
-        JObject jsonObject,
-        string propertyName,
-        out string? value)
-    {
-        foreach (JProperty property in jsonObject.Descendants().OfType<JProperty>())
-        {
-            if (!string.Equals(property.Name, propertyName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            value = property.Value.Value<string>();
-            return !string.IsNullOrWhiteSpace(value);
-        }
-
-        value = null;
-        return false;
     }
 
     private static void TryKillProcess(

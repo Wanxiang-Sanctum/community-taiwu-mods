@@ -1,14 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Wanxiang.Xiangshu.Frontend.Agent;
+namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 
 internal sealed class AgentCliChatResult(
     string assistantMessage,
-    string? agentSessionId)
+    string? agentSessionId,
+    bool isProtocolFallback = false)
 {
     public string AssistantMessage { get; } = assistantMessage;
 
     public string? AgentSessionId { get; } = agentSessionId;
+
+    public bool IsProtocolFallback { get; } = isProtocolFallback;
 }
 
 [SuppressMessage(

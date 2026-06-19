@@ -20,6 +20,12 @@ public static class IpcRuntime
 
     public const string McpPath = "/mcp";
 
+    public const string McpBearerTokenEnvironmentVariable = "WANXIANG_XIANGSHU_MCP_BEARER_TOKEN";
+
+    public const string McpAuthorizationHeaderName = "Authorization";
+
+    public const string BearerScheme = "Bearer";
+
     public static string FormatEndpointAddress(IpcEndpoint endpoint)
     {
 #if NET6_0_OR_GREATER

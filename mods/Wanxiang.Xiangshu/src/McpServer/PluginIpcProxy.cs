@@ -49,6 +49,19 @@ internal static class PluginIpcProxy
         return FormatRunScriptToolResponse(response);
     }
 
+    public static Task<IpcCapturePlayerViewResponse> CapturePlayerViewAsync(CancellationToken cancellationToken)
+    {
+        IpcEndpoint endpoint =
+            IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendEndpointRole)
+            ?? throw new McpException(
+                "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
+
+        return InvokeAsync<IpcCapturePlayerViewRequest, IpcCapturePlayerViewResponse>(
+            endpoint,
+            new IpcCapturePlayerViewRequest(),
+            cancellationToken);
+    }
+
     [SuppressMessage(
         "Usage",
         "ASP0000:Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'",

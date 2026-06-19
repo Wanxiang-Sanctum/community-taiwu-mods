@@ -22,9 +22,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[0.84.72-test, )",
-        "resolved": "0.84.72-test",
-        "contentHash": "5/48UUL7kmTR3vn6ImCc/JPEXDCf3Q4EIfwjR/qhv+gPHZlMmK09KOPjMjrMcBSAhVDqhLQch0GCs4viLVeu1w=="
+        "requested": "[1.0.1, )",
+        "resolved": "1.0.1",
+        "contentHash": "mlsRsZtnqnymbbVdzuqMVRCJ738c+PFpNQ0II8x1WO3o9vzUPc00MPk6RuIFFX9zatwZSDRH0Zd30xYUe8Y5QQ=="
       }
     },
     "net8.0": {
@@ -48,9 +48,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[0.84.72-test, )",
-        "resolved": "0.84.72-test",
-        "contentHash": "5/48UUL7kmTR3vn6ImCc/JPEXDCf3Q4EIfwjR/qhv+gPHZlMmK09KOPjMjrMcBSAhVDqhLQch0GCs4viLVeu1w=="
+        "requested": "[1.0.1, )",
+        "resolved": "1.0.1",
+        "contentHash": "mlsRsZtnqnymbbVdzuqMVRCJ738c+PFpNQ0II8x1WO3o9vzUPc00MPk6RuIFFX9zatwZSDRH0Zd30xYUe8Y5QQ=="
       }
     }
   }
