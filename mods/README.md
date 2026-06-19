@@ -9,7 +9,7 @@ Mod 源码目录。
 
 | 目录 | 角色 | 继续阅读 |
 | --- | --- | --- |
-| `Wanxiang.Prelude/` | 万象系 Mod 的前置引导层。 | `Wanxiang.Prelude/README.md` |
+| `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` |
 | `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` |
 
 新增或移除一级 mod 目录时，同步更新这张入口表。表中只保留选择信息；玩法、配置、运行链路和源码模块说明留在
@@ -181,9 +181,9 @@ MSBuild 目标结果 JSON 作为项目包产物清单。
 `TaiwuModPluginSubdirectory` 是相对 `Plugins/` 的子目录，例如 `Frontend` 或
 `Frontend/Tools`，不要包含 `Plugins/` 前缀或首尾斜杠。留空时入口和复制依赖直接部署到 `Plugins/`。
 设置后，在 `Config.Lua` 中使用相对 `Plugins/` 的入口路径，例如
-`Frontend/MyMod.Frontend.dll`。这适合前后端或多个插件需要携带同名 DLL、且运行时必须按入口所在目录优先
-解析依赖的场景。原生加载器不会完整处理这种依赖解析需求；需要该能力的实际 Mod 应声明 `Wanxiang.Prelude`
-（万象引）为前置依赖。
+`Frontend/MyMod.Frontend.dll`。这适合同一个 Mod 的前端和后端入口需要分别携带同名 DLL、且运行时必须按入口
+目录优先解析依赖的场景。原生加载器不会完整处理这种依赖解析需求；需要这条加载规则的 Mod 应声明
+`Wanxiang.Prelude`（万象引）为前置依赖。
 
 依赖部署有两种动作。需要作为独立文件复制到 `Plugins/` 时，声明：
 
