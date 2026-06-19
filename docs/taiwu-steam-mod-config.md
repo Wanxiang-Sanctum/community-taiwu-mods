@@ -1,8 +1,8 @@
 # 太吾游戏与 Steam Mod 配置
 
-这份机制参考说明太吾绘卷游戏内 Mod 管理与 Steam Workshop 之间的配置语义，依据是
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库维护的太吾游戏观察快照。它不记录实际
-Mod 取值、开发项目模板或发布流水线；这些内容由各自文档维护。
+这份机制参考说明太吾绘卷游戏内 Mod 管理与 Steam Workshop 之间的配置语义，依据是太吾绘卷读取和写回
+`Config.Lua` 的游戏行为，以及 Steam Workshop 的发布元数据语义。实际 Mod 取值、开发项目模板和发布流水线由各自
+文档维护。
 
 `Config.Lua` 是太吾绘卷读取的 Mod 清单，不是 Steam 自己定义的配置文件。它是一个返回 Lua table 的文件，放在
 每个 Mod 目录根部，和 `Plugins/`、`Config/`、`Settings.Lua` 等运行目录并列。
@@ -86,7 +86,7 @@ Workshop 发布元数据。
 
 ## 维护依据
 
-本说明基于 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下 `game/` 生成快照中
-`ModManager`、`ModInfoWithDisplayData`、`SteamManager`、`GameData.Domains.Mod.ModInfo`、`ModSource`、
-`EModVisibility` 和设置项类型的读取路径。太吾游戏版本更新后，如果 Mod 管理界面或 `Config.Lua` 字段发生变化，
-先在 `taiwu-modkit` 中更新对应游戏观察快照，再复核本文。
+本文维护时核对太吾游戏侧的 `ModManager`、`ModInfoWithDisplayData`、`SteamManager`、
+`GameData.Domains.Mod.ModInfo`、`ModSource`、`EModVisibility` 和设置项类型读取路径。组织内部维护者可以通过
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下的 `game/` 生成快照检索这些游戏侧
+路径。太吾游戏版本更新后，如果 Mod 管理界面或 `Config.Lua` 字段发生变化，先更新对应游戏观察快照，再复核本文。

@@ -16,14 +16,19 @@ mod 的组包和插件规则，`shared/README.md` 说明内部共享项目边界
 具体 mod 的玩法、运行链路、工作区内容、源码模块和维护入口由对应 `mods/<ModName>/README.md` 及其子目录
 README 维护；内部共享项目自己的 API、部署建议和维护入口由 `shared/<ProjectName>/README.md` 维护。
 
-本仓库按两种方式使用 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit)，这是维护太吾 mod
-开发辅助工具和游戏观察快照的仓库：
+本仓库是公开的实际 mod 仓库；[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 是
+Wanxiang-Sanctum 组织内部维护太吾 mod 开发辅助工具、引用包和游戏观察快照的仓库。涉及游戏机制、游戏文本、
+运行时行为或 Steam Workshop 语义时，文档以太吾绘卷游戏本体和对应外部平台为依据；`taiwu-modkit` 中的快照承担
+组织内部检索、跳转和变更对照。
+
+本仓库按两种方式使用 `taiwu-modkit`：
 
 - 本仓库引用 `Taiwu.ModKit.References.*` 和 `Taiwu.ModKit.Dependencies.*` NuGet 包。包切分、打包和发布流程归
   `taiwu-modkit` 的工具与配置维护；本仓库通过 `Directory.Packages.props` 固定版本，并通过
   `NuGet.config` 配置包源。
-- 源码维护时，可以把 `taiwu-modkit` 仓库根目录下的 `game/` 生成快照作为检索、跳转和变更观察证据。运行时
-  内容以本仓库的 mod 源码、组包入口和发布产物为准；快照需要更新时，在 `taiwu-modkit` 中运行对应工具重新生成。
+- 源码维护时，组织内部维护者使用 `taiwu-modkit` 仓库根目录下的 `game/` 生成快照对照太吾游戏文件和源码观察结果。
+  运行时内容以本仓库的 mod 源码、组包入口和发布产物为准；游戏观察快照需要更新时，在
+  `taiwu-modkit` 中运行对应工具重新生成。
 
 ## 项目命令
 

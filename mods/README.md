@@ -131,8 +131,9 @@ MSBuild 目标结果 JSON 作为项目包产物清单。
 插件项目默认引用 `Taiwu.ModKit.References.Plugin`。需要访问更宽的游戏 API 时，再按实际代码需要
 添加 `Taiwu.ModKit.References.Frontend` 或 `Taiwu.ModKit.References.Backend` 等引用包。
 
-这些 `Taiwu.ModKit.References.*` 包由 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的
-引用包工具生成和发布；包拆分原则、DLL 选择和发布目标归该仓库的工具配置维护。本仓库选择需要引用的包，并在仓库根
+这些 `Taiwu.ModKit.References.*` 包由组织内部
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的引用包工具生成和发布；包拆分原则、DLL
+选择和发布目标归该仓库的工具配置维护。本公开仓库通过稳定包 ID 选择需要引用的包，并在仓库根
 `Directory.Packages.props` 固定版本。
 
 插件项目默认具备编译期 Publicizer 支持，但不会自动公开化游戏 DLL。需要在编译期访问游戏 DLL

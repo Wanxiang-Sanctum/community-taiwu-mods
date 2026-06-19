@@ -19,9 +19,9 @@
 具体 DLL 部署清单以 `src/Frontend/Taiwu.Mod.props` 和 `src/Backend/Taiwu.Mod.props` 为准。README 说明运行时类别和
 维护入口；不由万象引部署的程序集，归游戏运行时、依赖方部署或编译期引用边界处理。
 
-万象引引用的 `Taiwu.ModKit.Dependencies.*` 包由
+万象引引用的 `Taiwu.ModKit.Dependencies.*` 包由组织内部
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的 UPM 依赖包工具生成和发布；本 mod 在版本文件中
-固定包版本，并声明实际部署动作。需要调整 Unity/UPM 依赖包内容时，先改该仓库的工具配置；需要调整本 mod 携带哪些
+固定包版本，并声明实际部署动作。需要调整 Unity/UPM 依赖包内容时，先改该内部仓库的工具配置；需要调整本 mod 携带哪些
 运行时 DLL 时，再修改本目录下的项目文件和 `Taiwu.Mod.props`。
 
 ## 插件加载规则
