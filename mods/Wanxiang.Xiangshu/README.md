@@ -2,7 +2,8 @@
 
 太吾绘卷本机 Agent 对话 Mod。
 
-相枢在游戏内提供与“相枢”的对话入口，并通过本机 MCP sidecar 让 Agent 调用相枢提供的工具能力。工具边界
+相枢在游戏内提供与“相枢”的对话入口，并通过本机 MCP sidecar 让 Agent 调用相枢提供的工具能力。它不是
+单纯的聊天入口；Agent 可以通过相枢投递受信 C# 脚本读写游戏运行时数据，从而影响当前游戏行为。工具边界
 重点是前后端受信 C# 脚本执行，以及同一投递轮次中的中间答复。
 
 ## 能力边界
@@ -13,10 +14,11 @@
 - 本机工具服务：前端拉起 MCP sidecar；sidecar 通过本机 IPC 把工具请求路由到前端或后端插件进程。
 - 会话衔接：前端保存游戏内可见对话和外部 Agent 会话 id；长期上下文仍由本机 CLI Agent 自己维护。
 
-脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。它的信任边界是本机 Agent
-工作区、MCP sidecar 与游戏插件进程，不承担远程服务或非受信输入沙箱职责。MCP sidecar 只在本机
-loopback 暴露工具服务；前端启动时生成本次运行的 MCP bearer token，并把它注入 sidecar 和 CLI Agent。
-endpoint manifest 只发布路由信息，token 不写入 manifest、聊天快照或诊断日志。
+脚本工具以完全信任方式在目标插件进程内运行，适合受信工作区和开发调试场景。脚本可触达的能力取决于目标
+插件进程能访问的游戏 API 和运行状态；理论上可以覆盖创建物品、影响 NPC 或改变当前运行状态等游戏本身具备的
+能力。它的信任边界是本机 Agent 工作区、MCP sidecar 与游戏插件进程，不承担远程服务或非受信输入沙箱职责。
+MCP sidecar 只在本机 loopback 暴露工具服务；前端启动时生成本次运行的 MCP bearer token，并把它注入
+sidecar 和 CLI Agent。endpoint manifest 只发布路由信息，token 不写入 manifest、聊天快照或诊断日志。
 
 对话、运行目录和脚本通道的内部设计见 `docs/agent-chat.md`；CLI 适配器清单和命令契约见
 `docs/agent-cli-adapters.md`；日志策略见 `docs/logging.md`。
@@ -67,7 +69,8 @@ Mod 目录下创建与 `Config.Lua` 同级的 `LocalSettings.json`：
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、
 MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 
-默认包内预置 `DefaultAgentWorkspace/`，作为本机 Agent 的默认工作区和可编辑示例。用户可以手工维护其中的
+默认包内预置 `DefaultAgentWorkspace/`，作为本机 Agent 的默认工作区和建议先复用的起点。它承载相枢人设、
+部分仍较粗糙的初始运行经验，以及让 Agent 通过相枢链路读写游戏运行时数据的工具指引。用户可以手工维护其中的
 入口指令、人设、世界观资料、运行工具指引和技能；这些文件由运行中的 Agent 作为工作区配置读取。配置到其它
 工作目录时，该目录由用户自行维护。
 

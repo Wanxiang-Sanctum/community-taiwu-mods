@@ -33,7 +33,7 @@ return {
 [*]当前适配 Codex CLI、Claude Code 和 CodeBuddy Code。
 [*]CLI 调用使用非交互模式；玩家只面对游戏内聊天窗口，不直接操作 Agent 命令行。
 [*]长期上下文、推理方式和工具选择由第三方 Agent 自己承担；相枢负责游戏内对话流、投递和结果显示。
-[*]默认 Agent 工作区承载相枢人设、部分仍较粗糙的本地经验，以及让 Agent 通过相枢链路读写游戏运行时数据的工具指引；入口指令、资料、技能、本地文件和运行数据都会影响 Agent 行为。
+[*]默认 Agent 工作区承载相枢人设、部分仍较粗糙的初始运行经验，以及让 Agent 通过相枢链路读写游戏运行时数据的工具指引；入口指令、资料、技能、本地文件和运行数据都会影响 Agent 行为。
 [/list]
 
 [h2]MCP、IPC 与插件边界[/h2]
@@ -82,7 +82,7 @@ https://github.com/Wanxiang-Sanctum/community-taiwu-mods
       SettingType = "InputField",
       Key = "AgentWorkingDirectory",
       DisplayName = "工作目录",
-      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录随包提供示例工作区。",
+      Description = "本机 Agent 的工作目录。相对路径会放在相枢 Mod 目录下；默认目录随包提供相枢默认工作区，建议先复用。",
       DefaultValue = "DefaultAgentWorkspace",
     },
   },
