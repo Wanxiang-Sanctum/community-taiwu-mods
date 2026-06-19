@@ -1,7 +1,7 @@
 return {
   Title = "相枢（实验阶段，普通用户谨慎订阅）",
   Source = 0,
-  FileId = 0,
+  FileId = 3747795330,
   Version = "0.1.0",
   GameVersion = "1.0.1",
   Author = "Wanxiang Sanctum",
@@ -52,6 +52,8 @@ return {
 [h2]开源地址[/h2]
 https://github.com/Wanxiang-Sanctum/community-taiwu-mods
 ]=],
+  Cover = "Cover.jpg",
+  WorkshopCover = "Cover.jpg",
   DetailImageList = {
     "DetailImage.png",
   },
@@ -59,7 +61,7 @@ https://github.com/Wanxiang-Sanctum/community-taiwu-mods
     "Extensions",
   },
   Dependencies = {
-    3747731025,
+    [1] = 3747731025,
   },
   DefaultSettings = {
     {
