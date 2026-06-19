@@ -75,8 +75,9 @@ MCP sidecar、运行数据目录、本机 Agent 会话和 CLI 子进程环境。
 目录不随默认包创建，也不是发布资料或运行数据。
 
 源码仓库中默认工作区资料的来源和维护边界见 `docs/agent-context-sources.md`。发布后的
-`DefaultAgentWorkspace/` 以包内文件作为完整工作区；源码维护时使用
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 快照核对资料来源。
+`DefaultAgentWorkspace/` 以包内文件作为完整工作区；源码维护时以太吾游戏文本、配置、游戏侧源码和运行时事实为
+资料来源，组织内部维护者可使用 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下的
+`game/` 快照核对这些游戏侧资料。
 
 ## 运行数据与诊断
 

@@ -9,9 +9,9 @@
 - `agent-cli-adapters.md`：本机 CLI Agent 适配器清单、命令形态、工作区入口、会话 id 来源、最终答复来源和新增
   适配器时的更新边界。它不重复游戏内对话、MCP sidecar 或脚本通道的完整运行模型。
 - `logging.md`：游戏日志、MCP sidecar 事件日志和可见对话的分工。它不维护共享日志库 API，也不复制运行数据文件格式。
-- `agent-context-sources.md`：`DefaultAgentWorkspace/` 资料如何回溯到游戏观察快照，新资料应放到哪里，以及本地
-  工作记录、默认资产和运行数据如何分界。它不替代运行中的 `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`
-  或 `tool-guides/`。
+- `agent-context-sources.md`：`DefaultAgentWorkspace/` 资料如何回溯到太吾游戏文本、配置、游戏侧源码和运行时事实，以及
+  组织内部游戏快照如何辅助复核；新资料应放到哪里，以及本地工作记录、默认资产和运行数据如何分界。它不替代运行中的
+  `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/` 或 `tool-guides/`。
 
 ## 与其它文档的关系
 

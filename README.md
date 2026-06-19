@@ -8,20 +8,27 @@
 
 ## 文档边界
 
-仓库根 README 负责说明仓库身份、常用命令、跨目录约定和外部依赖关系。目录级 README 负责各自的共同规则：
-`mods/README.md` 说明所有 mod 的组包和插件规则，`shared/README.md` 说明内部共享项目边界，
-`templates/README.md` 说明模板变量和渲染规则，`tools/README.md` 说明仓库维护工具的实现入口。
+仓库根 README 负责说明仓库身份、常用命令、跨目录约定和外部依赖关系。仓库级 `docs/` 负责沉淀跨具体
+Mod 复用的太吾机制、平台机制、发布经验和维护判断。目录级 README 负责各自的共同规则：`mods/README.md` 说明所有
+mod 的组包和插件规则，`shared/README.md` 说明内部共享项目边界，`templates/README.md` 说明模板变量和
+渲染规则，`tools/README.md` 说明仓库维护工具的实现入口。
 
 具体 mod 的玩法、运行链路、工作区内容、源码模块和维护入口由对应 `mods/<ModName>/README.md` 及其子目录
 README 维护；内部共享项目自己的 API、部署建议和维护入口由 `shared/<ProjectName>/README.md` 维护。
 
-本仓库按两种方式使用 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit)：
+本仓库是公开的实际 mod 仓库；[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 是
+Wanxiang-Sanctum 组织内部维护太吾 mod 开发辅助工具、引用包和游戏观察快照的仓库。涉及游戏机制、游戏文本、
+运行时行为或 Steam Workshop 语义时，文档以太吾绘卷游戏本体和对应外部平台为依据；`taiwu-modkit` 中的快照承担
+组织内部检索、跳转和变更对照。
+
+本仓库按两种方式使用 `taiwu-modkit`：
 
 - 本仓库引用 `Taiwu.ModKit.References.*` 和 `Taiwu.ModKit.Dependencies.*` NuGet 包。包切分、打包和发布流程归
   `taiwu-modkit` 的工具与配置维护；本仓库通过 `Directory.Packages.props` 固定版本，并通过
   `NuGet.config` 配置包源。
-- 源码维护时，可以把 `taiwu-modkit` 的 `game/` 生成快照作为检索、跳转和变更观察证据。运行时内容以本仓库的
-  mod 源码、组包入口和发布产物为准；快照需要更新时，在 `taiwu-modkit` 中运行对应工具重新生成。
+- 源码维护时，组织内部维护者使用 `taiwu-modkit` 仓库根目录下的 `game/` 生成快照对照太吾游戏文件和源码观察结果。
+  运行时内容以本仓库的 mod 源码、组包入口和发布产物为准；游戏观察快照需要更新时，在
+  `taiwu-modkit` 中运行对应工具重新生成。
 
 ## 项目命令
 
@@ -118,6 +125,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiw
 - `tools/`：创建 mod、内部共享项目、取消解决方案注册和打包可部署目录的命令行工具，工具文档关系见
   `tools/README.md`。
 - `.github/workflows/`：GitHub Actions 工作流，覆盖 PR 验证和 mod release 打包。
+- `docs/`：跨具体 Mod 复用的太吾机制、平台机制、发布经验和维护判断；入口见 `docs/README.md`。
 - `artifacts/mods/`：`pack-mod` 输出的可部署目录。
 - `Taiwu.Mods.Paths.props`：仓库级 MSBuild 路径 alias，供子目录 props 和项目引用稳定目录。
 - `Taiwu.Mods.slnx`：解决方案入口，收录工具、已注册的 mod 项目和内部共享项目。

@@ -1,16 +1,16 @@
 # 默认 Agent 工作区来源与维护
 
-本文面向源码仓库维护，是 `docs/README.md` 索引的默认工作区来源说明。源码中的 `DefaultAgentWorkspace/`
-是默认工作区内容源，组包后输出为包内同名目录；包内工作区以随包发布的文件作为完整输入。
+源码中的 `DefaultAgentWorkspace/` 是默认工作区内容源，组包后输出为包内同名目录；包内工作区以随包发布的
+文件作为完整输入。
 
-本文记录默认工作区资料如何回溯到游戏观察快照，以及本地工作记录、默认资产和运行数据的边界。本仓库内的
-相枢目录维护默认工作区内容和放置规则；
+本文记录默认工作区资料如何回溯到太吾游戏文本、配置、游戏侧源码和运行时事实，以及本地工作记录、默认资产和运行数据的
+边界。相枢目录维护默认工作区内容和放置规则；组织内部
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 维护游戏观察快照的生成工具和快照更新方式。
-快照正文保留在 `taiwu-modkit`，完整协议或工具语义保留在相枢对应源码模块中。
+大段游戏文本、完整清单和可跳转镜像由内部快照承载；完整协议或工具语义保留在相枢对应源码模块中。
 
-`DefaultAgentWorkspace/lore/` 中的世界观资料派生自同一开发工作区中的
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照。生成快照提供检索、跳转和
-观察变化的开发期证据；需要更新快照时运行该仓库中对应工具重新生成。
+`DefaultAgentWorkspace/lore/` 中的世界观资料以太吾游戏文本、配置关系、游戏侧源码和运行时行为为依据。组织内部维护者可用
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下的 `game/` 生成快照复核这些游戏侧
+资料；生成快照提供检索、跳转和观察变化的开发期证据。需要更新快照时运行该内部仓库中对应工具重新生成。
 
 `DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻、玩家可见边界和输出
 可见性，包括本 mod 的愿望回应前提：相枢被迫满足太吾传人的愿望，难以实现的愿望会被相枢趁机扭曲
@@ -19,10 +19,9 @@
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
 `DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。玩家视图观察边界、脚本入口、
-结果形态和工具边界以相枢源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 的 `game/` 生成快照中的稳定
-namespace、类型和成员为核对来源。默认工作区记录能帮助运行 Agent 选入口、定目标侧、减少反射探索的锚点；
-完整 API 清单、协议说明或不稳定枚举表保留在源码和生成快照中。
+结果形态和工具边界以相枢源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以太吾游戏配置、
+本地化、百晓册、显示辅助和游戏侧 namespace、类型、成员为依据。默认工作区记录能帮助运行 Agent 选入口、定目标侧、
+减少反射探索的锚点；完整协议说明保留在相枢源码中，完整 API 清单和不稳定枚举表保留在游戏侧源码或组织内部游戏观察快照中。
 
 `DefaultAgentWorkspace/.agents/skills/` 与 `DefaultAgentWorkspace/.claude/skills/` 服务不同 CLI Agent 的技能发现；
 当前适配器到入口文件、技能目录的对应关系由 `agent-cli-adapters.md` 维护。当前同名技能内容保持一致；需要调整
@@ -43,9 +42,11 @@ Agent 视角的说法。
 
 ## 默认资料主要证据入口
 
-下表路径相对 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录。
+下表列出组织内部游戏观察快照中的核对路径，路径相对
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录。这些路径对应太吾游戏文本、配置和
+游戏侧源码观察结果；资料主题对应太吾游戏本体。
 
-| 资料主题 | `taiwu-modkit` 内路径 | 用途 |
+| 资料主题 | 内部快照路径 | 用途 |
 | --- | --- | --- |
 | 侵袭阶段、相枢入邪/魔通、剑冢异动提示 | `game/text/The Scroll Of Taiwu_Data/StreamingAssets/Language_CN/WorldState_language.txt.yml` | `WORLD_BASELINE.md` 和 `XIANGSHU.md` 的世界状态、入邪警告、破冢说明。 |
 | 相枢入邪、化魔、化身、真身、焕心、三魔、似魔似人 | `game/text/The Scroll Of Taiwu_Data/StreamingAssets/Language_CN/CharacterFeature_language.txt.yml` | 相枢人设和深入资料素材。 |
@@ -60,16 +61,17 @@ Agent 视角的说法。
 
 ## 更新流程
 
-1. 静态世界观先在 `taiwu-modkit/game/text` 和 `taiwu-modkit/game/src` 中检索相关关键词；运行工具指引先核对
-   相枢源码中的脚本执行器和工具声明，再按需要查游戏生成快照。
+1. 静态世界观先按太吾游戏文本、配置和游戏侧源码事实检索相关关键词；组织内部维护者可在 `taiwu-modkit`
+   仓库的 `game/text` 和 `game/src` 快照路径中检索。运行工具指引先核对相枢源码中的脚本执行器和工具声明，再按需要查
+   游戏观察快照。
 2. 判断新增内容属于当前任务工作记录、本地经验、基础角色契约、扩展人设校准、基础世界观、相枢深入资料、
    运行工具指引，还是属于本文的来源说明。
 3. 将每次答复都需要的基础角色契约和输出可见性写入 `DefaultAgentWorkspace/AGENTS.md`；将扩展人设校准、
    世界观稳定概念、回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或
-   `DefaultAgentWorkspace/lore/`。大段文本和完整清单留在游戏镜像中。
+   `DefaultAgentWorkspace/lore/`。大段文本和完整清单由游戏镜像承载。
 4. 涉及脚本工具、玩家视图观察、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
    `DefaultAgentWorkspace/tool-guides/`；保留检索路线和边界，具体任务脚本留给运行时按当前请求目标生成。
-5. 更新本文的来源表或维护说明，确保以后能回到权威源码和快照重新核对。
+5. 更新本文的来源表或维护说明，确保以后能回到太吾游戏侧事实、相枢源码和内部快照重新核对。
 
 ## 维护边界
 
@@ -120,7 +122,7 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 归入现有文件更合适的情况：
 
 - 某个词条、工具参数或入口方法只增加少量说明，放入现有叶子文件更清楚。
-- 内容是当前版本的完整清单、枚举数值或 API 成员表，权威来源应继续留在游戏镜像或源码中。
+- 内容是当前版本的完整清单、枚举数值或 API 成员表，由太吾游戏侧事实、内部游戏镜像或相枢源码承载。
 - 内容是每次答复都必须遵循的身份、口吻或输出可见性边界，归入 `DefaultAgentWorkspace/AGENTS.md`。
 - 内容是扩展回答风格偏好，归入 `DefaultAgentWorkspace/persona/README.md`。
 
