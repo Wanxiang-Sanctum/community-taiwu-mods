@@ -17,7 +17,7 @@
 
 | 文档 | 何时阅读 |
 | --- | --- |
-| [太吾游戏与 Steam Mod 配置](taiwu-game-steam-config-lua.md) | 理解太吾读取的 `Config.Lua`、用户设置、插件入口和 Steam Workshop 字段关系时。 |
+| [太吾游戏与 Steam Mod 配置](taiwu-steam-mod-config.md) | 理解太吾读取的 `Config.Lua`、用户设置、插件入口和 Steam Workshop 字段关系时。 |
 
 新增仓库级文档时，先确定它是机制参考还是仓库经验，再选择依据和边界。只属于单个 Mod 的实现细节留在该 Mod 自己的
 README 或 `mods/<ModName>/docs/` 目录。

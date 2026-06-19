@@ -23,7 +23,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 
 新建后，Mod 目录包含游戏读取的 `Config.Lua`、项目内 README，以及前端和后端两个插件项目。
 太吾游戏读取 `Config.Lua` 以及同步 Steam Workshop 字段的通用语义见仓库级文档
-[`docs/taiwu-game-steam-config-lua.md`](../docs/taiwu-game-steam-config-lua.md)。
+[`docs/taiwu-steam-mod-config.md`](../docs/taiwu-steam-mod-config.md)。
 
 ```text
 mods/MyMod/
