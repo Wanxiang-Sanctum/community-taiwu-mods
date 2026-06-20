@@ -20,6 +20,10 @@
 
 ## 外部依据
 
+[`Taiwu.Mods`](https://github.com/Wanxiang-Sanctum/taiwu-mods) 是本仓库的太吾 Mod monorepo 模板来源。本仓库内的
+`templates/`、`tools/`、MSBuild 骨架和 GitHub Actions 以实际 Mod 需要为准保留本地适配；通用 monorepo 模板能力、
+模板仓库文档和从模板创建新仓库的说明由 `Taiwu.Mods` 维护。
+
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 是 Wanxiang-Sanctum 组织内部维护太吾 mod
 开发辅助工具、引用包和游戏观察快照的仓库。
 
