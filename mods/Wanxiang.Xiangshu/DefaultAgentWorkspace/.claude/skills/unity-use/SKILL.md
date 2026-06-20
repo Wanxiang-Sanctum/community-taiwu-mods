@@ -1,37 +1,41 @@
 ---
 name: unity-use
-description: "Use when Xiangshu needs to perform, target, or verify the result of a player-like operation in the live Unity frontend, including screen-coordinate targeting, UI gesture replay, selected-control edits, submit/cancel actions, scrolling, dragging, or hotkey-equivalent actions. Use with live Xiangshu frontend MCP/runtime tools. Do not use for visual-only screenshots or inspection, backend state edits, static game knowledge, ordinary conversation, or source-code maintenance."
+description: "Use when Xiangshu must choose, perform, or verify a live Unity frontend action whose target is the visible UI surface, a selected control, screen coordinates, or a frontend-only command. Use with live Xiangshu frontend MCP/runtime tools. Do not use for visual-only inspection, ordinary game-state changes with a direct runtime/API owner, static game knowledge, ordinary conversation, or source-code maintenance."
 ---
 
 # Unity Use
 
 ## Scope
 
-Use this skill when the task is operational: turn the player's intent and current frontend evidence into a narrow Unity frontend action, then verify the player-visible result.
+Use this skill when the requested result belongs to the live Unity frontend and must be chosen, applied, or verified against current UI state. It covers visible UI targets, selected controls, screen-coordinate targeting, frontend-only commands, and verification after those actions.
+
+Do not use this skill merely because a request may change the game. When a dedicated tool, backend domain API, or direct runtime API owns the result, use that path instead; return to frontend observation only if visible confirmation matters.
 
 Observation is supporting evidence, not this skill's center. For visual-only questions, use the available screenshot or frontend observation tool directly and do not load this skill unless an action, target selection, or verification of a requested operation depends on that observation.
 
-Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Use `backend` only for read-only authoritative checks after a frontend operation when persisted game state matters. Do not mutate backend state to impersonate a player gesture.
+Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Within this skill, use `backend` only for read-only authoritative checks after a frontend operation when persisted game state matters.
 
 ## Operating Model
 
-1. Identify the requested operation and its consequence.
-2. Gather the least frontend evidence needed to choose a target or action.
-3. Convert the target into Unity screen coordinates, a selected object, or a specific UI handler.
-4. Apply the narrowest player-like frontend action that matches the request.
-5. Verify through a fresh frontend probe, selected object state, screenshot evidence when visible state matters, or relevant read-only backend state.
+1. Identify the requested result and its consequence.
+2. Decide whether the result is owned by direct runtime/API state, the visible frontend surface, a selected control, or a frontend-only command.
+3. If direct runtime/API state owns the result, use that path and keep this skill only for visible verification.
+4. Gather the least frontend evidence needed to choose a target or action.
+5. Invoke the highest-level frontend entry that matches the request: dedicated tool, method or command, selected-control edit, or UI handler. Use coordinate or gesture replay only when the visible UI surface is the real target or no narrower path exists.
+6. Verify through a fresh frontend probe, selected object state, screenshot evidence when visible state matters, or relevant read-only backend state.
 
 Infer missing details from visible state, current tool results, and the player's wording. Use read-only observation or probes when they can resolve ambiguity. Ask the player only when the intended target or consequence remains ambiguous, or when the next action may be irreversible and the player has not already accepted that consequence.
 
 ## Tool Selection
 
-Prefer tools in this order:
+Within the frontend path, prefer result paths in this order:
 
-1. A dedicated Xiangshu frontend MCP tool for the exact operation.
-2. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
-3. `xiangshu_run_csharp_script` on `frontend` with a complete C# compilation unit.
-4. A narrow frontend method call or reflection probe when EventSystem replay cannot express the operation.
-5. Backend read-only verification after the frontend action, if persisted state matters.
+1. A dedicated Xiangshu frontend tool or stable public frontend/game API for the exact command.
+2. A concrete selected-control edit, UI model update, or frontend command call.
+3. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
+4. `xiangshu_run_csharp_script` on `frontend` with a complete C# compilation unit when no narrower exposed tool exists.
+5. EventSystem pointer, scroll, drag, submit, or cancel replay through that script only when the visible UI control itself is the target.
+6. Backend read-only verification after the frontend action, if persisted state matters.
 
 Use `tool-guides/RUNTIME_SCRIPTING.md` before drafting runtime scripts if it has not already been loaded in the current request. Check the tools exposed in the current request; actual tool descriptions override this skill.
 
@@ -161,17 +165,17 @@ If the script cannot keep the guard inside a synchronous `using`/`finally` bound
 
 ## Action Rules
 
-For Unity UI pointer gestures, replay EventSystem events. Do not try to assign `Input.mousePosition` or fake `Input.GetMouseButtonDown`; those APIs report frame input state and do not perform UI interaction.
+For Unity UI pointer gestures, replay EventSystem events only when the visible UI control is the task target or no narrower frontend command represents the requested result. Do not try to assign `Input.mousePosition` or fake `Input.GetMouseButtonDown`; those APIs report frame input state and do not perform UI interaction.
 
 Use this decision model:
 
-- If the target has an EventSystem handler, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
 - If the target is a selected input field, modify the concrete input component value and invoke its change or submit events when needed.
 - If the player asks for a hotkey and the game implements it through frame input such as `Input.GetKeyDown`, prefer an equivalent visible UI control or a narrow frontend method call.
-- If no EventSystem path represents the operation, call the smallest frontend API that performs the same player-visible command.
+- If a stable frontend method or command performs the requested visible command, call that instead of replaying low-level input.
+- If the target has an EventSystem handler and no narrower path exists, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
 - If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
 
-Minimal click event-replay fragment, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and supply the surrounding script context, target point, hit list, chat-window guard, and Unity main-thread switch from the current operation:
+Minimal click event-replay fragment for cases where a visible control must be activated through EventSystem, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and supply the surrounding script context, target point, hit list, chat-window guard, and Unity main-thread switch from the current operation:
 
 ```csharp
 PointerEventData eventData = new(eventSystem)
