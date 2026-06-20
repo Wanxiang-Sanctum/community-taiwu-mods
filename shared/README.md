@@ -1,8 +1,8 @@
 # shared
 
-内部共享项目目录。
+本仓库内部共享项目目录。
 
-每个一级子目录是一个可被多个 mod 引用的内部 C# 项目。共享项目为插件项目提供内部库；部署共享项目 DLL
+每个一级子目录是一个可被本仓库多个 mod 引用的内部 C# 项目。共享项目为插件项目提供内部库；部署共享项目 DLL
 或其 runtime 依赖的动作，由引用它的前端或后端插件项目声明，具体 item 见 `mods/README.md`。
 
 本目录 README 说明共享项目的共同边界。共享库自己的 API、事件选择、运行时部署建议和维护入口由
@@ -24,6 +24,9 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-shared --name MyCompany.Taiw
 ```
 
 新建后，项目目录包含项目内 README 和一个 C# class library 项目。
+
+创建命令生成共享项目的初始骨架。项目创建后，目标框架、Taiwu 引用、Publicizer 和部署建议以项目自己的 `.csproj`、
+README，以及引用它的插件项目配置为准。
 
 ```text
 shared/MyCompany.Taiwu.Shared/

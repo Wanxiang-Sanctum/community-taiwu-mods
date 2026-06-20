@@ -1,33 +1,23 @@
 # 万象引
 
-万象引是供依赖方 Mod 声明使用的前置 Mod。它在前端和后端分别部署常见、稳定的运行时和工具栈，并在自身
-加载后为后续 Mod 提供按插件入口目录优先解析 DLL 的加载规则。
+万象引是供其它 Mod 声明使用的前置依赖。它把常见、稳定的运行时和工具栈集中放在一个 Mod 中，并为依赖方 Mod 提供按插件
+入口目录优先解析 DLL 的加载规则。
 
-万象引自身不提供玩家入口、玩法或工具语义。玩家可见功能由依赖万象引的 Mod 承担；需要这些运行时或加载
-规则的 Mod 应声明依赖万象引。
+万象引自身不提供玩家入口、玩法或工具语义。玩家可见功能由依赖万象引的 Mod 承担；只有你订阅的其它 Mod 明确要求它，
+或 Steam Workshop 自动提示需要依赖时，才需要订阅它。
 
-## 能力边界
+## 它提供什么
 
-万象引按端侧维护共享运行时和工具栈：
+万象引按端侧提供共享运行时和工具栈：
 
-- 前端侧覆盖消息通信和跨进程通信、数据序列化、依赖容器、异步任务、动态脚本编译，以及游戏前端未提供但
-  这些前端运行时需要的支撑程序集。
-- 后端侧覆盖消息通信和跨进程通信、数据序列化、动态脚本编译、依赖注入，以及后端通信和流处理需要的
-  .NET 支撑程序集。
+- 前端侧覆盖消息通信和跨进程通信、数据序列化、依赖容器、异步任务、动态脚本编译，以及游戏前端未提供但这些前端运行时
+  需要的支撑程序集。
+- 后端侧覆盖消息通信和跨进程通信、数据序列化、动态脚本编译、依赖注入，以及后端通信和流处理需要的 .NET 支撑程序集。
 
-具体 DLL 部署清单以 `src/Frontend/Taiwu.Mod.props` 和 `src/Backend/Taiwu.Mod.props` 为准。README 说明运行时类别和
-维护入口；不由万象引部署的程序集，归游戏运行时、依赖方部署或编译期引用边界处理。
+## 加载辅助
 
-万象引引用的 `Taiwu.ModKit.Dependencies.*` 包由组织内部
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的 UPM 依赖包工具生成和发布；本 mod 在版本文件中
-固定包版本，并声明实际部署动作。需要调整 Unity/UPM 依赖包内容时，先改该内部仓库的工具配置；需要调整本 mod 携带哪些
-运行时 DLL 时，再修改本目录下的项目文件和 `Taiwu.Mod.props`。
-
-## 插件加载规则
-
-太吾原生加载器会从 Mod 的 `Plugins/` 目录读取 `Config.Lua` 中声明的前后端插件入口。入口路径可以包含
-子目录，但原生依赖预加载仍以 `Plugins/` 根目录为主要查找位置，容易让同一个 Mod 内前端和后端入口的
-同名 DLL 相互挤占。
+太吾原生加载器会从 Mod 的 `Plugins/` 目录读取 `Config.Lua` 中声明的前后端插件入口。入口路径可以包含子目录，但原生依赖
+预加载仍以 `Plugins/` 根目录为主要查找位置，容易让同一个 Mod 内前端和后端入口的同名 DLL 相互挤占。
 
 万象引加载后，后续 Mod 的插件依赖解析遵循这些规则：
 
@@ -36,61 +26,16 @@
 - 依赖解析优先使用入口 DLL 所在目录，再回退到 `Plugins/` 根目录。
 - 同一路径已加载的依赖会复用；前端和后端入口目录下的同名 DLL 会优先按请求方目录分别解析。
 
-这条规则只影响万象引加载之后的 Mod。需要这条规则的 Mod 必须把万象引声明为前置依赖，并让入口和
-需要隔离的复制依赖放在同一个插件子目录下。
+这条规则只影响万象引加载之后的 Mod。需要这条规则的 Mod 必须把万象引声明为前置依赖，并让入口和需要隔离的复制依赖放在
+同一个插件子目录下。
 
-实现细节集中在 `src/PluginLoading/`；根 README 不列出补丁点和解析器内部流程。
+## 什么时候需要
 
-## 依赖方使用
+- 你订阅的其它 Mod 要求万象引作为前置依赖。
+- Steam Workshop 在订阅其它 Mod 时自动提示需要万象引。
 
-依赖方项目引用万象引已提供的运行时包时，保留编译期引用，并让同名运行时 DLL 由万象引提供。常见做法是在
-`PackageReference` 上排除 runtime 资产：
+如果你不清楚万象引的作用，请不要为了“保险”单独订阅。
 
-```xml
-<PackageReference
-  Include="Taiwu.ModKit.Dependencies.MessagePipe"
-  ExcludeAssets="runtime"
-  PrivateAssets="all"
-/>
-```
+## 源码维护
 
-如果依赖方确实需要携带自己的版本，应把入口和相关复制依赖部署到同一个 `Plugins/` 子目录，并在实际游戏
-环境中验证解析结果。
-
-发布时，将万象引的 Steam Workshop `FileId` 加入依赖方 Mod 的 `Dependencies`，确保万象引先于依赖方 Mod
-加载。插件入口和复制依赖部署到子目录的 MSBuild 写法见 `mods/README.md`。
-
-## 维护入口
-
-- 运行时部署清单：`src/Frontend/Taiwu.Mod.props`、`src/Backend/Taiwu.Mod.props`。
-- 插件加载策略：`src/PluginLoading/`。
-- NuGet 版本：仓库根目录的 `Directory.Packages.props` 和各项目 `packages.lock.json`。
-- 可部署目录组装：`Taiwu.Mod.Pack.proj`。
-
-新增或移除共享运行时时，优先更新项目文件和 lock file；README 跟随运行时类别、使用约束或维护入口变化同步调整。
-
-## 开发
-
-从仓库根目录构建插件项目：
-
-```powershell
-dotnet build mods/Wanxiang.Prelude/src/Frontend/Wanxiang.Prelude.Frontend.csproj
-dotnet build mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj
-```
-
-打包可部署目录：
-
-```powershell
-dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Prelude
-```
-
-`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把 `Config.Lua`、前后端入口 DLL 和显式声明的运行时 DLL
-组装到仓库根目录的 `artifacts/mods/Wanxiang.Prelude/`。
-
-## 项目结构
-
-- `Config.Lua`：游戏读取的 Mod 配置。
-- `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `src/Frontend/`：前端插件项目，部署到 `Plugins/Frontend/`。
-- `src/Backend/`：后端插件项目，部署到 `Plugins/Backend/`。
-- `src/PluginLoading/`：前后端共用的插件加载桥接项目。
+维护者入口见 [万象引维护入口](DEVELOPMENT.md)。

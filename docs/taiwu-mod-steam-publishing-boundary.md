@@ -3,8 +3,8 @@
 这份机制参考说明太吾绘卷游戏内 Mod 配置、用户设置、插件入口和 Steam Workshop 发布之间的边界。依据是太吾读取和
 写回 `Config.Lua` 的游戏行为、太吾内置上传流程，以及 Steam Workshop 内容目录、item 属性和 custom metadata 语义。
 
-本文不维护具体 Mod 的取值、本仓库模板、`pack-mod` 组包声明或发布流水线。那些内容由具体 Mod README、
-`mods/README.md`、根 README 或专门的仓库经验文档维护。
+本文不维护具体 Mod 的取值、本仓库模板、`pack-mod` 组包声明或发布流水线。那些内容由具体 Mod 的 `Config.Lua`、
+`README.md`、`DEVELOPMENT.md`、`mods/README.md`、`docs/development/README.md` 或专门的仓库经验文档维护。
 
 ## 核心结论
 
