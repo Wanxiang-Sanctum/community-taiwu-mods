@@ -25,6 +25,9 @@
     <UsePublicizer
       Condition="'$(UsePublicizer)' == '' And ('$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend')"
     >true</UsePublicizer>
+    <TaiwuModCompatibilityProfile
+      Condition="'$(TaiwuModCompatibilityProfile)' == '' And ('$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend')"
+    >GameRuntime</TaiwuModCompatibilityProfile>
   </PropertyGroup>
 
   <ItemGroup

@@ -5,6 +5,13 @@
     Condition="'$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend'"
   />
 
+  <ItemGroup Condition="'$(TaiwuModCompatibilityProfile)' == 'GameRuntime'">
+    <PackageReference
+      Update="Microsoft.CodeAnalysis.CSharp"
+      VersionOverride="$(RoslynGameRuntimeVersion)"
+    />
+  </ItemGroup>
+
   <PropertyGroup
     Condition="'$(UsePublicizer)' == 'true' And '$(TaiwuModSide)' == 'Frontend'"
   >
