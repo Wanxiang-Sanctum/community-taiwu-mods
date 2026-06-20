@@ -7,7 +7,7 @@ Community Taiwu Mods 是 Wanxiang-Sanctum 维护的太吾绘卷 mod 源码集合
 
 ## Mod 入口
 
-本节是面向玩家的入口表，帮助判断先读哪个 Mod。完整一级 Mod 索引见 [`mods/`](mods/)。
+本节是面向玩家的入口表，帮助判断先读哪个 Mod。面向维护者的一级 Mod 源码索引见 [`mods/`](mods/)。
 
 | Mod | 适合谁 | 继续阅读 |
 | --- | --- | --- |

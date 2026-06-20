@@ -17,10 +17,13 @@
 ## 受众分层
 
 - 根 `README.md` 面向外部技术玩家，说明仓库形象、获取方式、使用边界和面向玩家的入口表。
+- 根 `CONTRIBUTING.md` 面向准备提交 issue、讨论或 PR 的贡献者，提供变更类型路由和提交前检查入口。
+- `docs/README.md` 面向仓库维护者，作为仓库级开发维护文档、机制参考和仓库经验的导航，不复制具体 Mod、共享项目或
+  模板的可变清单。
 - `docs/development/README.md` 面向仓库维护者，说明构建、检查、打包、发布、新增项目、文档和仓库结构。
 - `mods/README.md` 拥有实际 Mod 的一级目录索引和目录约定，以及所有 Mod 共同遵守的组包、插件入口、引用和依赖部署规则。
 - `shared/README.md` 拥有内部共享项目的一级目录索引、目录约定、目标框架和共享项目引用边界。
-- `docs/` 收纳仓库维护者使用的跨 Mod 机制参考、仓库经验和开发维护文档。
+- `docs/` 收纳仓库维护者使用的开发维护文档、机制参考和仓库经验。
 - `tools/README.md` 和 `templates/README.md` 说明工具实现入口、模板变量和渲染规则。
 - 具体 Mod 的 `README.md` 面向外部技术玩家，说明玩法、运行边界和配置入口。
 - 具体 Mod 的 `DEVELOPMENT.md` 面向仓库维护者，说明源码模块、组包内容、构建命令和内部设计入口。
@@ -28,15 +31,17 @@
 
 ## 放置规则
 
-索引是否存在由文档责任决定。根 `README.md` 可以保留面向外部玩家的入口表；`mods/README.md` 和 `shared/README.md`
-可以完整索引各自的一级子目录；开发手册、机制参考和具体设计文档需要项目发现时，链接目录级 README。
+索引是否存在由文档责任决定。根 `README.md` 只保留面向外部玩家的入口表；`mods/README.md` 和 `shared/README.md`
+完整索引各自的一级子目录；`docs/README.md` 只索引仓库级文档。开发手册、机制参考和具体设计文档需要项目发现时，
+链接目录级 README。
 
 索引行只保留选择信息和稳定入口。实际 Mod 的玩家说明留在对应 `mods/<ModName>/README.md`；源码迭代说明留在对应
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README；共享库 API、运行时依赖和部署建议留在
 对应 `shared/<ProjectName>/README.md`。
 
 新增仓库级文档时，先判断它是机制参考、仓库经验还是开发维护文档。机制参考要把依据归到太吾游戏本体、外部平台或公开
-可观察行为；仓库经验要把依据归到本仓库流程；开发维护文档要归到 `docs/development/` 或其子目录。
+可观察行为；仓库经验要把依据归到本仓库流程；开发维护文档要归到 `docs/development/` 或其子目录。新增后同步
+`docs/README.md` 的仓库级阅读入口。
 
 只属于单个 Mod 的实现细节放在该 Mod 自己的 `DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README。
 
