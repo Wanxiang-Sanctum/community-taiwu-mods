@@ -3,7 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
+using Wanxiang.Xiangshu.Backend.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Backend;
@@ -75,6 +77,7 @@ internal sealed class BackendIpcServer(string pluginDirectory) : IDisposable
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
         RegisterIpcScriptHandler(services, pluginDirectory);
+        RegisterItemGraftHandlers(services);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
             port,
@@ -135,6 +138,35 @@ internal sealed class BackendIpcServer(string pluginDirectory) : IDisposable
             typeof(IpcRunScriptRequest),
             typeof(IpcRunScriptResponse),
             typeof(BackendExecuteScriptHandler));
+    }
+
+    private static void RegisterItemGraftHandlers(IServiceCollection services)
+    {
+        _ = services
+            .AddSingleton<
+                IAsyncRequestHandlerCore<RegisterHostRequest, IpcNoContentResponse>,
+                RegisterHostHandler>()
+            .AddSingleton<IAsyncRequestHandler<RegisterHostRequest, IpcNoContentResponse>>(
+                provider => new AsyncRequestHandler<RegisterHostRequest, IpcNoContentResponse>(
+                    provider.GetRequiredService<
+                        IAsyncRequestHandlerCore<RegisterHostRequest, IpcNoContentResponse>>(),
+                    provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()))
+            .AddSingleton<
+                IAsyncRequestHandlerCore<UnregisterHostRequest, IpcNoContentResponse>,
+                UnregisterHostHandler>()
+            .AddSingleton<IAsyncRequestHandler<UnregisterHostRequest, IpcNoContentResponse>>(
+                provider => new AsyncRequestHandler<UnregisterHostRequest, IpcNoContentResponse>(
+                    provider.GetRequiredService<
+                        IAsyncRequestHandlerCore<UnregisterHostRequest, IpcNoContentResponse>>(),
+                    provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
+        AsyncRequestHandlerRegistory.Add(
+            typeof(RegisterHostRequest),
+            typeof(IpcNoContentResponse),
+            typeof(RegisterHostHandler));
+        AsyncRequestHandlerRegistory.Add(
+            typeof(UnregisterHostRequest),
+            typeof(IpcNoContentResponse),
+            typeof(UnregisterHostHandler));
     }
 
     private void ThrowIfDisposed()

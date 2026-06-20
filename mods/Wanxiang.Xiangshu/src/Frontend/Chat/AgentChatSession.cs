@@ -195,6 +195,50 @@ internal sealed class AgentChatSession : IDisposable
         return true;
     }
 
+    public bool RequestRuntimeInterrupt(string content)
+    {
+        string normalizedContent = NormalizeMessageContent(content);
+
+        if (normalizedContent.Length == 0)
+        {
+            return false;
+        }
+
+        AgentChatMessage message;
+        CancellationTokenSource turnCancellation;
+
+        lock (_syncRoot)
+        {
+            ThrowIfDisposedLocked();
+
+            if (!_dispatching
+                || _requiresReset
+                || _activeDispatch is not { InterruptRequested: false, ResetRequested: false } activeDispatch)
+            {
+                return false;
+            }
+
+            message = new AgentChatMessage(
+                CreateMessageId(),
+                DateTimeOffset.UtcNow,
+                AgentChatRole.Assistant,
+                _assistantName,
+                normalizedContent,
+                AgentChatMessageOrigin.Runtime);
+            _visibleMessages.Add(message);
+            _pendingMessages.Enqueue(message);
+            _dispatchPaused = true;
+            activeDispatch.InterruptRequested = true;
+            turnCancellation = activeDispatch.Cancellation;
+            _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
+        }
+
+        PersistSnapshot();
+        _events.Enqueue(AgentChatSessionEvent.StateChanged());
+        turnCancellation.Cancel();
+        return true;
+    }
+
     public void Reset()
     {
         CancellationTokenSource? turnCancellation = null;

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Wanxiang.Taiwu.Logging;
+using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -65,6 +66,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float InputTextFontSize = 22f;
     private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
+    private const string HostUnavailableButtonLabel = "断声";
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -253,7 +255,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             && !Input.GetKey(KeyCode.LeftShift)
             && !Input.GetKey(KeyCode.RightShift)
             && _session?.IsReplying != true
-            && _session?.RequiresReset != true)
+            && _session?.RequiresReset != true
+            && ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
         {
             SendCurrentInput();
         }
@@ -324,6 +327,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
+        if (!ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
+        {
+            UpdateSendButtonState();
+            return;
+        }
+
         if (_session.IsReplying)
         {
             InterruptReply();
@@ -340,7 +349,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private void SendCurrentInput()
     {
-        if (_session is null || _inputField is null || _session.RequiresReset)
+        if (_session is null
+            || _inputField is null
+            || _session.RequiresReset
+            || !ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
         {
             return;
         }
@@ -429,6 +441,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         bool isReplying = _session?.IsReplying == true;
         bool requiresReset = _session?.RequiresReset == true;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
+        bool hostInTaiwuInventory = ItemGraftRuntime.IsCurrentHostInTaiwuInventory;
 
         inputField.interactable = !requiresReset;
 
@@ -439,6 +452,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             sendButton.interactable = false;
             sendButtonImage.color = DisabledButtonColor;
             sendButtonText.text = "须重置";
+            sendButtonText.color = MutedTextColor;
+            return;
+        }
+
+        if (!hostInTaiwuInventory)
+        {
+            sendButton.interactable = false;
+            sendButtonImage.color = DisabledButtonColor;
+            sendButtonText.text = HostUnavailableButtonLabel;
             sendButtonText.color = MutedTextColor;
             return;
         }

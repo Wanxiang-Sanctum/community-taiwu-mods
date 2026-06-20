@@ -21,7 +21,7 @@ internal static class PluginIpcProxy
             ?? throw new McpException(
                 "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
 
-        _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>(
+        _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcNoContentResponse>(
             endpoint,
             new IpcIntermediateReplyRequest(content),
             cancellationToken);

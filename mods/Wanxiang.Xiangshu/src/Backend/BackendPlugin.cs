@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using GameData.Domains;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.Logging;
+using Wanxiang.Xiangshu.Backend.ItemGrafts;
 using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Backend;
@@ -25,6 +26,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         try
         {
             StartIpcServer();
+            ItemGraftPatches.Install();
         }
         catch (Exception ex)
         {
@@ -40,6 +42,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
+        ItemGraftPatches.Uninstall();
         _ipcServer?.Dispose();
         _ipcServer = null;
     }

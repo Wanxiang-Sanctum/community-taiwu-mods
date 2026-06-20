@@ -7,14 +7,19 @@ using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
+using Wanxiang.Xiangshu.Frontend.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.PlayerView;
 using Wanxiang.Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer(
     AgentChatSession chatSession,
+    Action<HostRemovedRequest> onHostRemoved,
+    Action<InventoryTransferRequest> onInventoryTransfer,
+    Action onTaiwuInventorySnapshotChanged,
     string pluginDirectory) : IDisposable
 {
     private const int MaxStartAttempts = 8;
@@ -115,6 +120,9 @@ internal sealed class FrontendIpcServer(
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
         _ = builder.RegisterInstance(chatSession);
+        _ = builder.RegisterInstance(onHostRemoved);
+        _ = builder.RegisterInstance(onInventoryTransfer);
+        _ = builder.RegisterInstance(onTaiwuInventorySnapshotChanged);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
                 IpcRuntime.FrontendEndpointRole,
@@ -126,13 +134,28 @@ internal sealed class FrontendIpcServer(
             options);
         _ = builder.RegisterAsyncRequestHandler<
             IpcIntermediateReplyRequest,
-            IpcIntermediateReplyResponse,
+            IpcNoContentResponse,
             FrontendIntermediateReplyHandler>(
             options);
         _ = builder.RegisterAsyncRequestHandler<
             IpcCapturePlayerViewRequest,
             IpcCapturePlayerViewResponse,
             FrontendCapturePlayerViewHandler>(
+            options);
+        _ = builder.RegisterAsyncRequestHandler<
+            HostRemovedRequest,
+            IpcNoContentResponse,
+            HostRemovedHandler>(
+            options);
+        _ = builder.RegisterAsyncRequestHandler<
+            InventoryTransferRequest,
+            IpcNoContentResponse,
+            InventoryTransferHandler>(
+            options);
+        _ = builder.RegisterAsyncRequestHandler<
+            TaiwuInventorySnapshotChangedRequest,
+            IpcNoContentResponse,
+            TaiwuInventorySnapshotChangedHandler>(
             options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
@@ -151,11 +174,23 @@ internal sealed class FrontendIpcServer(
             tcpOptions);
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcIntermediateReplyRequest,
-            IpcIntermediateReplyResponse>(
+            IpcNoContentResponse>(
             tcpOptions);
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcCapturePlayerViewRequest,
             IpcCapturePlayerViewResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            HostRemovedRequest,
+            IpcNoContentResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            InventoryTransferRequest,
+            IpcNoContentResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            TaiwuInventorySnapshotChangedRequest,
+            IpcNoContentResponse>(
             tcpOptions);
     }
 
@@ -188,15 +223,15 @@ internal sealed class FrontendExecuteScriptHandler(XiangshuScriptRunner scriptRu
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
 internal sealed class FrontendIntermediateReplyHandler(AgentChatSession chatSession)
-    : IAsyncRequestHandler<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>
+    : IAsyncRequestHandler<IpcIntermediateReplyRequest, IpcNoContentResponse>
 {
-    public UniTask<IpcIntermediateReplyResponse> InvokeAsync(
+    public UniTask<IpcNoContentResponse> InvokeAsync(
         IpcIntermediateReplyRequest request,
         CancellationToken cancellationToken = default)
     {
         chatSession.AddIntermediateReply(request.Content);
 
-        return UniTask.FromResult(new IpcIntermediateReplyResponse());
+        return UniTask.FromResult(new IpcNoContentResponse());
     }
 }
 
