@@ -20,6 +20,3 @@
 | 文档 | 何时阅读 |
 | --- | --- |
 | [太吾游戏 Mod 配置与 Steam 发布边界](taiwu-mod-steam-publishing-boundary.md) | 理解太吾读取的 `Config.Lua`、用户设置、插件入口、Steam Workshop 字段和上传内容边界时。 |
-
-新增仓库级文档时，先确定它是机制参考还是仓库经验，再选择依据和边界。只属于单个 Mod 的实现细节留在该 Mod 自己的
-README 或 `mods/<ModName>/docs/` 目录。

@@ -20,6 +20,3 @@
 - `tools/Taiwu.Mods.Cli/TemplateRenderer.cs`：模板变量和严格渲染规则。
 - `tools/Taiwu.Mods.Cli/TemplateDirectory.cs`：模板目录复制和路径渲染。
 - `tools/Taiwu.Mods.Cli/ModPacker.cs`：调用 MSBuild 组包目标并组装可部署目录。
-
-新增或调整命令时，同步更新 `CommandLineOptions.cs`、仓库根 `README.md` 中的常用命令说明，以及受影响目录自己的
-README。只有模板上下文变量或模板选择规则变化时，才更新 `templates/README.md`。

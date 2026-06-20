@@ -84,7 +84,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 
 ```xml
 <ItemGroup>
-  <TaiwuModPackFile Include="$(TargetPath)" PackagePath="Plugins/MyMod.Ipc.dll" />
+  <TaiwuModPackFile Include="$(TargetDir)MyMod.Ipc.dll" PackagePath="Plugins/MyMod.Ipc.dll" />
 </ItemGroup>
 ```
 
@@ -121,10 +121,6 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 `pack-mod` 会先运行该项目的 `Publish` target，再把 `$(PublishDir)` 复制到 `Tools/Worker/`。
 没有显式设置 `TaiwuModPublishPackagePath` 时，发布目录默认进入 `Processes/<ProjectName>/`。
 项目可以用普通 .NET publish 属性控制是否 self-contained、single-file、RID 等发布细节。
-
-只有维护新的组包 helper，或项目不使用仓库默认项目组包目标时，才需要直接关心
-`ResolveTaiwuModPackOutputs`。这是 `pack-mod` 读取项目包产物的 MSBuild 边界；CLI 使用
-MSBuild 目标结果 JSON 作为项目包产物清单。
 
 ## Taiwu 引用和 Publicizer
 

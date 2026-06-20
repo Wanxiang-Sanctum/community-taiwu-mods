@@ -135,24 +135,11 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiw
 - `Directory.Packages.props`：NuGet 包版本。
 - `NuGet.config`：NuGet 包源、包源映射，以及从环境变量读取 GitHub Packages 凭据的配置。
 
-## 仓库维护
+## 阅读入口
 
-需要检查或格式化仓库文档、配置和项目文件时运行：
-
-```powershell
-dotnet msbuild repo.proj -t:Check
-dotnet msbuild repo.proj -t:Format
-```
-
-这些目标通过 `aqua` 调用仓库声明的维护工具。本机没有 `aqua` 时，Windows 可用 `winget install aquaproj.aqua`
-或 `scoop install aqua`。如需提前安装这些工具，运行：
-
-```powershell
-dotnet msbuild repo.proj -t:InstallTools
-```
-
-更新 `aqua.yml` 中的工具版本后，同步刷新校验文件：
-
-```powershell
-dotnet msbuild repo.proj -t:UpdateToolChecksums
-```
+- `mods/README.md`：mod 共同遵守的组包、插件入口、引用和部署规则。
+- `shared/README.md`：内部共享项目边界、目标框架和项目级配置入口。
+- `templates/README.md`：模板目录、模板变量和渲染规则。
+- `tools/README.md`：仓库命令行工具的实现入口。
+- `docs/README.md`：跨具体 Mod 复用的太吾机制、平台机制、发布经验和维护判断。
+- `CONTRIBUTING.md`：维护本仓库文档、模板和工具时使用的规则。
