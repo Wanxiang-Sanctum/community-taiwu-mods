@@ -67,20 +67,20 @@
       },
       "Taiwu.ModKit.References.Frontend": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "W1oS/tFw1M0vOsOPpCQlYBRuau4w+cgud+aVOUH/amlMaTkWLA9uPchyNLT+9Ub9RM17EYQDYCIwGW2TC8fUzg==",
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "rlTihwSnoxYvGpeWG2QS6tSGqNVn/u1UL/PJZi6JgWJyvmdvuPwfYjdFkjxFo2NXUY2F6BthUsg1qFZIjSimBQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]",
-          "Taiwu.ModKit.References.Shared": "[1.0.1]",
-          "Taiwu.ModKit.References.Unity": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.10]",
+          "Taiwu.ModKit.References.Shared": "[1.0.10]",
+          "Taiwu.ModKit.References.Unity": "[1.0.10]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "mlsRsZtnqnymbbVdzuqMVRCJ738c+PFpNQ0II8x1WO3o9vzUPc00MPk6RuIFFX9zatwZSDRH0Zd30xYUe8Y5QQ=="
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "Sh5yPXwWQLgx0Wpd8PUmGq7knJDfQCjrmZgZ5RkZMCTXKvuKoIrrIwsuzjzqpb/tIiL/yp1EzDuxbRAj2dFK3A=="
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
@@ -199,18 +199,18 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "CentralTransitive",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "cPGxItJxHn39tHBq5JWbrs6wEJpMJ1vRm/52v3Fmm2+chClYnn+EXwFKOQZkIET6Oodd+l2g9gbIOiIZn9sI3w==",
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "TTMEptM6Xu5M5lJp1qFa7olWrURrfoHJ911oyG9b3ur8ePfQRFIu4q4NBCqNMfclfXjvLU9jUINBaZj4CaFkMQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.10]"
         }
       },
       "Taiwu.ModKit.References.Unity": {
         "type": "CentralTransitive",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "K8RU8az/A+pzzBnwIuhfCAayeD7V2JuwckLITd2421FqkceT9E4MaHlNRxT9O24ceapqeBQEOUeUeZnVCsOXsA=="
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "lkGb4HEOH+1zyhFRjA2l5nftLF0Tmv/S5OXqQ1Z1JqKZNwdVqBqHNJH9zon0cCxJ4lBj57aJMDXYIGFBim1X1w=="
       }
     }
   }

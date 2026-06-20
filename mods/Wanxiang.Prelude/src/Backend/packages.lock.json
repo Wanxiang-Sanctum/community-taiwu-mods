@@ -69,19 +69,19 @@
       },
       "Taiwu.ModKit.References.Backend": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "uMwB6vCZ2oqu+i2toAe+mWZCSFcCbH+s6BJbpQKaqDpF4Dqa6IEVeDqOXz9/ygalZrQP4Lw3pHYTdmO710VlSQ==",
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "Ew+2YtA+dn60UATnvcH653Q2i0mQOe/8mxLo5h/opsJmzKEcyYv0T9EtuAlJgoJcXQuIhhOjUU/BmC2SraxokQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]",
-          "Taiwu.ModKit.References.Shared": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.10]",
+          "Taiwu.ModKit.References.Shared": "[1.0.10]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "mlsRsZtnqnymbbVdzuqMVRCJ738c+PFpNQ0II8x1WO3o9vzUPc00MPk6RuIFFX9zatwZSDRH0Zd30xYUe8Y5QQ=="
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "Sh5yPXwWQLgx0Wpd8PUmGq7knJDfQCjrmZgZ5RkZMCTXKvuKoIrrIwsuzjzqpb/tIiL/yp1EzDuxbRAj2dFK3A=="
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
@@ -146,11 +146,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "CentralTransitive",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "cPGxItJxHn39tHBq5JWbrs6wEJpMJ1vRm/52v3Fmm2+chClYnn+EXwFKOQZkIET6Oodd+l2g9gbIOiIZn9sI3w==",
+        "requested": "[1.0.10, )",
+        "resolved": "1.0.10",
+        "contentHash": "TTMEptM6Xu5M5lJp1qFa7olWrURrfoHJ911oyG9b3ur8ePfQRFIu4q4NBCqNMfclfXjvLU9jUINBaZj4CaFkMQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.10]"
         }
       }
     }
