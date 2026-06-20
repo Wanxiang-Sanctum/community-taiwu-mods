@@ -27,9 +27,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
     private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
     private const string ScrollbarHandleSprite = "sp_gn_gundong_7";
-    private const float PreferredPanelWidth = 620f;
+    private const float PreferredPanelWidth = 680f;
     private const float PreferredPanelHeight = 720f;
-    private const float MinimumPanelWidth = 460f;
+    private const float MinimumPanelWidth = 540f;
     private const float MinimumPanelHeight = 520f;
     private const float PanelScreenMargin = 32f;
     private const float HeaderHeight = 78f;
@@ -40,18 +40,22 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float HeaderCloseButtonSize = 40f;
     private const float HeaderReplyIndicatorWidth = 118f;
     private const float HeaderReplyIndicatorHeight = 34f;
-    private const float ScrollbarReservedWidth = 34f;
-    private const float ScrollbarRailWidth = 16f;
-    private const float ScrollbarHandleWidth = 6f;
+    private const float ScrollbarReservedWidth = 28f;
+    private const float ScrollbarRailWidth = 12f;
+    private const float ScrollbarHandleWidth = 5f;
     private const float ScrollbarRightInset = 9f;
     private const float ScrollbarVerticalInset = 12f;
     private const float ScrollbarHandleMarkWidth = 8f;
     private const float MessageRowHorizontalPadding = 14f;
-    private const float MessageBubbleWidthRatio = 0.76f;
-    private const float MinimumMessageBubbleWidth = 220f;
-    private const float PreferredMessageBubbleWidth = 430f;
-    private const float MaximumMessageBubbleWidth = 460f;
+    private const float MessageBubbleWidthRatio = 0.88f;
+    private const float MinimumMessageBubbleWidth = 280f;
+    private const float PreferredMessageBubbleWidth = 520f;
+    private const float MaximumMessageBubbleWidth = 540f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
+    private const float InputAreaHeight = 108f;
+    private const float InputFieldMinimumHeight = 84f;
+    private const float SendButtonWidth = 84f;
+    private const float SendButtonHeight = 84f;
     private const float FallbackCanvasScaleFactor = 1f;
     private const float DefaultReferencePixelsPerUnit = 100f;
     private const float HeaderTitleFontSize = 24f;
@@ -862,7 +866,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         CImage inputAreaImage = AddSolidImage(inputArea, new Color(0.045f, 0.039f, 0.032f, 0.88f));
         inputAreaImage.raycastTarget = false;
         LayoutElement inputAreaLayoutElement = inputArea.AddComponent<LayoutElement>();
-        inputAreaLayoutElement.preferredHeight = 116f;
+        inputAreaLayoutElement.preferredHeight = InputAreaHeight;
 
         HorizontalLayoutGroup inputAreaLayout = inputArea.AddComponent<HorizontalLayoutGroup>();
         inputAreaLayout.childAlignment = TextAnchor.MiddleCenter;
@@ -882,7 +886,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _inputFocusOutline.enabled = false;
         LayoutElement inputLayout = inputObject.AddComponent<LayoutElement>();
         inputLayout.flexibleWidth = 1f;
-        inputLayout.minHeight = 92f;
+        inputLayout.minHeight = InputFieldMinimumHeight;
 
         _inputField = inputObject.AddComponent<DisableHotkeyInputField>();
         _inputField.transition = Selectable.Transition.None;
@@ -920,7 +924,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _inputField.onValueChanged.AddListener(_ => UpdateSendButtonState());
         SetInputFocused(focused: false);
 
-        _sendButton = CreateButton("SendButton", inputArea.transform, "送出", 88f, 92f);
+        _sendButton = CreateButton("SendButton", inputArea.transform, "送出", SendButtonWidth, SendButtonHeight);
         _sendButton.onClick.AddListener(ActivateSendButton);
         _sendButtonText = _sendButton.GetComponentInChildren<TextMeshProUGUI>();
         _sendButtonImage = _sendButton.GetComponent<CImage>();
