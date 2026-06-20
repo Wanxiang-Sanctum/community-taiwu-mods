@@ -143,11 +143,16 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-mod --name MyMod
 dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiwu.Shared
 ```
 
+新增、移除或重命名实际 Mod 时，同步更新 `mods/README.md` 的一级目录索引。新增、移除或重命名内部共享项目时，同步更新
+`shared/README.md` 的一级目录索引。根 README 只在玩家入口表需要变化时更新；开发手册和机制参考需要项目发现时，链接
+目录级 README。
+
 ## 仓库结构
 
-- `mods/`：实际 Mod 源码目录。当前 Mod 入口、组包声明、插件项目、Taiwu 引用、Publicizer、插件依赖和发布目录项目
-  约定见 `mods/README.md`。
-- `shared/`：本仓库内部共享项目目录。共享边界、目标框架和项目级配置入口见 `shared/README.md`。
+- `mods/`：实际 Mod 源码目录。一级目录索引、Mod 目录约定、组包声明、插件项目、Taiwu 引用、Publicizer、插件依赖和
+  发布目录项目约定见 `mods/README.md`。
+- `shared/`：本仓库内部共享项目目录。一级目录索引、共享项目目录约定、共享边界、目标框架和项目级配置入口见
+  `shared/README.md`。
 - `docs/`：仓库维护者使用的跨 Mod 机制参考、仓库经验和开发维护文档。
 - `tools/`：本仓库辅助命令行工具，负责创建项目、取消解决方案注册和打包可部署目录；实现入口见 `tools/README.md`。
 - `templates/`：本仓库创建命令使用的 Scriban 初始骨架；变量和渲染规则见 `templates/README.md`。

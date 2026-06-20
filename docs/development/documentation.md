@@ -7,7 +7,7 @@
 
 - GitHub 将
   [README 作为仓库展示和上手入口](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes)；
-  本仓库根 `README.md` 因此承担对外形象、当前 Mod、获取方式和使用边界。
+  本仓库根 `README.md` 因此承担对外形象、获取方式、使用边界和面向玩家的入口表。
 - GitHub 会在 issue、pull request、contribute 页面和仓库侧栏展示
   [贡献指南](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors)；
   根 `CONTRIBUTING.md` 因此保持为短入口和提交前契约，不承载完整维护手册。
@@ -16,10 +16,10 @@
 
 ## 受众分层
 
-- 根 `README.md` 面向外部技术玩家，说明仓库形象、当前 Mod、获取方式和使用边界。
+- 根 `README.md` 面向外部技术玩家，说明仓库形象、获取方式、使用边界和面向玩家的入口表。
 - `docs/development/README.md` 面向仓库维护者，说明构建、检查、打包、发布、新增项目、文档和仓库结构。
-- `mods/README.md` 拥有实际 Mod 清单，以及所有 Mod 共同遵守的组包、插件入口、引用和依赖部署规则。
-- `shared/README.md` 拥有内部共享项目清单、目标框架和共享项目引用边界。
+- `mods/README.md` 拥有实际 Mod 的一级目录索引和目录约定，以及所有 Mod 共同遵守的组包、插件入口、引用和依赖部署规则。
+- `shared/README.md` 拥有内部共享项目的一级目录索引、目录约定、目标框架和共享项目引用边界。
 - `docs/` 收纳仓库维护者使用的跨 Mod 机制参考、仓库经验和开发维护文档。
 - `tools/README.md` 和 `templates/README.md` 说明工具实现入口、模板变量和渲染规则。
 - 具体 Mod 的 `README.md` 面向外部技术玩家，说明玩法、运行边界和配置入口。
@@ -28,7 +28,10 @@
 
 ## 放置规则
 
-目录级入口表只保留选择信息。Mod 的玩家说明留在对应 `mods/<ModName>/README.md`；源码迭代说明留在对应
+索引是否存在由文档责任决定。根 `README.md` 可以保留面向外部玩家的入口表；`mods/README.md` 和 `shared/README.md`
+可以完整索引各自的一级子目录；开发手册、机制参考和具体设计文档需要项目发现时，链接目录级 README。
+
+索引行只保留选择信息和稳定入口。实际 Mod 的玩家说明留在对应 `mods/<ModName>/README.md`；源码迭代说明留在对应
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README；共享库 API、运行时依赖和部署建议留在
 对应 `shared/<ProjectName>/README.md`。
 
@@ -45,9 +48,13 @@
 文档中引用跨仓库路径时，首次出现应给出可点击仓库名，并说明后续路径相对哪个仓库根目录。引用组织内部仓库时，同时说明它
 承载的是工具、包还是同步快照角色。
 
-新增、移除或重命名实际 Mod 或内部共享项目时，优先更新拥有清单的目录 README；实际 Mod 的对外入口变化再同步更新根
-README 的当前 Mod 表。现有项目以项目文件、`Taiwu.Mod.Pack.proj`、lock file、目录 README 和解决方案注册为准；
-`templates/` 只用于创建新项目的初始骨架。
+新增、移除或重命名实际 Mod 时，同步更新 `mods/README.md` 的一级目录索引，以及该 Mod 自己的 README、维护入口、
+`Config.Lua`、组包入口、lock file、解决方案注册和发布配置。只有这个 Mod 应进入根 README 的玩家入口表时，才同步更新
+根 README。
+
+新增、移除或重命名内部共享项目时，同步更新 `shared/README.md` 的一级目录索引，以及项目自己的 README、项目文件、
+lock file、解决方案注册和引用方部署声明。现有项目以项目文件、`Taiwu.Mod.Pack.proj`、lock file、目录 README 和
+解决方案注册为准；`templates/` 只用于创建新项目的初始骨架。
 
 太吾游戏版本更新后，如果 Mod 管理界面、上传流程或 `Config.Lua` 字段发生变化，按新游戏版本复核相关机制参考。
 

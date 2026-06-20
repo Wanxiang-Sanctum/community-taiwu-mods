@@ -2,11 +2,16 @@
 
 实际 Mod 源码和组包规则目录。
 
-本文面向仓库维护者。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护当前 Mod 清单，以及所有 Mod 共同遵守的组包、
-插件入口、引用和部署规则。
+本文面向仓库维护者。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护一级 Mod 目录索引、Mod 目录约定，以及所有
+Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 具体 Mod 的 `README.md` 面向外部技术玩家；源码模块、内部设计和项目内维护入口由对应
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README 维护。
+
+## 目录约定
+
+`mods/` 下的一级子目录就是实际 Mod 边界。目录名同时用于 `pack-mod --name <ModName>`、发布 tag 中的
+`mods/<ModName>/v<Version>` 约定，以及可部署目录 `artifacts/mods/<ModName>/`。
 
 ## 文档入口
 
@@ -15,8 +20,9 @@
 | `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` | `Wanxiang.Prelude/DEVELOPMENT.md` |
 | `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` | `Wanxiang.Xiangshu/DEVELOPMENT.md` |
 
-新增或移除一级 Mod 目录时，同步更新这张入口表。表中只保留选择信息；玩家说明留在对应 `README.md`，源码模块说明留在
-对应 `DEVELOPMENT.md`、`docs/` 或源码子目录 README。
+这张表是 `mods/` 一级目录的索引，只保留选择信息和稳定入口。玩家说明留在对应 `README.md`，源码模块说明留在对应
+`DEVELOPMENT.md`、`docs/` 或源码子目录 README。新增、移除或重命名一级 Mod 目录时，同步更新这张表；共同组包规则或
+目录约定变化时，再修改本文其它部分。
 
 新建 Mod：
 
