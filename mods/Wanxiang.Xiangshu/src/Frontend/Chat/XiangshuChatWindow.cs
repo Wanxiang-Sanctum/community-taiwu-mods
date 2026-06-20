@@ -52,8 +52,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PreferredMessageBubbleWidth = 430f;
     private const float MaximumMessageBubbleWidth = 460f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
+    private const float FallbackCanvasScaleFactor = 1f;
+    private const float DefaultReferencePixelsPerUnit = 100f;
+    private const float HeaderTitleFontSize = 24f;
+    private const float ReplyIndicatorFontSize = 16f;
+    private const float MessageSpeakerFontSize = 18f;
+    private const float MessageBodyFontSize = 24f;
+    private const float InputTextFontSize = 22f;
+    private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
-    private static readonly Vector2 CanvasReferenceResolution = new(2560f, 1440f);
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -500,7 +507,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         TextMeshProUGUI speaker = CreateText(
             message.SpeakerName,
             bubble.transform,
-            16f,
+            MessageSpeakerFontSize,
             isUser ? new Color(0.72f, 0.88f, 0.9f, 1f) : AccentColor,
             FontStyles.Bold);
         speaker.text = message.SpeakerName;
@@ -516,7 +523,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         TextMeshProUGUI body = CreateText(
             "MessageText",
             bubble.transform,
-            18f,
+            MessageBodyFontSize,
             TextColor,
             FontStyles.Normal);
         body.text = message.Content;
@@ -743,7 +750,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         icon.preserveAspect = true;
         _ = SetFixedLayoutSize(iconObject, HeaderIconSize, HeaderIconSize);
 
-        TextMeshProUGUI title = CreateText("Title", header.transform, 24f, TextColor, FontStyles.Bold);
+        TextMeshProUGUI title = CreateText(
+            "Title",
+            header.transform,
+            HeaderTitleFontSize,
+            TextColor,
+            FontStyles.Bold);
         title.text = "相枢";
         title.alignment = TextAlignmentOptions.MidlineLeft;
         LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
@@ -787,7 +799,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _replyIndicatorText = CreateText(
             "Label",
             indicator.transform,
-            15f,
+            ReplyIndicatorFontSize,
             TextColor,
             FontStyles.Bold);
         _replyIndicatorText.text = "推演中";
@@ -896,7 +908,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         TextMeshProUGUI inputText = CreateText(
             "Text",
             textViewport.transform,
-            17f,
+            InputTextFontSize,
             TextColor,
             FontStyles.Normal);
         inputText.text = string.Empty;
@@ -965,7 +977,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         AttachToGameUiLayer(layer);
-        ConfigureRootCanvas(uiCamera);
+        ConfigureRootCanvas(uiCamera, layer);
         return true;
     }
 
@@ -987,7 +999,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
     }
 
-    private void ConfigureRootCanvas(Camera uiCamera)
+    private void ConfigureRootCanvas(
+        Camera uiCamera,
+        RectTransform gameUiLayer)
     {
         Canvas canvas = _rootCanvas
             ?? throw new InvalidOperationException("Xiangshu chat window root Canvas is not initialized.");
@@ -999,14 +1013,45 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         CanvasScaler scaler = _rootCanvasScaler
             ?? throw new InvalidOperationException("Xiangshu chat window root CanvasScaler is not initialized.");
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = CanvasReferenceResolution;
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+        ConfigureRootCanvasScaler(scaler, gameUiLayer);
 
         ConchShipGraphicRaycaster raycaster = _rootRaycaster
             ?? throw new InvalidOperationException("Xiangshu chat window root raycaster is not initialized.");
         raycaster.enabled = true;
         raycaster.TargetCamera = uiCamera;
+    }
+
+    private static void ConfigureRootCanvasScaler(
+        CanvasScaler scaler,
+        RectTransform gameUiLayer)
+    {
+        CanvasScaler? gameScaler = gameUiLayer.GetComponentInParent<CanvasScaler>();
+
+        if (gameScaler is not null)
+        {
+            CopyCanvasScalerSettings(gameScaler, scaler);
+            return;
+        }
+
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+        scaler.scaleFactor = FallbackCanvasScaleFactor;
+        scaler.referencePixelsPerUnit = DefaultReferencePixelsPerUnit;
+    }
+
+    private static void CopyCanvasScalerSettings(
+        CanvasScaler source,
+        CanvasScaler target)
+    {
+        target.uiScaleMode = source.uiScaleMode;
+        target.referencePixelsPerUnit = source.referencePixelsPerUnit;
+        target.scaleFactor = source.scaleFactor;
+        target.referenceResolution = source.referenceResolution;
+        target.screenMatchMode = source.screenMatchMode;
+        target.matchWidthOrHeight = source.matchWidthOrHeight;
+        target.physicalUnit = source.physicalUnit;
+        target.fallbackScreenDPI = source.fallbackScreenDPI;
+        target.defaultSpriteDPI = source.defaultSpriteDPI;
+        target.dynamicPixelsPerUnit = source.dynamicPixelsPerUnit;
     }
 
     private void ApplyPanelLayout()
@@ -1382,7 +1427,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         button.colors = colors;
         _ = SetFixedLayoutSize(buttonObject, width, height);
 
-        TextMeshProUGUI text = CreateText("Label", buttonObject.transform, 18f, TextColor, FontStyles.Bold);
+        TextMeshProUGUI text = CreateText(
+            "Label",
+            buttonObject.transform,
+            ButtonLabelFontSize,
+            TextColor,
+            FontStyles.Bold);
         text.text = label;
         text.alignment = TextAlignmentOptions.Center;
         StretchToParent(text.rectTransform);
