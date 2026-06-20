@@ -3,7 +3,7 @@
 本仓库内部共享项目目录。
 
 每个一级子目录是一个可被本仓库多个 mod 引用的内部 C# 项目。共享项目为插件项目提供内部库；部署共享项目 DLL
-或其 runtime 依赖的动作，由引用它的前端或后端插件项目声明，具体 item 见 `mods/README.md`。
+或其 runtime 依赖的动作，由引用它的前端或后端插件项目声明，具体部署入口见 `mods/README.md`。
 
 本目录 README 说明共享项目的共同边界。共享库自己的 API、事件选择、运行时部署建议和维护入口由
 `shared/<ProjectName>/README.md` 维护；引用它的 mod 负责决定是否合并、复制或不部署该 DLL。
@@ -18,6 +18,7 @@
 | 目录 | 角色 | 继续阅读 |
 | --- | --- | --- |
 | `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts/` | 前端插件复用的行囊物品嫁接协议。 | `Wanxiang.Taiwu.ItemGrafts/README.md` |
 
 这张表是 `shared/` 一级目录的索引，只保留选择信息和稳定入口。共享库 API、事件选择和部署建议留在项目自己的 README 里。
 新增、移除或重命名内部共享项目时，同步更新这张表；共享项目共同边界或目录约定变化时，再修改本文其它部分。

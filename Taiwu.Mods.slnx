@@ -29,6 +29,7 @@
     <Project
       Path="shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
+    <Project Path="shared/Wanxiang.Taiwu.ItemGrafts/Wanxiang.Taiwu.ItemGrafts.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Taiwu.Mods.Cli/Taiwu.Mods.Cli.csproj" />
