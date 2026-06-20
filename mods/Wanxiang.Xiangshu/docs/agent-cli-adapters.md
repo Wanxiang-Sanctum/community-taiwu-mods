@@ -130,4 +130,4 @@ codebuddy --print --resume <session_id> --output-format stream-json --verbose --
 - 本文的当前适配器表和对应命令契约。
 
 只有新增 Agent 改变了对话投递模型、运行数据所有权、默认工作区资产结构或用户配置语义时，才同步修改
-`agent-chat.md`、`agent-context-sources.md` 或根 `README.md` 的相关边界说明。
+`agent-chat.md`、`agent-context-sources.md` 或相枢 `README.md` 的相关边界说明。

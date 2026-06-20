@@ -1,34 +1,17 @@
 # {{ mod.name }}
 
-太吾绘卷 Mod。
+{{ mod.name }} 是太吾绘卷 Mod。
 
-## 开发
+本文面向安装和使用这个 Mod 的技术玩家。源码维护入口见 [DEVELOPMENT.md](DEVELOPMENT.md)。
 
-从仓库根目录构建插件项目：
+## 使用方式
 
-```powershell
-dotnet build mods/{{ mod.name }}/src/Frontend/{{ mod.name }}.Frontend.csproj
-dotnet build mods/{{ mod.name }}/src/Backend/{{ mod.name }}.Backend.csproj
-```
+在这里说明这个 Mod 提供的玩家可见功能、适合谁使用，以及是否需要其它前置 Mod。
 
-打包可部署目录：
+## 配置
 
-```powershell
-dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
-```
+在这里说明太吾 Mod 设置项、需要重启生效的配置，以及玩家本地文件的放置位置。
 
-`pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把它声明的内容组装到
-仓库根目录的 `artifacts/mods/{{ mod.name }}/`。
+## 使用边界
 
-最终包内容从 `Taiwu.Mod.Pack.proj` 开始维护。新增静态文件、目录、额外项目或发布目录时，先看上一级
-[mods/README.md](../README.md) 的组包约定，再更新对应项目文件。
-
-插件项目的本地构建设置、插件入口子目录和需要随包部署的依赖写在对应项目的 `Taiwu.Mod.props`。
-依赖部署用 `TaiwuModMergeDependency` 或 `TaiwuModCopyDependency` 声明，并只由 `pack-mod` 使用。
-
-## 项目结构
-
-- `Config.Lua`：游戏读取的 mod 配置。
-- `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
-- `src/Frontend/`：前端插件项目。
-- `src/Backend/`：后端插件项目。
+在这里说明这个 Mod 会读取或写入哪些游戏状态、是否会影响存档，以及玩家需要自行确认的本机环境。

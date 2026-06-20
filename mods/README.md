@@ -1,19 +1,28 @@
 # mods
 
-Mod 源码目录。
+实际 Mod 源码和组包规则目录。
 
-每个一级子目录是一个独立 Mod。目录级 README 维护所有 mod 共同遵守的组包、插件入口、引用和部署规则；
-具体玩法、运行链路和源码模块边界由各 mod 自己的 README 维护。
+本文面向仓库维护者。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护一级 Mod 目录索引、Mod 目录约定，以及所有
+Mod 共同遵守的组包、插件入口、引用和部署规则。
+
+具体 Mod 的 `README.md` 面向外部技术玩家；源码模块、内部设计和项目内维护入口由对应
+`mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README 维护。
+
+## 目录约定
+
+`mods/` 下的一级子目录就是实际 Mod 边界。目录名同时用于 `pack-mod --name <ModName>`、发布 tag 中的
+`mods/<ModName>/v<Version>` 约定，以及可部署目录 `artifacts/mods/<ModName>/`。
 
 ## 文档入口
 
-| 目录 | 角色 | 继续阅读 |
-| --- | --- | --- |
-| `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` |
-| `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` |
+| 目录 | 角色 | 玩家说明 | 维护入口 |
+| --- | --- | --- | --- |
+| `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` | `Wanxiang.Prelude/DEVELOPMENT.md` |
+| `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` | `Wanxiang.Xiangshu/DEVELOPMENT.md` |
 
-新增或移除一级 mod 目录时，同步更新这张入口表。表中只保留选择信息；玩法、配置、运行链路和源码模块说明留在
-对应 mod 的 README 里。
+这张表是 `mods/` 一级目录的索引，只保留选择信息和稳定入口。玩家说明留在对应 `README.md`，源码模块说明留在对应
+`DEVELOPMENT.md`、`docs/` 或源码子目录 README。新增、移除或重命名一级 Mod 目录时，同步更新这张表；共同组包规则或
+目录约定变化时，再修改本文其它部分。
 
 新建 Mod：
 
@@ -25,11 +34,16 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 太吾游戏读取 `Config.Lua` 以及同步 Steam Workshop 字段的通用语义见仓库级文档
 [`docs/taiwu-mod-steam-publishing-boundary.md`](../docs/taiwu-mod-steam-publishing-boundary.md)。
 
+创建命令生成新 Mod 的初始骨架。项目创建后，真实包内容由该 mod 的 `Taiwu.Mod.Pack.proj`、插件项目文件和项目旁
+`Taiwu.Mod.props` 维护；`templates/` 只作为新项目起点。新增实际 Mod 时，`README.md` 保持玩家说明视角，
+`DEVELOPMENT.md` 承接源码维护入口。
+
 ```text
 mods/MyMod/
   Config.Lua
   Taiwu.Mod.Pack.proj
   README.md
+  DEVELOPMENT.md
   src/
     Frontend/
     Backend/
@@ -84,7 +98,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 
 ```xml
 <ItemGroup>
-  <TaiwuModPackFile Include="$(TargetPath)" PackagePath="Plugins/MyMod.Ipc.dll" />
+  <TaiwuModPackFile Include="$(TargetDir)MyMod.Ipc.dll" PackagePath="Plugins/MyMod.Ipc.dll" />
 </ItemGroup>
 ```
 
@@ -121,10 +135,6 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 `pack-mod` 会先运行该项目的 `Publish` target，再把 `$(PublishDir)` 复制到 `Tools/Worker/`。
 没有显式设置 `TaiwuModPublishPackagePath` 时，发布目录默认进入 `Processes/<ProjectName>/`。
 项目可以用普通 .NET publish 属性控制是否 self-contained、single-file、RID 等发布细节。
-
-只有维护新的组包 helper，或项目不使用仓库默认项目组包目标时，才需要直接关心
-`ResolveTaiwuModPackOutputs`。这是 `pack-mod` 读取项目包产物的 MSBuild 边界；CLI 使用
-MSBuild 目标结果 JSON 作为项目包产物清单。
 
 ## Taiwu 引用和 Publicizer
 

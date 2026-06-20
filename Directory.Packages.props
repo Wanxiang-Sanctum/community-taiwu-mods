@@ -2,6 +2,11 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <MessagePipeVersion>1.8.2</MessagePipeVersion>
+    <!-- GameRuntime projects run inside Taiwu's Unity/Mono processes. Their
+         MessagePipe 1.8.2 and MessagePack 3.1.x stack pins
+         System.Collections.Immutable to 8.x, while Roslyn 5.x requires 9.x.
+         Raise this only after that stack no longer pins Immutable 8.x. -->
+    <RoslynGameRuntimeVersion>4.13.0</RoslynGameRuntimeVersion>
     <RoslynatorVersion>4.15.0</RoslynatorVersion>
     <TaiwuGameUnityVersion>2022.3.62f2</TaiwuGameUnityVersion>
     <TaiwuModKitReferencesVersion>1.0.1</TaiwuModKitReferencesVersion>
@@ -18,10 +23,7 @@
     />
     <PackageVersion Include="MessagePack" Version="3.1.4" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.0" />
-    <!-- Keep Roslyn on the last stable 4.x release that references
-         System.Collections.Immutable 8.0.0.0; Unity/Mono frontend loading
-         cannot bind MessagePack 3.1.x against Immutable 9.x. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
     <!-- Game-process plugins stay on DI 6.x: MessagePipe 1.8.2 strong-names
          DependencyInjection.Abstractions 6.0.0.0, and Taiwu plugin loading
          does not provide binding redirects. -->

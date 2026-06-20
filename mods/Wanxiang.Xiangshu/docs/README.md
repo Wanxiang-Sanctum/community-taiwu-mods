@@ -15,8 +15,9 @@
 
 ## 与其它文档的关系
 
-相枢根 `README.md` 面向读者选择入口、开发命令和项目结构；本目录解释较深的运行设计和维护边界。源码子目录下的
-README 只说明本模块职责、依赖方向和增长规则，不重复完整对话链路。
+相枢根 `README.md` 面向外部技术玩家，说明使用方式、配置入口和信任边界；`DEVELOPMENT.md` 面向源码维护者，说明开发
+命令、项目结构和内部设计入口。本目录解释较深的运行设计和维护边界。源码子目录下的 README 只说明本模块职责、依赖方向
+和增长规则，不重复完整对话链路。
 
 源码中的 `DefaultAgentWorkspace/` 是组包后默认本机 Agent 工作区的内容源。其中的 `AGENTS.md`、`CLAUDE.md`、
 `persona/`、`lore/`、`tool-guides/`、`.agents/skills/` 和 `.claude/skills/` 由运行中的 Agent 读取；这些文件应
