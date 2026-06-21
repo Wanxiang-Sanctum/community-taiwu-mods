@@ -5,6 +5,9 @@ using Wanxiang.Taiwu.ModRpc;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Backend;
 
+/// <summary>
+/// 提供观察嫁接宿主物品事实并转发给前端的后端入口。
+/// </summary>
 public static class BackendInventoryGrafts
 {
     private static readonly object SyncRoot = new();
@@ -13,6 +16,11 @@ public static class BackendInventoryGrafts
 
     private static List<IDisposable>? s_methodRegistrations;
 
+    /// <summary>
+    /// 为当前太吾 mod 安装后端宿主观察和 RPC 处理器。
+    /// </summary>
+    /// <param name="plugin">后端插件实例。</param>
+    /// <exception cref="ArgumentNullException"><paramref name="plugin"/> 为 null。</exception>
     public static void Install(TaiwuRemakePlugin plugin)
     {
         ArgumentNullException.ThrowIfNull(plugin);
@@ -55,6 +63,10 @@ public static class BackendInventoryGrafts
         }
     }
 
+    /// <summary>
+    /// 卸载后端宿主观察并释放已注册的处理器。
+    /// </summary>
+    /// <returns>移除了已安装的后端观察状态时返回 true；否则返回 false。</returns>
     public static bool Uninstall()
     {
         lock (SyncRoot)

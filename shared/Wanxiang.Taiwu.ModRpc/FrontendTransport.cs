@@ -51,7 +51,7 @@ internal static class FrontendTransport
             dispatch((offset, dataPool) => Complete(completionSource, offset, dataPool));
         }
 #pragma warning disable CA1031
-        // The game dispatcher reports immediate failures synchronously; preserve them on the returned task.
+        // 游戏派发器会同步报告即时失败；通过返回的任务保留这些失败。
         catch (Exception ex)
 #pragma warning restore CA1031
         {
@@ -80,7 +80,7 @@ internal static class FrontendTransport
             _ = completionSource.TrySetResult(result);
         }
 #pragma warning disable CA1031
-        // Callback exceptions should complete the awaiter instead of escaping through the game bridge.
+        // 回调异常应完成等待器，避免穿透游戏桥接层。
         catch (Exception ex)
 #pragma warning restore CA1031
         {

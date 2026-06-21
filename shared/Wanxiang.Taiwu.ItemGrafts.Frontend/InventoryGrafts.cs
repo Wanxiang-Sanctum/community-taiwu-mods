@@ -10,12 +10,20 @@ using Wanxiang.Taiwu.ModRpc;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 
+/// <summary>
+/// 提供创建和附加行囊物品嫁接会话的前端入口。
+/// </summary>
 public static class InventoryGrafts
 {
     private static readonly object SyncRoot = new();
 
     private static bool s_isInstalled;
 
+    /// <summary>
+    /// 将前端嫁接系统绑定到当前太吾 mod。
+    /// </summary>
+    /// <param name="plugin">前端插件实例。</param>
+    /// <exception cref="ArgumentNullException"><paramref name="plugin"/> 为 null。</exception>
     public static void Install(TaiwuRemakePlugin plugin)
     {
         if (plugin is null)
@@ -30,6 +38,14 @@ public static class InventoryGrafts
         }
     }
 
+    /// <summary>
+    /// 为已有真实宿主物品创建嫁接会话。
+    /// </summary>
+    /// <param name="hostKey">已有的非堆叠宿主物品 key。</param>
+    /// <param name="definition">要应用到宿主物品上的嫁接定义。</param>
+    /// <param name="options">可选通知和宿主事件行为。</param>
+    /// <param name="cancellationToken">用于停止等待后端宿主订阅的取消令牌。</param>
+    /// <returns>返回已建立嫁接会话的 UniTask。</returns>
     public static async UniTask<GraftSession> AttachAsync(
         ItemKey hostKey,
         GraftDefinition definition,
@@ -52,6 +68,16 @@ public static class InventoryGrafts
         return session;
     }
 
+    /// <summary>
+    /// 在角色行囊中创建真实宿主物品，并为其附加嫁接会话。
+    /// </summary>
+    /// <param name="characterId">接收真实宿主物品的太吾角色 ID。</param>
+    /// <param name="hostTemplate">要创建的非堆叠宿主物品模板。</param>
+    /// <param name="definition">要应用到新建宿主物品上的嫁接定义。</param>
+    /// <param name="options">可选通知、宿主选择和宿主事件行为。</param>
+    /// <param name="cancellationToken">用于停止等待异步游戏调用和后端宿主订阅的取消令牌。</param>
+    /// <returns>返回已建立嫁接会话的 UniTask。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="definition"/> 为 null。</exception>
     public static async UniTask<GraftSession> CreateAsync(
         int characterId,
         GraftHostTemplate hostTemplate,

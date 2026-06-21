@@ -6,7 +6,7 @@
 品级和操作。游戏后端、存档、交易、丢弃、转移以及其它未被使用方拦截的游戏交互，仍然处理原来的真实物品。
 
 本项目提供两个前端动作：把已有宿主建立为 `GraftSession`，以及创建真实宿主后立即建立 `GraftSession`。动作成功返回时，
-前端嫁接状态已经建立，后端也已经开始观察宿主事实；调用方保存返回的 session，并在自己的 UI 适配层中应用
+前端嫁接状态已经建立，后端也已经开始观察宿主事实；调用方保存返回的会话，并在自己的 UI 适配层中应用
 `session.Graft`。
 
 ## 边界
@@ -32,7 +32,7 @@
 再从 `session.Graft` 读取已校验的状态。
 
 `GraftHostId` 是宿主实例身份，由物品类型、模板 ID 和物品实例 ID 组成，不包含 `ModificationState`。`Graft.HostKey`
-是当前可传给游戏 API 的完整 key；宿主精炼、淬毒等数据变化可能让完整 key 改变，session 会在收到宿主事件时更新
+是当前可传给游戏 API 的完整 key；宿主精炼、淬毒等数据变化可能让完整 key 改变，会话会在收到宿主事件时更新
 `Graft.HostKey`。长期索引、字典 key 和存档锚点应优先使用 `GraftHostId`。
 
 `GraftDefinition` 是建立 `Graft` 的输入，由 `GraftAppearance`、`GraftMenuMode` 和 `GraftOperation` 列表组成。
@@ -43,7 +43,7 @@
 没有嫁接操作时传入空 `operations` 列表；空列表与 `Replace` 组合时，表示该嫁接物没有前端菜单操作。
 
 `GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
-`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只负责在前端动作和 session 生命周期里使用这些契约；宿主身份、事件种类和
+`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只负责在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
 跨端边界以 Contracts README 为准。
 
 ## 动作
@@ -54,11 +54,11 @@
 `InventoryGrafts.CreateAsync(...)` 创建已嫁接物。它接收角色 ID、`GraftHostTemplate`、`GraftDefinition` 和可选的
 `CreateOptions`。执行时创建一个数量为 1 的真实宿主，再从行囊快照中定位新宿主并返回 `UniTask<GraftSession>`。
 默认定位规则从创建前后快照的差集中选择同模板 `ItemDisplayData.RealKey`；快照里没有可匹配真实宿主时动作失败。
-需要自行处理同模板宿主歧义时，
-设置 `CreateOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，返回结果必须匹配请求创建的宿主模板。
+需要自行处理同模板宿主歧义时，设置 `CreateOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，
+返回结果必须匹配请求创建的宿主模板。
 
 `AttachOptions` 承载动作级即时通知和宿主事件回调；`CreateOptions` 同时承载即时通知、宿主事件回调和创建宿主后的定位规则。
-宿主事件回调通过 `OnHostEvent` 传入建会话动作，避免 session 返回后再登记回调而漏掉后端推送。
+宿主事件回调通过 `OnHostEvent` 传入建会话动作，避免动作返回后再登记回调而漏掉后端推送。
 
 ## 调用方式
 
@@ -149,15 +149,15 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 ## 会话生命周期
 
 `GraftSession` 是嫁接能否继续应用的所有权边界。`IsActive` 为 `true` 时，调用方可以继续在自己的 UI 适配层应用
-`session.Graft`；`IsActive` 为 `false` 后，调用方应停止应用该 session。
+`session.Graft`；`IsActive` 为 `false` 后，调用方应停止应用该会话。
 
 `EndReason` 在会话活跃时为 `null`，结束后说明原因：
 
-- `Canceled`：调用方释放 session，取消本次嫁接会话；真实宿主物品仍由游戏或上层业务持有。
+- `Canceled`：调用方释放会话，取消本次嫁接会话；真实宿主物品仍由游戏或上层业务持有。
 - `HostRemoved`：后端观察到真实宿主已被游戏流程删除，会话随宿主事实结束。
 
 调用 `GraftSession.DisposeAsync()` 是调用方主动取消嫁接会话的唯一入口。它会取消本次宿主订阅并移除本地事件订阅，
-但不会删除真实宿主物品。若宿主被游戏流程删除，后端会推送 `Removed` 事件，session 自动结束并把 `EndReason`
+但不会删除真实宿主物品。若宿主被游戏流程删除，后端会推送 `Removed` 事件，会话自动结束并把 `EndReason`
 设为 `HostRemoved`。
 
 后端还会推送 `LocationChanged` 和 `DataChanged`。`LocationChanged` 表示宿主进入、离开或转移到角色行囊；
@@ -188,10 +188,10 @@ new CreateOptions
 使用方拥有持久化状态。本项目不定义存档格式，也不提供 `GraftHostId` 到 `GraftSession` 的全局表。
 
 需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时先读取真实行囊，确认宿主物品仍存在，
-再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立 session 结束；后续策略由使用方负责。
+再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立会话结束；后续策略由使用方负责。
 
-使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端 session 订阅；后端按宿主身份统计 session，
-最后一个 session 结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，本项目不提供仲裁；需要仲裁时，
+使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端会话订阅；后端按宿主身份统计会话，
+最后一个会话结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，本项目不提供仲裁；需要仲裁时，
 由更高层 UI 适配定义优先级。
 
 ## 开发

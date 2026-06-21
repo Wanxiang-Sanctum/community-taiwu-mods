@@ -1,0 +1,3 @@
+[*.cs]
+# shared 库里的未使用 using 是审查依赖形态和公开面的有用信号。
+dotnet_diagnostic.IDE0005.severity = warning

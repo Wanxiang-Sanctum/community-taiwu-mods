@@ -16,13 +16,13 @@
 private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
 Log.Info(
-    "frontend plugin initialized",
+    "前端插件已初始化",
     new
     {
         adapter = settings.Adapter,
     });
 
-Log.Error(ex, "MCP sidecar failed to start");
+Log.Error(ex, "MCP sidecar 启动失败");
 ```
 
 日志上下文建议使用匿名对象表达。运行时契约是 `context` 必须能通过 Newtonsoft.Json 序列化为 JSON
@@ -32,7 +32,7 @@ Log.Error(ex, "MCP sidecar failed to start");
 ## 输出形态
 
 ```text
-frontend plugin initialized | {"adapter":"Codex"}
+前端插件已初始化 | {"adapter":"Codex"}
 ```
 
 异常会作为同一个 JSON 对象的 `exceptionType`、`exceptionMessage` 和 `exception` 字段输出。JSON 使用
