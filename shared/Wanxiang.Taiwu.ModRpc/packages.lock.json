@@ -22,35 +22,35 @@
       },
       "Taiwu.ModKit.References.Frontend": {
         "type": "Direct",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "rlTihwSnoxYvGpeWG2QS6tSGqNVn/u1UL/PJZi6JgWJyvmdvuPwfYjdFkjxFo2NXUY2F6BthUsg1qFZIjSimBQ==",
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "M6a301opzEO5hzwMFJroY3k9bCGWV8Z1z6Ry0IOPbu3zArJ+M6vPnLwdnaWnxn0GiP4uALzzGVcK8g2RdSt6hQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.10]",
-          "Taiwu.ModKit.References.Shared": "[1.0.10]",
-          "Taiwu.ModKit.References.Unity": "[1.0.10]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.13]",
+          "Taiwu.ModKit.References.Shared": "[1.0.13]",
+          "Taiwu.ModKit.References.Unity": "[1.0.13]"
         }
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "TTMEptM6Xu5M5lJp1qFa7olWrURrfoHJ911oyG9b3ur8ePfQRFIu4q4NBCqNMfclfXjvLU9jUINBaZj4CaFkMQ==",
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "nnuYES7hUl8Ih4LIHCPOz6aL7BB7zIGiMu8nHGWEgR+ZMEIuVGE0FC46PrXkaIX5X3QSMiuDk0Hei+2Q1Z64ZQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.10]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.13]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "Sh5yPXwWQLgx0Wpd8PUmGq7knJDfQCjrmZgZ5RkZMCTXKvuKoIrrIwsuzjzqpb/tIiL/yp1EzDuxbRAj2dFK3A=="
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "s870XcAbSGbqte6fDAHp+1/17c25VCZNaD+kq7KiJSCX1f7H0BQaBG5xT45KnSF7Q4To3IX7A13oV4Jf9SG97w=="
       },
       "Taiwu.ModKit.References.Unity": {
         "type": "CentralTransitive",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "lkGb4HEOH+1zyhFRjA2l5nftLF0Tmv/S5OXqQ1Z1JqKZNwdVqBqHNJH9zon0cCxJ4lBj57aJMDXYIGFBim1X1w=="
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "ke8tSIPBXosFnKdqjHWYUQPaJ9hGYeD5qDzIYP5MKUpAi1U5Jb6hCMMvMlNQ+mQaIGAPaSLtKGrL05OcHc9RYw=="
       }
     },
     "net8.0": {
@@ -68,28 +68,28 @@
       },
       "Taiwu.ModKit.References.Backend": {
         "type": "Direct",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "Ew+2YtA+dn60UATnvcH653Q2i0mQOe/8mxLo5h/opsJmzKEcyYv0T9EtuAlJgoJcXQuIhhOjUU/BmC2SraxokQ==",
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "q+53/UXQk0A0soWoNwvypKufS3cOQmRdwVUEHYYZ8peC/izu25iBXjyV3A5sCDzgNbumhEaVf2Tg6ae0uUPyew==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.10]",
-          "Taiwu.ModKit.References.Shared": "[1.0.10]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.13]",
+          "Taiwu.ModKit.References.Shared": "[1.0.13]"
         }
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "TTMEptM6Xu5M5lJp1qFa7olWrURrfoHJ911oyG9b3ur8ePfQRFIu4q4NBCqNMfclfXjvLU9jUINBaZj4CaFkMQ==",
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "nnuYES7hUl8Ih4LIHCPOz6aL7BB7zIGiMu8nHGWEgR+ZMEIuVGE0FC46PrXkaIX5X3QSMiuDk0Hei+2Q1Z64ZQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.10]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.13]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.10, )",
-        "resolved": "1.0.10",
-        "contentHash": "Sh5yPXwWQLgx0Wpd8PUmGq7knJDfQCjrmZgZ5RkZMCTXKvuKoIrrIwsuzjzqpb/tIiL/yp1EzDuxbRAj2dFK3A=="
+        "requested": "[1.0.13, )",
+        "resolved": "1.0.13",
+        "contentHash": "s870XcAbSGbqte6fDAHp+1/17c25VCZNaD+kq7KiJSCX1f7H0BQaBG5xT45KnSF7Q4To3IX7A13oV4Jf9SG97w=="
       }
     }
   }
