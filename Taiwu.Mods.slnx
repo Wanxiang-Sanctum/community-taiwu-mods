@@ -29,7 +29,19 @@
     <Project
       Path="shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
-    <Project Path="shared/Wanxiang.Taiwu.ItemGrafts/Wanxiang.Taiwu.ItemGrafts.csproj" />
+    <Project Path="shared/Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj" />
+    <Project
+      Path="shared/Wanxiang.Taiwu.ItemGrafts/Wanxiang.Taiwu.ItemGrafts.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.ItemGrafts.Backend/Wanxiang.Taiwu.ItemGrafts.Backend.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.ItemGrafts.Contracts/Wanxiang.Taiwu.ItemGrafts.Contracts.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj"
+    />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Taiwu.Mods.Cli/Taiwu.Mods.Cli.csproj" />

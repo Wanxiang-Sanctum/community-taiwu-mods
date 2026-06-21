@@ -1,9 +1,15 @@
 # Wanxiang.Taiwu.ItemGrafts
 
-太吾绘卷前端行囊物品嫁接协议的共享项目。
+> Deprecated: 本项目是旧版前端入口，只为现有调用方短期保留。新代码不要继续扩展本项目，迁移到
+> `Wanxiang.Taiwu.ItemGrafts.Contracts`、`Wanxiang.Taiwu.ItemGrafts.Frontend` 和
+> `Wanxiang.Taiwu.ItemGrafts.Backend`。
 
-“嫁接”指使用一个后端真实存在的非堆叠 `ItemKey` 作为宿主，在已适配的前端行囊入口里呈现另一套名称、描述、图标、品级和操作。
-后端、存档、交易、丢弃、转移以及其它未被使用方拦截的游戏交互，仍然处理原来的真实物品。
+太吾绘卷前端行囊物品嫁接机制的旧共享项目。本文只保留迁移前最低限度的旧用法，不再扩展宿主事件、后端观察或通知辅助入口。
+本文中的 `HostTemplate`、`CreateOptions.SelectHost` 等名称是旧包 API，不代表新版
+`Wanxiang.Taiwu.ItemGrafts.*` 项目的命名。
+
+“嫁接”指使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主，在已适配的前端行囊入口里呈现另一套名称、描述、图标、品级和操作。
+游戏后端、存档、交易、丢弃、转移以及其它未被使用方拦截的游戏交互，仍然处理原来的真实物品。
 
 本库提供两个异步动作：把已有宿主嫁接为 `Graft`，以及创建真实宿主后立即建立 `Graft`。两个动作都只返回前端嫁接状态；
 使用方负责保存返回的 `Graft`，并在自己的 UI 适配层中应用这些状态。
@@ -16,7 +22,7 @@
 `InventoryGrafts.CreateAsync(...)` 通过游戏原生 `CharacterDomainMethod.Call.CreateInventoryItem(...)` 创建真实宿主，再从前端行囊快照定位该宿主。
 本库不写入真实物品字段，不保存使用方状态，也不改变未适配交互里的原始物品表现。
 
-## 协议模型
+## 前端模型
 
 `Graft` 是已嫁接宿主的前端状态。它绑定一个有效的非堆叠真实 `ItemKey`，并携带外观、操作和菜单策略。
 
@@ -107,19 +113,17 @@ static void OpenNoteForItem(ItemKey hostKey)
 ## 通知
 
 两个动作默认不推送通知。需要通知时，在 `AttachOptions` 或 `CreateOptions` 上设置 `NotificationMessage`；
-需要替换原生即时通知模板时，再设置 `NotificationRecordType`：
+需要替换原生即时通知模板时，再设置具体的 `NotificationRecordType`：
 
 ```csharp
 new CreateOptions
 {
     NotificationMessage = "低语的陶土药钵落入了行囊。",
-    NotificationRecordType = GraftNotifications.DefaultNativeRecordType,
+    NotificationRecordType = customNativeRecordType,
 };
 ```
 
 动作会把 `NotificationMessage` 原文推送为即时通知。`NotificationRecordType` 只影响原生通知外观，不改变文本内容。
-
-需要脱离嫁接动作单独推送文本通知时，调用 `GraftNotifications.Push(...)`。
 
 即时通知只向当前前端的 `DisplayTriggerModel.RenderedNotificationList` 追加一条 `NotificationItem`，再触发 `UiEvents.OnNewInstantNotification`。
 它没有后端副作用，不写存档，也不会成为游戏真实机制的一部分。
@@ -128,12 +132,12 @@ new CreateOptions
 
 本库不定义存档格式，也不提供 `ItemKey` 到 `Graft` 的全局表。
 
-需要随存档恢复时，使用方自行持久化状态，并用宿主 `ItemKey` 作为锚点。前端恢复时先从后端读取真实行囊，
+需要随存档恢复时，使用方自行持久化状态，并用宿主 `ItemKey` 作为锚点。前端恢复时先通过游戏现有后端 API 读取真实行囊，
 确认宿主物品仍存在，再重新建立 `Graft`。如果宿主物品不存在，使用方再决定是不显示、提示失效，还是执行
 `InventoryGrafts.CreateAsync(...)` 重新创建一个宿主并建立嫁接。
 
-使用方应直接用自己的集合或字典维护关心的宿主 `ItemKey`。
-跨 mod 同时接管同一宿主时，本库不提供仲裁；需要仲裁时，由更高层 UI 适配或前置依赖定义优先级。
+使用方应直接用自己的集合或字典维护关心的宿主 `ItemKey`。同一前端内多处 UI 或业务同时接管同一宿主时，
+本库不提供仲裁；需要仲裁时，由更高层 UI 适配定义优先级。
 
 ## 开发
 

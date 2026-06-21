@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile
+      Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Internal/GraftHostValidation.cs"
+      Link="Shared/GraftHostValidation.cs"
+    />
+    <Compile
+      Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Internal/GraftHostRpcProtocol.cs"
+      Link="Shared/GraftHostRpcProtocol.cs"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="../Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj"
+    />
+    <ProjectReference
+      Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Wanxiang.Taiwu.ItemGrafts.Contracts.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Backend"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Plugin"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>
