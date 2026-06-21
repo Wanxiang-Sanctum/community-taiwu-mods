@@ -19,7 +19,7 @@
 本项目是前端共享 DLL，目标框架为 `netstandard2.1`，引用 `Taiwu.ModKit.References.Frontend` 和
 `Taiwu.ModKit.Dependencies.UniTask`，只面向前端插件。
 
-`InventoryGrafts.CreateAsync(...)` 通过游戏原生 `CharacterDomainMethod.Call.CreateInventoryItem(...)` 创建真实宿主，再从前端行囊快照定位该宿主。
+`InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。
 本库不写入真实物品字段，不保存使用方状态，也不改变未适配交互里的原始物品表现。
 
 ## 前端模型
@@ -130,11 +130,10 @@ new CreateOptions
 
 ## 状态归属
 
-本库不定义存档格式，也不提供 `ItemKey` 到 `Graft` 的全局表。
+使用方拥有持久化状态。本库不定义存档格式，也不提供 `ItemKey` 到 `Graft` 的全局表。
 
-需要随存档恢复时，使用方自行持久化状态，并用宿主 `ItemKey` 作为锚点。前端恢复时先通过游戏现有后端 API 读取真实行囊，
-确认宿主物品仍存在，再重新建立 `Graft`。如果宿主物品不存在，使用方再决定是不显示、提示失效，还是执行
-`InventoryGrafts.CreateAsync(...)` 重新创建一个宿主并建立嫁接。
+需要随存档恢复时，使用方自行持久化状态，并用宿主 `ItemKey` 作为锚点。前端恢复时先读取真实行囊，确认宿主物品仍存在，
+再重新建立 `Graft`。如果宿主物品不存在，恢复流程以未建立 `Graft` 结束；后续策略由使用方负责。
 
 使用方应直接用自己的集合或字典维护关心的宿主 `ItemKey`。同一前端内多处 UI 或业务同时接管同一宿主时，
 本库不提供仲裁；需要仲裁时，由更高层 UI 适配定义优先级。

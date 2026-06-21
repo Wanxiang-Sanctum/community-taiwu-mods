@@ -3,6 +3,7 @@ using GameData.Domains.Character;
 using GameData.Domains.Item;
 using GameData.Domains.Item.Display;
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.AsyncInterop;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 using Wanxiang.Taiwu.ModRpc;
@@ -129,7 +130,7 @@ public static class InventoryGrafts
                 null,
                 characterId,
                 itemSubType,
-                (offset, dataPool) => callback(offset, dataPool)));
+                callback.Invoke));
     }
 
     private static void EnsureInstalled()

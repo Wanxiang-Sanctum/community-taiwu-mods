@@ -19,6 +19,9 @@
       Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Wanxiang.Taiwu.ItemGrafts.Contracts.csproj"
     />
     <ProjectReference
+      Include="../Wanxiang.Taiwu.AsyncInterop/Wanxiang.Taiwu.AsyncInterop.csproj"
+    />
+    <ProjectReference
       Include="../Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj"
     />
   </ItemGroup>

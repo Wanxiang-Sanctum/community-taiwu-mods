@@ -11,16 +11,17 @@
 
 ## 边界
 
-本项目是前端共享 DLL，目标框架为 `netstandard2.1`，引用 `Taiwu.ModKit.References.Frontend` 和
-`Taiwu.ModKit.Dependencies.UniTask`，只面向前端插件。
+本项目是新版 ItemGrafts 的前端动作和会话实现。它面向 `netstandard2.1` 前端插件，引用
+`Taiwu.ModKit.References.Frontend`、`Taiwu.ModKit.Dependencies.UniTask`、`Wanxiang.Taiwu.AsyncInterop` 和
+`Wanxiang.Taiwu.ModRpc`。
 
 使用 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
-`InventoryGrafts.Install(this)`。同一 mod 的后端观察服务也需要完成安装，否则 session 无法完成宿主订阅；后端初始化入口和
-释放规则由 `Wanxiang.Taiwu.ItemGrafts.Backend` 负责说明。前端安装只绑定本 mod id，不安装后端观察服务，也不持有需要
-统一释放的资源；会话资源由每个 `GraftSession` 自己释放。
+`InventoryGrafts.Install(this)`。该安装绑定本 mod id，使前端 `GraftSession` 可以通过 `Wanxiang.Taiwu.ModRpc`
+与同一 mod 的后端观察服务协作。后端观察服务由 `Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放；前端没有全局卸载入口，
+每个会话资源由对应的 `GraftSession.DisposeAsync()` 释放。
 
-`InventoryGrafts.CreateAsync(...)` 通过游戏原生 `CharacterDomainMethod.Call.CreateInventoryItem(...)` 创建真实宿主，
-再从前端行囊快照定位该宿主。本项目不写入真实物品字段，不保存使用方状态，也不改变未适配交互里的原始物品表现。
+`InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。本项目不写入
+真实物品字段，不保存使用方状态，也不改变未适配交互里的原始物品表现。
 
 ## 前端模型
 
@@ -52,7 +53,8 @@
 
 `InventoryGrafts.CreateAsync(...)` 创建已嫁接物。它接收角色 ID、`GraftHostTemplate`、`GraftDefinition` 和可选的
 `CreateOptions`。执行时创建一个数量为 1 的真实宿主，再从行囊快照中定位新宿主并返回 `UniTask<GraftSession>`。
-默认定位规则从创建前后快照的差集中选择同模板 `RealKey`；未找到新宿主时动作失败。需要自行处理同模板宿主歧义时，
+默认定位规则从创建前后快照的差集中选择同模板 `ItemDisplayData.RealKey`；快照里没有可匹配真实宿主时动作失败。
+需要自行处理同模板宿主歧义时，
 设置 `CreateOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，返回结果必须匹配请求创建的宿主模板。
 
 `AttachOptions` 承载动作级即时通知和宿主事件回调；`CreateOptions` 同时承载即时通知、宿主事件回调和创建宿主后的定位规则。
@@ -183,11 +185,10 @@ new CreateOptions
 
 ## 状态归属
 
-本项目不定义存档格式，也不提供 `GraftHostId` 到 `GraftSession` 的全局表。
+使用方拥有持久化状态。本项目不定义存档格式，也不提供 `GraftHostId` 到 `GraftSession` 的全局表。
 
-需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时先通过游戏现有后端 API 读取
-真实行囊，确认宿主物品仍存在，再重新建立 `GraftSession`。如果宿主物品不存在，使用方再决定是不显示、提示失效，
-还是执行 `InventoryGrafts.CreateAsync(...)` 重新创建一个宿主并建立嫁接。
+需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时先读取真实行囊，确认宿主物品仍存在，
+再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立 session 结束；后续策略由使用方负责。
 
 使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端 session 订阅；后端按宿主身份统计 session，
 最后一个 session 结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，本项目不提供仲裁；需要仲裁时，
