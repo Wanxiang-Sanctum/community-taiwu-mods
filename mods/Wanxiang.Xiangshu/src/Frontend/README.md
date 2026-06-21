@@ -42,7 +42,8 @@
 运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
-注入 `Ipc/` endpoint；脚本编译和程序集解析规则仍归 `src/Scripting/`。
+注入 `Ipc/` endpoint；`entryThread = mainThread` 的入口调用切换到 Unity 主线程。脚本编译和程序集解析规则仍归
+`src/Scripting/`。
 
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
 事件选择和字段取舍归 `docs/logging.md`。行囊物品嫁接模型来自 `shared/Wanxiang.Taiwu.ItemGrafts.Contracts`、

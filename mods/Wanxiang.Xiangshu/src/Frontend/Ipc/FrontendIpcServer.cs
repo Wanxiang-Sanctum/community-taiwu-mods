@@ -118,7 +118,8 @@ internal sealed class FrontendIpcServer(
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
                 IpcRuntime.FrontendEndpointRole,
-                [pluginDirectory]));
+                [pluginDirectory],
+                new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,
             IpcRunScriptResponse,

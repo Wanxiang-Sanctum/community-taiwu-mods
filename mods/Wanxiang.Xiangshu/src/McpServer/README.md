@@ -17,8 +17,9 @@ MCP 工具承担三类路由：把 C# 脚本请求转发到前端或后端 IPC e
 事件日志只确认 sidecar 启动、endpoint 注册、父进程退出、停止和失败，不承担 MCP 工具调用统计，也不记录
 MCP bearer token。
 
-脚本运行中，MCP server 负责把 MCP 工具调用路由到目标侧 IPC endpoint，并把内部的嵌套判别联合整理为
-Agent 可读 JSON：未调用入口时只有原因；已调用入口时再区分入口返回值和入口异常。
+脚本运行中，MCP server 负责把 MCP 工具调用路由到目标侧 IPC endpoint，把 `entryThread` 写入 IPC 请求，并把
+内部的嵌套判别联合整理为 Agent 可读 JSON：未调用入口时只有原因；已调用入口时再区分入口返回值和入口异常。
+实际线程切换由目标侧插件实现。
 
 MCP server 不参与脚本编译引用解析，也不维护前后端 DLL 清单；这些责任分别归目标插件进程内的
 `src/Scripting/` 运行器和打包项目。

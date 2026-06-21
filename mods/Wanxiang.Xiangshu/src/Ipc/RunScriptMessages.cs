@@ -6,7 +6,8 @@ namespace Wanxiang.Xiangshu.Ipc;
 [MessagePackObject]
 public sealed class IpcRunScriptRequest(
     string script,
-    IReadOnlyDictionary<string, string>? arguments)
+    IReadOnlyDictionary<string, string>? arguments,
+    IpcScriptEntryThread entryThread = IpcScriptEntryThread.Current)
 {
     private static readonly IReadOnlyDictionary<string, string> EmptyArguments =
         new ReadOnlyDictionary<string, string>(
@@ -22,6 +23,29 @@ public sealed class IpcRunScriptRequest(
             ? new ReadOnlyDictionary<string, string>(
                 new Dictionary<string, string>(arguments, StringComparer.Ordinal))
             : EmptyArguments;
+
+    [Key(2)]
+    public IpcScriptEntryThread EntryThread { get; } =
+        ValidateEntryThread(entryThread);
+
+    private static IpcScriptEntryThread ValidateEntryThread(
+        IpcScriptEntryThread entryThread)
+    {
+        return entryThread is IpcScriptEntryThread.Current
+                or IpcScriptEntryThread.MainThread
+            ? entryThread
+            : throw new ArgumentOutOfRangeException(
+                nameof(entryThread),
+                entryThread,
+                "Unsupported script entry thread.");
+    }
+}
+
+public enum IpcScriptEntryThread
+{
+    Current = 0,
+
+    MainThread = 1,
 }
 
 [Union(0, typeof(IpcRunScriptNotInvokedResponse))]

@@ -7,6 +7,9 @@
 这个模块不承载 MCP 工具语义，也不直接定义 MessagePipe endpoint。跨进程请求与响应归 `src/Ipc/`，MCP
 工具路由归 `src/McpServer/`，可访问的游戏 API、运行状态和线程边界归目标侧前端或后端模块。
 
+脚本入口调用线程来自 IPC 请求中的 `entryThread`。共享运行器按该字段委托入口调用分派器；前端和后端模块负责把
+`mainThread` 映射到各自的游戏主线程。
+
 ## 引用和程序集解析
 
 Roslyn 编译需要 PE metadata。太吾 Mod 运行时可能用字节方式加载插件程序集，使已加载程序集没有可用的
@@ -51,3 +54,5 @@ public static class XiangshuScript
 参数必须是 `Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals`，可以通过
 `using Wanxiang.Xiangshu.Scripting;` 简写为 `XiangshuScriptGlobals`。同步返回值、`Task` 和 `Task<T>`
 都会解析为入口返回值。
+
+`entryThread` 只约束入口方法的调用线程，不改变脚本内部自行创建任务或目标侧异步 API 回调的线程语义。

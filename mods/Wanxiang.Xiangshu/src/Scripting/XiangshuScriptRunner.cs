@@ -18,6 +18,7 @@ public sealed class XiangshuScriptRunner
 
     private readonly string _targetSide;
     private readonly ScriptReferenceResolver _referenceResolver;
+    private readonly IScriptEntryDispatcher _entryDispatcher;
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -27,7 +28,8 @@ public sealed class XiangshuScriptRunner
 
     public XiangshuScriptRunner(
         string targetSide,
-        IEnumerable<string>? referenceDirectories = null)
+        IEnumerable<string>? referenceDirectories = null,
+        IScriptEntryDispatcher? entryDispatcher = null)
     {
 #if NET6_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(targetSide);
@@ -40,6 +42,7 @@ public sealed class XiangshuScriptRunner
 
         _targetSide = targetSide;
         _referenceResolver = new ScriptReferenceResolver(referenceDirectories);
+        _entryDispatcher = entryDispatcher ?? CurrentThreadEntryDispatcher.Instance;
     }
 
     [SuppressMessage(
@@ -70,12 +73,13 @@ public sealed class XiangshuScriptRunner
             }
 
             ScriptCompilationResult.Compiled compiled = (ScriptCompilationResult.Compiled)compilationResult;
-            object? value = await InvokeAsync(
+            object? value = await InvokeEntryAsync(
                 compiled.AssemblyBytes,
                 new XiangshuScriptGlobals(
                     _targetSide,
                     request.Arguments,
                     cancellationToken),
+                request.EntryThread,
                 () => entryInvoked = true,
                 cancellationToken);
 
@@ -142,9 +146,10 @@ public sealed class XiangshuScriptRunner
         return new ScriptCompilationResult.Compiled(assemblyStream.ToArray());
     }
 
-    private async Task<object?> InvokeAsync(
+    private async Task<object?> InvokeEntryAsync(
         byte[] assemblyBytes,
         XiangshuScriptGlobals globals,
+        IpcScriptEntryThread entryThread,
         Action markEntryInvoked,
         CancellationToken cancellationToken)
     {
@@ -154,8 +159,14 @@ public sealed class XiangshuScriptRunner
         Type scriptType = FindEntryType(assembly);
         MethodInfo executeMethod = FindEntryMethod(scriptType);
 
-        markEntryInvoked();
-        object? entryReturnValue = executeMethod.Invoke(null, [globals]);
+        object? entryReturnValue = await _entryDispatcher.InvokeAsync(
+            () =>
+            {
+                markEntryInvoked();
+                return executeMethod.Invoke(null, [globals]);
+            },
+            entryThread,
+            cancellationToken);
         return await ResolveReturnValueAsync(entryReturnValue, cancellationToken);
     }
 

@@ -252,7 +252,7 @@ CLI Agent
 
 模块边界按所有权划分：
 
-- `src/Ipc/` 定义跨进程请求/响应 contract。脚本响应只表达运行事实：
+- `src/Ipc/` 定义跨进程请求/响应 contract，包括脚本源码、参数、入口调用线程和运行事实响应：
   `notInvoked(reason)` 或 `invoked(returnValue | exception)`。
 - `src/McpServer/` 拥有 MCP 工具语义：选择目标 endpoint、转发 IPC 请求，并把内部响应整理成 Agent 可读
   JSON。
@@ -283,6 +283,7 @@ MCP 工具形态：
 xiangshu_run_csharp_script(
   targetSide,
   script,
+  entryThread,
   argumentsJson
 )
 ```
@@ -291,11 +292,15 @@ xiangshu_run_csharp_script(
 
 - `targetSide`：目标插件侧，取 `frontend` 或 `backend`。
 - `script`：完整 C# 编译单元。
+- `entryThread`：可选入口调用线程，取 `current` 或 `mainThread`；默认 `current`。
 - `argumentsJson`：可选 JSON object，转为 `XiangshuScriptGlobals.Arguments`。
 
 脚本通道传递完整 C# 编译单元，不定义 statements/expression 模式，也不提供预置 `using` 列表。脚本自己
 声明 `using`、类型和入口；入口契约由 `src/Scripting/README.md` 维护。入口契约不满足时，运行器返回
 `notInvoked(reason)`，不把它归类为 MCP 或 IPC 转发失败。
+
+MCP server 只把 `entryThread` 写入 IPC 请求并转发；`mainThread` 的实际切换由目标侧插件负责。访问 Unity 对象、前端 UI、
+后端 `DomainManager` 数据域或其它线程敏感的游戏运行态时使用 `mainThread`。
 
 ## MCP 驱动的中间答复
 

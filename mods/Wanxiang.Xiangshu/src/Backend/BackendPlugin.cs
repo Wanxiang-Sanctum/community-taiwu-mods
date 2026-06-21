@@ -20,6 +20,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private BackendIpcServer? _ipcServer;
+    private BackendScriptEntryDispatcher? _scriptEntryDispatcher;
 
     public override void Initialize()
     {
@@ -45,6 +46,8 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         _ = BackendInventoryGrafts.Uninstall();
         _ipcServer?.Dispose();
         _ipcServer = null;
+        _scriptEntryDispatcher?.Dispose();
+        _scriptEntryDispatcher = null;
     }
 
     private void StartIpcServer()
@@ -56,8 +59,10 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         _ = Directory.CreateDirectory(workingDirectory);
         _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
         IpcEndpointRegistry.ConfigureForWorkingDirectory(workingDirectory);
+        _scriptEntryDispatcher ??= new BackendScriptEntryDispatcher();
         _ipcServer = new BackendIpcServer(
-            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
+            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName),
+            _scriptEntryDispatcher);
         _ = _ipcServer.Start();
         Log.Info("backend IPC ready");
     }

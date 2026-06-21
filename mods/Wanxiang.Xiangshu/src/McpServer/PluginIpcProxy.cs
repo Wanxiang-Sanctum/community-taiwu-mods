@@ -32,10 +32,13 @@ internal static class PluginIpcProxy
     public static async Task<string> RunCSharpScriptAsync(
         string targetSide,
         string script,
+        string entryThread,
         string argumentsJson,
         CancellationToken cancellationToken)
     {
         string normalizedTargetSide = NormalizeTargetSide(targetSide);
+        IpcScriptEntryThread parsedEntryThread =
+            ParseEntryThread(entryThread);
         IpcEndpoint endpoint =
             IpcEndpointRegistry.TryGetLiveEndpoint(normalizedTargetSide)
             ?? throw new McpException(
@@ -43,7 +46,10 @@ internal static class PluginIpcProxy
 
         IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
-            new IpcRunScriptRequest(script, ParseArgumentsJson(argumentsJson)),
+            new IpcRunScriptRequest(
+                script,
+                ParseArgumentsJson(argumentsJson),
+                parsedEntryThread),
             cancellationToken);
 
         return FormatRunScriptToolResponse(response);
@@ -145,6 +151,28 @@ internal static class PluginIpcProxy
         }
 
         throw new McpException("targetSide must be either 'frontend' or 'backend'.");
+    }
+
+    private static IpcScriptEntryThread ParseEntryThread(string entryThread)
+    {
+        if (string.IsNullOrWhiteSpace(entryThread))
+        {
+            throw new McpException("entryThread must be either 'current' or 'mainThread'.");
+        }
+
+        string trimmedEntryThread = entryThread.Trim();
+
+        if (string.Equals(trimmedEntryThread, "current", StringComparison.OrdinalIgnoreCase))
+        {
+            return IpcScriptEntryThread.Current;
+        }
+
+        if (string.Equals(trimmedEntryThread, "mainThread", StringComparison.OrdinalIgnoreCase))
+        {
+            return IpcScriptEntryThread.MainThread;
+        }
+
+        throw new McpException("entryThread must be either 'current' or 'mainThread'.");
     }
 
     private static Dictionary<string, string> ParseArgumentsJson(string argumentsJson)

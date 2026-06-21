@@ -62,6 +62,11 @@ internal sealed class PluginTools
             + "The entry return value is serialized to JSON.")]
         string script,
         [Description(
+            "Thread used to invoke the script entry: current keeps the IPC handler thread; "
+            + "mainThread invokes the entry on the target side's game main thread. Use mainThread for Unity UI/object access "
+            + "or backend game-domain state access.")]
+        string entryThread = "current",
+        [Description(
             "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
         string argumentsJson = "{}",
         CancellationToken cancellationToken = default)
@@ -69,6 +74,7 @@ internal sealed class PluginTools
         return PluginIpcProxy.RunCSharpScriptAsync(
             targetSide,
             script,
+            entryThread,
             argumentsJson,
             cancellationToken);
     }
