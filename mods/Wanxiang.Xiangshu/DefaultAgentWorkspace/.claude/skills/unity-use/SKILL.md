@@ -33,7 +33,7 @@ Within the frontend path, prefer result paths in this order:
 1. A dedicated Xiangshu frontend tool or stable public frontend/game API for the exact command.
 2. A concrete selected-control edit, UI model update, or frontend command call.
 3. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
-4. `xiangshu_run_csharp_script` on `frontend` with a complete C# compilation unit when no narrower exposed tool exists.
+4. `xiangshu_run_csharp_script` on `frontend` with `entryThread: "mainThread"` and a complete C# compilation unit when no narrower exposed tool exists.
 5. EventSystem pointer, scroll, drag, submit, or cancel replay through that script only when the visible UI control itself is the target.
 6. Backend read-only verification after the frontend action, if persisted state matters.
 
@@ -175,7 +175,7 @@ Use this decision model:
 - If the target has an EventSystem handler and no narrower path exists, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
 - If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
 
-Minimal click event-replay fragment for cases where a visible control must be activated through EventSystem, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and supply the surrounding script context, target point, hit list, chat-window guard, and Unity main-thread switch from the current operation:
+Minimal click event-replay fragment for cases where a visible control must be activated through EventSystem, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and call the runtime script tool with `entryThread: "mainThread"`; supply the surrounding script context, target point, hit list, and chat-window guard from the current operation:
 
 ```csharp
 PointerEventData eventData = new(eventSystem)
@@ -222,6 +222,8 @@ For scroll, drag, submit, cancel, and text input, keep the same discipline: iden
 ## Runtime Script Discipline
 
 The Xiangshu runner receives a complete C# compilation unit. Follow `tool-guides/RUNTIME_SCRIPTING.md` for the entry contract, target side, async behavior, arguments, and result shape.
+
+For frontend UI, Unity objects, EventSystem state, selected controls, coordinates, and visible verification scripts, call `xiangshu_run_csharp_script` with `entryThread: "mainThread"`. Handle later awaited or callback work as a separate threading decision owned by that API.
 
 Use `globals.Arguments` for coordinates, text, target paths, mode flags, and confirmation flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
 

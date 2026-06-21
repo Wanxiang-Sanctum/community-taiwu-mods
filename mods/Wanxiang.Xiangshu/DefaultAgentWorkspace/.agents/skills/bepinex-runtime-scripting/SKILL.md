@@ -7,7 +7,7 @@ description: "Use when drafting or revising Xiangshu runtime C# scripts that ins
 
 ## Scope
 
-Use this skill only after the request already calls for a Xiangshu runtime C# script. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
+Use this skill only after the current task has already selected Xiangshu runtime C# scripting as the implementation path. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
 
 ## Script Entry Contract
 
@@ -29,6 +29,14 @@ public static class XiangshuScript
 ```
 
 The entry type may be inside a namespace, but its simple name must be `XiangshuScript`, and the script must define exactly one public static non-generic class with that simple name. Define exactly one public static `Execute` or `ExecuteAsync` method that takes one `XiangshuScriptGlobals` parameter; synchronous values, `Task`, and `Task<T>` are accepted. Use `globals.Arguments` for MCP arguments and `globals.CancellationToken` for cancellable work.
+
+## Entry Thread Selection
+
+Choose the `xiangshu_run_csharp_script` `entryThread` together with the target side before drafting the body:
+
+- Use `entryThread: "current"` only for pure computation, reference checks, type/member discovery, and other probes that do not touch live game objects, Unity state, backend domains, or persisted game state.
+- Use `entryThread: "mainThread"` for Unity objects, frontend UI, EventSystem state, backend `DomainManager` access, game entities, persisted state, and any mutation of live game or mod state.
+- `entryThread` controls only the entry invocation thread. If the script deliberately schedules later work with `ExecuteAsync`, callbacks, or target-side async APIs, handle that later work according to that API's threading rules and keep it separate from entry-thread selection.
 
 ## BepInEx Helper Namespaces
 
@@ -58,7 +66,7 @@ Use this orientation as a compact map of the loaded game API surface when a scri
 
 When drafting the script body:
 
-- Decide the target side from the requested state or action.
+- Decide the target side and `entryThread` from the requested state or action.
 - Use the entry contract above as the outer shape.
 - Prefer direct public game APIs. Choose helper namespaces from the BepInEx map above only when reflection, private access, hooks, IL work, or metadata inspection is part of the task.
 - Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.
