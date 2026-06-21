@@ -1,6 +1,5 @@
 using GameData.Domains.Item;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
-using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Backend;
 
@@ -12,7 +11,10 @@ internal sealed class GraftHostSessionCounts
 
     public void AddSession(ItemKey hostKey)
     {
-        GraftHostId hostId = GetHostId(hostKey);
+        if (!GraftHostId.TryCreate(hostKey, out GraftHostId hostId))
+        {
+            throw new ArgumentException("Host item key must be valid.", nameof(hostKey));
+        }
 
         lock (_syncRoot)
         {
@@ -85,21 +87,8 @@ internal sealed class GraftHostSessionCounts
         }
     }
 
-    private static GraftHostId GetHostId(ItemKey hostKey)
-    {
-        return new GraftHostId(hostKey);
-    }
-
     private static bool TryGetHostId(ItemKey hostKey, out GraftHostId hostId)
     {
-        hostId = default;
-
-        if (!GraftHostValidation.IsValidKey(hostKey))
-        {
-            return false;
-        }
-
-        hostId = new GraftHostId(hostKey);
-        return true;
+        return GraftHostId.TryCreate(hostKey, out hostId);
     }
 }

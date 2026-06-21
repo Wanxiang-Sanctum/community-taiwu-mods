@@ -1,5 +1,5 @@
 using GameData.Domains.Item;
-using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
+using Wanxiang.Taiwu.ItemGrafts.Contracts;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 
@@ -37,6 +37,7 @@ public sealed class GraftOperation(
     /// 使用当前宿主物品 key 调用已启用的操作。
     /// </summary>
     /// <param name="hostKey">当前宿主物品 key。</param>
+    /// <exception cref="ArgumentException"><paramref name="hostKey"/> 不是有效的非堆叠宿主物品 key。</exception>
     /// <exception cref="InvalidOperationException">操作已禁用。</exception>
     public void Invoke(ItemKey hostKey)
     {
@@ -45,7 +46,7 @@ public sealed class GraftOperation(
             throw new InvalidOperationException("Item graft operation is disabled.");
         }
 
-        _ = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
+        _ = new GraftHostId(hostKey);
 
         Execute!(hostKey);
     }

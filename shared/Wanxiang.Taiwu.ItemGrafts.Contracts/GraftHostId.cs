@@ -12,6 +12,7 @@ public readonly struct GraftHostId : IEquatable<GraftHostId>
     /// 从有效的非堆叠太吾物品 key 创建宿主身份。
     /// </summary>
     /// <param name="hostKey">真实宿主物品 key。</param>
+    /// <exception cref="ArgumentException"><paramref name="hostKey"/> 不是有效的非堆叠宿主物品 key。</exception>
     public GraftHostId(ItemKey hostKey)
     {
         ItemKey validatedHostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
@@ -28,6 +29,8 @@ public readonly struct GraftHostId : IEquatable<GraftHostId>
     /// <param name="itemType">太吾物品类型。</param>
     /// <param name="templateId">太吾物品模板 ID。</param>
     /// <param name="itemId">太吾物品实例 ID。</param>
+    /// <exception cref="ArgumentException"><paramref name="itemType"/> 和 <paramref name="templateId"/> 不指向有效的非堆叠模板。</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="itemId"/> 小于 0。</exception>
     public GraftHostId(sbyte itemType, short templateId, int itemId)
     {
         ValidateTemplate(itemType, templateId);
@@ -70,14 +73,39 @@ public readonly struct GraftHostId : IEquatable<GraftHostId>
     /// 判断给定的完整物品 key 是否属于这个稳定宿主身份。
     /// </summary>
     /// <param name="hostKey">要比较的当前太吾物品 key。</param>
-    /// <returns>当物品 key 具有相同类型、模板 ID 和实例 ID 时返回 true。</returns>
+    /// <returns>当物品 key 是有效非堆叠宿主且具有相同类型、模板 ID 和实例 ID 时返回 true。</returns>
     public bool Matches(ItemKey hostKey)
     {
         return IsValid
-            && hostKey.IsValid()
+            && GraftHostValidation.IsValidKey(hostKey)
             && hostKey.ItemType == ItemType
             && hostKey.TemplateId == TemplateId
             && hostKey.Id == ItemId;
+    }
+
+    /// <summary>
+    /// 尝试从太吾物品 key 创建稳定宿主身份。
+    /// </summary>
+    /// <param name="hostKey">要验证的真实宿主物品 key。</param>
+    /// <param name="hostId">创建成功时接收宿主身份；失败时为默认值。</param>
+    /// <returns>当物品 key 是有效的非堆叠宿主物品时返回 true。</returns>
+    public static bool TryCreate(
+        ItemKey hostKey,
+        out GraftHostId hostId)
+    {
+        hostId = default;
+
+        if (!GraftHostValidation.IsValidKey(hostKey))
+        {
+            return false;
+        }
+
+        hostId = new GraftHostId(
+            hostKey.ItemType,
+            hostKey.TemplateId,
+            hostKey.Id,
+            ValidatedHostFields.Value);
+        return true;
     }
 
     /// <inheritdoc />
@@ -152,5 +180,24 @@ public readonly struct GraftHostId : IEquatable<GraftHostId>
         {
             throw new ArgumentException("Host item template must be valid and not stackable.");
         }
+    }
+
+    private GraftHostId(
+        sbyte itemType,
+        short templateId,
+        int itemId,
+        ValidatedHostFields validationState)
+    {
+        _ = validationState;
+
+        ItemType = itemType;
+        TemplateId = templateId;
+        ItemId = itemId;
+        IsValid = true;
+    }
+
+    private enum ValidatedHostFields
+    {
+        Value = 0,
     }
 }

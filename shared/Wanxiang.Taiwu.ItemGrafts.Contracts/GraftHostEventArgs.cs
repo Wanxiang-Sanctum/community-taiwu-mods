@@ -1,17 +1,21 @@
 using GameData.Domains.Item;
-using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Contracts;
 
 /// <summary>
-/// 后端观察器向前端嫁接会话报告宿主事实事件的基类。
+/// 表示后端观察服务报告给前端嫁接会话的宿主事实事件。
 /// </summary>
 public abstract class GraftHostEventArgs : EventArgs
 {
     private protected GraftHostEventArgs(ItemKey hostKey)
     {
-        HostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
-        HostId = new GraftHostId(HostKey);
+        if (!GraftHostId.TryCreate(hostKey, out GraftHostId hostId))
+        {
+            throw new ArgumentException("Host item key must be valid.", nameof(hostKey));
+        }
+
+        HostKey = hostKey;
+        HostId = hostId;
     }
 
     /// <summary>

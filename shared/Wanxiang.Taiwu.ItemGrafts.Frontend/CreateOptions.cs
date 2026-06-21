@@ -20,7 +20,7 @@ public sealed class CreateOptions
     public short NotificationRecordType { get; set; } = GraftNotifications.DefaultNativeRecordType;
 
     /// <summary>
-    /// 获取或设置从创建前后行囊快照中选择新建宿主物品的选择器。
+    /// 获取或设置从创建前后行囊快照中选择新建宿主物品的选择器；返回值会由创建动作校验为请求的宿主模板。
     /// </summary>
     public Func<IReadOnlyList<ItemDisplayData>, IReadOnlyList<ItemDisplayData>, ItemKey>? SelectCreatedHost { get; set; }
 

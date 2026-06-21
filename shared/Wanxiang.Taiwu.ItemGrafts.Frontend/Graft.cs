@@ -1,6 +1,5 @@
 using GameData.Domains.Item;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
-using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 
@@ -15,8 +14,8 @@ public sealed class Graft
         GraftMenuMode menuMode,
         IReadOnlyList<GraftOperation> operations)
     {
-        HostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
-        HostId = new GraftHostId(HostKey);
+        HostKey = ValidateHostKey(hostKey, out GraftHostId hostId);
+        HostId = hostId;
         Appearance = appearance ?? throw new ArgumentNullException(nameof(appearance));
         MenuMode = ValidateMenuMode(menuMode, nameof(menuMode));
         Operations = CopyOperations(operations);
@@ -59,7 +58,17 @@ public sealed class Graft
             throw new ArgumentException("Host key does not belong to this graft.", nameof(hostKey));
         }
 
-        HostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
+        HostKey = hostKey;
+    }
+
+    private static ItemKey ValidateHostKey(ItemKey hostKey, out GraftHostId hostId)
+    {
+        if (!GraftHostId.TryCreate(hostKey, out hostId))
+        {
+            throw new ArgumentException("Host item key must be valid.", nameof(hostKey));
+        }
+
+        return hostKey;
     }
 
     internal static GraftOperation[] CopyOperations(

@@ -5,7 +5,6 @@ using GameData.Domains.Item.Display;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.AsyncInterop;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
-using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 using Wanxiang.Taiwu.ModRpc;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
@@ -46,6 +45,8 @@ public static class InventoryGrafts
     /// <param name="options">可选通知和宿主事件行为。</param>
     /// <param name="cancellationToken">用于停止等待后端宿主订阅的取消令牌。</param>
     /// <returns>返回已建立嫁接会话的 UniTask。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="definition"/> 为 null。</exception>
+    /// <exception cref="InvalidOperationException">前端嫁接系统尚未安装，或宿主在会话建立前已结束。</exception>
     public static async UniTask<GraftSession> AttachAsync(
         ItemKey hostKey,
         GraftDefinition definition,
@@ -77,7 +78,9 @@ public static class InventoryGrafts
     /// <param name="options">可选通知、宿主选择和宿主事件行为。</param>
     /// <param name="cancellationToken">用于停止等待异步游戏调用和后端宿主订阅的取消令牌。</param>
     /// <returns>返回已建立嫁接会话的 UniTask。</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="definition"/> 为 null。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="hostTemplate"/> 或 <paramref name="definition"/> 为 null。</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="characterId"/> 小于 0。</exception>
+    /// <exception cref="InvalidOperationException">前端嫁接系统尚未安装，无法定位新建宿主，或宿主在会话建立前已结束。</exception>
     public static async UniTask<GraftSession> CreateAsync(
         int characterId,
         GraftHostTemplate hostTemplate,
@@ -93,8 +96,7 @@ public static class InventoryGrafts
         }
 
         int validatedCharacterId = ValidateCharacterId(characterId);
-        GraftHostTemplate validatedHostTemplate =
-            GraftHostValidation.ValidateTemplate(hostTemplate, nameof(hostTemplate));
+        GraftHostTemplate validatedHostTemplate = ValidateHostTemplate(hostTemplate);
         short hostItemSubType = ItemTemplateHelper.GetItemSubType(
             validatedHostTemplate.ItemType,
             validatedHostTemplate.TemplateId);
@@ -183,7 +185,7 @@ public static class InventoryGrafts
             ItemDisplayData item = beforeInventoryItems[i];
             ItemKey key = item.RealKey;
 
-            if (GraftHostValidation.MatchesTemplate(key, hostTemplate))
+            if (hostTemplate.Matches(key))
             {
                 _ = beforeKeys.Add(key);
             }
@@ -196,7 +198,7 @@ public static class InventoryGrafts
             ItemDisplayData item = afterInventoryItems[i];
             ItemKey key = item.RealKey;
 
-            if (!GraftHostValidation.MatchesTemplate(key, hostTemplate))
+            if (!hostTemplate.Matches(key))
             {
                 continue;
             }
@@ -233,10 +235,8 @@ public static class InventoryGrafts
             throw new ArgumentNullException(nameof(definition));
         }
 
-        ItemKey validatedHostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
-
         return new Graft(
-            validatedHostKey,
+            hostKey,
             definition.Appearance,
             definition.MenuMode,
             definition.Operations);
@@ -244,14 +244,22 @@ public static class InventoryGrafts
 
     private static ItemKey ValidateCreatedHostKey(ItemKey hostKey, GraftHostTemplate hostTemplate)
     {
-        ItemKey validatedHostKey = GraftHostValidation.ValidateKey(hostKey, "selectedHostKey");
+        if (!GraftHostId.TryCreate(hostKey, out _))
+        {
+            throw new InvalidOperationException("Selected host item is not a valid graft host.");
+        }
 
-        if (!GraftHostValidation.MatchesTemplate(validatedHostKey, hostTemplate))
+        if (!hostTemplate.Matches(hostKey))
         {
             throw new InvalidOperationException("Selected host item does not match the requested host template.");
         }
 
-        return validatedHostKey;
+        return hostKey;
+    }
+
+    private static GraftHostTemplate ValidateHostTemplate(GraftHostTemplate hostTemplate)
+    {
+        return hostTemplate ?? throw new ArgumentNullException(nameof(hostTemplate));
     }
 
     private static int ValidateCharacterId(int characterId)

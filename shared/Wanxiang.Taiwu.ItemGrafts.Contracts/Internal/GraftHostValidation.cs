@@ -4,7 +4,7 @@ namespace Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 
 internal static class GraftHostValidation
 {
-    public static ItemKey ValidateKey(ItemKey hostKey, string parameterName)
+    internal static ItemKey ValidateKey(ItemKey hostKey, string parameterName)
     {
         if (!hostKey.IsValid())
         {
@@ -20,57 +20,20 @@ internal static class GraftHostValidation
         return hostKey;
     }
 
-    public static GraftHostTemplate ValidateTemplate(
-        GraftHostTemplate hostTemplate,
-        string parameterName)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(hostTemplate, parameterName);
-#else
-        if (hostTemplate is null)
-        {
-            throw new ArgumentNullException(parameterName);
-        }
-#endif
-
-        ValidateTemplate(
-            hostTemplate.ItemType,
-            hostTemplate.TemplateId,
-            parameterName);
-
-        return hostTemplate;
-    }
-
-    public static bool IsValidKey(ItemKey hostKey)
+    internal static bool IsValidKey(ItemKey hostKey)
     {
         return hostKey.IsValid()
             && hostKey.HasTemplate
             && IsValidTemplate(hostKey.ItemType, hostKey.TemplateId);
     }
 
-    public static bool IsValidTemplate(sbyte itemType, short templateId)
+    internal static bool IsValidTemplate(sbyte itemType, short templateId)
     {
         return ItemTemplateHelper.CheckTemplateValid(itemType, templateId)
             && !ItemTemplateHelper.IsStackable(itemType, templateId);
     }
 
-    public static bool MatchesTemplate(ItemKey hostKey, GraftHostTemplate hostTemplate)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(hostTemplate);
-#else
-        if (hostTemplate is null)
-        {
-            throw new ArgumentNullException(nameof(hostTemplate));
-        }
-#endif
-
-        return hostKey.IsValid()
-            && hostKey.ItemType == hostTemplate.ItemType
-            && hostKey.TemplateId == hostTemplate.TemplateId;
-    }
-
-    private static void ValidateTemplate(
+    internal static void ValidateTemplate(
         sbyte itemType,
         short templateId,
         string parameterName)

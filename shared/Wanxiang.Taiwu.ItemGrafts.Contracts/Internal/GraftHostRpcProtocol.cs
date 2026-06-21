@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using GameData.Domains.Item;
 using Newtonsoft.Json;
 
@@ -22,6 +23,7 @@ internal static class GraftHostRpcProtocol
     public static string CreateHostPayload(ItemKey hostKey)
     {
         ItemKey validatedHostKey = GraftHostValidation.ValidateKey(hostKey, nameof(hostKey));
+
         return Serialize(new GraftHostPayload
         {
             HostKey = (ulong)validatedHostKey,
@@ -100,6 +102,7 @@ internal static class GraftHostRpcProtocol
 
     public static bool TryDeserializeHostEvent(
         string payloadJson,
+        [NotNullWhen(true)]
         out GraftHostEventArgs? hostEvent)
     {
         hostEvent = null;

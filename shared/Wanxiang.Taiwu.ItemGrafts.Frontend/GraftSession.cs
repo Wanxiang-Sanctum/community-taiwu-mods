@@ -90,18 +90,6 @@ public sealed class GraftSession : IAsyncDisposable
 
     private void HandleHostEvent(GraftHostEventArgs hostEvent)
     {
-        if (hostEvent is null)
-        {
-            throw new ArgumentNullException(nameof(hostEvent));
-        }
-
-        if (hostEvent.HostId != Graft.HostId)
-        {
-            throw new ArgumentException(
-                "Host event does not belong to this graft session.",
-                nameof(hostEvent));
-        }
-
         Graft.UpdateHostKey(hostEvent.HostKey);
 
         if (hostEvent is GraftHostRemovedEventArgs)
@@ -145,8 +133,7 @@ public sealed class GraftSession : IAsyncDisposable
     private void HandleHostEventPayload(string payloadJson)
     {
         if (!IsActive
-            || !GraftHostRpcProtocol.TryDeserializeHostEvent(payloadJson, out GraftHostEventArgs? hostEvent)
-            || hostEvent is null)
+            || !GraftHostRpcProtocol.TryDeserializeHostEvent(payloadJson, out GraftHostEventArgs? hostEvent))
         {
             return;
         }

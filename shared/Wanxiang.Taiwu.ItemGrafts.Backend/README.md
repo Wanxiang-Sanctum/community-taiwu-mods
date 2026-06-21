@@ -2,21 +2,20 @@
 
 行囊物品嫁接机制的后端观察项目。
 
-后端观察服务不创建真实宿主，也不删除宿主物品；它只观察游戏事实，并把宿主事件转发给同一 mod 前端的 `GraftSession`。
-真实宿主的创建由前端动作完成，删除仍由游戏流程或上层业务触发。
+后端观察服务负责观察游戏事实，并把宿主事件转发给同一 mod 前端的 `GraftSession`。真实宿主的创建由前端动作完成，
+删除由游戏流程或上层业务触发。
 
 ## 边界
 
-`BackendInventoryGrafts.Install(plugin)` 是唯一的后端安装入口。它从太吾插件实例读取本 mod id，安装本组件的后端观察服务，
+`BackendInventoryGrafts.Install(plugin)` 是后端安装入口。它从太吾插件实例读取本 mod id，安装本组件的后端观察服务，
 并把后端宿主事件转发给前端会话。后端持有需要释放的注册资源、Harmony 补丁和宿主会话统计，因此提供
-`Uninstall()`；前端没有对应的全局卸载入口，前端嫁接会话由 `GraftSession.DisposeAsync()` 逐个结束。
+`Uninstall()`。
 
-本组件只面向同一 mod 内的前后端协作，不提供跨 mod 通讯入口。Harmony 观察补丁、宿主会话统计、后端事件流和跨端消息编码
-都是内部实现。调用方不订阅后端观察事件，也不直接登记宿主或安装补丁；调用 `BackendInventoryGrafts.Install(plugin)` 后，
-前端会话可以订阅宿主。
+本组件的作用域限定为同一 mod 内的前后端协作。Harmony 观察补丁、宿主会话统计、后端事件流和跨端消息编码都是内部实现；
+调用 `BackendInventoryGrafts.Install(plugin)` 后，前端会话通过 ItemGrafts 协议订阅宿主。
 
-后端推送三类宿主事实：`Removed`、`LocationChanged`、`DataChanged`。`DataChanged` 只表示宿主真实物品数据已变化，
-不细分为耐久、精炼、淬毒等字段；前端收到后按使用方自己的展示和业务需要重新查询。
+后端推送三类宿主事实：`Removed`、`LocationChanged`、`DataChanged`。`DataChanged` 表示宿主真实物品数据已变化；
+耐久、精炼、淬毒等字段级解释归使用方查询真实物品数据后处理。
 
 ## 安装入口
 
@@ -33,6 +32,7 @@ BackendInventoryGrafts.Install(this);
 后续游戏调用使用的完整 key。
 
 前端调用 `GraftSession.DisposeAsync()` 取消本次嫁接会话时，后端会减少该宿主的会话计数。宿主被游戏流程真实删除时，
-后端会推送 `Removed` 事件并清掉该宿主的会话统计；删除物品本身不属于 ItemGrafts 的消息协议。
+后端会推送 `Removed` 事件并清掉该宿主的会话统计；删除行为归游戏流程或上层业务。
 
-`BackendInventoryGrafts.Uninstall()` 会移除 ItemGrafts 的后端处理器、卸载 Harmony 补丁、清空宿主会话统计并停止向前端转发事件。
+`BackendInventoryGrafts.Uninstall()` 会移除 ItemGrafts 的后端处理器、卸载 Harmony 补丁、清空宿主会话统计，
+并停止向前端转发事件。

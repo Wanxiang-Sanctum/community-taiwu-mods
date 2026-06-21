@@ -20,16 +20,15 @@
 与同一 mod 的后端观察服务协作。后端观察服务由 `Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放；前端没有全局卸载入口，
 每个会话资源由对应的 `GraftSession.DisposeAsync()` 释放。
 
-`InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。本项目不写入
-真实物品字段，不保存使用方状态，也不改变未适配交互里的原始物品表现。
+`InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。真实物品字段、
+使用方状态和未适配交互表现分别归游戏流程或使用方；本项目只负责创建、定位和建立前端嫁接会话。
 
 ## 前端模型
 
 `GraftSession` 是一次前端嫁接会话。它持有 `Graft`，把宿主事件交给创建时传入的回调，并管理宿主订阅生命周期。
 
 `Graft` 是已嫁接宿主的前端状态。它绑定一个有效的非堆叠真实 `ItemKey`，并携带稳定的 `GraftHostId`、外观、操作和菜单策略。
-外部代码不直接构造 `Graft`；通过 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 得到 `GraftSession`，
-再从 `session.Graft` 读取已校验的状态。
+会话通过 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 产生；调用方从返回的 `session.Graft` 读取已校验状态。
 
 `GraftHostId` 是宿主实例身份，由物品类型、模板 ID 和物品实例 ID 组成，不包含 `ModificationState`。`Graft.HostKey`
 是当前可传给游戏 API 的完整 key；宿主精炼、淬毒等数据变化可能让完整 key 改变，会话会在收到宿主事件时更新
@@ -43,8 +42,8 @@
 没有嫁接操作时传入空 `operations` 列表；空列表与 `Replace` 组合时，表示该嫁接物没有前端菜单操作。
 
 `GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
-`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只负责在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
-跨端边界以 Contracts README 为准。
+`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
+跨端协议归 Contracts 项目说明。
 
 ## 动作
 
@@ -181,18 +180,17 @@ new CreateOptions
 动作成功建立 `GraftSession` 后，才会把 `NotificationMessage` 原文推送为即时通知。`NotificationRecordType`
 只影响原生通知外观，不改变文本内容。
 
-即时通知没有后端副作用，不写存档，也不会成为游戏真实机制的一部分。
+即时通知属于前端展示结果；后端事实、存档状态和游戏真实机制仍由各自边界维护。
 
 ## 状态归属
 
-使用方拥有持久化状态。本项目不定义存档格式，也不提供 `GraftHostId` 到 `GraftSession` 的全局表。
+使用方拥有持久化状态、存档格式和 `GraftHostId` 到 `GraftSession` 的运行期索引。
 
 需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时先读取真实行囊，确认宿主物品仍存在，
 再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立会话结束；后续策略由使用方负责。
 
 使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端会话订阅；后端按宿主身份统计会话，
-最后一个会话结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，本项目不提供仲裁；需要仲裁时，
-由更高层 UI 适配定义优先级。
+最后一个会话结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，仲裁归更高层 UI 适配定义。
 
 ## 开发
 
@@ -202,5 +200,4 @@ new CreateOptions
 dotnet build shared/Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj
 ```
 
-共享项目不作为独立插件入口写入 mod 包。引用它的前端插件项目负责决定将
-`Wanxiang.Taiwu.ItemGrafts.Frontend.dll` 合并、复制或随插件部署。
+部署由引用它的前端插件项目决定：可以将 `Wanxiang.Taiwu.ItemGrafts.Frontend.dll` 合并、复制或随插件部署。

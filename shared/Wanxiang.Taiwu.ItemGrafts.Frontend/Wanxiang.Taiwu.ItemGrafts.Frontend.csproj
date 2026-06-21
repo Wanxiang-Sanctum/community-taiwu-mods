@@ -4,17 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile
-      Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Internal/GraftHostValidation.cs"
-      Link="Shared/GraftHostValidation.cs"
-    />
-    <Compile
-      Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Internal/GraftHostRpcProtocol.cs"
-      Link="Shared/GraftHostRpcProtocol.cs"
-    />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference
       Include="../Wanxiang.Taiwu.ItemGrafts.Contracts/Wanxiang.Taiwu.ItemGrafts.Contracts.csproj"
     />

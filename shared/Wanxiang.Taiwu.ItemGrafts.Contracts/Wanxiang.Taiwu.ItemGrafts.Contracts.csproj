@@ -9,4 +9,9 @@
       PrivateAssets="all"
     />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wanxiang.Taiwu.ItemGrafts.Backend" />
+    <InternalsVisibleTo Include="Wanxiang.Taiwu.ItemGrafts.Frontend" />
+  </ItemGroup>
 </Project>
