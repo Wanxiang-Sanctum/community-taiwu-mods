@@ -29,6 +29,9 @@
     <Project
       Path="shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
+    <Project
+      Path="shared/Wanxiang.Taiwu.AsyncInterop/Wanxiang.Taiwu.AsyncInterop.csproj"
+    />
     <Project Path="shared/Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj" />
     <Project
       Path="shared/Wanxiang.Taiwu.ItemGrafts.Backend/Wanxiang.Taiwu.ItemGrafts.Backend.csproj"
