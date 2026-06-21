@@ -7,19 +7,14 @@ using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
-using Wanxiang.Xiangshu.Frontend.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.PlayerView;
 using Wanxiang.Xiangshu.Ipc;
-using Wanxiang.Xiangshu.Ipc.ItemGrafts;
 using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer(
     AgentChatSession chatSession,
-    Action<HostRemovedRequest> onHostRemoved,
-    Action<InventoryTransferRequest> onInventoryTransfer,
-    Action onTaiwuInventorySnapshotChanged,
     string pluginDirectory) : IDisposable
 {
     private const int MaxStartAttempts = 8;
@@ -120,9 +115,6 @@ internal sealed class FrontendIpcServer(
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
         _ = builder.RegisterInstance(chatSession);
-        _ = builder.RegisterInstance(onHostRemoved);
-        _ = builder.RegisterInstance(onInventoryTransfer);
-        _ = builder.RegisterInstance(onTaiwuInventorySnapshotChanged);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
                 IpcRuntime.FrontendEndpointRole,
@@ -141,21 +133,6 @@ internal sealed class FrontendIpcServer(
             IpcCapturePlayerViewRequest,
             IpcCapturePlayerViewResponse,
             FrontendCapturePlayerViewHandler>(
-            options);
-        _ = builder.RegisterAsyncRequestHandler<
-            HostRemovedRequest,
-            IpcNoContentResponse,
-            HostRemovedHandler>(
-            options);
-        _ = builder.RegisterAsyncRequestHandler<
-            InventoryTransferRequest,
-            IpcNoContentResponse,
-            InventoryTransferHandler>(
-            options);
-        _ = builder.RegisterAsyncRequestHandler<
-            TaiwuInventorySnapshotChangedRequest,
-            IpcNoContentResponse,
-            TaiwuInventorySnapshotChangedHandler>(
             options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
@@ -179,18 +156,6 @@ internal sealed class FrontendIpcServer(
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcCapturePlayerViewRequest,
             IpcCapturePlayerViewResponse>(
-            tcpOptions);
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
-            HostRemovedRequest,
-            IpcNoContentResponse>(
-            tcpOptions);
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
-            InventoryTransferRequest,
-            IpcNoContentResponse>(
-            tcpOptions);
-        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
-            TaiwuInventorySnapshotChangedRequest,
-            IpcNoContentResponse>(
             tcpOptions);
     }
 

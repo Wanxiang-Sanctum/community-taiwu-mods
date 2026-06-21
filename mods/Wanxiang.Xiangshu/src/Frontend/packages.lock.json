@@ -182,10 +182,24 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
       },
-      "wanxiang.taiwu.itemgrafts": {
+      "wanxiang.taiwu.asyncinterop": {
         "type": "Project"
       },
+      "wanxiang.taiwu.itemgrafts.contracts": {
+        "type": "Project"
+      },
+      "wanxiang.taiwu.itemgrafts.frontend": {
+        "type": "Project",
+        "dependencies": {
+          "Wanxiang.Taiwu.AsyncInterop": "[1.0.0, )",
+          "Wanxiang.Taiwu.ItemGrafts.Contracts": "[1.0.0, )",
+          "Wanxiang.Taiwu.ModRpc": "[1.0.0, )"
+        }
+      },
       "wanxiang.taiwu.logging": {
+        "type": "Project"
+      },
+      "wanxiang.taiwu.modrpc": {
         "type": "Project"
       },
       "wanxiang.xiangshu.ipc": {

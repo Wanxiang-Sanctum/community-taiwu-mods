@@ -1,13 +1,12 @@
 using Config;
 using Cysharp.Threading.Tasks;
 using FrameWork;
-using GameData.Domains;
 using GameData.Domains.Character;
 using GameData.Domains.Item;
 using GameData.Domains.Item.Display;
-using GameData.GameDataBridge;
-using GameData.Serializer;
-using Wanxiang.Taiwu.ItemGrafts;
+using Wanxiang.Taiwu.AsyncInterop;
+using Wanxiang.Taiwu.ItemGrafts.Contracts;
+using Wanxiang.Taiwu.ItemGrafts.Frontend;
 using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
@@ -22,16 +21,17 @@ internal sealed class ItemGraftDriver : IDisposable
     private readonly Action _onHostLeftTaiwuInventory;
     private bool _disposed;
     private bool _ensuring;
-    private bool _inventoryReady;
     private bool _ensureRequested;
     private int _stateVersion;
-    private int _itemListenerId = -1;
-    private ItemKey _monitoredHostKey = ItemKey.Invalid;
+    private GraftSession? _currentSession;
 
     public static ItemGraftDriver Create(Action onHostLeftTaiwuInventory)
     {
         ItemGraftDriver driver = new(onHostLeftTaiwuInventory);
         GEvent.Add(EEvents.OnGameStateChange, driver.OnGameStateChange);
+
+        driver.RequestEnsure();
+
         return driver;
     }
 
@@ -50,14 +50,13 @@ internal sealed class ItemGraftDriver : IDisposable
 
         _disposed = true;
         GEvent.Remove(EEvents.OnGameStateChange, OnGameStateChange);
-        UnmonitorCurrentHost();
-        UnregisterItemListener();
-        ItemGraftRuntime.ClearCurrent();
+        ClearCurrentSession();
     }
 
     private void RequestEnsure()
     {
-        if (_disposed || !TryGetTaiwuCharId(out int taiwuCharId))
+        if (_disposed
+            || !TryGetTaiwuCharId(out int taiwuCharId))
         {
             return;
         }
@@ -75,22 +74,8 @@ internal sealed class ItemGraftDriver : IDisposable
     private void ResetReadyState()
     {
         _stateVersion++;
-        _inventoryReady = false;
         _ensureRequested = false;
-        UnmonitorCurrentHost();
-        ItemGraftRuntime.ClearCurrent();
-    }
-
-    public void NotifyTaiwuInventorySnapshotChanged()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _inventoryReady = true;
-        _ensureRequested = true;
-        RequestEnsure();
+        ClearCurrentSession();
     }
 
     private void OnGameStateChange(ArgumentBox argBox)
@@ -106,18 +91,47 @@ internal sealed class ItemGraftDriver : IDisposable
             return;
         }
 
-        if (_inventoryReady)
+        RequestEnsure();
+    }
+
+    private void OnHostEvent(GraftHostEventArgs hostEvent)
+    {
+        HandleHostEventAsync(hostEvent).Forget();
+    }
+
+    private async UniTask HandleHostEventAsync(GraftHostEventArgs hostEvent)
+    {
+        await UniTask.SwitchToMainThread();
+
+        if (_disposed
+            || _currentSession is null
+            || _currentSession.Graft.HostId != hostEvent.HostId)
+        {
+            return;
+        }
+
+        if (hostEvent is GraftHostRemovedEventArgs removed)
+        {
+            NotifyHostRemoved(removed.HostKey);
+        }
+        else if (hostEvent is GraftHostLocationChangedEventArgs locationChanged)
+        {
+            NotifyHostLocationChanged(locationChanged);
+        }
+        else if (hostEvent is GraftHostDataChangedEventArgs)
         {
             RequestEnsure();
         }
     }
 
-    public void NotifyHostRemoved(ItemKey hostKey)
+    private void NotifyHostRemoved(ItemKey hostKey)
     {
-        if (_disposed || !hostKey.IsValid())
+        if (_disposed)
         {
             return;
         }
+
+        GraftSession? session = _currentSession;
 
         if (!ItemGraftRuntime.ClearCurrentIfHost(
                 hostKey,
@@ -126,7 +140,12 @@ internal sealed class ItemGraftDriver : IDisposable
             return;
         }
 
-        UnmonitorCurrentHost();
+        _currentSession = null;
+
+        if (session?.IsActive == true)
+        {
+            DisposeSessionSafelyAsync(session).Forget();
+        }
 
         if (wasInTaiwuInventory)
         {
@@ -136,54 +155,30 @@ internal sealed class ItemGraftDriver : IDisposable
         RequestEnsure();
     }
 
-    public void NotifyHostTaiwuInventoryChanged(
-        ItemKey hostKey,
-        bool isInTaiwuInventory)
+    private void NotifyHostLocationChanged(GraftHostLocationChangedEventArgs hostEvent)
     {
-        if (_disposed || !hostKey.IsValid())
+        if (_disposed || !TryGetTaiwuCharId(out int taiwuCharId))
         {
             return;
         }
 
-        if (!ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
-                hostKey,
-                isInTaiwuInventory))
+        bool fromTaiwuInventory = hostEvent.FromCharacterId == taiwuCharId;
+        bool toTaiwuInventory = hostEvent.ToCharacterId == taiwuCharId;
+
+        if (fromTaiwuInventory == toTaiwuInventory
+            || !ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
+                hostEvent.HostKey,
+                isInTaiwuInventory: toTaiwuInventory))
         {
             return;
         }
 
-        if (isInTaiwuInventory)
-        {
-            MonitorHost(hostKey);
-        }
-        else
+        if (!toTaiwuInventory)
         {
             _onHostLeftTaiwuInventory();
         }
 
         RequestEnsure();
-    }
-
-    private void OnHostItemDataChanged(List<NotificationWrapper> notifications)
-    {
-        if (_disposed || !_monitoredHostKey.IsValid())
-        {
-            return;
-        }
-
-        for (int i = 0; i < notifications.Count; i++)
-        {
-            Notification notification = notifications[i].Notification;
-
-            if (notification.Type == NotificationType.DataModification
-                && notification.Uid.DomainId == DomainHelper.DomainIds.Item
-                && notification.Uid.DataId == ItemDomainHelper.DataIds.CraftTools
-                && notification.Uid.SubId0 == (ulong)_monitoredHostKey.Id)
-            {
-                RequestEnsure();
-                return;
-            }
-        }
     }
 
     private async UniTask EnsureGraftAsync(
@@ -194,9 +189,13 @@ internal sealed class ItemGraftDriver : IDisposable
 
         try
         {
+            GraftHostTemplate hostTemplate = CreateHostTemplate();
+
             if (ItemGraftRuntime.TryGetCurrentHost(out ItemKey currentHost))
             {
-                bool currentInInventory = await InventoryContainsItemAsync(taiwuCharId, currentHost);
+                bool currentInInventory = await InventoryContainsItemAsync(
+                    taiwuCharId,
+                    currentHost);
 
                 if (!IsEnsureCurrent(taiwuCharId, stateVersion))
                 {
@@ -208,7 +207,6 @@ internal sealed class ItemGraftDriver : IDisposable
                     _ = ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
                         currentHost,
                         isInTaiwuInventory: true);
-                    MonitorHost(currentHost);
                     return;
                 }
 
@@ -228,15 +226,13 @@ internal sealed class ItemGraftDriver : IDisposable
 
                 if (currentExists)
                 {
-                    MonitorHost(currentHost);
                     return;
                 }
 
-                UnmonitorCurrentHost();
-                ItemGraftRuntime.ClearCurrent();
+                ClearCurrentSession();
             }
 
-            IReadOnlyList<ItemDisplayData> medicineBowls = await GetMedicineBowlsAsync(taiwuCharId);
+            IReadOnlyList<ItemKey> medicineBowls = await GetMedicineBowlsAsync(taiwuCharId);
 
             if (!IsEnsureCurrent(taiwuCharId, stateVersion))
             {
@@ -246,34 +242,34 @@ internal sealed class ItemGraftDriver : IDisposable
             ItemKey existingHost = SelectHost(medicineBowls);
             GraftDefinition definition = ItemGraftRuntime.CreateDefinition();
 
-            Graft graft = existingHost.IsValid()
+            GraftSession session = existingHost.IsValid()
                 ? await InventoryGrafts.AttachAsync(
                     existingHost,
                     definition,
                     new AttachOptions
                     {
                         NotificationMessage = AttachNotification,
+                        OnHostEvent = OnHostEvent,
                     })
                 : await InventoryGrafts.CreateAsync(
                     taiwuCharId,
-                    new HostTemplate(
-                        GameData.Domains.Item.ItemType.CraftTool,
-                        CraftTool.DefKey.Medicine0),
+                    hostTemplate,
                     definition,
                     new CreateOptions
                     {
                         NotificationMessage = CreateNotification,
+                        OnHostEvent = OnHostEvent,
                     });
 
             if (!IsEnsureCurrent(taiwuCharId, stateVersion))
             {
+                await DisposeSessionSafelyAsync(session);
                 return;
             }
 
-            ItemGraftRuntime.SetCurrent(
-                graft,
+            SetCurrentSession(
+                session,
                 isInTaiwuInventory: true);
-            MonitorHost(graft.HostKey);
         }
 #pragma warning disable CA1031
         catch (Exception ex)
@@ -292,77 +288,54 @@ internal sealed class ItemGraftDriver : IDisposable
         }
     }
 
-    private void MonitorHost(ItemKey hostKey)
+    private void SetCurrentSession(
+        GraftSession session,
+        bool isInTaiwuInventory)
     {
-        if (_monitoredHostKey == hostKey)
+        GraftSession? previousSession = _currentSession;
+        _currentSession = session ?? throw new ArgumentNullException(nameof(session));
+        ItemGraftRuntime.SetCurrent(
+            session.Graft,
+            isInTaiwuInventory);
+
+        if (previousSession is not null
+            && !ReferenceEquals(previousSession, session))
         {
-            return;
-        }
-
-        UnmonitorCurrentHost(updateBackendRegistration: false);
-
-        if (!IsMedicineBowl(hostKey))
-        {
-            BackendHostRegistration.UnregisterHost();
-            return;
-        }
-
-        EnsureItemListener();
-        _monitoredHostKey = hostKey;
-        GameDataBridge.AddDataMonitor(
-            _itemListenerId,
-            DomainHelper.DomainIds.Item,
-            ItemDomainHelper.DataIds.CraftTools,
-            (ulong)hostKey.Id);
-        BackendHostRegistration.RegisterHost(hostKey);
-    }
-
-    private void UnmonitorCurrentHost(bool updateBackendRegistration = true)
-    {
-        if (_itemListenerId < 0 || !_monitoredHostKey.IsValid())
-        {
-            _monitoredHostKey = ItemKey.Invalid;
-
-            if (updateBackendRegistration)
-            {
-                BackendHostRegistration.UnregisterHost();
-            }
-
-            return;
-        }
-
-        GameDataBridge.AddDataUnMonitor(
-            _itemListenerId,
-            DomainHelper.DomainIds.Item,
-            ItemDomainHelper.DataIds.CraftTools,
-            (ulong)_monitoredHostKey.Id);
-        _monitoredHostKey = ItemKey.Invalid;
-
-        if (updateBackendRegistration)
-        {
-            BackendHostRegistration.UnregisterHost();
+            DisposeSessionSafelyAsync(previousSession).Forget();
         }
     }
 
-    private void EnsureItemListener()
+    private void ClearCurrentSession()
     {
-        if (_itemListenerId >= 0)
-        {
-            return;
-        }
+        GraftSession? session = _currentSession;
+        _currentSession = null;
+        ItemGraftRuntime.ClearCurrent();
 
-        _itemListenerId = GameDataBridge.RegisterListener(OnHostItemDataChanged);
+        if (session?.IsActive == true)
+        {
+            DisposeSessionSafelyAsync(session).Forget();
+        }
     }
 
-    private void UnregisterItemListener()
+    private static async UniTask DisposeSessionSafelyAsync(GraftSession session)
     {
-        if (_itemListenerId < 0)
+        try
         {
-            return;
+            await session.DisposeAsync();
         }
-
-        GameDataBridge.UnregisterListener(_itemListenerId);
-        _itemListenerId = -1;
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            Log.Warning(
+                "failed to dispose Xiangshu item graft session",
+                new
+                {
+                    exceptionType = ex.GetType().FullName,
+                    exceptionMessage = ex.Message,
+                    exception = ex.ToString(),
+                });
+        }
     }
 
     private bool IsEnsureCurrent(
@@ -375,135 +348,63 @@ internal sealed class ItemGraftDriver : IDisposable
             && currentTaiwuCharId == taiwuCharId;
     }
 
-    private static async UniTask<bool> InventoryContainsItemAsync(
+    private static UniTask<bool> InventoryContainsItemAsync(
         int taiwuCharId,
         ItemKey hostKey)
     {
-        UniTaskCompletionSource<bool> completionSource = new();
-
-        try
-        {
-            CharacterDomainMethod.AsyncCall.InventoryContainsItem(
+        return TaiwuAsyncCall.InvokeAsync<bool>(
+            callback => CharacterDomainMethod.AsyncCall.InventoryContainsItem(
                 null,
                 taiwuCharId,
                 hostKey,
-                (offset, dataPool) =>
-                {
-                    try
-                    {
-                        bool contains = false;
-                        _ = Serializer.Deserialize(dataPool, offset, ref contains);
-                        _ = completionSource.TrySetResult(contains);
-                    }
-#pragma warning disable CA1031
-                    catch (Exception ex)
-#pragma warning restore CA1031
-                    {
-                        _ = completionSource.TrySetException(ex);
-                    }
-                });
-        }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
-        {
-            _ = completionSource.TrySetException(ex);
-        }
-
-        return await completionSource.Task;
+                callback.Invoke));
     }
 
     private static async UniTask<bool> ItemExistsAsync(ItemKey hostKey)
     {
-        if (!hostKey.IsValid())
-        {
-            return false;
-        }
-
-        UniTaskCompletionSource<bool> completionSource = new();
-
-        try
-        {
-            ItemDomainMethod.AsyncCall.GetItemDisplayData(
+        GraftHostId hostId = new(hostKey);
+        ItemDisplayData? item = await TaiwuAsyncCall.InvokeAsync<ItemDisplayData?>(
+            callback => ItemDomainMethod.AsyncCall.GetItemDisplayData(
                 null,
                 hostKey,
-                (offset, dataPool) =>
-                {
-                    try
-                    {
-                        ItemDisplayData? item = null;
-                        _ = Serializer.Deserialize(dataPool, offset, ref item);
-                        _ = completionSource.TrySetResult(GetHostKey(item) == hostKey);
-                    }
-#pragma warning disable CA1031
-                    catch (Exception ex)
-#pragma warning restore CA1031
-                    {
-                        _ = completionSource.TrySetException(ex);
-                    }
-                });
-        }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
-        {
-            _ = completionSource.TrySetException(ex);
-        }
+                callback.Invoke));
 
-        return await completionSource.Task;
+        return hostId.Matches(item?.RealKey ?? ItemKey.Invalid);
     }
 
-    private static async UniTask<List<ItemDisplayData>> GetMedicineBowlsAsync(int taiwuCharId)
+    private static async UniTask<IReadOnlyList<ItemKey>> GetMedicineBowlsAsync(int taiwuCharId)
     {
-        UniTaskCompletionSource<List<ItemDisplayData>> completionSource = new();
         short itemSubType = ItemTemplateHelper.GetItemSubType(
             GameData.Domains.Item.ItemType.CraftTool,
             CraftTool.DefKey.Medicine0);
-
-        try
-        {
-            CharacterDomainMethod.AsyncCall.GetInventoryItems(
+        List<ItemDisplayData> inventoryItems = await TaiwuAsyncCall.InvokeAsync<List<ItemDisplayData>>(
+            callback => CharacterDomainMethod.AsyncCall.GetInventoryItems(
                 null,
                 taiwuCharId,
                 itemSubType,
-                (offset, dataPool) =>
-                {
-                    try
-                    {
-                        List<ItemDisplayData> inventoryItems = [];
-                        _ = Serializer.Deserialize(dataPool, offset, ref inventoryItems);
-                        _ = completionSource.TrySetResult(inventoryItems);
-                    }
-#pragma warning disable CA1031
-                    catch (Exception ex)
-#pragma warning restore CA1031
-                    {
-                        _ = completionSource.TrySetException(ex);
-                    }
-                });
-        }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
+                callback.Invoke));
+        List<ItemKey> medicineBowls = [];
+
+        for (int i = 0; i < inventoryItems.Count; i++)
         {
-            _ = completionSource.TrySetException(ex);
+            ItemKey key = inventoryItems[i].RealKey;
+
+            if (IsMedicineBowl(key))
+            {
+                medicineBowls.Add(key);
+            }
         }
 
-        return await completionSource.Task;
+        return medicineBowls;
     }
 
-    private static ItemKey SelectHost(IReadOnlyList<ItemDisplayData> medicineBowls)
+    private static ItemKey SelectHost(IReadOnlyList<ItemKey> medicineBowls)
     {
         ItemKey selected = ItemKey.Invalid;
 
         for (int i = 0; i < medicineBowls.Count; i++)
         {
-            ItemKey key = GetHostKey(medicineBowls[i]);
-
-            if (!IsMedicineBowl(key))
-            {
-                continue;
-            }
+            ItemKey key = medicineBowls[i];
 
             if (!selected.IsValid() || key.Id < selected.Id)
             {
@@ -514,23 +415,18 @@ internal sealed class ItemGraftDriver : IDisposable
         return selected;
     }
 
-    private static ItemKey GetHostKey(ItemDisplayData? item)
-    {
-        if (item is null)
-        {
-            return ItemKey.Invalid;
-        }
-
-        return item.RealKey.IsValid()
-            ? item.RealKey
-            : item.Key;
-    }
-
     private static bool IsMedicineBowl(ItemKey key)
     {
         return key.IsValid()
             && key.ItemType == GameData.Domains.Item.ItemType.CraftTool
             && key.TemplateId == CraftTool.DefKey.Medicine0;
+    }
+
+    private static GraftHostTemplate CreateHostTemplate()
+    {
+        return new GraftHostTemplate(
+            GameData.Domains.Item.ItemType.CraftTool,
+            CraftTool.DefKey.Medicine0);
     }
 
     private static bool TryGetTaiwuCharId(out int taiwuCharId)

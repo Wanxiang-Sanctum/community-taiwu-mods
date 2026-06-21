@@ -1,9 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using Cysharp.Threading.Tasks;
-using FrameWork;
-using GameData.Domains.Item;
 using TaiwuModdingLib.Core.Plugin;
+using SharedInventoryGrafts = Wanxiang.Taiwu.ItemGrafts.Frontend.InventoryGrafts;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
 using Wanxiang.Xiangshu.Frontend.Agent.Cli;
@@ -14,7 +12,6 @@ using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.Mcp;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
-using Wanxiang.Xiangshu.Ipc.ItemGrafts;
 
 namespace Wanxiang.Xiangshu.Frontend;
 
@@ -140,9 +137,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _ipcServer?.Dispose();
         _ipcServer = new FrontendIpcServer(
             chatSession,
-            OnHostRemoved,
-            OnItemGraftInventoryTransfer,
-            OnTaiwuInventorySnapshotChanged,
             XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
         _ = _ipcServer.Start();
         Log.Info("frontend IPC ready");
@@ -157,6 +151,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     private void InstallItemGraftFlavor()
     {
+        SharedInventoryGrafts.Install(this);
         ItemGraftPatches.Install(this);
         _itemGraftDriver?.Dispose();
         _itemGraftDriver = ItemGraftDriver.Create(OnHostLeftTaiwuInventory);
@@ -169,12 +164,6 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             throw new InvalidOperationException("Wanxiang.Xiangshu chat window is not initialized.");
         }
 
-        if (!_chatWindow.IsVisible
-            && !ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
-        {
-            return;
-        }
-
         _chatWindow.Toggle();
     }
 
@@ -185,83 +174,11 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             throw new InvalidOperationException("Wanxiang.Xiangshu chat window is not initialized.");
         }
 
-        if (!ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
-        {
-            return;
-        }
-
         _chatWindow.SetVisible(visible: true);
     }
 
     private void OnHostLeftTaiwuInventory()
     {
         _ = _chatSession?.RequestRuntimeInterrupt(HostLeftInventoryInterruptMessage);
-    }
-
-    private void OnHostRemoved(HostRemovedRequest notification)
-    {
-        HandleHostRemovedAsync(notification.HostKey).Forget();
-    }
-
-    private void OnItemGraftInventoryTransfer(InventoryTransferRequest notification)
-    {
-        HandleItemGraftInventoryTransferAsync(notification).Forget();
-    }
-
-    private void OnTaiwuInventorySnapshotChanged()
-    {
-        HandleTaiwuInventorySnapshotChangedAsync().Forget();
-    }
-
-    private async UniTaskVoid HandleHostRemovedAsync(ulong hostKey)
-    {
-        await UniTask.SwitchToMainThread();
-        _itemGraftDriver?.NotifyHostRemoved((ItemKey)hostKey);
-    }
-
-    private async UniTaskVoid HandleItemGraftInventoryTransferAsync(
-        InventoryTransferRequest notification)
-    {
-        await UniTask.SwitchToMainThread();
-
-        if (!TryGetTaiwuCharId(out int taiwuCharId))
-        {
-            return;
-        }
-
-        bool fromTaiwuInventory = notification.FromCharacterId == taiwuCharId;
-        bool toTaiwuInventory = notification.ToCharacterId == taiwuCharId;
-
-        if (fromTaiwuInventory == toTaiwuInventory)
-        {
-            return;
-        }
-
-        _itemGraftDriver?.NotifyHostTaiwuInventoryChanged(
-            (ItemKey)notification.HostKey,
-            isInTaiwuInventory: toTaiwuInventory);
-    }
-
-    private async UniTaskVoid HandleTaiwuInventorySnapshotChangedAsync()
-    {
-        await UniTask.SwitchToMainThread();
-        _itemGraftDriver?.NotifyTaiwuInventorySnapshotChanged();
-    }
-
-    private static bool TryGetTaiwuCharId(out int taiwuCharId)
-    {
-        taiwuCharId = -1;
-
-        try
-        {
-            taiwuCharId = SingletonObject.getInstance<BasicGameData>().TaiwuCharId;
-            return taiwuCharId >= 0;
-        }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
-        {
-            return false;
-        }
     }
 }

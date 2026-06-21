@@ -12,7 +12,8 @@ using GameData.Domains.Taiwu;
 using GameDataExtensions;
 using HarmonyLib;
 using TMPro;
-using Wanxiang.Taiwu.ItemGrafts;
+using Wanxiang.Taiwu.ItemGrafts.Contracts;
+using Wanxiang.Taiwu.ItemGrafts.Frontend;
 using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;

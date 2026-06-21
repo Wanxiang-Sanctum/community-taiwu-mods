@@ -253,10 +253,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (_inputField?.isFocused == true
             && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             && !Input.GetKey(KeyCode.LeftShift)
-            && !Input.GetKey(KeyCode.RightShift)
-            && _session?.IsReplying != true
-            && _session?.RequiresReset != true
-            && ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
+            && !Input.GetKey(KeyCode.RightShift))
         {
             SendCurrentInput();
         }
@@ -351,6 +348,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         if (_session is null
             || _inputField is null
+            || _session.IsReplying
             || _session.RequiresReset
             || !ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
         {

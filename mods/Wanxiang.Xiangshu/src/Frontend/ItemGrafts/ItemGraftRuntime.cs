@@ -2,7 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using Config;
 using GameData.Domains.Item;
 using GameData.Domains.Item.Display;
-using Wanxiang.Taiwu.ItemGrafts;
+using Wanxiang.Taiwu.ItemGrafts.Contracts;
+using Wanxiang.Taiwu.ItemGrafts.Frontend;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
@@ -72,8 +73,7 @@ internal static class ItemGraftRuntime
     {
         lock (SyncRoot)
         {
-            if (s_currentGraft is not null
-                && s_currentGraft.HostKey == hostKey)
+            if (s_currentGraft?.HostId.Matches(hostKey) == true)
             {
                 bool changed = s_currentHostInTaiwuInventory != isInTaiwuInventory;
                 s_currentHostInTaiwuInventory = isInTaiwuInventory;
@@ -90,8 +90,7 @@ internal static class ItemGraftRuntime
     {
         lock (SyncRoot)
         {
-            if (s_currentGraft is not null
-                && s_currentGraft.HostKey == hostKey)
+            if (s_currentGraft?.HostId.Matches(hostKey) == true)
             {
                 wasInTaiwuInventory = s_currentHostInTaiwuInventory;
                 s_currentGraft = null;
@@ -141,8 +140,7 @@ internal static class ItemGraftRuntime
             return false;
         }
 
-        return TryGet(content.RealKey, out graft)
-            || TryGet(content.Key, out graft);
+        return TryGet(content.RealKey, out graft);
     }
 
     public static bool TryGet(
@@ -158,8 +156,7 @@ internal static class ItemGraftRuntime
         lock (SyncRoot)
         {
             graft = s_currentGraft;
-            return graft is not null
-                && graft.HostKey == key;
+            return graft?.HostId.Matches(key) == true;
         }
     }
 
@@ -186,8 +183,7 @@ internal static class ItemGraftRuntime
 
         lock (SyncRoot)
         {
-            if (s_currentGraft is null
-                || s_currentGraft.HostKey != hostKey
+            if (s_currentGraft?.HostId.Matches(hostKey) != true
                 || !s_currentHostInTaiwuInventory)
             {
                 return;
