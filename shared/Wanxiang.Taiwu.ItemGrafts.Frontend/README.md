@@ -11,7 +11,7 @@
 
 ## 边界
 
-本项目是新版 ItemGrafts 的前端动作和会话实现。它面向 `netstandard2.1` 前端插件，引用
+本项目是 ItemGrafts 的前端动作和会话实现。它面向 `netstandard2.1` 前端插件，引用
 `Taiwu.ModKit.References.Frontend`、`Taiwu.ModKit.Dependencies.UniTask`、`Wanxiang.Taiwu.AsyncInterop` 和
 `Wanxiang.Taiwu.ModRpc`。
 

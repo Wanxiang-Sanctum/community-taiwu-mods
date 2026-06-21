@@ -31,9 +31,6 @@
     />
     <Project Path="shared/Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj" />
     <Project
-      Path="shared/Wanxiang.Taiwu.ItemGrafts/Wanxiang.Taiwu.ItemGrafts.csproj"
-    />
-    <Project
       Path="shared/Wanxiang.Taiwu.ItemGrafts.Backend/Wanxiang.Taiwu.ItemGrafts.Backend.csproj"
     />
     <Project

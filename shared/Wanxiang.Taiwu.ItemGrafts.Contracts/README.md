@@ -40,5 +40,3 @@ Harmony 观察和宿主事件转发。
 调用方不直接拼 ItemGrafts RPC 内容或后端补丁标识。前端通过 `InventoryGrafts.Install(plugin)` 绑定本 mod，
 再通过 `AttachAsync(...)` / `CreateAsync(...)` 建立 `GraftSession`；后端通过 `BackendInventoryGrafts.Install(plugin)`
 安装观察和转发。
-
-旧 `Wanxiang.Taiwu.ItemGrafts` 项目只作为短期迁移入口保留；新代码应引用本项目及对应端侧实现。

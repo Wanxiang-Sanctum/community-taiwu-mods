@@ -20,10 +20,9 @@
 | `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
 | `Wanxiang.Taiwu.AsyncInterop/` | 前后端共用的太吾游戏异步 callback-awaitable 互操作原语。 | `Wanxiang.Taiwu.AsyncInterop/README.md` |
 | `Wanxiang.Taiwu.ModRpc/` | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。 | `Wanxiang.Taiwu.ModRpc/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts/` | 旧版前端行囊物品嫁接入口，保留给现有调用方。 | `Wanxiang.Taiwu.ItemGrafts/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 新版行囊物品嫁接的跨端契约，包含宿主身份、展示替换和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 新版行囊物品嫁接的前端动作、会话、通知和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Backend/` | 新版行囊物品嫁接的后端观察服务，负责跟踪宿主事实并转发事件。 | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 行囊物品嫁接的跨端契约，包含宿主身份、展示替换和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 行囊物品嫁接的前端动作、会话、通知和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Backend/` | 行囊物品嫁接的后端观察服务，负责跟踪宿主事实并转发事件。 | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md` |
 
 这张表是 `shared/` 一级目录的索引，只保留选择信息和稳定入口。共享库 API、事件选择和部署建议留在项目自己的 README 里。
 新增、移除或重命名内部共享项目时，同步更新这张表；共享项目共同边界或目录约定变化时，再修改本文其它部分。
