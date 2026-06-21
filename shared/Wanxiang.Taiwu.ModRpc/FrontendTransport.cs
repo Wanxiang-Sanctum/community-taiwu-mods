@@ -9,18 +9,18 @@ namespace Wanxiang.Taiwu.ModRpc;
 internal static class FrontendTransport
 {
     internal static void Send(
-        string modId,
+        string localModId,
         string methodName,
         SerializableModData parameter)
     {
         ModDomainMethod.Call.CallModMethodWithParam(
-            modId,
+            localModId,
             methodName,
             parameter);
     }
 
     internal static UniTask<SerializableModData> InvokeAsync(
-        string modId,
+        string localModId,
         string methodName,
         SerializableModData parameter,
         CancellationToken cancellationToken = default)
@@ -28,7 +28,7 @@ internal static class FrontendTransport
         return InvokeAsync(
             callback => ModDomainMethod.AsyncCall.CallModMethodWithParamAndRet(
                 null,
-                modId,
+                localModId,
                 methodName,
                 parameter,
                 callback),

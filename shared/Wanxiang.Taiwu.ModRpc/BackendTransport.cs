@@ -8,31 +8,31 @@ namespace Wanxiang.Taiwu.ModRpc;
 internal static class BackendTransport
 {
     internal static void Register(
-        string modId,
+        string localModId,
         string methodName,
         Action<DataContext, SerializableModData> handler)
     {
         DomainManager.Mod.AddModMethod(
-            modId,
+            localModId,
             methodName,
             handler);
     }
 
     internal static void Register(
-        string modId,
+        string localModId,
         string methodName,
         Func<DataContext, SerializableModData, SerializableModData> handler)
     {
         DomainManager.Mod.AddModMethod(
-            modId,
+            localModId,
             methodName,
             handler);
     }
 
-    internal static void PublishDisplayEvent(string modId, string customData)
+    internal static void PublishDisplayEvent(string localModId, string customData)
     {
         DomainManager.Mod.AddModDisplayEvent(
-            modId,
+            localModId,
             customData);
     }
 }

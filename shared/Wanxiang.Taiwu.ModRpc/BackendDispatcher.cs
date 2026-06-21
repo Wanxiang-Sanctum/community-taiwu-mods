@@ -17,28 +17,27 @@ internal static class BackendDispatcher
     private static readonly Dictionary<string, List<Action<DataContext, string>>> NotificationHandlers =
         new(StringComparer.Ordinal);
 
-    private static readonly HashSet<string> RequestMethodKeys = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> RegisteredRequestMethods = new(StringComparer.Ordinal);
 
-    private static readonly HashSet<string> NotificationMethodKeys = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> RegisteredNotificationMethods = new(StringComparer.Ordinal);
 
-    private static readonly HashSet<string> ResponseHandlerModIds = new(StringComparer.Ordinal);
+    private static bool s_isResponseHandlerRegistered;
 
     internal static async Task<string> InvokeAsync(
-        string modId,
         string methodName,
         string payloadJson,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        string validatedModId = Guard.RequiredText(modId, nameof(modId));
         string validatedMethodName = Guard.RequiredText(methodName, nameof(methodName));
         string validatedPayloadJson = JsonPayload.Require(payloadJson, nameof(payloadJson));
+        string localModId = LocalModBinding.RequireLocalModId();
         string requestId = Guid.NewGuid().ToString("N");
         TaskCompletionSource<string> completionSource = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
-        EnsureResponseHandler(validatedModId);
+        EnsureResponseMethodRegistered(localModId);
 
         lock (SyncRoot)
         {
@@ -48,7 +47,7 @@ internal static class BackendDispatcher
         try
         {
             BackendTransport.PublishDisplayEvent(
-                validatedModId,
+                localModId,
                 WireProtocol.SerializeRequest(
                     requestId,
                     validatedMethodName,
@@ -69,105 +68,97 @@ internal static class BackendDispatcher
     }
 
     internal static IDisposable RegisterRequestHandler(
-        string modId,
         string methodName,
         Func<DataContext, string, string> handler)
     {
-        string validatedModId = Guard.RequiredText(modId, nameof(modId));
         string validatedMethodName = Guard.RequiredText(methodName, nameof(methodName));
-        string key = CreateHandlerKey(validatedModId, validatedMethodName);
         Guard.ThrowIfNull(handler, nameof(handler));
 
         lock (SyncRoot)
         {
-            EnsureRequestMethod(validatedModId, validatedMethodName, key);
+            EnsureRequestMethodRegistered(LocalModBinding.RequireLocalModId(), validatedMethodName);
 
-            if (RequestHandlers.ContainsKey(key))
+            if (RequestHandlers.ContainsKey(validatedMethodName))
             {
                 throw new InvalidOperationException(
                     $"A backend ModRpc handler is already registered for '{validatedMethodName}'.");
             }
 
-            RequestHandlers.Add(key, handler);
+            RequestHandlers.Add(validatedMethodName, handler);
         }
 
-        return new HandlerRegistration(() => RemoveRequestHandler(key, handler));
+        return new HandlerRegistration(() => RemoveRequestHandler(validatedMethodName, handler));
     }
 
     internal static IDisposable SubscribeNotification(
-        string modId,
         string methodName,
         Action<DataContext, string> handler)
     {
-        string validatedModId = Guard.RequiredText(modId, nameof(modId));
         string validatedMethodName = Guard.RequiredText(methodName, nameof(methodName));
-        string key = CreateHandlerKey(validatedModId, validatedMethodName);
         Guard.ThrowIfNull(handler, nameof(handler));
 
         lock (SyncRoot)
         {
-            EnsureNotificationMethod(validatedModId, validatedMethodName, key);
+            EnsureNotificationMethodRegistered(LocalModBinding.RequireLocalModId(), validatedMethodName);
 
-            if (!NotificationHandlers.TryGetValue(key, out List<Action<DataContext, string>>? handlers))
+            if (!NotificationHandlers.TryGetValue(validatedMethodName, out List<Action<DataContext, string>>? handlers))
             {
                 handlers = [];
-                NotificationHandlers.Add(key, handlers);
+                NotificationHandlers.Add(validatedMethodName, handlers);
             }
 
             handlers.Add(handler);
         }
 
-        return new HandlerRegistration(() => RemoveNotificationHandler(key, handler));
+        return new HandlerRegistration(() => RemoveNotificationHandler(validatedMethodName, handler));
     }
 
-    private static void EnsureRequestMethod(
-        string modId,
-        string methodName,
-        string key)
+    private static void EnsureRequestMethodRegistered(
+        string localModId,
+        string methodName)
     {
-        if (RequestMethodKeys.Contains(key))
+        if (RegisteredRequestMethods.Contains(methodName))
         {
             return;
         }
 
         SerializableModData HandleRequest(DataContext context, SerializableModData payload)
         {
-            return DispatchRequest(context, key, payload);
+            return DispatchRequest(context, methodName, payload);
         }
 
-        BackendTransport.Register(modId, methodName, HandleRequest);
-        _ = RequestMethodKeys.Add(key);
+        BackendTransport.Register(localModId, methodName, HandleRequest);
+        _ = RegisteredRequestMethods.Add(methodName);
     }
 
-    private static void EnsureNotificationMethod(
-        string modId,
-        string methodName,
-        string key)
+    private static void EnsureNotificationMethodRegistered(
+        string localModId,
+        string methodName)
     {
-        if (NotificationMethodKeys.Contains(key))
+        if (RegisteredNotificationMethods.Contains(methodName))
         {
             return;
         }
 
         void HandleNotification(DataContext context, SerializableModData payload)
         {
-            DispatchNotification(context, key, payload);
+            DispatchNotification(context, methodName, payload);
         }
 
-        BackendTransport.Register(modId, methodName, HandleNotification);
-        _ = NotificationMethodKeys.Add(key);
+        BackendTransport.Register(localModId, methodName, HandleNotification);
+        _ = RegisteredNotificationMethods.Add(methodName);
     }
 
     private static SerializableModData DispatchRequest(
         DataContext context,
-        string key,
+        string methodName,
         SerializableModData payload)
     {
         Func<DataContext, string, string>? handler;
 
         lock (SyncRoot)
         {
-            _ = RequestHandlers.TryGetValue(key, out handler);
+            _ = RequestHandlers.TryGetValue(methodName, out handler);
         }
 
         if (handler is null)
@@ -202,14 +193,14 @@ internal static class BackendDispatcher
 
     private static void DispatchNotification(
         DataContext context,
-        string key,
+        string methodName,
         SerializableModData payload)
     {
         List<Action<DataContext, string>>? handlers = null;
 
         lock (SyncRoot)
         {
-            if (NotificationHandlers.TryGetValue(key, out List<Action<DataContext, string>>? registeredHandlers))
+            if (NotificationHandlers.TryGetValue(methodName, out List<Action<DataContext, string>>? registeredHandlers))
             {
                 handlers = [.. registeredHandlers];
             }
@@ -253,11 +244,11 @@ internal static class BackendDispatcher
         }
     }
 
-    private static void EnsureResponseHandler(string modId)
+    private static void EnsureResponseMethodRegistered(string localModId)
     {
         lock (SyncRoot)
         {
-            if (ResponseHandlerModIds.Contains(modId))
+            if (s_isResponseHandlerRegistered)
             {
                 return;
             }
@@ -268,8 +259,8 @@ internal static class BackendDispatcher
                 CompletePendingResponse(payload);
             }
 
-            BackendTransport.Register(modId, WireProtocol.ResponseMethodName, HandleResponse);
-            _ = ResponseHandlerModIds.Add(modId);
+            BackendTransport.Register(localModId, WireProtocol.ResponseMethodName, HandleResponse);
+            s_isResponseHandlerRegistered = true;
         }
     }
 
@@ -330,26 +321,26 @@ internal static class BackendDispatcher
     }
 
     private static void RemoveRequestHandler(
-        string key,
+        string methodName,
         Func<DataContext, string, string> handler)
     {
         lock (SyncRoot)
         {
-            if (RequestHandlers.TryGetValue(key, out Func<DataContext, string, string>? registeredHandler)
+            if (RequestHandlers.TryGetValue(methodName, out Func<DataContext, string, string>? registeredHandler)
                 && ReferenceEquals(registeredHandler, handler))
             {
-                _ = RequestHandlers.Remove(key);
+                _ = RequestHandlers.Remove(methodName);
             }
         }
     }
 
     private static void RemoveNotificationHandler(
-        string key,
+        string methodName,
         Action<DataContext, string> handler)
     {
         lock (SyncRoot)
         {
-            if (!NotificationHandlers.TryGetValue(key, out List<Action<DataContext, string>>? handlers))
+            if (!NotificationHandlers.TryGetValue(methodName, out List<Action<DataContext, string>>? handlers))
             {
                 return;
             }
@@ -358,14 +349,9 @@ internal static class BackendDispatcher
 
             if (handlers.Count == 0)
             {
-                _ = NotificationHandlers.Remove(key);
+                _ = NotificationHandlers.Remove(methodName);
             }
         }
-    }
-
-    private static string CreateHandlerKey(string modId, string methodName)
-    {
-        return modId + "\n" + methodName;
     }
 }
 #endif

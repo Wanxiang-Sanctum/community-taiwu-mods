@@ -48,7 +48,7 @@ internal static class JsonPayload
         }
         catch (ArgumentException)
         {
-            normalizedPayloadJson = NullJson;
+            normalizedPayloadJson = string.Empty;
             return false;
         }
     }

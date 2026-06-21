@@ -7,21 +7,29 @@ internal static class FrontendDispatcher
 {
     private static readonly object SyncRoot = new();
 
-    private static readonly Dictionary<string, State> States =
-        new(StringComparer.Ordinal);
+    private static State? s_state;
+
+    internal static void EnsureDisplayHandler()
+    {
+        string localModId = LocalModBinding.RequireLocalModId();
+
+        lock (SyncRoot)
+        {
+            _ = GetOrCreateState(localModId);
+        }
+    }
 
     internal static IDisposable RegisterRequestHandler(
-        string modId,
         string methodName,
         Func<string, string> handler)
     {
-        string validatedModId = Guard.RequiredText(modId, nameof(modId));
         string validatedMethodName = Guard.RequiredText(methodName, nameof(methodName));
+        string localModId = LocalModBinding.RequireLocalModId();
         Guard.ThrowIfNull(handler, nameof(handler));
 
         lock (SyncRoot)
         {
-            State state = GetOrCreateState(validatedModId);
+            State state = GetOrCreateState(localModId);
 
             if (state.RequestHandlers.ContainsKey(validatedMethodName))
             {
@@ -33,21 +41,20 @@ internal static class FrontendDispatcher
         }
 
         return new HandlerRegistration(
-            () => RemoveRequestHandler(validatedModId, validatedMethodName, handler));
+            () => RemoveRequestHandler(validatedMethodName, handler));
     }
 
     internal static IDisposable SubscribeNotification(
-        string modId,
         string methodName,
         Action<string> handler)
     {
-        string validatedModId = Guard.RequiredText(modId, nameof(modId));
         string validatedMethodName = Guard.RequiredText(methodName, nameof(methodName));
+        string localModId = LocalModBinding.RequireLocalModId();
         Guard.ThrowIfNull(handler, nameof(handler));
 
         lock (SyncRoot)
         {
-            State state = GetOrCreateState(validatedModId);
+            State state = GetOrCreateState(localModId);
 
             if (!state.NotificationHandlers.TryGetValue(validatedMethodName, out List<Action<string>>? handlers))
             {
@@ -59,50 +66,55 @@ internal static class FrontendDispatcher
         }
 
         return new HandlerRegistration(
-            () => RemoveNotificationHandler(validatedModId, validatedMethodName, handler));
+            () => RemoveNotificationHandler(validatedMethodName, handler));
     }
 
-    private static State GetOrCreateState(string modId)
+    private static State GetOrCreateState(string localModId)
     {
-        if (States.TryGetValue(modId, out State? state))
+        if (s_state is not null)
         {
-            return state;
+            return s_state;
         }
 
-        void DisplayHandler(string customData)
+        static void DisplayHandler(string customData)
         {
-            HandleDisplayEvent(modId, customData);
+            HandleDisplayEvent(customData);
         }
 
-        state = new State(DisplayHandler);
-        States.Add(modId, state);
-        ModManager.RegisterModDisplayEventHandler(modId, DisplayHandler);
+        State state = new();
+        s_state = state;
+        ModManager.RegisterModDisplayEventHandler(localModId, DisplayHandler);
         return state;
     }
 
-    private static void HandleDisplayEvent(string modId, string customData)
+    private static void HandleDisplayEvent(string customData)
     {
         if (!WireProtocol.TryDeserializeEnvelope(customData, out Envelope? request)
             || request is null
             || !string.Equals(request.Kind, WireProtocol.RequestKind, StringComparison.Ordinal)
-            || string.IsNullOrWhiteSpace(request.MethodName))
+            || string.IsNullOrWhiteSpace(request.MethodName)
+            || (request.ExpectsResponse && string.IsNullOrWhiteSpace(request.RequestId)))
         {
             return;
         }
 
-        Func<string, string>? registeredHandler = null;
         List<Action<string>>? notificationHandlers = null;
+        Func<string, string>? requestHandler = null;
 
         lock (SyncRoot)
         {
-            if (!States.TryGetValue(modId, out State? state))
+            if (s_state is null)
             {
                 return;
             }
 
-            _ = state.RequestHandlers.TryGetValue(request.MethodName, out registeredHandler);
+            if (request.ExpectsResponse)
+            {
+                _ = s_state.RequestHandlers.TryGetValue(request.MethodName, out requestHandler);
+            }
 
-            if (state.NotificationHandlers.TryGetValue(request.MethodName, out List<Action<string>>? handlers))
+            if (!request.ExpectsResponse
+                && s_state.NotificationHandlers.TryGetValue(request.MethodName, out List<Action<string>>? handlers))
             {
                 notificationHandlers = [.. handlers];
             }
@@ -110,7 +122,7 @@ internal static class FrontendDispatcher
 
         if (request.ExpectsResponse)
         {
-            HandleRequest(modId, request, registeredHandler);
+            HandleRequest(request, requestHandler);
             return;
         }
 
@@ -122,37 +134,31 @@ internal static class FrontendDispatcher
             }
         }
 
-        if (registeredHandler is not null)
-        {
-            _ = TryInvokeRequestHandler(registeredHandler, request.PayloadJson, out _, out _);
-        }
     }
 
     private static void HandleRequest(
-        string modId,
         Envelope request,
         Func<string, string>? registeredHandler)
     {
         if (registeredHandler is null)
         {
             SendResponse(
-                modId,
                 request.RequestId,
                 JsonPayload.NullJson,
                 $"No frontend ModRpc handler is registered for '{request.MethodName}'.");
             return;
         }
 
-        _ = TryInvokeRequestHandler(
+        InvokeRequestHandler(
             registeredHandler,
             request.PayloadJson,
             out string responsePayload,
             out string? error);
 
-        SendResponse(modId, request.RequestId, responsePayload, error);
+        SendResponse(request.RequestId, responsePayload, error);
     }
 
-    private static bool TryInvokeRequestHandler(
+    private static void InvokeRequestHandler(
         Func<string, string> handler,
         string payloadJson,
         out string responsePayload,
@@ -165,7 +171,6 @@ internal static class FrontendDispatcher
             responsePayload = JsonPayload.Require(
                 handler(payloadJson),
                 nameof(responsePayload));
-            return true;
         }
 #pragma warning disable CA1031
         catch (Exception ex)
@@ -175,7 +180,6 @@ internal static class FrontendDispatcher
             error = string.IsNullOrWhiteSpace(ex.Message)
                 ? "Frontend ModRpc handler failed."
                 : ex.Message;
-            return false;
         }
     }
 
@@ -195,48 +199,43 @@ internal static class FrontendDispatcher
     }
 
     private static void SendResponse(
-        string modId,
         string requestId,
         string payloadJson,
         string? error)
     {
         ModDomainMethod.Call.CallModMethodWithParam(
-            modId,
+            LocalModBinding.RequireLocalModId(),
             WireProtocol.ResponseMethodName,
             ModDataPayload.Create(WireProtocol.SerializeResponse(requestId, payloadJson, error)));
     }
 
     private static void RemoveRequestHandler(
-        string modId,
         string methodName,
         Func<string, string> handler)
     {
         lock (SyncRoot)
         {
-            if (!States.TryGetValue(modId, out State? state))
+            if (s_state is null)
             {
                 return;
             }
 
-            if (state.RequestHandlers.TryGetValue(methodName, out Func<string, string>? registeredHandler)
+            if (s_state.RequestHandlers.TryGetValue(methodName, out Func<string, string>? registeredHandler)
                 && ReferenceEquals(registeredHandler, handler))
             {
-                _ = state.RequestHandlers.Remove(methodName);
+                _ = s_state.RequestHandlers.Remove(methodName);
             }
-
-            RemoveStateIfEmpty(modId, state);
         }
     }
 
     private static void RemoveNotificationHandler(
-        string modId,
         string methodName,
         Action<string> handler)
     {
         lock (SyncRoot)
         {
-            if (!States.TryGetValue(modId, out State? state)
-                || !state.NotificationHandlers.TryGetValue(methodName, out List<Action<string>>? handlers))
+            if (s_state is null
+                || !s_state.NotificationHandlers.TryGetValue(methodName, out List<Action<string>>? handlers))
             {
                 return;
             }
@@ -245,28 +244,13 @@ internal static class FrontendDispatcher
 
             if (handlers.Count == 0)
             {
-                _ = state.NotificationHandlers.Remove(methodName);
+                _ = s_state.NotificationHandlers.Remove(methodName);
             }
-
-            RemoveStateIfEmpty(modId, state);
         }
     }
 
-    private static void RemoveStateIfEmpty(string modId, State state)
+    private sealed class State
     {
-        if (state.RequestHandlers.Count != 0 || state.NotificationHandlers.Count != 0)
-        {
-            return;
-        }
-
-        _ = States.Remove(modId);
-        _ = ModManager.UnRegisterModDisplayEventHandler(modId, state.DisplayHandler);
-    }
-
-    private sealed class State(Action<string> displayHandler)
-    {
-        public Action<string> DisplayHandler { get; } = displayHandler;
-
         public Dictionary<string, Func<string, string>> RequestHandlers { get; } =
             new(StringComparer.Ordinal);
 
