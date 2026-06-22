@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using GameData.Domains.Item;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
 
@@ -8,6 +10,8 @@ internal static class GraftHostRpcProtocol
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
+        // Game runtime builds can reject Json.NET dynamic access after ILRepack internalization.
+        ContractResolver = new ReflectionOnlyContractResolver(),
         NullValueHandling = NullValueHandling.Ignore,
         TypeNameHandling = TypeNameHandling.None,
     };
@@ -178,5 +182,13 @@ internal static class GraftHostRpcProtocol
         public int? FromCharacterId { get; set; }
 
         public int? ToCharacterId { get; set; }
+    }
+
+    private sealed class ReflectionOnlyContractResolver : DefaultContractResolver
+    {
+        protected override IValueProvider CreateMemberValueProvider(MemberInfo member)
+        {
+            return new ReflectionValueProvider(member);
+        }
     }
 }
