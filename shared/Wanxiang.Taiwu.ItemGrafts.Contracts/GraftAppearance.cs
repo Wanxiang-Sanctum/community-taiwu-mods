@@ -1,37 +1,48 @@
 namespace Wanxiang.Taiwu.ItemGrafts.Contracts;
 
 /// <summary>
-/// 描述嫁接宿主物品在前端显示时可选的覆盖信息。
+/// 描述嫁接宿主物品可选的前端外观覆盖值。
 /// </summary>
-/// <param name="name">名称覆盖；为 null 或空白时沿用宿主名称。</param>
-/// <param name="description">描述覆盖；为 null 或空白时沿用宿主描述。</param>
-/// <param name="iconName">图标名称覆盖；为 null 或空白时沿用宿主图标。</param>
-/// <param name="grade">品级覆盖；为 null 时沿用宿主品级。</param>
+/// <remarks>
+/// 字符串覆盖会修剪首尾空白；<see langword="null"/> 或空白表示未提供。<paramref name="visualGrade"/> 为
+/// <see langword="null"/> 时也表示未提供；非 <see langword="null"/> 值只透传，不解释取值、范围或显示效果。
+/// </remarks>
+/// <param name="name">名称覆盖。</param>
+/// <param name="description">描述覆盖。</param>
+/// <param name="detailDescription">详情描述覆盖。</param>
+/// <param name="iconName">图标名称覆盖。</param>
+/// <param name="visualGrade">视觉品级覆盖。</param>
 public sealed class GraftAppearance(
     string? name = null,
     string? description = null,
+    string? detailDescription = null,
     string? iconName = null,
-    sbyte? grade = null)
+    sbyte? visualGrade = null)
 {
     /// <summary>
-    /// 获取规范化后的名称覆盖；为 null 时应沿用宿主名称。
+    /// 获取规范化后的名称覆盖。
     /// </summary>
     public string? Name { get; } = NormalizeOptionalText(name);
 
     /// <summary>
-    /// 获取规范化后的描述覆盖；为 null 时应沿用宿主描述。
+    /// 获取规范化后的描述覆盖。
     /// </summary>
     public string? Description { get; } = NormalizeOptionalText(description);
 
     /// <summary>
-    /// 获取规范化后的图标名称覆盖；为 null 时应沿用宿主图标。
+    /// 获取规范化后的详情描述覆盖。
+    /// </summary>
+    public string? DetailDescription { get; } = NormalizeOptionalText(detailDescription);
+
+    /// <summary>
+    /// 获取规范化后的图标名称覆盖。
     /// </summary>
     public string? IconName { get; } = NormalizeOptionalText(iconName);
 
     /// <summary>
-    /// 获取品级覆盖；为 null 时应沿用宿主品级。
+    /// 获取视觉品级覆盖。
     /// </summary>
-    public sbyte? Grade { get; } = grade;
+    public sbyte? VisualGrade { get; } = visualGrade;
 
     private static string? NormalizeOptionalText(string? value)
     {

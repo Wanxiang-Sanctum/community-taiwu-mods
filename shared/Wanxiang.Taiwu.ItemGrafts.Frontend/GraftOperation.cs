@@ -9,7 +9,7 @@ namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 /// <param name="label">非空操作标签。</param>
 /// <param name="execute">操作启用时，以当前宿主物品 key 调用的回调。</param>
 /// <param name="isEnabled">操作当前是否可以调用。</param>
-/// <param name="disabledReason">操作禁用时提供给 UI 的可选原因。</param>
+/// <param name="disabledReason">操作禁用时提供给 UI 的可选原因文案。</param>
 public sealed class GraftOperation(
     string label,
     Action<ItemKey>? execute = null,
@@ -27,7 +27,7 @@ public sealed class GraftOperation(
     public bool IsEnabled { get; } = isEnabled;
 
     /// <summary>
-    /// 获取规范化后提供给 UI 的禁用原因；未提供原因时为空字符串。
+    /// 获取规范化后提供给 UI 的禁用原因文案；未提供原因时为空字符串。
     /// </summary>
     public string DisabledReason { get; } = NormalizeOptionalText(disabledReason);
 

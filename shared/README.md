@@ -28,7 +28,7 @@
 | `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
 | `Wanxiang.Taiwu.AsyncInterop/` | 前后端共用的太吾游戏异步回调与可等待对象互操作原语。 | `Wanxiang.Taiwu.AsyncInterop/README.md` |
 | `Wanxiang.Taiwu.ModRpc/` | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。 | `Wanxiang.Taiwu.ModRpc/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 行囊物品嫁接的跨端契约，包含宿主身份、展示替换和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 行囊物品嫁接的跨端契约，包含宿主身份、外观覆盖和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
 | `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 行囊物品嫁接的前端动作、会话、共享可视化、通知和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
 | `Wanxiang.Taiwu.ItemGrafts.Backend/` | 行囊物品嫁接的后端观察服务，负责跟踪宿主事实并转发事件。 | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md` |
 

@@ -20,12 +20,12 @@ internal static class GraftVisuals
         string name = appearance.Name ?? renderedName;
 
         if (!withGradeColor
-            || (appearance.Name is null && appearance.Grade is null))
+            || (appearance.Name is null && appearance.VisualGrade is null))
         {
             return name;
         }
 
-        sbyte grade = appearance.Grade ?? content.Grade;
+        sbyte grade = appearance.VisualGrade ?? content.Grade;
         return grade >= 0
             ? (usesRenderedName ? name.RemoveColorTags() : name)
                 .SetColor(Colors.Instance.GradeColors[grade])
@@ -84,7 +84,7 @@ internal static class GraftVisuals
             itemBack.SetIcon(appearance.IconName);
         }
 
-        if (appearance.Grade is sbyte grade)
+        if (appearance.VisualGrade is sbyte grade)
         {
             itemBack.SetBack(grade);
         }
@@ -99,7 +99,7 @@ internal static class GraftVisuals
             itemBack.CGet<CImage>("Icon").SetSprite(appearance.IconName);
         }
 
-        if (appearance.Grade is sbyte grade)
+        if (appearance.VisualGrade is sbyte grade)
         {
             itemBack.CGet<CImage>("GradeBack").SetSprite(CommonItemBack.GetGradeBack(grade));
         }
@@ -114,7 +114,7 @@ internal static class GraftVisuals
             itemView.SetIcon(appearance.IconName);
         }
 
-        if (appearance.Grade is sbyte grade)
+        if (appearance.VisualGrade is sbyte grade)
         {
             itemView.SetGrade(showGrade: true, grade);
         }
@@ -141,7 +141,7 @@ internal static class GraftVisuals
             toolTip.CGet<CImage>("ItemIcon").SetSprite(appearance.IconName);
         }
 
-        if (appearance.Grade is sbyte grade)
+        if (appearance.VisualGrade is sbyte grade)
         {
             toolTip.CGet<CImage>("GradeBack").SetSprite(ItemView.GetGradeIcon(grade));
             toolTip.CGet<TextMeshProUGUI>("GradeName").text = ItemView.GetGradeText(grade);
@@ -168,11 +168,10 @@ internal static class GraftVisuals
         string description = (appearance.Description
                 ?? ItemTemplateHelper.GetDesc(key.ItemType, key.TemplateId))
             .ColorReplace();
-        string functionDescription = ItemTemplateHelper.GetFunctionDesc(
-                key.ItemType,
-                key.TemplateId)
+        string functionDescription = (appearance.DetailDescription
+                ?? ItemTemplateHelper.GetFunctionDesc(key.ItemType, key.TemplateId))
             .ColorReplace();
-        sbyte grade = appearance.Grade
+        sbyte grade = appearance.VisualGrade
             ?? ItemTemplateHelper.GetGrade(key.ItemType, key.TemplateId);
         string icon = appearance.IconName
             ?? ItemTemplateHelper.GetIcon(key.ItemType, key.TemplateId);

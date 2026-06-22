@@ -12,7 +12,8 @@
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；把脚本执行、中间答复和玩家视图捕获请求接入前端模块。
 - `ItemGrafts/`：相枢行囊宿主同步。它使用 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend` 创建或附着真实宿主物品，
   维护本次前端运行内的当前 `GraftSession`、宿主身份和宿主是否在太吾行囊中，并把这些状态用于宿主恢复和聊天可用性；
-  共享前端可视化层负责支持入口中的行囊与提示外观、物品消息实例名称替换和 `Replace` 操作菜单。
+  相枢前端提供低语药钵外观和“对话”操作，共享前端可视化层负责支持入口中的外观覆盖、物品消息实例名称替换和
+  `Replace` 操作菜单。
 - `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/Cli/` 注入子进程，不持久化，
   也不进入 endpoint manifest。
 - `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，聊天窗口排除由 `Chat/` 提供。

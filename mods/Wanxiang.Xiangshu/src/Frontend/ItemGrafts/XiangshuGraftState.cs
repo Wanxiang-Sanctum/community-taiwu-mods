@@ -9,6 +9,8 @@ internal static class XiangshuGraftState
 {
     private const string BowlName = "低语的陶土药钵";
     private const string BowlDescription = "药杵未动，钵底却传出细碎低语，自称相枢。";
+    private const string BowlDetailDescription = "可在太吾行囊中与相枢对话；离身时声息暂断。";
+    private const sbyte BowlVisualGrade = 8;
     private const string ChatOperationLabel = "对话";
 
     private static readonly object SyncRoot = new();
@@ -136,8 +138,9 @@ internal static class XiangshuGraftState
             appearance: new GraftAppearance(
                 name: BowlName,
                 description: BowlDescription,
+                detailDescription: BowlDetailDescription,
                 iconName: hostTemplate.Icon,
-                grade: hostTemplate.Grade),
+                visualGrade: BowlVisualGrade),
             menuMode: GraftMenuMode.Replace,
             operations:
             [

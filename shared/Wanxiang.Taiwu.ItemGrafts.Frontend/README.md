@@ -2,9 +2,9 @@
 
 太吾绘卷前端行囊物品嫁接实现项目。
 
-“嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主，在本项目支持的前端行囊和提示入口里呈现另一套名称、描述、
-图标和品级，在太吾行囊菜单中提供嫁接操作，并在携带真实 `ItemKey` 的物品消息入口里替换实例名称。游戏后端、存档、
-交易、丢弃、转移以及其它未被使用方接管的游戏交互，仍然处理原来的真实物品。
+“嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主。本项目在支持的前端行囊和提示入口应用
+`GraftAppearance` 外观覆盖，在太吾行囊菜单中提供嫁接操作，并在携带真实 `ItemKey` 的物品消息入口里替换实例名称。
+游戏后端、存档、交易、丢弃、转移以及其它未被使用方接管的游戏交互，仍然处理原来的真实物品。
 
 本项目提供两个前端动作：把已有宿主建立为 `GraftSession`，以及创建真实宿主后立即建立 `GraftSession`。动作成功返回时，
 前端会话、共享可视化状态和后端宿主观察都已经建立；使用方保存返回的会话，用于业务状态、生命周期和持久化锚点。
@@ -39,8 +39,9 @@
 `Graft.HostKey`。长期索引、字典 key 和存档锚点应优先使用 `GraftHostId`。
 
 `GraftDefinition` 是建立 `Graft` 的输入，由 `GraftAppearance`、`GraftMenuMode` 和 `GraftOperation` 列表组成。
-`GraftAppearance` 描述名称、描述、图标和品级替换；字段为 `null` 时沿用宿主原值。`GraftOperation` 描述前端可展示的
-自定义操作；启用操作执行时接收宿主 `ItemKey`，禁用操作只提供标签和原因。
+`GraftAppearance` 来自 Contracts，描述名称、描述、详情描述、图标和视觉品级覆盖；字符串字段为 `null` 或空白时沿用宿主原值，
+`VisualGrade` 为 `null` 时沿用宿主品级。`GraftOperation` 描述前端可展示的自定义操作；启用操作执行时接收宿主
+`ItemKey`，禁用操作只提供标签和原因文案，不表达宿主固有能力或真实数值。
 
 `GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
 `Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
@@ -51,7 +52,11 @@
 共享前端可视化层维护一份内部显示状态，只用于判断哪些宿主物品应应用嫁接外观。使用方为了业务、存档或恢复流程维护的
 `GraftHostId` 到 `GraftSession` 索引归使用方所有，不作为该可视化层的依赖。
 
-该可视化层在本项目支持的物品显示入口替换名称、描述、图标和品级，包括行囊物品组件、常规物品提示和制造工具提示。
+该可视化层在本项目支持的物品显示入口应用 `GraftAppearance`：行囊物品组件、常规物品提示和制造工具提示会使用
+名称、描述、详情描述、图标和视觉品级中对应控件存在的部分；未提供的字段沿用真实宿主。
+`VisualGrade` 不是真实品级。本项目把非空值透传给太吾既有品级显示入口；在当前支持入口中，它影响名称颜色、
+品级底图和品级文本等视觉元素。本项目不提供品级枚举或常量，也不替底层入口校验取值。
+真实品级、类型、价值、重量、耐久和其它游戏事实始终沿用真实宿主。
 携带真实 `ItemKey` 的游戏消息文本只替换实例名称，图标、引号、颜色和其它行内格式沿用游戏原生渲染结果。只携带物品类型和
 模板 ID、没有实例 `ItemKey` 的文本无法判断具体宿主，保持原模板表现。
 
@@ -84,7 +89,7 @@
 InventoryGrafts.Install(this);
 ```
 
-定义嫁接内容：
+定义嫁接内容。示例中的 `visualGrade: 8` 会原样交给太吾既有品级显示入口；ItemGrafts 不为它定义枚举或常量：
 
 ```csharp
 Dictionary<GraftHostId, GraftSession> sessionsByHost = [];
@@ -93,8 +98,9 @@ GraftDefinition definition = new(
     appearance: new GraftAppearance(
         name: "低语的陶土药钵",
         description: "药杵未动，钵底却传出细碎低语，自称相枢。",
+        detailDescription: "可在太吾行囊中与相枢对话；离身时声息暂断。",
         iconName: CraftTool.DefValue.Medicine0.Icon,
-        grade: CraftTool.DefValue.Medicine0.Grade),
+        visualGrade: 8),
     menuMode: GraftMenuMode.Replace,
     operations:
     [
