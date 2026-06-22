@@ -8,8 +8,10 @@ namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 internal static class XiangshuGraftState
 {
     private const string BowlName = "低语的陶土药钵";
-    private const string BowlDescription = "药杵未动，钵底却传出细碎低语，自称相枢。";
-    private const string BowlDetailDescription = "可在太吾行囊中与相枢对话；离身时声息暂断。";
+    private const string BowlDescription = "陶钵泥胎微冷，药杵轻触便泛起低语，自称相枢，似有一缕万相回声寄在其中。";
+    private const string BowlDetailDescription =
+        "轻叩钵沿，可问人物、局势与去路，也可托其查验、推演、尝试改易当前因果；" +
+        "药钵离身则声息沉寂，复归身侧后方可续言。";
     private const sbyte BowlVisualGrade = 8;
     private const string ChatOperationLabel = "对话";
 

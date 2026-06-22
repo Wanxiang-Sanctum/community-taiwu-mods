@@ -89,7 +89,8 @@
 InventoryGrafts.Install(this);
 ```
 
-定义嫁接内容。示例中的 `visualGrade: 8` 会原样交给太吾既有品级显示入口；ItemGrafts 不为它定义枚举或常量：
+定义嫁接内容。示例中，`description` 描写物件异状，`detailDescription` 交代可用能力和离身边界；`visualGrade: 8`
+会原样交给太吾既有品级显示入口，ItemGrafts 不为它定义枚举或常量：
 
 ```csharp
 Dictionary<GraftHostId, GraftSession> sessionsByHost = [];
@@ -97,14 +98,16 @@ Dictionary<GraftHostId, GraftSession> sessionsByHost = [];
 GraftDefinition definition = new(
     appearance: new GraftAppearance(
         name: "低语的陶土药钵",
-        description: "药杵未动，钵底却传出细碎低语，自称相枢。",
-        detailDescription: "可在太吾行囊中与相枢对话；离身时声息暂断。",
+        description: "陶钵泥胎微冷，药杵轻触便泛起低语，自称相枢，似有一缕万相回声寄在其中。",
+        detailDescription:
+            "轻叩钵沿，可问人物、局势与去路，也可托其查验、推演、尝试改易当前因果；" +
+            "药钵离身则声息沉寂，复归身侧后方可续言。",
         iconName: CraftTool.DefValue.Medicine0.Icon,
         visualGrade: 8),
     menuMode: GraftMenuMode.Replace,
     operations:
     [
-        new GraftOperation("查看", OpenNoteForItem),
+        new GraftOperation("对话", OpenXiangshuConversation),
     ]);
 ```
 
@@ -134,7 +137,7 @@ GraftSession session = await InventoryGrafts.CreateAsync(
     definition: definition,
     options: new CreationOptions
     {
-        NotificationMessage = "低语的陶土药钵落入了行囊。",
+        NotificationMessage = "低语的陶土药钵落入囊中。",
         OnHostEvent = HandleHostEvent,
     });
 
@@ -145,9 +148,9 @@ sessionsByHost[session.Graft.HostId] = session;
 `session.Graft.HostKey`。
 
 ```csharp
-static void OpenNoteForItem(ItemKey hostKey)
+static void OpenXiangshuConversation(ItemKey hostKey)
 {
-    // 使用方在这里处理自定义操作。
+    // 使用方在这里打开嫁接物自己的前端入口。
 }
 
 static void HandleHostEvent(GraftHostEventArgs hostEvent)
@@ -194,7 +197,7 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 ```csharp
 new CreationOptions
 {
-    NotificationMessage = "低语的陶土药钵落入了行囊。",
+    NotificationMessage = "低语的陶土药钵落入囊中。",
     NotificationRecordType = customNativeRecordType,
 };
 ```

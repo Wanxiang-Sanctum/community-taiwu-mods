@@ -14,7 +14,7 @@ namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 internal sealed class GraftHostSync : IDisposable
 {
     private const string AttachNotification = "相枢藏进了陶土药钵。";
-    private const string CreateNotification = "低语的陶土药钵落入了行囊。";
+    private const string CreateNotification = "低语的陶土药钵落入囊中。";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
