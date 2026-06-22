@@ -47,11 +47,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float ScrollbarRightInset = 9f;
     private const float ScrollbarVerticalInset = 12f;
     private const float ScrollbarHandleMarkWidth = 8f;
-    private const float MessageRowHorizontalPadding = 14f;
-    private const float MessageBubbleWidthRatio = 0.88f;
-    private const float MinimumMessageBubbleWidth = 280f;
-    private const float PreferredMessageBubbleWidth = 520f;
-    private const float MaximumMessageBubbleWidth = 540f;
+    private const float MessageRowEdgePadding = 14f;
+    private const float MessageRowOppositeGutter = 58f;
+    private const float MessageBubbleWidthRatio = 0.94f;
+    private const float MinimumMessageBubbleWidth = 260f;
+    private const float PreferredMessageBubbleWidth = 500f;
+    private const float MaximumMessageBubbleWidth = 500f;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
     private const float InputAreaHeight = 108f;
     private const float InputFieldMinimumHeight = 84f;
@@ -71,12 +72,14 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
     private static readonly Color HeaderColor = new(0.12f, 0.087f, 0.058f, 0.98f);
-    private static readonly Color MessageAreaColor = new(0.035f, 0.033f, 0.031f, 0.96f);
+    private static readonly Color MessageAreaColor = new(0.022f, 0.020f, 0.019f, 0.97f);
     private static readonly Color InputColor = new(0.08f, 0.074f, 0.063f, 0.98f);
     private static readonly Color FocusedInputColor = new(0.105f, 0.092f, 0.071f, 0.99f);
     private static readonly Color InputFocusOutlineColor = new(0.82f, 0.59f, 0.28f, 0.72f);
-    private static readonly Color AssistantBubbleColor = new(0.18f, 0.15f, 0.11f, 0.96f);
-    private static readonly Color UserBubbleColor = new(0.095f, 0.15f, 0.17f, 0.96f);
+    private static readonly Color AssistantBubbleColor = new(0.42f, 0.30f, 0.18f, 0.99f);
+    private static readonly Color UserBubbleColor = new(0.10f, 0.38f, 0.42f, 0.99f);
+    private static readonly Color AssistantBubbleOutlineColor = new(0.92f, 0.57f, 0.24f, 0.58f);
+    private static readonly Color UserBubbleOutlineColor = new(0.25f, 0.86f, 0.90f, 0.60f);
     private static readonly Color AccentColor = new(0.82f, 0.59f, 0.28f, 1f);
     private static readonly Color TextColor = new(0.92f, 0.88f, 0.78f, 1f);
     private static readonly Color MutedTextColor = new(0.67f, 0.62f, 0.52f, 1f);
@@ -503,24 +506,22 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         rowLayout.childForceExpandWidth = false;
         rowLayout.spacing = 0f;
         rowLayout.padding = new RectOffset(
-            (int)MessageRowHorizontalPadding,
-            (int)MessageRowHorizontalPadding,
+            (int)(isUser ? MessageRowOppositeGutter : MessageRowEdgePadding),
+            (int)(isUser ? MessageRowEdgePadding : MessageRowOppositeGutter),
             6,
             6);
         _ = row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         GameObject bubble = CreateChild(isUser ? "PlayerBubble" : "XiangshuBubble", row.transform);
-        CImage bubbleImage = AddSpriteImage(
-            bubble,
-            isUser ? UserBubbleColor : AssistantBubbleColor,
-            isUser ? UserBubbleSprite : AssistantBubbleSprite);
-        bubbleImage.raycastTarget = false;
+        AddMessageBubbleBackground(bubble, isUser);
         VerticalLayoutGroup bubbleLayout = bubble.AddComponent<VerticalLayoutGroup>();
         bubbleLayout.childControlHeight = true;
         bubbleLayout.childControlWidth = true;
         bubbleLayout.childForceExpandHeight = false;
         bubbleLayout.childForceExpandWidth = true;
-        bubbleLayout.padding = new RectOffset(14, 14, 10, 10);
+        bubbleLayout.padding = isUser
+            ? new RectOffset(16, 24, 11, 12)
+            : new RectOffset(24, 16, 11, 12);
         bubbleLayout.spacing = 5f;
         LayoutElement bubbleLayoutElement = bubble.AddComponent<LayoutElement>();
         bubbleLayoutElement.preferredWidth = GetMessageBubbleWidth();
@@ -670,7 +671,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return PreferredMessageBubbleWidth;
         }
 
-        float usableWidth = Mathf.Max(0f, contentWidth - (MessageRowHorizontalPadding * 2f));
+        float usableWidth = Mathf.Max(0f, contentWidth - MessageRowEdgePadding - MessageRowOppositeGutter);
 
         if (usableWidth <= 0f)
         {
@@ -680,6 +681,33 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         float maximumWidth = Mathf.Min(MaximumMessageBubbleWidth, usableWidth);
         float minimumWidth = Mathf.Min(MinimumMessageBubbleWidth, maximumWidth);
         return Mathf.Clamp(usableWidth * MessageBubbleWidthRatio, minimumWidth, maximumWidth);
+    }
+
+    private static void AddMessageBubbleBackground(
+        GameObject bubble,
+        bool isUser)
+    {
+        GameObject background = CreateChild("Background", bubble.transform);
+        RectTransform backgroundRect = background.GetComponent<RectTransform>();
+        StretchToParent(backgroundRect);
+        background.AddComponent<LayoutElement>().ignoreLayout = true;
+
+        CImage backgroundImage = AddSpriteImage(
+            background,
+            isUser ? UserBubbleColor : AssistantBubbleColor,
+            isUser ? UserBubbleSprite : AssistantBubbleSprite);
+        backgroundImage.raycastTarget = false;
+
+        Outline outline = background.AddComponent<Outline>();
+        outline.effectColor = isUser ? UserBubbleOutlineColor : AssistantBubbleOutlineColor;
+        outline.effectDistance = isUser
+            ? new Vector2(-2f, -2f)
+            : new Vector2(2f, -2f);
+
+        if (isUser)
+        {
+            backgroundRect.localScale = new Vector3(-1f, 1f, 1f);
+        }
     }
 
     private void BuildUi()
