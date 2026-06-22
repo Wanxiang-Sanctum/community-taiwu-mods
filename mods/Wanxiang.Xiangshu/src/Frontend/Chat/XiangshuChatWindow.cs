@@ -324,7 +324,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        if (!ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
+        if (!XiangshuGraftState.IsHostInTaiwuInventory)
         {
             UpdateSendButtonState();
             return;
@@ -350,7 +350,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             || _inputField is null
             || _session.IsReplying
             || _session.RequiresReset
-            || !ItemGraftRuntime.IsCurrentHostInTaiwuInventory)
+            || !XiangshuGraftState.IsHostInTaiwuInventory)
         {
             return;
         }
@@ -439,7 +439,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         bool isReplying = _session?.IsReplying == true;
         bool requiresReset = _session?.RequiresReset == true;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
-        bool hostInTaiwuInventory = ItemGraftRuntime.IsCurrentHostInTaiwuInventory;
+        bool hostInTaiwuInventory = XiangshuGraftState.IsHostInTaiwuInventory;
 
         inputField.interactable = !requiresReset;
 

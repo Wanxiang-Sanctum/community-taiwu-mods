@@ -11,7 +11,7 @@ using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
-internal sealed class ItemGraftDriver : IDisposable
+internal sealed class GraftHostSync : IDisposable
 {
     private const string AttachNotification = "相枢藏进了陶土药钵。";
     private const string CreateNotification = "低语的陶土药钵落入了行囊。";
@@ -20,22 +20,22 @@ internal sealed class ItemGraftDriver : IDisposable
 
     private readonly Action _onHostLeftTaiwuInventory;
     private bool _disposed;
-    private bool _ensuring;
-    private bool _ensureRequested;
-    private int _stateVersion;
+    private bool _syncing;
+    private bool _syncRequested;
+    private int _syncGeneration;
     private GraftSession? _currentSession;
 
-    public static ItemGraftDriver Create(Action onHostLeftTaiwuInventory)
+    public static GraftHostSync Create(Action onHostLeftTaiwuInventory)
     {
-        ItemGraftDriver driver = new(onHostLeftTaiwuInventory);
-        GEvent.Add(EEvents.OnGameStateChange, driver.OnGameStateChange);
+        GraftHostSync sync = new(onHostLeftTaiwuInventory);
+        GEvent.Add(EEvents.OnGameStateChange, sync.OnGameStateChange);
 
-        driver.RequestEnsure();
+        sync.RequestSync();
 
-        return driver;
+        return sync;
     }
 
-    private ItemGraftDriver(Action onHostLeftTaiwuInventory)
+    private GraftHostSync(Action onHostLeftTaiwuInventory)
     {
         _onHostLeftTaiwuInventory = onHostLeftTaiwuInventory
             ?? throw new ArgumentNullException(nameof(onHostLeftTaiwuInventory));
@@ -53,7 +53,7 @@ internal sealed class ItemGraftDriver : IDisposable
         ClearCurrentSession();
     }
 
-    private void RequestEnsure()
+    private void RequestSync()
     {
         if (_disposed
             || !TryGetTaiwuCharId(out int taiwuCharId))
@@ -61,20 +61,20 @@ internal sealed class ItemGraftDriver : IDisposable
             return;
         }
 
-        if (_ensuring)
+        if (_syncing)
         {
-            _ensureRequested = true;
+            _syncRequested = true;
             return;
         }
 
-        _ensureRequested = false;
-        EnsureGraftAsync(taiwuCharId, _stateVersion).Forget();
+        _syncRequested = false;
+        SyncGraftAsync(taiwuCharId, _syncGeneration).Forget();
     }
 
-    private void ResetReadyState()
+    private void ResetState()
     {
-        _stateVersion++;
-        _ensureRequested = false;
+        _syncGeneration++;
+        _syncRequested = false;
         ClearCurrentSession();
     }
 
@@ -87,11 +87,11 @@ internal sealed class ItemGraftDriver : IDisposable
 
         if ((EGameState)(object)newState != EGameState.InGame)
         {
-            ResetReadyState();
+            ResetState();
             return;
         }
 
-        RequestEnsure();
+        RequestSync();
     }
 
     private void OnHostEvent(GraftHostEventArgs hostEvent)
@@ -120,7 +120,7 @@ internal sealed class ItemGraftDriver : IDisposable
         }
         else if (hostEvent is GraftHostDataChangedEventArgs)
         {
-            RequestEnsure();
+            RequestSync();
         }
     }
 
@@ -133,7 +133,7 @@ internal sealed class ItemGraftDriver : IDisposable
 
         GraftSession? session = _currentSession;
 
-        if (!ItemGraftRuntime.ClearCurrentIfHost(
+        if (!XiangshuGraftState.ClearIfHost(
                 hostKey,
                 out bool wasInTaiwuInventory))
         {
@@ -152,7 +152,7 @@ internal sealed class ItemGraftDriver : IDisposable
             _onHostLeftTaiwuInventory();
         }
 
-        RequestEnsure();
+        RequestSync();
     }
 
     private void NotifyHostLocationChanged(GraftHostLocationChangedEventArgs hostEvent)
@@ -166,7 +166,7 @@ internal sealed class ItemGraftDriver : IDisposable
         bool toTaiwuInventory = hostEvent.ToCharacterId == taiwuCharId;
 
         if (fromTaiwuInventory == toTaiwuInventory
-            || !ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
+            || !XiangshuGraftState.SetHostInTaiwuInventory(
                 hostEvent.HostKey,
                 isInTaiwuInventory: toTaiwuInventory))
         {
@@ -178,39 +178,39 @@ internal sealed class ItemGraftDriver : IDisposable
             _onHostLeftTaiwuInventory();
         }
 
-        RequestEnsure();
+        RequestSync();
     }
 
-    private async UniTask EnsureGraftAsync(
+    private async UniTask SyncGraftAsync(
         int taiwuCharId,
-        int stateVersion)
+        int syncGeneration)
     {
-        _ensuring = true;
+        _syncing = true;
 
         try
         {
-            GraftHostTemplate hostTemplate = CreateHostTemplate();
+            GraftHostTemplate hostTemplate = CreateBowlHostTemplate();
 
-            if (ItemGraftRuntime.TryGetCurrentHost(out ItemKey currentHost))
+            if (XiangshuGraftState.TryGetHost(out ItemKey currentHost))
             {
                 bool currentInInventory = await InventoryContainsItemAsync(
                     taiwuCharId,
                     currentHost);
 
-                if (!IsEnsureCurrent(taiwuCharId, stateVersion))
+                if (!IsCurrentSync(taiwuCharId, syncGeneration))
                 {
                     return;
                 }
 
                 if (currentInInventory)
                 {
-                    _ = ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
+                    _ = XiangshuGraftState.SetHostInTaiwuInventory(
                         currentHost,
                         isInTaiwuInventory: true);
                     return;
                 }
 
-                if (ItemGraftRuntime.SetCurrentHostInTaiwuInventory(
+                if (XiangshuGraftState.SetHostInTaiwuInventory(
                         currentHost,
                         isInTaiwuInventory: false))
                 {
@@ -219,7 +219,7 @@ internal sealed class ItemGraftDriver : IDisposable
 
                 bool currentExists = await ItemExistsAsync(currentHost);
 
-                if (!IsEnsureCurrent(taiwuCharId, stateVersion))
+                if (!IsCurrentSync(taiwuCharId, syncGeneration))
                 {
                     return;
                 }
@@ -234,19 +234,19 @@ internal sealed class ItemGraftDriver : IDisposable
 
             IReadOnlyList<ItemKey> medicineBowls = await GetMedicineBowlsAsync(taiwuCharId);
 
-            if (!IsEnsureCurrent(taiwuCharId, stateVersion))
+            if (!IsCurrentSync(taiwuCharId, syncGeneration))
             {
                 return;
             }
 
-            ItemKey existingHost = SelectHost(medicineBowls);
-            GraftDefinition definition = ItemGraftRuntime.CreateDefinition();
+            ItemKey existingHost = SelectOldestHost(medicineBowls);
+            GraftDefinition definition = XiangshuGraftState.CreateDefinition();
 
             GraftSession session = existingHost.IsValid()
                 ? await InventoryGrafts.AttachAsync(
                     existingHost,
                     definition,
-                    new AttachOptions
+                    new AttachmentOptions
                     {
                         NotificationMessage = AttachNotification,
                         OnHostEvent = OnHostEvent,
@@ -255,13 +255,13 @@ internal sealed class ItemGraftDriver : IDisposable
                     taiwuCharId,
                     hostTemplate,
                     definition,
-                    new CreateOptions
+                    new CreationOptions
                     {
                         NotificationMessage = CreateNotification,
                         OnHostEvent = OnHostEvent,
                     });
 
-            if (!IsEnsureCurrent(taiwuCharId, stateVersion))
+            if (!IsCurrentSync(taiwuCharId, syncGeneration))
             {
                 await DisposeSessionSafelyAsync(session);
                 return;
@@ -275,15 +275,15 @@ internal sealed class ItemGraftDriver : IDisposable
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            Log.Error(ex, "failed to ensure Xiangshu item graft");
+            Log.Error(ex, "failed to sync Xiangshu item graft");
         }
         finally
         {
-            _ensuring = false;
+            _syncing = false;
 
-            if (_ensureRequested)
+            if (_syncRequested)
             {
-                RequestEnsure();
+                RequestSync();
             }
         }
     }
@@ -294,7 +294,7 @@ internal sealed class ItemGraftDriver : IDisposable
     {
         GraftSession? previousSession = _currentSession;
         _currentSession = session ?? throw new ArgumentNullException(nameof(session));
-        ItemGraftRuntime.SetCurrent(
+        XiangshuGraftState.SetCurrent(
             session.Graft,
             isInTaiwuInventory);
 
@@ -309,7 +309,7 @@ internal sealed class ItemGraftDriver : IDisposable
     {
         GraftSession? session = _currentSession;
         _currentSession = null;
-        ItemGraftRuntime.ClearCurrent();
+        XiangshuGraftState.ClearCurrent();
 
         if (session?.IsActive == true)
         {
@@ -338,12 +338,12 @@ internal sealed class ItemGraftDriver : IDisposable
         }
     }
 
-    private bool IsEnsureCurrent(
+    private bool IsCurrentSync(
         int taiwuCharId,
-        int stateVersion)
+        int syncGeneration)
     {
         return !_disposed
-            && _stateVersion == stateVersion
+            && _syncGeneration == syncGeneration
             && TryGetTaiwuCharId(out int currentTaiwuCharId)
             && currentTaiwuCharId == taiwuCharId;
     }
@@ -398,7 +398,7 @@ internal sealed class ItemGraftDriver : IDisposable
         return medicineBowls;
     }
 
-    private static ItemKey SelectHost(IReadOnlyList<ItemKey> medicineBowls)
+    private static ItemKey SelectOldestHost(IReadOnlyList<ItemKey> medicineBowls)
     {
         ItemKey selected = ItemKey.Invalid;
 
@@ -422,7 +422,7 @@ internal sealed class ItemGraftDriver : IDisposable
             && key.TemplateId == CraftTool.DefKey.Medicine0;
     }
 
-    private static GraftHostTemplate CreateHostTemplate()
+    private static GraftHostTemplate CreateBowlHostTemplate()
     {
         return new GraftHostTemplate(
             GameData.Domains.Item.ItemType.CraftTool,
@@ -433,22 +433,13 @@ internal sealed class ItemGraftDriver : IDisposable
     {
         taiwuCharId = -1;
 
-        try
-        {
-            if (GameApp.Instance is null
-                || GameApp.Instance.GetCurrentGameStateName() != EGameState.InGame)
-            {
-                return false;
-            }
-
-            taiwuCharId = SingletonObject.getInstance<BasicGameData>().TaiwuCharId;
-            return taiwuCharId >= 0;
-        }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
+        if (GameApp.Instance is null
+            || GameApp.Instance.GetCurrentGameStateName() != EGameState.InGame)
         {
             return false;
         }
+
+        taiwuCharId = SingletonObject.getInstance<BasicGameData>().TaiwuCharId;
+        return taiwuCharId >= 0;
     }
 }

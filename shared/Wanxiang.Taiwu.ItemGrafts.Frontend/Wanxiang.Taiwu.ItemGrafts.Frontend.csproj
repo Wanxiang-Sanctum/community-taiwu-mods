@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <UsePublicizer>true</UsePublicizer>
+    <PublicizerRuntimeStrategies>Unsafe</PublicizerRuntimeStrategies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +19,11 @@
 
   <ItemGroup>
     <PackageReference
+      Include="Krafs.Publicizer"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
       Include="Taiwu.ModKit.Dependencies.UniTask"
       ExcludeAssets="runtime"
       PrivateAssets="all"
@@ -28,6 +35,29 @@
     <PackageReference
       Include="Taiwu.ModKit.References.Shared"
       PrivateAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Publicize
+      Include="Assembly-CSharp:MouseTipBase.SetItemDesc"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
+      Include="Assembly-CSharp:MouseTipMakingTool.Init"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
+      Include="Assembly-CSharp:Game.Views.CharacterMenu.ViewCharacterMenuItems.itemListScroll"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
+      Include="Assembly-CSharp:Game.Views.CharacterMenu.ViewCharacterMenuItems.ShowItemOperateMenu"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
     />
   </ItemGroup>
 </Project>

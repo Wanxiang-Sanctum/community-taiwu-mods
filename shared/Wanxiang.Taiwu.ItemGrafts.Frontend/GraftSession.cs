@@ -36,6 +36,8 @@ public sealed class GraftSession : IAsyncDisposable
     /// </summary>
     public bool IsActive => EndReason is null;
 
+    internal event Action<GraftSession>? Ended;
+
     /// <summary>
     /// 获取本会话结束的原因；会话仍活动时为 null。
     /// </summary>
@@ -152,5 +154,7 @@ public sealed class GraftSession : IAsyncDisposable
         _isBackendSubscribed = false;
         _hostEventSubscription?.Dispose();
         _hostEventSubscription = null;
+        Ended?.Invoke(this);
+        Ended = null;
     }
 }

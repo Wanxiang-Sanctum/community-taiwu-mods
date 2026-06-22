@@ -10,7 +10,7 @@ using Wanxiang.Taiwu.ModRpc;
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 
 /// <summary>
-/// 提供创建和附加行囊物品嫁接会话的前端入口。
+/// 提供行囊物品嫁接会话和共享前端可视化层的入口。
 /// </summary>
 public static class InventoryGrafts
 {
@@ -19,7 +19,7 @@ public static class InventoryGrafts
     private static bool s_isInstalled;
 
     /// <summary>
-    /// 将前端嫁接系统绑定到当前太吾 mod。
+    /// 绑定当前太吾 mod，并安装共享前端可视化层。
     /// </summary>
     /// <param name="plugin">前端插件实例。</param>
     /// <exception cref="ArgumentNullException"><paramref name="plugin"/> 为 null。</exception>
@@ -30,10 +30,32 @@ public static class InventoryGrafts
             throw new ArgumentNullException(nameof(plugin));
         }
 
+        string validatedModId = ValidateModId(plugin.ModIdStr);
+
         lock (SyncRoot)
         {
-            RpcPeer.Bind(plugin.ModIdStr);
+            RpcPeer.Bind(validatedModId);
+            GraftVisualLayer.Install(validatedModId);
             s_isInstalled = true;
+        }
+    }
+
+    /// <summary>
+    /// 卸载共享前端可视化层，并清空内部显示状态；已建立会话仍由调用方释放。
+    /// </summary>
+    /// <returns>存在已安装状态或内部显示状态时返回 true；否则返回 false。</returns>
+    public static bool Uninstall()
+    {
+        lock (SyncRoot)
+        {
+            bool wasInstalled = s_isInstalled
+                || GraftVisualLayer.IsInstalled
+                || GraftVisualState.HasActiveGrafts;
+
+            s_isInstalled = false;
+            GraftVisualLayer.Uninstall();
+            GraftVisualState.Clear();
+            return wasInstalled;
         }
     }
 
@@ -50,7 +72,7 @@ public static class InventoryGrafts
     public static async UniTask<GraftSession> AttachAsync(
         ItemKey hostKey,
         GraftDefinition definition,
-        AttachOptions? options = null,
+        AttachmentOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         EnsureInstalled();
@@ -62,9 +84,18 @@ public static class InventoryGrafts
             options?.OnHostEvent,
             cancellationToken);
 
-        PushNotification(
-            options?.NotificationMessage,
-            options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+        try
+        {
+            RegisterSession(session);
+            PushNotification(
+                options?.NotificationMessage,
+                options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+        }
+        catch
+        {
+            await session.DisposeAsync();
+            throw;
+        }
 
         return session;
     }
@@ -85,7 +116,7 @@ public static class InventoryGrafts
         int characterId,
         GraftHostTemplate hostTemplate,
         GraftDefinition definition,
-        CreateOptions? options = null,
+        CreationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         EnsureInstalled();
@@ -132,9 +163,18 @@ public static class InventoryGrafts
             options?.OnHostEvent,
             cancellationToken);
 
-        PushNotification(
-            options?.NotificationMessage,
-            options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+        try
+        {
+            RegisterSession(session);
+            PushNotification(
+                options?.NotificationMessage,
+                options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+        }
+        catch
+        {
+            await session.DisposeAsync();
+            throw;
+        }
 
         return session;
 
@@ -170,6 +210,18 @@ public static class InventoryGrafts
                 throw new InvalidOperationException(
                     "InventoryGrafts.Install(plugin) must be called before using item graft actions.");
             }
+        }
+    }
+
+    private static void RegisterSession(GraftSession session)
+    {
+        GraftVisualState.Add(session.Graft);
+        session.Ended += HandleSessionEnded;
+
+        static void HandleSessionEnded(GraftSession endedSession)
+        {
+            endedSession.Ended -= HandleSessionEnded;
+            GraftVisualState.Remove(endedSession.Graft);
         }
     }
 
@@ -240,6 +292,16 @@ public static class InventoryGrafts
             definition.Appearance,
             definition.MenuMode,
             definition.Operations);
+    }
+
+    private static string ValidateModId(string modId)
+    {
+        if (string.IsNullOrWhiteSpace(modId))
+        {
+            throw new ArgumentException("Mod id must not be empty.", nameof(modId));
+        }
+
+        return modId.Trim();
     }
 
     private static ItemKey ValidateCreatedHostKey(ItemKey hostKey, GraftHostTemplate hostTemplate)

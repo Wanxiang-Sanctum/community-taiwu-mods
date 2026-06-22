@@ -1,23 +1,21 @@
-using System.Diagnostics.CodeAnalysis;
 using Config;
 using GameData.Domains.Item;
-using GameData.Domains.Item.Display;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 using Wanxiang.Taiwu.ItemGrafts.Frontend;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
-internal static class ItemGraftRuntime
+internal static class XiangshuGraftState
 {
-    private const string GraftName = "低语的陶土药钵";
-    private const string GraftDescription = "药杵未动，钵底却传出细碎低语，自称相枢。";
+    private const string BowlName = "低语的陶土药钵";
+    private const string BowlDescription = "药杵未动，钵底却传出细碎低语，自称相枢。";
     private const string ChatOperationLabel = "对话";
 
     private static readonly object SyncRoot = new();
     private static Graft? s_currentGraft;
     private static Action? s_openChatWindow;
 
-    private static bool s_currentHostInTaiwuInventory;
+    private static bool s_hostInTaiwuInventory;
 
     public static void Configure(Action openChatWindow)
     {
@@ -37,7 +35,7 @@ internal static class ItemGraftRuntime
         lock (SyncRoot)
         {
             s_currentGraft = null;
-            s_currentHostInTaiwuInventory = false;
+            s_hostInTaiwuInventory = false;
             s_openChatWindow = null;
         }
     }
@@ -47,7 +45,7 @@ internal static class ItemGraftRuntime
         lock (SyncRoot)
         {
             s_currentGraft = null;
-            s_currentHostInTaiwuInventory = false;
+            s_hostInTaiwuInventory = false;
         }
     }
 
@@ -63,11 +61,11 @@ internal static class ItemGraftRuntime
         lock (SyncRoot)
         {
             s_currentGraft = graft;
-            s_currentHostInTaiwuInventory = isInTaiwuInventory;
+            s_hostInTaiwuInventory = isInTaiwuInventory;
         }
     }
 
-    public static bool SetCurrentHostInTaiwuInventory(
+    public static bool SetHostInTaiwuInventory(
         ItemKey hostKey,
         bool isInTaiwuInventory)
     {
@@ -75,8 +73,8 @@ internal static class ItemGraftRuntime
         {
             if (s_currentGraft?.HostId.Matches(hostKey) == true)
             {
-                bool changed = s_currentHostInTaiwuInventory != isInTaiwuInventory;
-                s_currentHostInTaiwuInventory = isInTaiwuInventory;
+                bool changed = s_hostInTaiwuInventory != isInTaiwuInventory;
+                s_hostInTaiwuInventory = isInTaiwuInventory;
                 return changed;
             }
         }
@@ -84,7 +82,7 @@ internal static class ItemGraftRuntime
         return false;
     }
 
-    public static bool ClearCurrentIfHost(
+    public static bool ClearIfHost(
         ItemKey hostKey,
         out bool wasInTaiwuInventory)
     {
@@ -92,9 +90,9 @@ internal static class ItemGraftRuntime
         {
             if (s_currentGraft?.HostId.Matches(hostKey) == true)
             {
-                wasInTaiwuInventory = s_currentHostInTaiwuInventory;
+                wasInTaiwuInventory = s_hostInTaiwuInventory;
                 s_currentGraft = null;
-                s_currentHostInTaiwuInventory = false;
+                s_hostInTaiwuInventory = false;
                 return true;
             }
         }
@@ -103,19 +101,19 @@ internal static class ItemGraftRuntime
         return false;
     }
 
-    public static bool IsCurrentHostInTaiwuInventory
+    public static bool IsHostInTaiwuInventory
     {
         get
         {
             lock (SyncRoot)
             {
                 return s_currentGraft is not null
-                    && s_currentHostInTaiwuInventory;
+                    && s_hostInTaiwuInventory;
             }
         }
     }
 
-    public static bool TryGetCurrentHost(out ItemKey hostKey)
+    public static bool TryGetHost(out ItemKey hostKey)
     {
         lock (SyncRoot)
         {
@@ -130,44 +128,14 @@ internal static class ItemGraftRuntime
         return false;
     }
 
-    public static bool TryGet(
-        ITradeableContent? content,
-        [NotNullWhen(returnValue: true)] out Graft? graft)
-    {
-        if (content is null)
-        {
-            graft = null;
-            return false;
-        }
-
-        return TryGet(content.RealKey, out graft);
-    }
-
-    public static bool TryGet(
-        ItemKey key,
-        [NotNullWhen(returnValue: true)] out Graft? graft)
-    {
-        if (!key.IsValid())
-        {
-            graft = null;
-            return false;
-        }
-
-        lock (SyncRoot)
-        {
-            graft = s_currentGraft;
-            return graft?.HostId.Matches(key) == true;
-        }
-    }
-
     public static GraftDefinition CreateDefinition()
     {
         CraftToolItem hostTemplate = CraftTool.DefValue.Medicine0;
 
         return new GraftDefinition(
             appearance: new GraftAppearance(
-                name: GraftName,
-                description: GraftDescription,
+                name: BowlName,
+                description: BowlDescription,
                 iconName: hostTemplate.Icon,
                 grade: hostTemplate.Grade),
             menuMode: GraftMenuMode.Replace,
@@ -184,7 +152,7 @@ internal static class ItemGraftRuntime
         lock (SyncRoot)
         {
             if (s_currentGraft?.HostId.Matches(hostKey) != true
-                || !s_currentHostInTaiwuInventory)
+                || !s_hostInTaiwuInventory)
             {
                 return;
             }

@@ -35,7 +35,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private AgentChatSession? _chatSession;
     private XiangshuChatWindow? _chatWindow;
     private FrontendHotkeyDriver? _hotkeyDriver;
-    private ItemGraftDriver? _itemGraftDriver;
+    private GraftHostSync? _graftHostSync;
 
     internal AgentSettings? CurrentAgentSettings { get; private set; }
 
@@ -58,7 +58,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
                 ChatParticipantIdentity.AssistantName);
             _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
             InstallChatHotkey();
-            InstallItemGraftFlavor();
+            InstallItemGraft();
             StartFrontendIpcServer(_chatSession, CurrentAgentSettings.ModDirectory);
 
             StartMcpSidecar(CurrentAgentSettings);
@@ -83,9 +83,10 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
-        _itemGraftDriver?.Dispose();
-        _itemGraftDriver = null;
-        ItemGraftPatches.Uninstall();
+        _graftHostSync?.Dispose();
+        _graftHostSync = null;
+        XiangshuGraftState.Reset();
+        _ = SharedInventoryGrafts.Uninstall();
         _hotkeyDriver?.Dispose();
         _hotkeyDriver = null;
         _chatWindow?.DestroyWindow();
@@ -149,12 +150,12 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _hotkeyDriver = FrontendHotkeyDriver.Create(this);
     }
 
-    private void InstallItemGraftFlavor()
+    private void InstallItemGraft()
     {
         SharedInventoryGrafts.Install(this);
-        ItemGraftPatches.Install(this);
-        _itemGraftDriver?.Dispose();
-        _itemGraftDriver = ItemGraftDriver.Create(OnHostLeftTaiwuInventory);
+        XiangshuGraftState.Configure(OpenChatWindow);
+        _graftHostSync?.Dispose();
+        _graftHostSync = GraftHostSync.Create(OnHostLeftTaiwuInventory);
     }
 
     internal void ToggleChatWindow()

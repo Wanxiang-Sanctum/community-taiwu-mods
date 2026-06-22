@@ -2,12 +2,12 @@
 
 太吾绘卷前端行囊物品嫁接实现项目。
 
-“嫁接”指使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主，在已适配的前端行囊入口里呈现另一套名称、描述、图标、
-品级和操作。游戏后端、存档、交易、丢弃、转移以及其它未被使用方拦截的游戏交互，仍然处理原来的真实物品。
+“嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主，在本项目支持的前端行囊、提示和物品消息入口里呈现另一套
+名称、描述、图标、品级和操作。游戏后端、存档、交易、丢弃、转移以及其它未被使用方接管的游戏交互，仍然处理原来的
+真实物品。
 
 本项目提供两个前端动作：把已有宿主建立为 `GraftSession`，以及创建真实宿主后立即建立 `GraftSession`。动作成功返回时，
-前端嫁接状态已经建立，后端也已经开始观察宿主事实；调用方保存返回的会话，并在自己的 UI 适配层中应用
-`session.Graft`。
+前端会话、共享可视化状态和后端宿主观察都已经建立；使用方保存返回的会话，用于业务状态、生命周期和持久化锚点。
 
 ## 边界
 
@@ -16,19 +16,23 @@
 `Wanxiang.Taiwu.ModRpc`。
 
 使用 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
-`InventoryGrafts.Install(this)`。该安装绑定本 mod id，使前端 `GraftSession` 可以通过 `Wanxiang.Taiwu.ModRpc`
-与同一 mod 的后端观察服务协作。后端观察服务由 `Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放；前端没有全局卸载入口，
-每个会话资源由对应的 `GraftSession.DisposeAsync()` 释放。
+`InventoryGrafts.Install(this)`。该安装绑定本 mod id，使前端 `GraftSession` 可以通过
+`Wanxiang.Taiwu.ModRpc` 与同一 mod 的后端观察服务协作；它也安装共享前端可视化层。后端观察服务由
+`Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放。
+
+`InventoryGrafts.Uninstall()` 卸载共享前端可视化层并清空内部显示状态；它不释放已经返回给使用方的会话。
+每个会话资源仍由对应的 `GraftSession.DisposeAsync()` 释放。
 
 `InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。真实物品字段、
-使用方状态和未适配交互表现分别归游戏流程或使用方；本项目只负责创建、定位和建立前端嫁接会话。
+使用方状态和未适配交互表现分别归游戏流程或使用方；本项目负责创建、定位、建立前端嫁接会话，并在支持的前端入口提供
+共享可视化。
 
 ## 前端模型
 
 `GraftSession` 是一次前端嫁接会话。它持有 `Graft`，把宿主事件交给创建时传入的回调，并管理宿主订阅生命周期。
 
 `Graft` 是已嫁接宿主的前端状态。它绑定一个有效的非堆叠真实 `ItemKey`，并携带稳定的 `GraftHostId`、外观、操作和菜单策略。
-会话通过 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 产生；调用方从返回的 `session.Graft` 读取已校验状态。
+会话通过 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 产生；使用方从返回的 `session.Graft` 读取已校验状态。
 
 `GraftHostId` 是宿主实例身份，由物品类型、模板 ID 和物品实例 ID 组成，不包含 `ModificationState`。`Graft.HostKey`
 是当前可传给游戏 API 的完整 key；宿主精炼、淬毒等数据变化可能让完整 key 改变，会话会在收到宿主事件时更新
@@ -38,32 +42,43 @@
 `GraftAppearance` 描述名称、描述、图标和品级替换；字段为 `null` 时沿用宿主原值。`GraftOperation` 描述前端可展示的
 自定义操作；启用操作执行时接收宿主 `ItemKey`，禁用操作只提供标签和原因。
 
-`GraftMenuMode` 必须显式传入。`Append` 保留原生菜单并追加嫁接操作；`Replace` 用嫁接操作完整替换该物品的前端菜单。
-没有嫁接操作时传入空 `operations` 列表；空列表与 `Replace` 组合时，表示该嫁接物没有前端菜单操作。
-
 `GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
 `Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
 跨端协议归 Contracts 项目说明。
 
+## 可视化与菜单
+
+共享前端可视化层维护一份内部显示状态，只用于判断哪些宿主物品应应用嫁接外观。使用方为了业务、存档或恢复流程维护的
+`GraftHostId` 到 `GraftSession` 索引归使用方所有，不作为该可视化层的依赖。
+
+该可视化层在本项目支持的物品显示入口替换名称、描述、图标和品级，包括行囊物品组件、常规物品提示、制造工具提示，
+以及携带真实 `ItemKey` 的游戏消息文本。只携带物品类型和模板 ID、没有实例 `ItemKey` 的文本无法判断具体宿主，
+保持原模板表现。
+
+`GraftMenuMode` 必须显式传入。它是嫁接定义交给菜单适配的策略值。共享可视化层在太吾行囊入口实现 `Replace`：
+用嫁接操作完整替换该物品的原生菜单。`Append` 表示保留原生菜单项并追加嫁接操作；它由使用方自有菜单代码解释，
+不代表本项目提供通用菜单追加入口。没有嫁接操作时传入空 `operations` 列表；空列表与 `Replace` 组合时，表示该嫁接物没有
+前端菜单操作。
+
 ## 动作
 
 `InventoryGrafts.AttachAsync(...)` 嫁接已有宿主。它用于使用方已经从行囊数据中选定宿主的场景，接收宿主 `ItemKey`、
-`GraftDefinition` 和可选的 `AttachOptions`，返回 `UniTask<GraftSession>`。
+`GraftDefinition` 和可选的 `AttachmentOptions`，返回 `UniTask<GraftSession>`。
 
 `InventoryGrafts.CreateAsync(...)` 创建已嫁接物。它接收角色 ID、`GraftHostTemplate`、`GraftDefinition` 和可选的
-`CreateOptions`。执行时创建一个数量为 1 的真实宿主，再从行囊快照中定位新宿主并返回 `UniTask<GraftSession>`。
+`CreationOptions`。执行时创建一个数量为 1 的真实宿主，再从行囊快照中定位新宿主并返回 `UniTask<GraftSession>`。
 默认定位规则从创建前后快照的差集中选择同模板 `ItemDisplayData.RealKey`；快照里没有可匹配真实宿主时动作失败。
-需要自行处理同模板宿主歧义时，设置 `CreateOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，
+需要自行处理同模板宿主歧义时，设置 `CreationOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，
 返回结果必须匹配请求创建的宿主模板。
 
-`AttachOptions` 承载动作级即时通知和宿主事件回调；`CreateOptions` 同时承载即时通知、宿主事件回调和创建宿主后的定位规则。
+`AttachmentOptions` 承载动作级即时通知和宿主事件回调；`CreationOptions` 同时承载即时通知、宿主事件回调和创建宿主后的定位规则。
 宿主事件回调通过 `OnHostEvent` 传入建会话动作，避免动作返回后再登记回调而漏掉后端推送。
 
 ## 调用方式
 
 示例以 `CraftTool.DefKey.Medicine0`（陶土药钵）作为非堆叠真实宿主。
 
-前端初始化时绑定本 mod id：
+前端初始化时绑定本 mod id，并启用共享可视化层：
 
 ```csharp
 InventoryGrafts.Install(this);
@@ -93,7 +108,7 @@ GraftDefinition definition = new(
 GraftSession session = await InventoryGrafts.AttachAsync(
     hostKey: existingMedicineBowlKey,
     definition: definition,
-    options: new AttachOptions
+    options: new AttachmentOptions
     {
         NotificationMessage = "相枢藏进了陶土药钵。",
         OnHostEvent = HandleHostEvent,
@@ -111,7 +126,7 @@ GraftSession session = await InventoryGrafts.CreateAsync(
         itemType: ItemType.CraftTool,
         templateId: CraftTool.DefKey.Medicine0),
     definition: definition,
-    options: new CreateOptions
+    options: new CreationOptions
     {
         NotificationMessage = "低语的陶土药钵落入了行囊。",
         OnHostEvent = HandleHostEvent,
@@ -147,8 +162,9 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 
 ## 会话生命周期
 
-`GraftSession` 是嫁接能否继续应用的所有权边界。`IsActive` 为 `true` 时，调用方可以继续在自己的 UI 适配层应用
-`session.Graft`；`IsActive` 为 `false` 后，调用方应停止应用该会话。
+`GraftSession` 是嫁接能否继续应用的所有权边界。`IsActive` 为 `true` 时，共享可视化层会继续应用该会话的
+`Graft`；`IsActive` 为 `false` 后，该会话会从内部显示状态中移除，使用方也应从自己的业务索引移除该会话并停止应用
+自有表现。
 
 `EndReason` 在会话活跃时为 `null`，结束后说明原因：
 
@@ -162,23 +178,23 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 后端还会推送 `LocationChanged` 和 `DataChanged`。`LocationChanged` 表示宿主进入、离开或转移到角色行囊；
 `FromCharacterId` 和 `ToCharacterId` 是变化前后的角色行囊端点，非角色行囊端用 `null` 表示。
 `DataChanged` 表示宿主真实物品数据已经变化，具体字段由使用方按自己的 UI 需要重新查询。前端可以通过
-`AttachOptions.OnHostEvent` 或 `CreateOptions.OnHostEvent` 处理这些事件。
+`AttachmentOptions.OnHostEvent` 或 `CreationOptions.OnHostEvent` 处理这些事件。
 
 ## 通知
 
-两个动作默认不推送通知。需要通知时，在 `AttachOptions` 或 `CreateOptions` 上设置 `NotificationMessage`；
+两个动作默认不推送通知。需要通知时，在 `AttachmentOptions` 或 `CreationOptions` 上设置 `NotificationMessage`；
 需要替换原生即时通知模板时，再设置具体的 `NotificationRecordType`：
 
 ```csharp
-new CreateOptions
+new CreationOptions
 {
     NotificationMessage = "低语的陶土药钵落入了行囊。",
     NotificationRecordType = customNativeRecordType,
 };
 ```
 
-动作成功建立 `GraftSession` 后，才会把 `NotificationMessage` 原文推送为即时通知。`NotificationRecordType`
-只影响原生通知外观，不改变文本内容。
+动作成功建立 `GraftSession` 后，才会把非空白的 `NotificationMessage` 规范化后推送为即时通知。`NotificationRecordType`
+只影响原生通知外观，不改变通知文本。
 
 即时通知属于前端展示结果；后端事实、存档状态和游戏真实机制仍由各自边界维护。
 

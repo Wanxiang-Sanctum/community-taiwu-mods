@@ -5,10 +5,10 @@ namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 /// <summary>
 /// 配置把嫁接附加到已有宿主物品时的可选行为。
 /// </summary>
-public sealed class AttachOptions
+public sealed class AttachmentOptions
 {
     /// <summary>
-    /// 获取或设置会话创建后推送的可选即时通知文本。
+    /// 获取或设置会话创建后推送的即时通知文本；为 null 时不推送，非 null 时不能为空白。
     /// </summary>
     public string? NotificationMessage { get; set; }
 
