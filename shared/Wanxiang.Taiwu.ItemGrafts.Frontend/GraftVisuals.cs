@@ -2,6 +2,7 @@ using Game.Components.Item;
 using Game.Views.MouseTips.Item.Common;
 using GameData.Domains.Item;
 using GameData.Domains.Item.Display;
+using GameData.Domains.LifeRecord.GeneralRecord;
 using TMPro;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 
@@ -12,28 +13,51 @@ internal static class GraftVisuals
     internal static string FormatName(
         ITradeableContent content,
         GraftAppearance appearance,
-        bool withGradeColor)
+        bool withGradeColor,
+        string renderedName)
     {
-        ItemKey key = content.RealKey;
-        string name = appearance.Name
-            ?? ItemTemplateHelper.GetName(key.ItemType, key.TemplateId);
+        bool usesRenderedName = appearance.Name is null;
+        string name = appearance.Name ?? renderedName;
 
-        if (!withGradeColor)
+        if (!withGradeColor
+            || (appearance.Name is null && appearance.Grade is null))
         {
             return name;
         }
 
         sbyte grade = appearance.Grade ?? content.Grade;
         return grade >= 0
-            ? name.SetColor(Colors.Instance.GradeColors[grade])
+            ? (usesRenderedName ? name.RemoveColorTags() : name)
+                .SetColor(Colors.Instance.GradeColors[grade])
             : name;
     }
 
-    internal static string ApplyRenderedItemName(
-        string renderedName,
-        ItemKey key,
-        GraftAppearance appearance)
+    internal static void ApplyRenderedItemKeyNames(
+        ArgumentCollection argumentCollection,
+        RenderedArgumentCollection renderedArgCollection,
+        int firstRenderedIndex)
     {
+        for (int i = 0; i < argumentCollection.ItemKeys.Count; i++)
+        {
+            int renderedIndex = firstRenderedIndex + i;
+            ItemKey key = (ItemKey)argumentCollection.ItemKeys[i];
+            renderedArgCollection.ItemKeys[renderedIndex] = ApplyRenderedItemKeyName(
+                key,
+                renderedArgCollection.ItemKeys[renderedIndex]);
+        }
+    }
+
+    internal static string ApplyRenderedItemKeyName(
+        ItemKey key,
+        string renderedName)
+    {
+        if (!GraftVisualState.TryGet(key, out Graft? graft))
+        {
+            return renderedName;
+        }
+
+        GraftAppearance appearance = graft.Appearance;
+
         if (appearance.Name is null
             || string.IsNullOrEmpty(renderedName))
         {

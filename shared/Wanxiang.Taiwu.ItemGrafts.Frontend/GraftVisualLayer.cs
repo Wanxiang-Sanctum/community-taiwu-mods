@@ -136,13 +136,13 @@ internal static class ItemNamePatch
         bool withGradeColor,
         ref string __result)
     {
-        if (GraftVisualState.TryGet(itemDisplayData, out Graft? graft)
-            && graft.Appearance.Name is not null)
+        if (GraftVisualState.TryGet(itemDisplayData, out Graft? graft))
         {
             __result = GraftVisuals.FormatName(
                 itemDisplayData,
                 graft.Appearance,
-                withGradeColor);
+                withGradeColor,
+                __result);
         }
     }
 }
@@ -250,22 +250,10 @@ internal static class MessageItemKeysPatch
         RenderedArgumentCollection renderedArgCollection,
         int __state)
     {
-        for (int i = 0; i < argumentCollection.ItemKeys.Count; i++)
-        {
-            ItemKey key = (ItemKey)argumentCollection.ItemKeys[i];
-
-            if (GraftVisualState.TryGet(key, out Graft? graft)
-                && graft.Appearance.Name is not null)
-            {
-                int renderedIndex = __state + i;
-                string renderedName = renderedArgCollection.ItemKeys[renderedIndex];
-                renderedArgCollection.ItemKeys[renderedIndex] =
-                    GraftVisuals.ApplyRenderedItemName(
-                        renderedName,
-                        key,
-                        graft.Appearance);
-            }
-        }
+        GraftVisuals.ApplyRenderedItemKeyNames(
+            argumentCollection,
+            renderedArgCollection,
+            __state);
     }
 }
 
@@ -284,13 +272,6 @@ internal static class MessageItemKeyPatch
     {
         ItemKey key = (ItemKey)data.ArgumentCollection.ItemKeys[index];
 
-        if (GraftVisualState.TryGet(key, out Graft? graft)
-            && graft.Appearance.Name is not null)
-        {
-            __result = GraftVisuals.ApplyRenderedItemName(
-                __result,
-                key,
-                graft.Appearance);
-        }
+        __result = GraftVisuals.ApplyRenderedItemKeyName(key, __result);
     }
 }
