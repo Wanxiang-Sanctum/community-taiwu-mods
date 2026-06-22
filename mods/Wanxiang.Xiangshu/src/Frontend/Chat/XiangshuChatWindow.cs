@@ -66,7 +66,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float InputTextFontSize = 22f;
     private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
-    private const string HostUnavailableButtonLabel = "断声";
+    private const string HostUnavailableButtonLabel = "离身";
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);

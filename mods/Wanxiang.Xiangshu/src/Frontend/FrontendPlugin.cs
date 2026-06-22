@@ -24,7 +24,7 @@ namespace Wanxiang.Xiangshu.Frontend;
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     private const string PluginDirectoryName = "Frontend";
-    private const string HostLeftInventoryInterruptMessage = "药钵离囊，声息骤断。";
+    private const string HostLeftInventoryInterruptMessage = "药钵离身，声息骤断。";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
