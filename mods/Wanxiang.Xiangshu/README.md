@@ -58,7 +58,7 @@ sidecar 让 Agent 调用相枢提供的工具能力。
 ```
 
 相枢启动 CLI Agent 子进程时，会把 `agent.env` 中的字符串键值写入子进程环境。这些变量不传给游戏进程或 MCP sidecar，
-也不会写入诊断日志。
+也不会写入诊断日志。`agent.env` 只接受普通字符串值；非字符串值会被视为配置格式错误。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、MCP sidecar、
 运行数据目录、本机 Agent 会话和 CLI 子进程环境。

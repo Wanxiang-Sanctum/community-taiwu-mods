@@ -223,16 +223,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 入口项目输出目录，再用 `TaiwuModMergeDependency` 或 `TaiwuModCopyDependency` 声明打包动作。
 游戏或运行时已经提供的 DLL 作为外部运行时依赖处理。
 
-被合并的依赖默认会内部化，但不会重命名类型。内部化用于收窄合并依赖的可见范围；类型重命名会破坏
-反射、序列化、IPC/RPC 和脚本等按完整类型名建立的契约。
-
-需要关闭内部化时，在项目中设置：
-
-```xml
-<PropertyGroup>
-  <InternalizeMergedDependencies>false</InternalizeMergedDependencies>
-</PropertyGroup>
-```
+被合并的依赖不会内部化，也不会重命名类型。太吾只按 `Config.Lua` 发现并加载入口 DLL；入口 DLL 是 Mod
+的运行时边界。保留合并依赖的公开可见性可以避免破坏反射、序列化、IPC/RPC、脚本和插件加载桥等按完整类型名建立的契约。
 
 前后端共同引用的内部共享项目如果要随入口一起部署，由前端和后端入口项目分别声明需要合并或复制的
 DLL。这样前后端各自生成自己的最终入口 DLL。

@@ -8,7 +8,7 @@ internal static class AgentCliJson
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        NullValueHandling = NullValueHandling.Ignore,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     public static bool TryExtractChatReply(

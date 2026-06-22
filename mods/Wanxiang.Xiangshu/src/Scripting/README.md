@@ -55,4 +55,7 @@ public static class XiangshuScript
 `using Wanxiang.Xiangshu.Scripting;` 简写为 `XiangshuScriptGlobals`。同步返回值、`Task` 和 `Task<T>`
 都会解析为入口返回值。
 
+入口返回值会整理为缩进的 camelCase JSON。需要返回游戏运行时对象时，脚本应先转成稳定字段对象，而不是直接
+暴露运行时类型。
+
 `entryThread` 只约束入口方法的调用线程，不改变脚本内部自行创建任务或目标侧异步 API 回调的线程语义。

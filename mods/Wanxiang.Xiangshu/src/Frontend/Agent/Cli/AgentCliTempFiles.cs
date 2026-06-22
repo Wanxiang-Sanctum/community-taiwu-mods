@@ -11,7 +11,7 @@ internal sealed class AgentCliTempFiles : IDisposable
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        NullValueHandling = NullValueHandling.Ignore,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     private readonly string _directory;

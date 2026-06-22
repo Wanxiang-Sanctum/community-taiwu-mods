@@ -1,8 +1,6 @@
-using System.Reflection;
 using GameData.Domains.Mod;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 
 namespace Wanxiang.Taiwu.ModRpc;
 
@@ -10,7 +8,6 @@ internal static class JsonCodec
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        ContractResolver = new ReflectionOnlyContractResolver(),
         TypeNameHandling = TypeNameHandling.None,
     };
 
@@ -90,11 +87,4 @@ internal static class JsonCodec
         }
     }
 
-    private sealed class ReflectionOnlyContractResolver : DefaultContractResolver
-    {
-        protected override IValueProvider CreateMemberValueProvider(MemberInfo member)
-        {
-            return new ReflectionValueProvider(member);
-        }
-    }
 }

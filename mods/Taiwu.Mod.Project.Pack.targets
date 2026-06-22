@@ -1,11 +1,5 @@
 <Project>
   <PropertyGroup>
-    <InternalizeMergedDependencies
-      Condition="'$(InternalizeMergedDependencies)' == ''"
-    >true</InternalizeMergedDependencies>
-    <AllowDuplicateInternalizedResources
-      Condition="'$(AllowDuplicateInternalizedResources)' == ''"
-    >false</AllowDuplicateInternalizedResources>
     <TaiwuModPackDependsOn Condition="'$(TaiwuModPackDependsOn)' == ''"
     >Build</TaiwuModPackDependsOn>
   </PropertyGroup>
@@ -187,10 +181,6 @@
         <Kind>Entry</Kind>
         <SourcePath>%(TaiwuModPackEntry.FullPath)</SourcePath>
         <PackagePath>%(TaiwuModPackEntry.PackagePath)</PackagePath>
-        <InternalizeMergedDependencies
-        >$(InternalizeMergedDependencies)</InternalizeMergedDependencies>
-        <AllowDuplicateInternalizedResources
-        >$(AllowDuplicateInternalizedResources)</AllowDuplicateInternalizedResources>
         <KeyFile>$(KeyFile)</KeyFile>
       </_TaiwuPackOutput>
       <_TaiwuPackOutput Include="@(_TaiwuUniqueMergeDll)">

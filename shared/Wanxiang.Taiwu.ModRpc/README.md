@@ -3,8 +3,8 @@
 太吾 mod 内部前后端 JSON RPC 封装。
 
 本项目同时产出前端 `netstandard2.1` 和后端 `net8.0` 目标框架；程序集名和命名空间保持为
-`Wanxiang.Taiwu.ModRpc`。实际 mod 包会合并并内部化本 DLL，因此一个 `Wanxiang.Taiwu.ModRpc` 副本只服务于一个
-mod 的前后端通信，不提供跨 mod 路由。
+`Wanxiang.Taiwu.ModRpc`。实际 mod 包会把本 DLL 合并进入口 DLL，因此一个入口 DLL 内的
+`Wanxiang.Taiwu.ModRpc` 副本只服务于一个 mod 的前后端通信，不提供跨 mod 路由。
 
 调用方只使用 `RpcPeer` 和 `ModRpcException`。底层 `CallModMethod`、`ModDisplayEvent`、`SerializableModData`、
 响应 method 和内部 envelope 都是实现细节。
@@ -17,7 +17,7 @@ mod 的前后端通信，不提供跨 mod 路由。
 RpcPeer.Bind("My.Mod.Id");
 ```
 
-`Bind(...)` 可用同一个 mod id 重复调用；如果同一个内部化副本试图绑定到不同 mod id，会失败。绑定之后，
+`Bind(...)` 可用同一个 mod id 重复调用；如果同一个合并副本试图绑定到不同 mod id，会失败。绑定之后，
 `RpcPeer` 在前端和后端提供同一组概念入口；这些入口只面向本 mod 对端，不接收目标 mod id：
 
 - `Notify(methodName, payloadJson)`：向本 mod 对端发送单向通知，不等待返回。
@@ -63,8 +63,8 @@ JSON 文本。
 载荷；无关或损坏的 display event 会被忽略。
 
 DTO 到 JSON 的转换可以由调用方协议模块负责，也可以使用 `RpcPeer` 的泛型重载。泛型载荷为 C# `null` 时会按
-JSON 字面量 `null` 发送；泛型响应只有在目标类型可接收 null 时才接受 JSON null。本项目不额外公开
-序列化器/编解码对象，也不公开 `JsonSerializerSettings`。泛型重载使用 `TypeNameHandling.None`，只适合稳定 DTO；
+JSON 字面量 `null` 发送；泛型响应只有在目标类型可接收 null 时才接受 JSON null。本项目只公开 JSON 字符串
+入口和泛型 DTO 重载，不公开可替换的序列化器或编解码入口。泛型重载只读写稳定 DTO 的公开 JSON 字段；
 游戏运行时对象应由业务协议转成稳定字段。
 
 `SerializableModData` 不作为公开载荷类型支持。需要这类游戏原生载体时，调用方先转成稳定 JSON DTO。

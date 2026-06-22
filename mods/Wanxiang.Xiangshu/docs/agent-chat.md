@@ -122,7 +122,8 @@ Agent 自己的可恢复会话维护。
 运行数据集中写入 `.xiangshu-runtime/`，避免和人设、世界观资料、运行工具指引、CLI 入口文件、Agent 技能
 目录等可编辑资产混在一起。当前写入点：
 
-- `ipc-endpoints.json`：前端、后端和 MCP server 共同使用的本机 endpoint manifest。
+- `ipc-endpoints.json`：前端、后端和 MCP server 共同使用的本机 endpoint manifest；格式由 `src/Ipc/`
+  维护。
 - `Diagnostics/McpServer/`：MCP sidecar 生命周期事件日志目录。
 - `Temp/AgentCli/`：前端启动 CLI Agent 时使用的短生命周期协议文件目录，例如 JSON Schema、Codex
   last-message 和 MCP config；需要写入临时 MCP config 的适配器会在其中包含本次运行的 `Authorization: Bearer ...`
@@ -152,8 +153,8 @@ Agent 自己的可恢复会话维护。
 
 - `<Wanxiang.Xiangshu Mod directory>/LocalSettings.json`
 
-当前支持 `agent.env` 对象。读取到的字符串键值只注入 CLI Agent 子进程，用于代理地址或 CLI
-私有开关等本机配置，不注入游戏进程或 MCP sidecar，也不写入诊断日志。
+当前支持 `agent.env` 对象。它是普通 JSON object；读取到的字符串键值只注入 CLI Agent 子进程，用于代理地址或 CLI
+私有开关等本机配置，不注入游戏进程或 MCP sidecar，也不写入诊断日志。非字符串值会被视为配置格式错误。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都属于启动参数。运行时继续使用本次启动时加载的值；重启游戏后，
 前端和后端会按新配置重建 IPC endpoint、manifest 路径、MCP sidecar、前端 Agent 会话和 CLI 子进程环境。

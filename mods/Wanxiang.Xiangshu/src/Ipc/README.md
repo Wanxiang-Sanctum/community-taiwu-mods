@@ -18,6 +18,8 @@
 协议约定：
 
 - endpoint manifest 承载本机进程发现所需的 `role`、transport、地址和进程信息。
+- endpoint manifest 是供前端、后端和 MCP server 共同读写的普通 JSON 文档，字段名固定为 camelCase。
+  `netstandard2.1`、`net8.0` 和 `net10.0` 必须保持同一份 manifest 形态。
 - MessagePack `[Key]` 是线上的字段编号；调整现有 DTO 时保留既有编号。消息语义改变时，同步修改调用端和处理器，
   必要时创建新的请求/响应类型。
 - 接收方没有业务结果要返回时，使用 `IpcNoContentResponse`。响应字段只表达调用方会消费的业务结果。

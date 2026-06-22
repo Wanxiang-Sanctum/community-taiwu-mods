@@ -11,7 +11,7 @@ internal static class AgentChatTurnInputBuilder
         {
             new StringEnumConverter { AllowIntegerValues = false },
         },
-        NullValueHandling = NullValueHandling.Ignore,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     public static string Build(AgentChatTurn turn)

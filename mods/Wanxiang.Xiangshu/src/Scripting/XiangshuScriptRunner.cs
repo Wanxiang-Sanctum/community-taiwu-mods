@@ -24,6 +24,7 @@ public sealed class XiangshuScriptRunner
     {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
         Formatting = Formatting.Indented,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     public XiangshuScriptRunner(

@@ -1,10 +1,8 @@
 using System.Globalization;
-using System.Reflection;
 using GameData.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 
 namespace Wanxiang.Taiwu.Logging;
 
@@ -116,14 +114,11 @@ public sealed class TaiwuLogger
     {
         private static readonly JsonSerializerSettings JsonSettings = new()
         {
-            // GameData 可能拒绝 Json.NET 基于 DynamicMethod 的 getter；日志上下文转换保持使用反射。
-            ContractResolver = new ReflectionOnlyContractResolver(),
             Converters =
             {
                 new StringEnumConverter(),
             },
             Culture = CultureInfo.InvariantCulture,
-            Formatting = Formatting.None,
             NullValueHandling = NullValueHandling.Ignore,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         };
@@ -172,14 +167,6 @@ public sealed class TaiwuLogger
             throw new ArgumentException(
                 "Log context must serialize to a JSON object. Use new { field = value }.",
                 nameof(context));
-        }
-
-        private sealed class ReflectionOnlyContractResolver : DefaultContractResolver
-        {
-            protected override IValueProvider CreateMemberValueProvider(MemberInfo member)
-            {
-                return new ReflectionValueProvider(member);
-            }
         }
     }
 }
