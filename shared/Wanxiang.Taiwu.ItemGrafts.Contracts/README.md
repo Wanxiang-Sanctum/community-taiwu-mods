@@ -11,12 +11,12 @@
 
 - `GraftHostTemplate`：请求创建真实宿主时使用的物品类型和模板 ID；构造时校验模板存在且不是堆叠物。
 - `GraftHostId`：宿主实例身份，由物品类型、模板 ID 和物品实例 ID 组成，不包含 `ModificationState`。
-- `GraftAppearance`：嫁接物可提供的名称、描述、详情描述、图标和视觉品级覆盖值；具体支持入口由前端实现决定。
+- `GraftAppearance`：嫁接物可提供的名称、描述、详情描述、图标和视觉品级覆盖值；具体渲染由前端实现决定。
 - `GraftHostEventArgs`：后端观察到宿主删除、角色行囊位置变化或宿主数据变化后发回前端的宿主事件基类。
 - `GraftHostEventKind`：`GraftHostEventArgs` 的事件种类枚举。
 
 `GraftAppearance` 属于外观契约，不是物品事实模型。字符串覆盖为空白时按未提供处理；`VisualGrade`
-是可选透传值，本契约不维护品级枚举、常量、范围或显示规则。真实品级、类型、价值、重量、耐久和其它游戏事实
+是可选透传值，本契约不维护品级枚举、常量、范围或显示规则。宿主品级、类型、价值、重量、耐久和其它游戏事实
 仍由真实宿主决定。
 
 宿主事件表达基础事实分类：`Removed`、`LocationChanged`、`DataChanged`。`DataChanged` 是重新查询信号；

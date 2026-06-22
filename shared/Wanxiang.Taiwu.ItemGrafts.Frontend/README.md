@@ -40,7 +40,7 @@
 
 `GraftDefinition` 是建立 `Graft` 的输入，由 `GraftAppearance`、`GraftMenuMode` 和 `GraftOperation` 列表组成。
 `GraftAppearance` 来自 Contracts，描述名称、描述、详情描述、图标和视觉品级覆盖；字符串字段为 `null` 或空白时沿用宿主原值，
-`VisualGrade` 为 `null` 时沿用宿主品级。`GraftOperation` 描述前端可展示的自定义操作；启用操作执行时接收宿主
+`VisualGrade` 为 `null` 时不提供视觉品级覆盖。`GraftOperation` 描述前端可展示的自定义操作；启用操作执行时接收宿主
 `ItemKey`，禁用操作只提供标签和原因文案，不表达宿主固有能力或真实数值。
 
 `GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
@@ -52,11 +52,10 @@
 共享前端可视化层维护一份内部显示状态，只用于判断哪些宿主物品应应用嫁接外观。使用方为了业务、存档或恢复流程维护的
 `GraftHostId` 到 `GraftSession` 索引归使用方所有，不作为该可视化层的依赖。
 
-该可视化层在本项目支持的物品显示入口应用 `GraftAppearance`：行囊物品组件、常规物品提示和制造工具提示会使用
-名称、描述、详情描述、图标和视觉品级中对应控件存在的部分；未提供的字段沿用真实宿主。
-`VisualGrade` 不是真实品级。本项目把非空值透传给太吾既有品级显示入口；在当前支持入口中，它影响名称颜色、
-品级底图和品级文本等视觉元素。本项目不提供品级枚举或常量，也不替底层入口校验取值。
-真实品级、类型、价值、重量、耐久和其它游戏事实始终沿用真实宿主。
+该可视化层在本项目支持的物品显示入口应用 `GraftAppearance`。行囊物品组件、常规物品提示和制造工具提示只在对应控件
+存在时应用名称、描述、详情描述、图标和视觉品级覆盖；未提供的字段沿用真实宿主。
+`VisualGrade` 的职责限定在外观：当前支持入口可用它渲染名称颜色、品级底图和品级图标。品阶文案由宿主品级生成；类型、
+价值、重量、耐久和其它游戏事实始终沿用真实宿主。本项目不提供品级枚举或常量，也不替底层入口校验取值。
 携带真实 `ItemKey` 的游戏消息文本只替换实例名称，图标、引号、颜色和其它行内格式沿用游戏原生渲染结果。只携带物品类型和
 模板 ID、没有实例 `ItemKey` 的文本无法判断具体宿主，保持原模板表现。
 
@@ -90,7 +89,7 @@ InventoryGrafts.Install(this);
 ```
 
 定义嫁接内容。示例中，`description` 描写物件异状，`detailDescription` 交代可用能力和离身边界；`visualGrade: 8`
-会原样交给太吾既有品级显示入口，ItemGrafts 不为它定义枚举或常量：
+只覆盖支持入口中的名称颜色、品级底图和品级图标，品阶文案仍显示宿主品阶：
 
 ```csharp
 Dictionary<GraftHostId, GraftSession> sessionsByHost = [];

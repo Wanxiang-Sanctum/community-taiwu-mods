@@ -25,10 +25,10 @@ internal static class GraftVisuals
             return name;
         }
 
-        sbyte grade = appearance.VisualGrade ?? content.Grade;
-        return grade >= 0
+        sbyte nameColorGrade = appearance.VisualGrade ?? content.Grade;
+        return nameColorGrade >= 0
             ? (usesRenderedName ? name.RemoveColorTags() : name)
-                .SetColor(Colors.Instance.GradeColors[grade])
+                .SetColor(Colors.Instance.GradeColors[nameColorGrade])
             : name;
     }
 
@@ -84,9 +84,9 @@ internal static class GraftVisuals
             itemBack.SetIcon(appearance.IconName);
         }
 
-        if (appearance.VisualGrade is sbyte grade)
+        if (appearance.VisualGrade is sbyte visualGrade)
         {
-            itemBack.SetBack(grade);
+            itemBack.SetBack(visualGrade);
         }
     }
 
@@ -99,9 +99,9 @@ internal static class GraftVisuals
             itemBack.CGet<CImage>("Icon").SetSprite(appearance.IconName);
         }
 
-        if (appearance.VisualGrade is sbyte grade)
+        if (appearance.VisualGrade is sbyte visualGrade)
         {
-            itemBack.CGet<CImage>("GradeBack").SetSprite(CommonItemBack.GetGradeBack(grade));
+            itemBack.CGet<CImage>("GradeBack").SetSprite(CommonItemBack.GetGradeBack(visualGrade));
         }
     }
 
@@ -114,9 +114,9 @@ internal static class GraftVisuals
             itemView.SetIcon(appearance.IconName);
         }
 
-        if (appearance.VisualGrade is sbyte grade)
+        if (appearance.VisualGrade is sbyte visualGrade)
         {
-            itemView.SetGrade(showGrade: true, grade);
+            ApplyItemViewGradeVisuals(itemView, visualGrade);
         }
 
         if (appearance.Name is not null
@@ -141,11 +141,9 @@ internal static class GraftVisuals
             toolTip.CGet<CImage>("ItemIcon").SetSprite(appearance.IconName);
         }
 
-        if (appearance.VisualGrade is sbyte grade)
+        if (appearance.VisualGrade is sbyte visualGrade)
         {
-            toolTip.CGet<CImage>("GradeBack").SetSprite(ItemView.GetGradeIcon(grade));
-            toolTip.CGet<TextMeshProUGUI>("GradeName").text = ItemView.GetGradeText(grade);
-            toolTip.CGet<TextMeshProUGUI>("Grade").text = ItemView.GetLastGradeText(grade);
+            toolTip.CGet<CImage>("GradeBack").SetSprite(ItemView.GetGradeIcon(visualGrade));
         }
 
         if (appearance.Description is not null)
@@ -162,21 +160,20 @@ internal static class GraftVisuals
         GraftAppearance appearance,
         bool isDetail)
     {
-        ItemKey key = itemData.RealKey;
+        ItemKey hostKey = itemData.RealKey;
         string name = appearance.Name
-            ?? ItemTemplateHelper.GetName(key.ItemType, key.TemplateId);
+            ?? ItemTemplateHelper.GetName(hostKey.ItemType, hostKey.TemplateId);
         string description = (appearance.Description
-                ?? ItemTemplateHelper.GetDesc(key.ItemType, key.TemplateId))
+                ?? ItemTemplateHelper.GetDesc(hostKey.ItemType, hostKey.TemplateId))
             .ColorReplace();
         string functionDescription = (appearance.DetailDescription
-                ?? ItemTemplateHelper.GetFunctionDesc(key.ItemType, key.TemplateId))
+                ?? ItemTemplateHelper.GetFunctionDesc(hostKey.ItemType, hostKey.TemplateId))
             .ColorReplace();
-        sbyte grade = appearance.VisualGrade
-            ?? ItemTemplateHelper.GetGrade(key.ItemType, key.TemplateId);
+        sbyte hostGrade = ItemTemplateHelper.GetGrade(hostKey.ItemType, hostKey.TemplateId);
         string icon = appearance.IconName
-            ?? ItemTemplateHelper.GetIcon(key.ItemType, key.TemplateId);
-        string itemType = CommonUtils.GetItemTypeName(key.ItemType);
-        int baseValue = ItemTemplateHelper.GetBaseValue(key.ItemType, key.TemplateId);
+            ?? ItemTemplateHelper.GetIcon(hostKey.ItemType, hostKey.TemplateId);
+        string itemType = CommonUtils.GetItemTypeName(hostKey.ItemType);
+        int baseValue = ItemTemplateHelper.GetBaseValue(hostKey.ItemType, hostKey.TemplateId);
         string value = TooltipItemBase.GetBonusValue(
             baseValue,
             (int)itemData.Value,
@@ -187,10 +184,34 @@ internal static class GraftVisuals
             name,
             description,
             functionDescription,
-            grade,
+            hostGrade,
             icon,
             itemType,
             value);
+
+        if (appearance.VisualGrade is sbyte visualGrade)
+        {
+            ApplyCommonTooltipGradeBackground(commonArea, visualGrade);
+        }
     }
 
+    private static void ApplyCommonTooltipGradeBackground(
+        TooltipItemCommonArea commonArea,
+        sbyte visualGrade)
+    {
+        // Refresh owns the grade text; visual grade only replaces the background.
+        commonArea.imageGradeBack.SetSprite("ui9_mousetip_base_level_" + visualGrade);
+    }
+
+    private static void ApplyItemViewGradeVisuals(
+        ItemView itemView,
+        sbyte visualGrade)
+    {
+        // ItemView.SetGrade also rewrites the grade label; keep this to visual surfaces.
+        itemView.CGet<CImage>("IconBack").SetSprite(ItemView.GetGradeBack(visualGrade));
+
+        CImage gradeBack = itemView.CGet<CImage>("GradeBack");
+        gradeBack.gameObject.SetActive(true);
+        gradeBack.SetSprite(ItemView.GetGradeIcon(visualGrade));
+    }
 }

@@ -50,6 +50,11 @@
       IncludeVirtualMembers="false"
     />
     <Publicize
+      Include="Assembly-CSharp:Game.Views.MouseTips.Item.Common.TooltipItemCommonArea.imageGradeBack"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
       Include="Assembly-CSharp:Game.Views.CharacterMenu.ViewCharacterMenuItems.itemListScroll"
       IncludeCompilerGeneratedMembers="false"
       IncludeVirtualMembers="false"
