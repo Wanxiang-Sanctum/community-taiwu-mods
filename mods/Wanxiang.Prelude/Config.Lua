@@ -1,6 +1,6 @@
 return {
   Title = "万象引（前置依赖，请勿单独订阅）",
-  Source = 0,
+  Source = 1,
   FileId = 3747731025,
   Version = "0.1.0",
   GameVersion = "1.0.17",

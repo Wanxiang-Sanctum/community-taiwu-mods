@@ -1,6 +1,6 @@
 return {
   Title = "相枢（实验阶段，普通用户谨慎订阅）",
-  Source = 0,
+  Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
   GameVersion = "1.0.17",
