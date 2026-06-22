@@ -52,14 +52,15 @@ Frontend scripts align with the Unity/netstandard side and should assume the com
 
 ## Runtime Game API Orientation
 
-Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types:
+Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types. For game knowledge queries, config lookup, localization, template/display helpers, Baixiaoce data, or namespace routing before a script, read `tool-guides/GAME_KNOWLEDGE.md` first.
 
 - Prefer backend for persisted or authoritative game state: Taiwu identity, inventory, characters, map/world data, organizations, items, information, combat state, monthly events, adventure state, and state mutations.
-- Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Item`, `GameData.Domains.Information`, `GameData.Domains.Combat`, `GameData.Domains.TaiwuEvent`, and `GameData.Domains.Adventure` are common anchors.
+- Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Item`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Building`, `GameData.Domains.CombatSkill`, `GameData.Domains.Combat`, `GameData.Domains.Adventure`, `GameData.Domains.TaiwuEvent`, `GameData.Domains.LifeRecord`, `GameData.Domains.Information`, `GameData.Domains.LegendaryBook`, `GameData.Domains.Merchant`, `GameData.Domains.Mod`, `GameData.Domains.Global`, `GameData.Domains.Extra`, `GameData.Domains.Story`, `GameData.Domains.TutorialChapter`, and `GameData.Domains.SpecialEffect` are common anchors.
 - `DomainManager.*` is the usual backend entry shape for domain access. For Taiwu-specific state, look for `DomainManager.Taiwu`; for characters, use `DomainManager.Character`; for event or monthly flow, use `DomainManager.TaiwuEvent` or related domain managers.
 - Shared value shapes, display data, config cells, and enum names usually come from `GameData.Shared`, `Config`, `Config.Common`, `Config.ConfigCells`, and `GameData.Domains.*` enum namespaces. Prefer reachable enum and config names over raw numeric constants.
 - Prefer frontend for visible UI state, selected controls, active windows, Unity objects, local resources, hotkeys, and display-only data.
-- Frontend UI roots usually live under `Game.Views.*`; reusable widgets and list/sort/filter components under `Game.Components.*`; UI lifecycle, resources, commands, and localization under `FrameWork.UISystem`, `FrameWork.ResManager`, `FrameWork.CommandSystem`, and `FrameWork.Localization`.
+- Frontend UI roots usually live under `Game.Views.*`; reusable widgets and list/sort/filter components under `Game.Components.*` and `CommonSortAndFilterLegacy.*`; UI lifecycle, resources, commands, and localization under `FrameWork.UISystem`, `FrameWork.ResManager`, `FrameWork.CommandSystem`, and `FrameWork.Localization`.
+- `Config.*`, `GameDataExtensions`, and `UICommon` are often better first targets than broad reflection when resolving display text, template facts, localization, or frontend bridge helpers.
 - Resolve text, config IDs, event GUIDs, and player-facing names from the player request, current tool results, packaged lightweight context, or live game APIs.
 
 ## Drafting Order

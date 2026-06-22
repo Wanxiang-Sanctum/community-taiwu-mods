@@ -1,7 +1,7 @@
 # 游戏知识检索指引
 
 当玩家询问游戏机制、术语、物品/功法/建筑/门派等资料，或使用运行工具前需要先解析游戏内名称、说明、配置、
-本地化、模板/显示辅助和百晓册内容时，读取本文件。当前角色、地点、背包、地图、界面状态等动态事实按
+本地化、模板/显示辅助、百晓册内容、目标侧或 namespace 时，读取本文件。当前角色、地点、背包、地图、界面状态等动态事实按
 当前输入或运行工具读取；玩家当前可见画面和可见结果按 `PLAYER_VIEW.md` 处理。
 
 基础相枢身份和口吻由 `AGENTS.md` 处理；更细的人设校准由 `persona/README.md` 处理，静态世界观背景由
@@ -17,6 +17,31 @@
 3. 需要稳定游戏知识时，优先查 `Config.*` 配置表、本地化、模板显示辅助和百晓册数据结构。
 4. 直接入口失败、成员名不确定或游戏版本差异导致编译失败时，做小范围反射；反射限定到目标 namespace
    或类型名前缀，并返回候选名，不枚举全部程序集。
+
+## 命名空间地图
+
+太吾运行时的主要命名空间可先按职责选入口。这里不是完整 API 清单，只用于在写脚本或查询资料前缩小目标侧和
+反射范围。
+
+- `Config.*`：配置表、配置项、全局规则、本地化 key 和百晓册提示链接。稳定机制、模板、数值关系和 refName/id
+  转换优先从这里找。
+- `GameData.Domains.*`：后端权威状态、数据域、实体、显示数据和领域枚举。常见域包括 `Taiwu`、`Character`、
+  `Item`、`Map`、`World`、`Organization`、`Building`、`CombatSkill`、`Combat`、`Adventure`、
+  `TaiwuEvent`、`LifeRecord`、`Information`、`LegendaryBook`、`Merchant`、`Mod`、`Global`、`Extra`、
+  `Story`、`TutorialChapter` 和 `SpecialEffect`。
+- `GameData.*` 中非 `Domains` 的部分：`GameData.GameDataBridge`、`GameData.Common`、`GameData.Utilities`、
+  `GameData.Serializer`、`GameData.ActionPlanning`、`GameData.Adventure`、`GameData.Combat.*` 等。用于
+  前后端桥接、通用结构、序列化、AI/月度行为、奇遇和战斗底层模型。
+- `Game.Views.*`：前端界面视图、面板和页面逻辑；玩家当前看见或正在操作的 UI 通常从这里或当前激活的
+  `UIElement` 追踪。
+- `Game.Components.*`、`CommonSortAndFilterLegacy.*`、`UICommon`：前端复用组件、列表、筛选、鼠标提示和旧 UI
+  辅助。优先用于解释显示和定位控件，不作为后端状态来源。
+- `FrameWork.*`：前端 UI 生命周期、资源、命令、mod、AssetBundle 和本地化框架。用于 UI 打开/关闭、资源加载、
+  命令系统和语言辅助。
+- `GameDataExtensions`：前端显示、桥接和本地化扩展辅助。需要把后端数据转成前端展示文本时可先查。
+- `TaiwuModdingLib.*`：mod 插件基类、配置和工具辅助，主要用于 mod 生命周期和插件信息，不是游戏存档状态入口。
+- `EventEditor`、`AdventureEditor`、`AiEditor`、`GM`、`DisplayConfig` 等偏编辑器、调试或旧系统命名空间，只在
+  当前请求明确涉及编辑器、GM、工具面板或旧界面时再查。
 
 ## 配置与本地化
 

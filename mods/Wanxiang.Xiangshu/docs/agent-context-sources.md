@@ -60,6 +60,7 @@ Agent 视角的说法。
 | 相枢等级与世界状态映射 | `game/src/Backend/GameData.Shared/GameData.Domains.World/SharedMethods.cs` | `xiangshuProgress / 2` 与世界状态选择。 |
 | 剑冢状态枚举 | `game/src/Backend/GameData.Shared/GameData.Domains.World/SwordTombStatus.cs` | 未完成、第一阶段击败、第二阶段击败。 |
 | 神剑碎片增加相枢侵蚀、剑冢倒计时、侵蚀上限 | `game/src/Backend/GameData.Shared/GlobalConfig.cs` | 机制说明中的数值依据。 |
+| 游戏主要命名空间路由 | `game/src/Backend/Backend.slnx`、`game/src/The Scroll Of Taiwu_Data/The Scroll Of Taiwu_Data.slnx` | `GAME_KNOWLEDGE.md` 和脚本技能中的目标侧、命名空间和反射范围地图。 |
 
 ## 更新流程
 
@@ -109,7 +110,8 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   `DefaultAgentWorkspace/tool-guides/PLAYER_VIEW.md`。
 - 脚本工具目标侧、运行环境、入口契约、结果判断和运行时锚点归入
   `DefaultAgentWorkspace/tool-guides/RUNTIME_SCRIPTING.md`。
-- 配置、本地化、模板/显示辅助、百晓册和反射边界归入 `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
+- 配置、本地化、模板/显示辅助、百晓册、命名空间路由和反射边界归入
+  `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
 - Agent 技能触发、脚本草拟纪律或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
   `.claude/skills/*/SKILL.md`；同名技能默认保持内容一致。
 - 当前任务计划、待验证事实、临时脚本思路和本地经验归入 `AgentWorkingDirectory/.xiangshu-notes/`；这个
