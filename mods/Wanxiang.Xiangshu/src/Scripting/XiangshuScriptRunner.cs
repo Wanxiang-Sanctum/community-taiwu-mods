@@ -31,18 +31,29 @@ public sealed class XiangshuScriptRunner
         string targetSide,
         IEnumerable<string>? referenceDirectories = null,
         IScriptEntryDispatcher? entryDispatcher = null)
+        : this(
+            new ScriptHostOptions(
+                targetSide,
+                referenceDirectories: referenceDirectories),
+            entryDispatcher)
+    {
+    }
+
+    public XiangshuScriptRunner(
+        ScriptHostOptions hostOptions,
+        IScriptEntryDispatcher? entryDispatcher = null)
     {
 #if NET6_0_OR_GREATER
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetSide);
+        ArgumentNullException.ThrowIfNull(hostOptions);
 #else
-        if (string.IsNullOrWhiteSpace(targetSide))
+        if (hostOptions is null)
         {
-            throw new ArgumentException("Target side is required.", nameof(targetSide));
+            throw new ArgumentNullException(nameof(hostOptions));
         }
 #endif
 
-        _targetSide = targetSide;
-        _referenceResolver = new ScriptReferenceResolver(referenceDirectories);
+        _targetSide = hostOptions.TargetSide;
+        _referenceResolver = new ScriptReferenceResolver(hostOptions);
         _entryDispatcher = entryDispatcher ?? CurrentThreadEntryDispatcher.Instance;
     }
 
@@ -70,7 +81,9 @@ public sealed class XiangshuScriptRunner
             ScriptCompilationResult compilationResult = Compile(request.Script, cancellationToken);
             if (compilationResult is ScriptCompilationResult.Rejected rejected)
             {
-                return IpcRunScriptResponse.NotInvoked(rejected.Reason);
+                return IpcRunScriptResponse.NotInvoked(
+                    rejected.Reason,
+                    rejected.Details);
             }
 
             ScriptCompilationResult.Compiled compiled = (ScriptCompilationResult.Compiled)compilationResult;
@@ -111,7 +124,8 @@ public sealed class XiangshuScriptRunner
         if (!references.HasRequiredReferences)
         {
             return new ScriptCompilationResult.Rejected(
-                CreateCompilationRejectionReason(references.Issues));
+                CompilationFailureReason,
+                CreateCompilationFailureDetails(references.ReferenceDiagnostics, []));
         }
 
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
@@ -133,15 +147,18 @@ public sealed class XiangshuScriptRunner
             cancellationToken: cancellationToken);
         if (!emitResult.Success)
         {
-            string[] rejectionDetails =
+            string[] compilationDiagnostics =
             [
-                .. references.Issues,
                 .. emitResult.Diagnostics
                     .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
                     .Select(static diagnostic => diagnostic.ToString()),
             ];
 
-            return new ScriptCompilationResult.Rejected(CreateCompilationRejectionReason(rejectionDetails));
+            return new ScriptCompilationResult.Rejected(
+                CompilationFailureReason,
+                CreateCompilationFailureDetails(
+                    references.ReferenceDiagnostics,
+                    compilationDiagnostics));
         }
 
         return new ScriptCompilationResult.Compiled(assemblyStream.ToArray());
@@ -328,15 +345,16 @@ public sealed class XiangshuScriptRunner
         return JsonConvert.SerializeObject(value, JsonSettings) ?? "null";
     }
 
-    private static string CreateCompilationRejectionReason(IReadOnlyList<string> details)
-    {
-        const string message = "Compilation could not produce an assembly.";
-        if (details.Count == 0)
-        {
-            return message;
-        }
+    private const string CompilationFailureReason =
+        "Compilation could not produce an assembly.";
 
-        return message + Environment.NewLine + string.Join(Environment.NewLine, details);
+    private static IpcRunScriptNotInvokedDetails CreateCompilationFailureDetails(
+        IReadOnlyList<string> referenceDiagnostics,
+        string[] compilationDiagnostics)
+    {
+        return new IpcRunScriptNotInvokedDetails(
+            [.. referenceDiagnostics],
+            compilationDiagnostics);
     }
 
     private static Exception UnwrapInvocationException(Exception exception)
@@ -358,10 +376,14 @@ public sealed class XiangshuScriptRunner
                 assemblyBytes ?? throw new ArgumentNullException(nameof(assemblyBytes));
         }
 
-        public sealed class Rejected(string reason) : ScriptCompilationResult
+        public sealed class Rejected(
+            string reason,
+            IpcRunScriptNotInvokedDetails? details = null) : ScriptCompilationResult
         {
             public string Reason { get; } =
                 reason ?? throw new ArgumentNullException(nameof(reason));
+
+            public IpcRunScriptNotInvokedDetails? Details { get; } = details;
         }
 
     }

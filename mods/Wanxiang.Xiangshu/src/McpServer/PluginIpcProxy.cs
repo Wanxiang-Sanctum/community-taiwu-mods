@@ -211,7 +211,9 @@ internal static class PluginIpcProxy
         RunScriptToolJson.Response toolResponse = response switch
         {
             IpcRunScriptNotInvokedResponse notInvoked =>
-                new RunScriptToolJson.NotInvokedResponse(notInvoked.Reason),
+                new RunScriptToolJson.NotInvokedResponse(
+                    notInvoked.Reason,
+                    ConvertNotInvokedDetails(notInvoked.Details)),
 
             IpcRunScriptInvokedResponse
             {
@@ -232,6 +234,19 @@ internal static class PluginIpcProxy
         };
 
         return RunScriptToolJson.Serialize(toolResponse);
+    }
+
+    private static RunScriptToolJson.NotInvokedDetails? ConvertNotInvokedDetails(
+        IpcRunScriptNotInvokedDetails? details)
+    {
+        if (details is null)
+        {
+            return null;
+        }
+
+        return new RunScriptToolJson.NotInvokedDetails(
+            details.ReferenceDiagnostics,
+            details.CompilationDiagnostics);
     }
 
     private static JsonElement ParseReturnValueJson(string returnValueJson)
@@ -264,10 +279,25 @@ internal static class RunScriptToolJson
     [JsonDerivedType(typeof(InvokedResponse), "invoked")]
     internal abstract class Response;
 
-    internal sealed class NotInvokedResponse(string reason) : Response
+    internal sealed class NotInvokedResponse(
+        string reason,
+        NotInvokedDetails? details) : Response
     {
         public string Reason { get; } =
             reason ?? throw new ArgumentNullException(nameof(reason));
+
+        public NotInvokedDetails? Details { get; } = details;
+    }
+
+    internal sealed class NotInvokedDetails(
+        IReadOnlyList<string> referenceDiagnostics,
+        IReadOnlyList<string> compilationDiagnostics)
+    {
+        public IReadOnlyList<string> ReferenceDiagnostics { get; } =
+            referenceDiagnostics ?? throw new ArgumentNullException(nameof(referenceDiagnostics));
+
+        public IReadOnlyList<string> CompilationDiagnostics { get; } =
+            compilationDiagnostics ?? throw new ArgumentNullException(nameof(compilationDiagnostics));
     }
 
     internal sealed class InvokedResponse(

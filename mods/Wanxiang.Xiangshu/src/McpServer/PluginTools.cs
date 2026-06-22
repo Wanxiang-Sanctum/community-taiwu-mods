@@ -46,7 +46,7 @@ internal sealed class PluginTools
         + "Use it when current game/mod state or a clearly requested action requires plugin APIs; "
         + "do not use it for ordinary conversation or static knowledge. "
         + "Mutate state only when the player's target and intent are clear. "
-        + "The tool returns JSON describing invocation facts: notInvoked(reason), invoked(returnValue(value)), "
+        + "The tool returns JSON describing invocation facts: notInvoked(reason, details?), invoked(returnValue(value)), "
         + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
     public Task<string> RunCSharpScriptAsync(
         [Description(

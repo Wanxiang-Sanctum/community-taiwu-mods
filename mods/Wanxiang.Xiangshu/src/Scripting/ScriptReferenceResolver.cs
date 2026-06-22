@@ -9,6 +9,13 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
     private const string TrustedPlatformAssembliesKey = "TRUSTED_PLATFORM_ASSEMBLIES";
 
     private readonly List<string> _referenceDirectories = NormalizeReferenceDirectories(referenceDirectories);
+    private readonly List<string> _assemblyReferencePaths = [];
+
+    public ScriptReferenceResolver(ScriptHostOptions hostOptions)
+        : this((hostOptions ?? throw new ArgumentNullException(nameof(hostOptions))).ReferenceDirectories)
+    {
+        _assemblyReferencePaths.AddRange(hostOptions.AssemblyReferencePaths);
+    }
 
     public CompilationReferences CollectReferences(
         Assembly requiredAssembly,
@@ -30,7 +37,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
 #endif
 
         List<MetadataReference> references = [];
-        List<string> issues = [];
+        List<string> referenceDiagnostics = [];
         HashSet<string> referencePaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> referenceAssemblyIdentities = new(StringComparer.OrdinalIgnoreCase);
 
@@ -39,11 +46,17 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             referencePaths,
             referenceAssemblyIdentities);
 
+        AddExplicitAssemblyReferences(
+            references,
+            referencePaths,
+            referenceAssemblyIdentities,
+            referenceDiagnostics);
+
         AddReferenceDirectoryReferences(
             references,
             referencePaths,
             referenceAssemblyIdentities,
-            issues);
+            referenceDiagnostics);
 
         bool hasRequiredReferences = TryAddRequiredAssemblyReference(
             requiredAssembly,
@@ -51,7 +64,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             references,
             referencePaths,
             referenceAssemblyIdentities,
-            issues);
+            referenceDiagnostics);
 
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
@@ -65,12 +78,39 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         return new CompilationReferences(
             hasRequiredReferences,
             references,
-            issues);
+            referenceDiagnostics);
     }
 
     public AssemblyResolutionScope CreateAssemblyResolutionScope()
     {
         return new AssemblyResolutionScope(_referenceDirectories);
+    }
+
+    private void AddExplicitAssemblyReferences(
+        List<MetadataReference> references,
+        HashSet<string> referencePaths,
+        HashSet<string> referenceAssemblyIdentities,
+        List<string> referenceDiagnostics)
+    {
+        foreach (string referencePath in _assemblyReferencePaths)
+        {
+            if (!File.Exists(referencePath))
+            {
+                referenceDiagnostics.Add(
+                    $"Script assembly reference path does not exist: '{referencePath}'.");
+                continue;
+            }
+
+            if (!TryAddMetadataReference(
+                    referencePath,
+                    references,
+                    referencePaths,
+                    referenceAssemblyIdentities))
+            {
+                referenceDiagnostics.Add(
+                    $"Script assembly reference path could not be loaded as metadata: '{referencePath}'.");
+            }
+        }
     }
 
     private bool TryAddRequiredAssemblyReference(
@@ -79,12 +119,12 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         List<MetadataReference> references,
         HashSet<string> referencePaths,
         HashSet<string> referenceAssemblyIdentities,
-        List<string> issues)
+        List<string> referenceDiagnostics)
     {
         if (!TryGetAssemblyReferencePath(assembly, out string? referencePath)
             && !TryFindReferenceDirectoryAssembly(assembly.GetName(), out referencePath))
         {
-            issues.Add(
+            referenceDiagnostics.Add(
                 $"The assembly that defines {assemblyDisplayName} is not available "
                 + "as a metadata reference for dynamic compilation.");
             return false;
@@ -99,7 +139,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             return true;
         }
 
-        issues.Add(
+        referenceDiagnostics.Add(
             $"The assembly that defines {assemblyDisplayName} could not be loaded "
             + $"as a metadata reference from '{referencePath}'.");
         return false;
@@ -138,10 +178,10 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         }
         catch (NotSupportedException)
         {
-            return false;
         }
 
-        return !string.IsNullOrWhiteSpace(referencePath) && File.Exists(referencePath);
+        return !string.IsNullOrWhiteSpace(referencePath)
+            && File.Exists(referencePath);
     }
 
     private static void AddTrustedPlatformAssemblyReferences(
@@ -171,13 +211,13 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         List<MetadataReference> references,
         HashSet<string> referencePaths,
         HashSet<string> referenceAssemblyIdentities,
-        List<string> issues)
+        List<string> referenceDiagnostics)
     {
         foreach (string referenceDirectory in _referenceDirectories)
         {
             if (!Directory.Exists(referenceDirectory))
             {
-                issues.Add(
+                referenceDiagnostics.Add(
                     $"Script reference directory does not exist: '{referenceDirectory}'.");
                 continue;
             }
@@ -295,17 +335,16 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
             return false;
         }
     }
-
 }
 
 internal sealed class CompilationReferences(
     bool hasRequiredReferences,
     IReadOnlyList<MetadataReference> references,
-    IReadOnlyList<string> issues)
+    IReadOnlyList<string> referenceDiagnostics)
 {
     public bool HasRequiredReferences { get; } = hasRequiredReferences;
 
     public IReadOnlyList<MetadataReference> References { get; } = references;
 
-    public IReadOnlyList<string> Issues { get; } = issues;
+    public IReadOnlyList<string> ReferenceDiagnostics { get; } = referenceDiagnostics;
 }

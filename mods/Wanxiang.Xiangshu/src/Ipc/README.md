@@ -8,7 +8,7 @@
 
 - 定义 sidecar 到目标插件端的 MessagePipe 请求/响应 DTO；调用端与处理器注册处使用同一对类型。
 - 定义受信脚本执行请求的 `script`、`arguments`、`entryThread` 字段，以及脚本运行响应的嵌套 MessagePack
-  判别联合：`notInvoked(reason)` 或 `invoked(returnValue | exception)`。
+  判别联合：`notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。
 - 定义玩家前端视图截图请求和 PNG 响应；这里只承载跨进程协议，截图语义归前端 `PlayerView/`。
 - 维护前端、后端和 MCP server 的 endpoint manifest 注册与发现；manifest 用 endpoint `role` 区分进程角色。
 - 定义 MCP sidecar、前端和 CLI 适配器共享的 transport、path、header 和环境变量名称；请求门禁由
@@ -23,6 +23,8 @@
 - MessagePack `[Key]` 是线上的字段编号；调整现有 DTO 时保留既有编号。消息语义改变时，同步修改调用端和处理器，
   必要时创建新的请求/响应类型。
 - 接收方没有业务结果要返回时，使用 `IpcNoContentResponse`。响应字段只表达调用方会消费的业务结果。
+- 脚本 `notInvoked` 的 `details` 只承载入口调用前的结构化诊断，例如宿主引用设置和 Roslyn 编译错误；玩家目标判断、
+  工具语义和修复策略归 MCP 调用方或 Agent 指引。
 - DTO 可以按能力切分文件；文件名已经提供上下文时，DTO 名不重复 `Ipc` 或能力名前缀，命名保留本协议内需要区分的动作
   和事件名。
 - 跨进程语义归本模块；前端、后端和 MCP 模块只实现本侧处理器或调用端。

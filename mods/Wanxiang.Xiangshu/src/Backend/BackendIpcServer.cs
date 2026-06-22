@@ -130,8 +130,9 @@ internal sealed class BackendIpcServer(
         _ = services
             .AddSingleton(
                 new XiangshuScriptRunner(
-                    IpcRuntime.BackendEndpointRole,
-                    [pluginDirectory],
+                    new ScriptHostOptions(
+                        IpcRuntime.BackendEndpointRole,
+                        referenceDirectories: [pluginDirectory]),
                     scriptEntryDispatcher))
             .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
             .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(

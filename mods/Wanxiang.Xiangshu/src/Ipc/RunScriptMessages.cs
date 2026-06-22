@@ -59,9 +59,11 @@ public abstract class IpcRunScriptResponse
             new IpcRunScriptReturnValueOutcome(returnValueJson));
     }
 
-    public static IpcRunScriptResponse NotInvoked(string reason)
+    public static IpcRunScriptResponse NotInvoked(
+        string reason,
+        IpcRunScriptNotInvokedDetails? details = null)
     {
-        return new IpcRunScriptNotInvokedResponse(reason);
+        return new IpcRunScriptNotInvokedResponse(reason, details);
     }
 
     public static IpcRunScriptResponse InvokedWithException(string message)
@@ -76,11 +78,40 @@ public abstract class IpcRunScriptResponse
 }
 
 [MessagePackObject]
-public sealed class IpcRunScriptNotInvokedResponse(string reason) : IpcRunScriptResponse
+public sealed class IpcRunScriptNotInvokedResponse(
+    string reason,
+    IpcRunScriptNotInvokedDetails? details = null) : IpcRunScriptResponse
 {
     [Key(0)]
     public string Reason { get; } =
         reason ?? throw new ArgumentNullException(nameof(reason));
+
+    [Key(1)]
+    public IpcRunScriptNotInvokedDetails? Details { get; } = details;
+}
+
+[MessagePackObject]
+public sealed class IpcRunScriptNotInvokedDetails(
+    IReadOnlyList<string>? referenceDiagnostics,
+    IReadOnlyList<string>? compilationDiagnostics)
+{
+    private static readonly IReadOnlyList<string> EmptyList =
+        new ReadOnlyCollection<string>([]);
+
+    [Key(0)]
+    public IReadOnlyList<string> ReferenceDiagnostics { get; } =
+        NormalizeList(referenceDiagnostics);
+
+    [Key(1)]
+    public IReadOnlyList<string> CompilationDiagnostics { get; } =
+        NormalizeList(compilationDiagnostics);
+
+    private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string>? values)
+    {
+        return values is { Count: > 0 }
+            ? new ReadOnlyCollection<string>([.. values])
+            : EmptyList;
+    }
 }
 
 [MessagePackObject]

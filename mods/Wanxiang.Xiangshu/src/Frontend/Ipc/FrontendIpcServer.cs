@@ -15,7 +15,8 @@ namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer(
     AgentChatSession chatSession,
-    string pluginDirectory) : IDisposable
+    string pluginDirectory,
+    IEnumerable<string>? scriptAssemblyReferencePaths) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -117,8 +118,10 @@ internal sealed class FrontendIpcServer(
         _ = builder.RegisterInstance(chatSession);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
-                IpcRuntime.FrontendEndpointRole,
-                [pluginDirectory],
+                new ScriptHostOptions(
+                    IpcRuntime.FrontendEndpointRole,
+                    referenceDirectories: [pluginDirectory],
+                    assemblyReferencePaths: scriptAssemblyReferencePaths),
                 new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,
