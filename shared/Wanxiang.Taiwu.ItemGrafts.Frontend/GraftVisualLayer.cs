@@ -238,28 +238,32 @@ internal static class MakingTooltipPatch
 [HarmonyPatch(typeof(global::GameMessageUtils), nameof(global::GameMessageUtils.RenderItemKeys))]
 internal static class MessageItemKeysPatch
 {
+    public static void Prefix(
+        RenderedArgumentCollection renderedArgCollection,
+        out int __state)
+    {
+        __state = renderedArgCollection.ItemKeys.Count;
+    }
+
     public static void Postfix(
         ArgumentCollection argumentCollection,
         RenderedArgumentCollection renderedArgCollection,
-        bool insertIcon)
+        int __state)
     {
-        int count = Math.Min(
-            argumentCollection.ItemKeys.Count,
-            renderedArgCollection.ItemKeys.Count);
-        int renderedOffset = renderedArgCollection.ItemKeys.Count - count;
-
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < argumentCollection.ItemKeys.Count; i++)
         {
             ItemKey key = (ItemKey)argumentCollection.ItemKeys[i];
 
             if (GraftVisualState.TryGet(key, out Graft? graft)
                 && graft.Appearance.Name is not null)
             {
-                renderedArgCollection.ItemKeys[renderedOffset + i] =
-                    GraftVisuals.FormatItemKeyName(
+                int renderedIndex = __state + i;
+                string renderedName = renderedArgCollection.ItemKeys[renderedIndex];
+                renderedArgCollection.ItemKeys[renderedIndex] =
+                    GraftVisuals.ApplyRenderedItemName(
+                        renderedName,
                         key,
-                        graft.Appearance,
-                        insertIcon);
+                        graft.Appearance);
             }
         }
     }
@@ -276,24 +280,17 @@ internal static class MessageItemKeyPatch
     public static void Postfix(
         int index,
         TransferableRecordDataBase data,
-        bool insertIcon,
         ref string __result)
     {
-        if (index < 0
-            || index >= data.ArgumentCollection.ItemKeys.Count)
-        {
-            return;
-        }
-
         ItemKey key = (ItemKey)data.ArgumentCollection.ItemKeys[index];
 
         if (GraftVisualState.TryGet(key, out Graft? graft)
             && graft.Appearance.Name is not null)
         {
-            __result = GraftVisuals.FormatItemKeyName(
+            __result = GraftVisuals.ApplyRenderedItemName(
+                __result,
                 key,
-                graft.Appearance,
-                insertIcon);
+                graft.Appearance);
         }
     }
 }

@@ -12,7 +12,7 @@
 - `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；把脚本执行、中间答复和玩家视图捕获请求接入前端模块。
 - `ItemGrafts/`：相枢行囊宿主同步。它使用 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend` 创建或附着真实宿主物品，
   维护本次前端运行内的当前 `GraftSession`、宿主身份和宿主是否在太吾行囊中，并把这些状态用于宿主恢复和聊天可用性；
-  共享前端可视化层负责支持入口中的外观渲染、提示、物品消息和 `Replace` 操作菜单。
+  共享前端可视化层负责支持入口中的行囊与提示外观、物品消息实例名称替换和 `Replace` 操作菜单。
 - `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/Cli/` 注入子进程，不持久化，
   也不进入 endpoint manifest。
 - `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，聊天窗口排除由 `Chat/` 提供。
@@ -51,5 +51,5 @@
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
 事件选择和字段取舍归 `docs/logging.md`。行囊物品嫁接模型来自 `shared/Wanxiang.Taiwu.ItemGrafts.Contracts`、
 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend` 和 `shared/Wanxiang.Taiwu.ItemGrafts.Backend`；相枢前端负责保存
-`GraftSession`，并决定如何把它应用到聊天可用性、宿主恢复/创建和相枢特有入口。支持入口中的共享 UI 表现归
+`GraftSession`，并决定如何把它应用到聊天可用性、宿主恢复/创建和相枢特有入口。共享 UI 支持范围和消息文本处理边界归
 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend`。

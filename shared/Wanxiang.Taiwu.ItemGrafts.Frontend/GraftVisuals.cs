@@ -29,29 +29,26 @@ internal static class GraftVisuals
             : name;
     }
 
-    internal static string FormatItemKeyName(
+    internal static string ApplyRenderedItemName(
+        string renderedName,
         ItemKey key,
-        GraftAppearance appearance,
-        bool insertIcon)
+        GraftAppearance appearance)
     {
-        sbyte itemType = key.ItemType;
-        short templateId = key.TemplateId;
-        short itemSubType = ItemTemplateHelper.GetItemSubType(itemType, templateId);
-        string itemName = (appearance.Name ?? ItemTemplateHelper.GetName(itemType, templateId))
-            .Replace('\n', ' ');
-        sbyte grade = appearance.Grade ?? ItemTemplateHelper.GetGrade(itemType, templateId);
-
-        string text = itemType != 10 && itemSubType != 1202
-            ? LocalStringManager.GetFormat(LanguageKey.LK_Quotation_Marks_Fix, itemName)
-                .SetColor(Colors.Instance.GradeColors[grade])
-            : itemName.SetColor(Colors.Instance.GradeColors[grade]);
-
-        if (!insertIcon)
+        if (appearance.Name is null
+            || string.IsNullOrEmpty(renderedName))
         {
-            return text;
+            return renderedName;
         }
 
-        return "<SpName=" + GetInlineItemIcon(itemType, itemSubType) + ">" + text;
+        string templateName = ItemTemplateHelper.GetName(key.ItemType, key.TemplateId)
+            .Replace('\n', ' ');
+
+        return string.IsNullOrEmpty(templateName)
+            ? renderedName
+            : renderedName.Replace(
+                templateName,
+                appearance.Name.Replace('\n', ' '),
+                StringComparison.Ordinal);
     }
 
     internal static void ApplyToItemBack(
@@ -123,12 +120,8 @@ internal static class GraftVisuals
         if (appearance.Grade is sbyte grade)
         {
             toolTip.CGet<CImage>("GradeBack").SetSprite(ItemView.GetGradeIcon(grade));
-            toolTip.CGet<TextMeshProUGUI>("GradeName").text =
-                LocalStringManager.Get($"LK_ShortGrade_{grade}");
-            toolTip.CGet<TextMeshProUGUI>("Grade").text =
-                (LocalStringManager.Get($"LK_Num_{9 - grade}")
-                    + LocalStringManager.Get(LanguageKey.LK_Item_Grade))
-                .SetColor(Colors.Instance.GradeColors[grade]);
+            toolTip.CGet<TextMeshProUGUI>("GradeName").text = ItemView.GetGradeText(grade);
+            toolTip.CGet<TextMeshProUGUI>("Grade").text = ItemView.GetLastGradeText(grade);
         }
 
         if (appearance.Description is not null)
@@ -177,22 +170,4 @@ internal static class GraftVisuals
             value);
     }
 
-    private static string GetInlineItemIcon(
-        sbyte itemType,
-        short itemSubType)
-    {
-        if (itemSubType == 802)
-        {
-            return "charactermenu3_26_icon_guchong";
-        }
-
-        if (itemSubType is 801 or 506)
-        {
-            return "charactermenu3_26_icon_duyao";
-        }
-
-        return ItemType.IsEquipmentItemType(itemType)
-            ? "charactermenu3_26_icon_zhuangbei"
-            : "charactermenu3_26_icon_daoju";
-    }
 }
