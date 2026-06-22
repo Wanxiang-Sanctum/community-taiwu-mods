@@ -1,7 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using FrameWork.ModSystem;
-using GameData.Domains.Mod;
 using TaiwuModdingLib.Core.Plugin;
 using SharedInventoryGrafts = Wanxiang.Taiwu.ItemGrafts.Frontend.InventoryGrafts;
 using Wanxiang.Taiwu.Logging;
@@ -12,6 +10,7 @@ using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.Mcp;
+using Wanxiang.Xiangshu.Frontend.ScriptHost;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -25,9 +24,6 @@ namespace Wanxiang.Xiangshu.Frontend;
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     private const string PluginDirectoryName = "Frontend";
-    private const byte SteamWorkshopModSource = 1;
-    private const ulong PreludeSteamWorkshopFileId = 3747731025;
-    private const string UniTaskAssemblyFileName = "UniTask.dll";
     private const string HostLeftInventoryInterruptMessage = "药钵离囊，声息骤断。";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
@@ -141,38 +137,15 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         string modDirectory)
     {
         _ipcServer?.Dispose();
+        string pluginDirectory = XiangshuRuntimePaths.GetPluginDirectory(
+            modDirectory,
+            PluginDirectoryName);
         _ipcServer = new FrontendIpcServer(
             chatSession,
-            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName),
-            GetScriptAssemblyReferencePaths());
+            pluginDirectory,
+            FrontendScriptReferences.GetAdditionalAssemblyReferencePaths(pluginDirectory));
         _ = _ipcServer.Start();
         Log.Info("frontend IPC ready");
-    }
-
-    private static IReadOnlyList<string> GetScriptAssemblyReferencePaths()
-    {
-        string? uniTaskPath = GetPreludeFrontendAssemblyPath(UniTaskAssemblyFileName);
-        return uniTaskPath is null
-            ? []
-            : [uniTaskPath];
-    }
-
-    private static string? GetPreludeFrontendAssemblyPath(string assemblyFileName)
-    {
-        ModInfoWithDisplayData? preludeModInfo = global::ModManager.GetModInfo(
-            new ModId
-            {
-                FileId = PreludeSteamWorkshopFileId,
-                Source = SteamWorkshopModSource,
-            });
-        if (preludeModInfo is null || string.IsNullOrWhiteSpace(preludeModInfo.DirectoryName))
-        {
-            return null;
-        }
-
-        return Path.Combine(
-            XiangshuRuntimePaths.GetPluginDirectory(preludeModInfo.DirectoryName, PluginDirectoryName),
-            assemblyFileName);
     }
 
     private void InstallChatHotkey()

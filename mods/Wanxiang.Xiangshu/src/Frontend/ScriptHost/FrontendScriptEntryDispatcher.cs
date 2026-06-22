@@ -2,7 +2,7 @@ using Cysharp.Threading.Tasks;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
-namespace Wanxiang.Xiangshu.Frontend.Ipc;
+namespace Wanxiang.Xiangshu.Frontend.ScriptHost;
 
 internal sealed class FrontendScriptEntryDispatcher : IScriptEntryDispatcher
 {

@@ -9,13 +9,14 @@
 - `Chat/`：前端投递会话状态、会话快照持久化、可见聊天消息/事件模型，以及挂载在游戏 UI 层的聊天窗口；
   它维护单一对话入口，并提供玩家视图捕获时排除自身的边界。
 - `HotKeys/`：游戏热键注册、前端热键驱动，以及打开或关闭聊天界面所需的 UI 焦点判断。
-- `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；前端侧脚本执行、中间答复和玩家视图捕获能力放在这个边界。
+- `Ipc/`：暴露给本机 MCP server 的前端 MessagePipe endpoint；把脚本执行、中间答复和玩家视图捕获请求接入前端模块。
 - `ItemGrafts/`：相枢行囊宿主同步。它使用 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend` 创建或附着真实宿主物品，
   维护本次前端运行内的当前 `GraftSession`、宿主身份和宿主是否在太吾行囊中，并把这些状态用于宿主恢复和聊天可用性；
   共享前端可视化层负责支持入口中的外观渲染、提示、物品消息和 `Replace` 操作菜单。
 - `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/Cli/` 注入子进程，不持久化，
   也不进入 endpoint manifest。
 - `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，聊天窗口排除由 `Chat/` 提供。
+- `ScriptHost/`：前端侧脚本宿主适配；维护入口主线程分派，以及按运行时类型和游戏前端插件加载目录解析额外程序集引用。
 - `Settings/`：相枢本地设置文件读取，负责前端初始化时加载 `LocalSettings.json`。
 - `Sidecar/`：MCP server 进程生命周期，并把 sidecar 事件日志定向到
   `.xiangshu-runtime/Diagnostics/McpServer/`。
@@ -43,8 +44,8 @@
 运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
-注入 `Ipc/` endpoint；`entryThread = mainThread` 的入口调用切换到 Unity 主线程。脚本编译和程序集解析规则仍归
-`src/Scripting/`。
+注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求，前端侧入口分派和额外程序集引用解析归 `ScriptHost/`。
+`entryThread = mainThread` 的入口调用切换到 Unity 主线程。共享脚本编译和临时程序集依赖解析规则仍归 `src/Scripting/`。
 
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
 事件选择和字段取舍归 `docs/logging.md`。行囊物品嫁接模型来自 `shared/Wanxiang.Taiwu.ItemGrafts.Contracts`、

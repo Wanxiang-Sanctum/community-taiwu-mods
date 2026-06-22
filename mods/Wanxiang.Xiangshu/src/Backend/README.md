@@ -11,5 +11,5 @@ endpoint、安装 shared 行囊宿主观察服务，并把 endpoint 注册到 `.
 组件。
 
 启动时，后端从游戏 Mod 管理接口取得相枢 Mod 目录，并把 `Plugins/Backend` 作为本侧插件部署目录传给共享
-脚本运行器。`entryThread = mainThread` 的入口调用排入 GameData 主循环。脚本编译和程序集解析规则归
+脚本运行器。`entryThread = mainThread` 的入口调用排入 GameData 主循环。共享脚本编译和临时程序集依赖解析规则归
 `src/Scripting/`；后端负责本侧 endpoint 和后端 API 边界。

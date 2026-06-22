@@ -32,7 +32,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Xiangshu
 
 相枢依赖 `Wanxiang.Prelude`（万象引）提供共享运行时和按入口目录优先解析 DLL 的加载规则。发布时，将万象引的 Steam
 Workshop `FileId` 加入相枢的 `Dependencies`，确保万象引先于相枢加载。具体运行时清单由万象引和相枢各自的项目文件
-维护；脚本编译和程序集解析的模块边界见 `src/Scripting/README.md`。
+维护；共享脚本编译规则见 `src/Scripting/README.md`，前端宿主适配边界见 `src/Frontend/README.md`。
 
 ## 默认工作区维护
 

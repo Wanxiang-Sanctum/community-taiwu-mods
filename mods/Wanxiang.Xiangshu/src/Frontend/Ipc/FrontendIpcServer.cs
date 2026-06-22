@@ -8,6 +8,7 @@ using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.PlayerView;
+using Wanxiang.Xiangshu.Frontend.ScriptHost;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -16,7 +17,7 @@ namespace Wanxiang.Xiangshu.Frontend.Ipc;
 internal sealed class FrontendIpcServer(
     AgentChatSession chatSession,
     string pluginDirectory,
-    IEnumerable<string>? scriptAssemblyReferencePaths) : IDisposable
+    IEnumerable<string>? additionalAssemblyReferencePaths) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -121,7 +122,7 @@ internal sealed class FrontendIpcServer(
                 new ScriptHostOptions(
                     IpcRuntime.FrontendEndpointRole,
                     referenceDirectories: [pluginDirectory],
-                    assemblyReferencePaths: scriptAssemblyReferencePaths),
+                    assemblyReferencePaths: additionalAssemblyReferencePaths),
                 new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,
