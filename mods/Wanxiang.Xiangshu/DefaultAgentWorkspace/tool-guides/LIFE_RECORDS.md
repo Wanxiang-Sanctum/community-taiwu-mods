@@ -50,7 +50,7 @@
 
 - 已有 `charId` 列表、当前太吾、当前界面选中的角色或玩家明确点名的角色。
 - 玩家指定的人际范围、地点范围、组织范围、村镇范围、囚犯范围或死者范围。
-- 全部活人是广域兜底候选源；仅在玩家明确要求广域调试，或没有更窄候选源时使用，并说明范围大、耗时和结果
+- 全部活人是广域候选源；仅在玩家目标要求全局范围，或更窄范围不能覆盖问题时使用，并说明范围大、耗时和结果
   可能需要分页。
 
 按经历找角色不依赖前端渲染文本做匹配。优先匹配结构化字段：
@@ -80,8 +80,8 @@
 
 ## 可组合运行时原语
 
-本节只提供可组合原语。完整入口类、`using`、返回值和工具参数处理按 `RUNTIME_SCRIPTING.md` 的脚本入口契约
-临时组织。
+本节只提供可组合原语。入口外壳、`using`、返回值和工具参数处理由 `RUNTIME_SCRIPTING.md` 的脚本入口契约
+统一说明；本节不重复脚本外壳。
 
 读取某个角色的一页经历：
 
@@ -125,7 +125,7 @@ var prisoners = new List<int>();
 DomainManager.Organization.GetAllPrisoner(prisoners);
 ```
 
-全量活人候选源：
+广域活人候选源：
 
 ```csharp
 var allAliveNames = DomainManager.Character.GmCmd_GetAllCharacterName();

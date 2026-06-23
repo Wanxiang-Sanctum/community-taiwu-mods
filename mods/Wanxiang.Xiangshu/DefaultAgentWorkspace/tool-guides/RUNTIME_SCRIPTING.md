@@ -46,7 +46,8 @@
 
 ## 脚本入口
 
-脚本内容是完整 C# 编译单元。脚本需要自己声明 `using`、namespace、类型和返回值。
+脚本内容是完整 C# 编译单元。脚本需要自己声明 `using`、namespace、类型和返回值。本节只保留入口契约骨架；
+具体查询、修改和 UI 操作从后续锚点或领域指引中选择小片段组合。
 
 ```csharp
 using System.Threading.Tasks;
@@ -56,7 +57,7 @@ public static class XiangshuScript
 {
     public static Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
     {
-        return Task.FromResult<object?>(new { side = globals.Side });
+        return Task.FromResult<object?>(null);
     }
 }
 ```
@@ -66,24 +67,9 @@ public static class XiangshuScript
 `Task<T>` 都可以作为入口返回；需要异步时优先让入口返回 `Task<object?>`。脚本需要的命名空间都由脚本
 显式声明。
 
-前端脚本可以显式引用 UniTask：
-
-```csharp
-using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
-using Wanxiang.Xiangshu.Scripting;
-
-public static class XiangshuScript
-{
-    public static async Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
-    {
-        await UniTask.SwitchToMainThread(globals.CancellationToken);
-        return new { side = globals.Side };
-    }
-}
-```
-
-UniTask 适合作为入口内部 await 的前端 API；脚本入口的宿主异步契约仍是 `Task` 或 `Task<T>`。
+主线程需求由工具调用层承担：访问 Unity 对象、前端 UI、后端 `DomainManager` 数据域、游戏实体或运行状态时，
+调用脚本工具选择 `entryThread = "mainThread"`。入口内部继续创建任务或调用异步/回调 API 时，才按对应 API 的
+线程语义处理；入口线程选择仍以工具参数为准。
 
 `globals` 只提供：
 
