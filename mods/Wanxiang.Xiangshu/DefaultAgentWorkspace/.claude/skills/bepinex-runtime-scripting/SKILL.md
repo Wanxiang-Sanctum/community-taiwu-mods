@@ -7,7 +7,7 @@ description: "Use when drafting or revising Xiangshu runtime C# scripts that ins
 
 ## Scope
 
-Use this skill only after the request already calls for a Xiangshu runtime C# script. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
+Use this skill only after the current task has already selected Xiangshu runtime C# scripting as the implementation path. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
 
 ## Script Entry Contract
 
@@ -30,6 +30,14 @@ public static class XiangshuScript
 
 The entry type may be inside a namespace, but its simple name must be `XiangshuScript`, and the script must define exactly one public static non-generic class with that simple name. Define exactly one public static `Execute` or `ExecuteAsync` method that takes one `XiangshuScriptGlobals` parameter; synchronous values, `Task`, and `Task<T>` are accepted. Use `globals.Arguments` for MCP arguments and `globals.CancellationToken` for cancellable work.
 
+## Entry Thread Selection
+
+Choose the `xiangshu_run_csharp_script` `entryThread` together with the target side before drafting the body:
+
+- Use `entryThread: "current"` only for pure computation, reference checks, type/member discovery, and other probes that do not touch live game objects, Unity state, backend domains, or persisted game state.
+- Use `entryThread: "mainThread"` for Unity objects, frontend UI, EventSystem state, backend `DomainManager` access, game entities, persisted state, and any mutation of live game or mod state.
+- `entryThread` controls only the entry invocation thread. If the script deliberately schedules later work with `ExecuteAsync`, callbacks, or target-side async APIs, handle that later work according to that API's threading rules and keep it separate from entry-thread selection.
+
 ## BepInEx Helper Namespaces
 
 The script runner compiles against the target plugin side's deployment directory, trusted platform assemblies, and already loaded assemblies. For BepInEx-style low-level work, orient around these namespace families rather than looking for a broad `BepInEx.*` API surface:
@@ -44,21 +52,22 @@ Frontend scripts align with the Unity/netstandard side and should assume the com
 
 ## Runtime Game API Orientation
 
-Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types:
+Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types. For game knowledge queries, config lookup, localization, template/display helpers, Baixiaoce data, or namespace routing before a script, read `tool-guides/GAME_KNOWLEDGE.md` first.
 
 - Prefer backend for persisted or authoritative game state: Taiwu identity, inventory, characters, map/world data, organizations, items, information, combat state, monthly events, adventure state, and state mutations.
-- Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Item`, `GameData.Domains.Information`, `GameData.Domains.Combat`, `GameData.Domains.TaiwuEvent`, and `GameData.Domains.Adventure` are common anchors.
+- Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Item`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Building`, `GameData.Domains.CombatSkill`, `GameData.Domains.Combat`, `GameData.Domains.Adventure`, `GameData.Domains.TaiwuEvent`, `GameData.Domains.LifeRecord`, `GameData.Domains.Information`, `GameData.Domains.LegendaryBook`, `GameData.Domains.Merchant`, `GameData.Domains.Mod`, `GameData.Domains.Global`, `GameData.Domains.Extra`, `GameData.Domains.Story`, `GameData.Domains.TutorialChapter`, and `GameData.Domains.SpecialEffect` are common anchors.
 - `DomainManager.*` is the usual backend entry shape for domain access. For Taiwu-specific state, look for `DomainManager.Taiwu`; for characters, use `DomainManager.Character`; for event or monthly flow, use `DomainManager.TaiwuEvent` or related domain managers.
 - Shared value shapes, display data, config cells, and enum names usually come from `GameData.Shared`, `Config`, `Config.Common`, `Config.ConfigCells`, and `GameData.Domains.*` enum namespaces. Prefer reachable enum and config names over raw numeric constants.
 - Prefer frontend for visible UI state, selected controls, active windows, Unity objects, local resources, hotkeys, and display-only data.
-- Frontend UI roots usually live under `Game.Views.*`; reusable widgets and list/sort/filter components under `Game.Components.*`; UI lifecycle, resources, commands, and localization under `FrameWork.UISystem`, `FrameWork.ResManager`, `FrameWork.CommandSystem`, and `FrameWork.Localization`.
+- Frontend UI roots usually live under `Game.Views.*`; reusable widgets and list/sort/filter components under `Game.Components.*` and `CommonSortAndFilterLegacy.*`; UI lifecycle, resources, commands, and localization under `FrameWork.UISystem`, `FrameWork.ResManager`, `FrameWork.CommandSystem`, and `FrameWork.Localization`.
+- `Config.*`, `GameDataExtensions`, and `UICommon` are often better first targets than broad reflection when resolving display text, template facts, localization, or frontend bridge helpers.
 - Resolve text, config IDs, event GUIDs, and player-facing names from the player request, current tool results, packaged lightweight context, or live game APIs.
 
 ## Drafting Order
 
 When drafting the script body:
 
-- Decide the target side from the requested state or action.
+- Decide the target side and `entryThread` from the requested state or action.
 - Use the entry contract above as the outer shape.
 - Prefer direct public game APIs. Choose helper namespaces from the BepInEx map above only when reflection, private access, hooks, IL work, or metadata inspection is part of the task.
 - Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using GameData.Domains;
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.ItemGrafts.Backend;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -19,12 +20,14 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
     private BackendIpcServer? _ipcServer;
+    private BackendScriptEntryDispatcher? _scriptEntryDispatcher;
 
     public override void Initialize()
     {
         try
         {
             StartIpcServer();
+            BackendInventoryGrafts.Install(this);
         }
         catch (Exception ex)
         {
@@ -40,8 +43,11 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
+        _ = BackendInventoryGrafts.Uninstall();
         _ipcServer?.Dispose();
         _ipcServer = null;
+        _scriptEntryDispatcher?.Dispose();
+        _scriptEntryDispatcher = null;
     }
 
     private void StartIpcServer()
@@ -53,8 +59,10 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         _ = Directory.CreateDirectory(workingDirectory);
         _ = Directory.CreateDirectory(XiangshuRuntimePaths.GetRuntimeDirectory(workingDirectory));
         IpcEndpointRegistry.ConfigureForWorkingDirectory(workingDirectory);
+        _scriptEntryDispatcher ??= new BackendScriptEntryDispatcher();
         _ipcServer = new BackendIpcServer(
-            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName));
+            XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName),
+            _scriptEntryDispatcher);
         _ = _ipcServer.Start();
         Log.Info("backend IPC ready");
     }

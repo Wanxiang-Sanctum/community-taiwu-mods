@@ -1,9 +1,9 @@
 return {
   Title = "相枢（实验阶段，普通用户谨慎订阅）",
-  Source = 0,
+  Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
-  GameVersion = "1.0.1",
+  GameVersion = "1.0.17",
   Author = "Wanxiang Sanctum",
   Description = [=[相枢是在太吾绘卷内接入第三方本机 CLI Agent 的对话 Mod。它不只是聊天入口：Agent 可以通过相枢投递脚本读写游戏运行时数据，理论上能触达游戏本身具备的能力，例如创建物品、影响 NPC 或改变当前运行状态。
 
@@ -24,6 +24,7 @@ return {
 [*]确认“工作目录”。默认值是 DefaultAgentWorkspace，相对路径会放在相枢 Mod 目录下；建议先复用默认工作区。
 [*]重启游戏，让相枢重新读取 Agent 配置并启动所需的本机组件。
 [*]进入存档，回到能控制主角的主界面或地图交互状态后，按 Ctrl+\ 打开或关闭相枢对话窗口。
+[*]相枢会藏身随身携带的“低语的陶土药钵”。药钵随身时可以交流；药钵离身时，发送入口会显示“离身”，需要先取回药钵。
 [/list]
 
 [h2]它如何与 Agent 交互[/h2]
@@ -55,7 +56,8 @@ https://github.com/Wanxiang-Sanctum/community-taiwu-mods
   Cover = "Cover.jpg",
   WorkshopCover = "Cover.jpg",
   DetailImageList = {
-    "DetailImage.png",
+    "DetailImage1.png",
+    "DetailImage2.png",
   },
   TagList = {
     "Extensions",

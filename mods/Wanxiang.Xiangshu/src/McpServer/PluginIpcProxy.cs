@@ -21,7 +21,7 @@ internal static class PluginIpcProxy
             ?? throw new McpException(
                 "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
 
-        _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcIntermediateReplyResponse>(
+        _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcNoContentResponse>(
             endpoint,
             new IpcIntermediateReplyRequest(content),
             cancellationToken);
@@ -32,10 +32,13 @@ internal static class PluginIpcProxy
     public static async Task<string> RunCSharpScriptAsync(
         string targetSide,
         string script,
+        string entryThread,
         string argumentsJson,
         CancellationToken cancellationToken)
     {
         string normalizedTargetSide = NormalizeTargetSide(targetSide);
+        IpcScriptEntryThread parsedEntryThread =
+            ParseEntryThread(entryThread);
         IpcEndpoint endpoint =
             IpcEndpointRegistry.TryGetLiveEndpoint(normalizedTargetSide)
             ?? throw new McpException(
@@ -43,7 +46,10 @@ internal static class PluginIpcProxy
 
         IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
-            new IpcRunScriptRequest(script, ParseArgumentsJson(argumentsJson)),
+            new IpcRunScriptRequest(
+                script,
+                ParseArgumentsJson(argumentsJson),
+                parsedEntryThread),
             cancellationToken);
 
         return FormatRunScriptToolResponse(response);
@@ -147,6 +153,28 @@ internal static class PluginIpcProxy
         throw new McpException("targetSide must be either 'frontend' or 'backend'.");
     }
 
+    private static IpcScriptEntryThread ParseEntryThread(string entryThread)
+    {
+        if (string.IsNullOrWhiteSpace(entryThread))
+        {
+            throw new McpException("entryThread must be either 'current' or 'mainThread'.");
+        }
+
+        string trimmedEntryThread = entryThread.Trim();
+
+        if (string.Equals(trimmedEntryThread, "current", StringComparison.OrdinalIgnoreCase))
+        {
+            return IpcScriptEntryThread.Current;
+        }
+
+        if (string.Equals(trimmedEntryThread, "mainThread", StringComparison.OrdinalIgnoreCase))
+        {
+            return IpcScriptEntryThread.MainThread;
+        }
+
+        throw new McpException("entryThread must be either 'current' or 'mainThread'.");
+    }
+
     private static Dictionary<string, string> ParseArgumentsJson(string argumentsJson)
     {
         if (string.IsNullOrWhiteSpace(argumentsJson))
@@ -183,7 +211,9 @@ internal static class PluginIpcProxy
         RunScriptToolJson.Response toolResponse = response switch
         {
             IpcRunScriptNotInvokedResponse notInvoked =>
-                new RunScriptToolJson.NotInvokedResponse(notInvoked.Reason),
+                new RunScriptToolJson.NotInvokedResponse(
+                    notInvoked.Reason,
+                    ConvertNotInvokedDetails(notInvoked.Details)),
 
             IpcRunScriptInvokedResponse
             {
@@ -204,6 +234,19 @@ internal static class PluginIpcProxy
         };
 
         return RunScriptToolJson.Serialize(toolResponse);
+    }
+
+    private static RunScriptToolJson.NotInvokedDetails? ConvertNotInvokedDetails(
+        IpcRunScriptNotInvokedDetails? details)
+    {
+        if (details is null)
+        {
+            return null;
+        }
+
+        return new RunScriptToolJson.NotInvokedDetails(
+            details.ReferenceDiagnostics,
+            details.CompilationDiagnostics);
     }
 
     private static JsonElement ParseReturnValueJson(string returnValueJson)
@@ -236,10 +279,25 @@ internal static class RunScriptToolJson
     [JsonDerivedType(typeof(InvokedResponse), "invoked")]
     internal abstract class Response;
 
-    internal sealed class NotInvokedResponse(string reason) : Response
+    internal sealed class NotInvokedResponse(
+        string reason,
+        NotInvokedDetails? details) : Response
     {
         public string Reason { get; } =
             reason ?? throw new ArgumentNullException(nameof(reason));
+
+        public NotInvokedDetails? Details { get; } = details;
+    }
+
+    internal sealed class NotInvokedDetails(
+        IReadOnlyList<string> referenceDiagnostics,
+        IReadOnlyList<string> compilationDiagnostics)
+    {
+        public IReadOnlyList<string> ReferenceDiagnostics { get; } =
+            referenceDiagnostics ?? throw new ArgumentNullException(nameof(referenceDiagnostics));
+
+        public IReadOnlyList<string> CompilationDiagnostics { get; } =
+            compilationDiagnostics ?? throw new ArgumentNullException(nameof(compilationDiagnostics));
     }
 
     internal sealed class InvokedResponse(

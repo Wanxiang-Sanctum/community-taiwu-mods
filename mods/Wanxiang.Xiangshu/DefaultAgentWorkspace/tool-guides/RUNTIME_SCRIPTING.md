@@ -32,28 +32,58 @@
 - 共享脚本运行库同时面向 `netstandard2.1` 和 `net8.0`，因此同一入口契约可被前后端复用。
 - 外部工具服务进程不是脚本运行目标；它只负责把工具请求转给前端或后端。
 
-目标侧不确定时，先在最可能的一侧运行只读探测。目标侧探测使用无副作用脚本。
-需要查询游戏机制、配置、本地化、模板/显示辅助或百晓册资料时，先读取 `GAME_KNOWLEDGE.md`，按直接入口缩小脚本范围。
+脚本工具的 `entryThread` 参数控制入口调用线程：
+
+- `current`：默认值，在 IPC 处理线程调用入口。用于纯计算、程序集/类型探测和格式整理等不依赖游戏运行态的
+  脚本。
+- `mainThread`：在目标侧游戏主线程调用入口。访问 Unity 对象、前端 UI、后端 `DomainManager` 数据域、游戏实体或修改
+  运行状态时使用。
+
+`entryThread` 只控制入口调用；入口内部自行创建任务或调用异步/回调 API 后，继续按对应 API 的线程语义运行。
+
+目标侧不确定，或需要查询游戏机制、配置、本地化、模板/显示辅助、百晓册资料或主要 namespace 时，先读取
+`GAME_KNOWLEDGE.md`，按事实来源和命名空间地图缩小脚本范围。目标侧探测使用无副作用脚本。
 
 ## 脚本入口
 
-脚本内容是完整 C# 编译单元，不是片段。脚本需要自己声明 `using`、namespace、类型和返回值。
+脚本内容是完整 C# 编译单元。脚本需要自己声明 `using`、namespace、类型和返回值。
 
 ```csharp
+using System.Threading.Tasks;
 using Wanxiang.Xiangshu.Scripting;
 
 public static class XiangshuScript
 {
-    public static object? Execute(XiangshuScriptGlobals globals)
+    public static Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
     {
-        return new { side = globals.Side };
+        return Task.FromResult<object?>(new { side = globals.Side });
     }
 }
 ```
 
 入口类型的简单名必须是 `XiangshuScript`，且必须是 `public static` 非泛型 class。入口方法是 `Execute` 或
 `ExecuteAsync`，参数必须是 `Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals`。同步返回值、`Task` 和
-`Task<T>` 都可以作为入口返回。
+`Task<T>` 都可以作为入口返回；需要异步时优先让入口返回 `Task<object?>`。脚本需要的命名空间都由脚本
+显式声明。
+
+前端脚本可以显式引用 UniTask：
+
+```csharp
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using Wanxiang.Xiangshu.Scripting;
+
+public static class XiangshuScript
+{
+    public static async Task<object?> ExecuteAsync(XiangshuScriptGlobals globals)
+    {
+        await UniTask.SwitchToMainThread(globals.CancellationToken);
+        return new { side = globals.Side };
+    }
+}
+```
+
+UniTask 适合作为入口内部 await 的前端 API；脚本入口的宿主异步契约仍是 `Task` 或 `Task<T>`。
 
 `globals` 只提供：
 
@@ -61,13 +91,15 @@ public static class XiangshuScript
 - `Arguments`：由工具参数传入的字符串字典；非字符串 JSON 值通常会以紧凑 JSON 字符串传入。
 - `CancellationToken`：当前脚本调用的取消信号。
 
-`globals` 不提供游戏 facade、服务容器或预置 using 列表。
+`globals` 的公共成员只有以上三项；游戏 facade、服务容器和命名空间声明由脚本或目标侧 API 自行处理。
 
 ## 结果判断
 
 脚本工具返回的是运行事实，不替你判断玩家目标是否达成。常见形态：
 
-- `notInvoked(reason)`：入口未执行，常见原因是编译失败、引用失败、入口契约不满足或调用前取消。
+- `notInvoked(reason, details?)`：入口未执行，常见原因是编译失败、引用失败、入口契约不满足或调用前取消。
+  编译阶段未产出程序集时，`details.referenceDiagnostics` 保留宿主引用设置问题，`details.compilationDiagnostics`
+  保留 Roslyn 原始诊断。
 - `invoked(returnValue)`：入口已执行并返回。
 - `invoked(exception)`：入口已执行但抛出异常。
 
@@ -80,10 +112,9 @@ public static class XiangshuScript
 
 后端常见锚点：
 
-- `GameData.Domains.DomainManager`：后端域集中入口。常见域包括 `World`、`Map`、`Organization`、
-  `Character`、`Taiwu`、`Item`、`CombatSkill`、`Combat`、`Building`、`Adventure`、`LegendaryBook`、
-  `TaiwuEvent`、`LifeRecord`、`Merchant`、`TutorialChapter`、`Mod`、`SpecialEffect`、`Information`、`Extra`、
-  `Story`。
+- `GameData.Domains.DomainManager`：后端域集中入口。常见域包括 `Taiwu`、`Character`、`Item`、`Map`、`World`、
+  `Organization`、`Building`、`CombatSkill`、`Combat`、`Adventure`、`TaiwuEvent`、`LifeRecord`、`Information`、
+  `LegendaryBook`、`Merchant`、`Mod`、`Global`、`Extra`、`Story`、`TutorialChapter` 和 `SpecialEffect`。
 - `GameData.Domains.*`：后端数据域、实体和显示数据类型。
 - `Config.*`：配置表与配置项，常见访问形态是 `Config.SomeTable.Instance[...]`。
 - `GameData.GameDataBridge`、`GameData.Utilities`、`GameData.Common`：跨端消息、工具类型、集合和值对象。
@@ -126,9 +157,11 @@ public static class XiangshuScript
 ## 使用策略
 
 - 先按事实归属选择观察方式，再决定是否修改；玩家可见问题先读 `PLAYER_VIEW.md`，权威状态问题再读运行时对象。
-- 查询游戏知识时，先走 `GAME_KNOWLEDGE.md` 中的配置、本地化、模板/显示辅助和百晓册入口；反射只用于定位缺失成员。
+- 访问 Unity UI/对象、后端游戏域或存档实体时使用 `mainThread`；纯计算或类型探测保留 `current`。
+- 查询游戏知识、目标侧或 namespace 时，先走 `GAME_KNOWLEDGE.md` 中的命名空间地图、配置、本地化、模板/显示辅助和
+  百晓册入口；反射只用于定位缺失成员。
 - 让脚本返回紧凑、结构化的数据，再把结果转成玩家能理解的答复。
-- 编译失败时，依据 `reason` 收窄 using、类型名和目标侧。
+- 编译失败时，先看 `details.referenceDiagnostics` 和 `details.compilationDiagnostics`，再收窄 using、类型名和目标侧。
 - 工具不可用、检索失败或脚本探索失败时，先收窄问题、换用只读路径，或基于已知事实给出边界清楚的答复。
 - 长任务需要先让玩家看见进展时，可以发送中间答复；中间答复必须已经是玩家可见的相枢文本，不暴露工具、
   进程或错误栈。

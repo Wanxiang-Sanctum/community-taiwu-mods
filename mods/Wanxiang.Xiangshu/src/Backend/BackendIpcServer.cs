@@ -8,7 +8,9 @@ using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Backend;
 
-internal sealed class BackendIpcServer(string pluginDirectory) : IDisposable
+internal sealed class BackendIpcServer(
+    string pluginDirectory,
+    IScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -74,7 +76,10 @@ internal sealed class BackendIpcServer(string pluginDirectory) : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        RegisterIpcScriptHandler(services, pluginDirectory);
+        RegisterIpcScriptHandler(
+            services,
+            pluginDirectory,
+            scriptEntryDispatcher);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
             port,
@@ -119,13 +124,16 @@ internal sealed class BackendIpcServer(string pluginDirectory) : IDisposable
 
     private static void RegisterIpcScriptHandler(
         IServiceCollection services,
-        string pluginDirectory)
+        string pluginDirectory,
+        IScriptEntryDispatcher scriptEntryDispatcher)
     {
         _ = services
             .AddSingleton(
                 new XiangshuScriptRunner(
-                    IpcRuntime.BackendEndpointRole,
-                    [pluginDirectory]))
+                    new ScriptHostOptions(
+                        IpcRuntime.BackendEndpointRole,
+                        referenceDirectories: [pluginDirectory]),
+                    scriptEntryDispatcher))
             .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
             .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(
                 provider => new AsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>(

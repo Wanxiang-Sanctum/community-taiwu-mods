@@ -63,19 +63,19 @@
       },
       "Taiwu.ModKit.References.Backend": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "uMwB6vCZ2oqu+i2toAe+mWZCSFcCbH+s6BJbpQKaqDpF4Dqa6IEVeDqOXz9/ygalZrQP4Lw3pHYTdmO710VlSQ==",
+        "requested": "[1.0.17, )",
+        "resolved": "1.0.17",
+        "contentHash": "UFDI+QArru6XRr/2AkjiSk2yWlY8B5V9yGTvGC3bGx7L5qgj67f8XkFDda+ms/CtUo2Hmyfv7hdE/AdCORcQrw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]",
-          "Taiwu.ModKit.References.Shared": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.17]",
+          "Taiwu.ModKit.References.Shared": "[1.0.17]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "Direct",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "mlsRsZtnqnymbbVdzuqMVRCJ738c+PFpNQ0II8x1WO3o9vzUPc00MPk6RuIFFX9zatwZSDRH0Zd30xYUe8Y5QQ=="
+        "requested": "[1.0.17, )",
+        "resolved": "1.0.17",
+        "contentHash": "BNexDa+ASjAwHrVEmnnXkUhqJgMFQ/CshQgw4ZnWlBv53HapnqlSjxfhCMIy9fcVQ8Pr9zvqmfXlZHsviZ2cXA=="
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
@@ -135,7 +135,20 @@
         "resolved": "6.0.0",
         "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
       },
+      "wanxiang.taiwu.itemgrafts.backend": {
+        "type": "Project",
+        "dependencies": {
+          "Wanxiang.Taiwu.ItemGrafts.Contracts": "[1.0.0, )",
+          "Wanxiang.Taiwu.ModRpc": "[1.0.0, )"
+        }
+      },
+      "wanxiang.taiwu.itemgrafts.contracts": {
+        "type": "Project"
+      },
       "wanxiang.taiwu.logging": {
+        "type": "Project"
+      },
+      "wanxiang.taiwu.modrpc": {
         "type": "Project"
       },
       "wanxiang.xiangshu.ipc": {
@@ -162,11 +175,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "CentralTransitive",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "cPGxItJxHn39tHBq5JWbrs6wEJpMJ1vRm/52v3Fmm2+chClYnn+EXwFKOQZkIET6Oodd+l2g9gbIOiIZn9sI3w==",
+        "requested": "[1.0.17, )",
+        "resolved": "1.0.17",
+        "contentHash": "dcxgLfcep4lUWkD6mNBaUm1640XfE31J6hbxYKJKP2YoKdk9ZtzZrKEPqWmOw9aiP3C4wr+6iBR8tOPItCOsqA==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.1]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.17]"
         }
       }
     }

@@ -46,7 +46,7 @@ internal sealed class PluginTools
         + "Use it when current game/mod state or a clearly requested action requires plugin APIs; "
         + "do not use it for ordinary conversation or static knowledge. "
         + "Mutate state only when the player's target and intent are clear. "
-        + "The tool returns JSON describing invocation facts: notInvoked(reason), invoked(returnValue(value)), "
+        + "The tool returns JSON describing invocation facts: notInvoked(reason, details?), invoked(returnValue(value)), "
         + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
     public Task<string> RunCSharpScriptAsync(
         [Description(
@@ -62,6 +62,11 @@ internal sealed class PluginTools
             + "The entry return value is serialized to JSON.")]
         string script,
         [Description(
+            "Thread used to invoke the script entry: current keeps the IPC handler thread; "
+            + "mainThread invokes the entry on the target side's game main thread. Use mainThread for Unity UI/object access "
+            + "or backend game-domain state access.")]
+        string entryThread = "current",
+        [Description(
             "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
         string argumentsJson = "{}",
         CancellationToken cancellationToken = default)
@@ -69,6 +74,7 @@ internal sealed class PluginTools
         return PluginIpcProxy.RunCSharpScriptAsync(
             targetSide,
             script,
+            entryThread,
             argumentsJson,
             cancellationToken);
     }

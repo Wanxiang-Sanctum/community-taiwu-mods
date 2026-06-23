@@ -6,6 +6,12 @@
 
   <ItemGroup>
     <TaiwuModMergeDependency Include="Wanxiang.Taiwu.Logging.dll" />
+    <TaiwuModMergeDependency Include="Wanxiang.Taiwu.AsyncInterop.dll" />
+    <TaiwuModMergeDependency Include="Wanxiang.Taiwu.ModRpc.dll" />
+    <TaiwuModMergeDependency
+      Include="Wanxiang.Taiwu.ItemGrafts.Contracts.dll"
+    />
+    <TaiwuModMergeDependency Include="Wanxiang.Taiwu.ItemGrafts.Frontend.dll" />
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
   </ItemGroup>

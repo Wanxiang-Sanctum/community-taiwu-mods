@@ -6,7 +6,7 @@ internal static class AgentCliChatReplySchema
 {
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        NullValueHandling = NullValueHandling.Ignore,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     public static string CreateCompactJson()

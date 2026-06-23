@@ -8,6 +8,15 @@
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
     <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.ItemGrafts.Contracts/Wanxiang.Taiwu.ItemGrafts.Contracts.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.AsyncInterop/Wanxiang.Taiwu.AsyncInterop.csproj"
+    />
+    <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
     />
     <ProjectReference

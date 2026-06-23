@@ -21,6 +21,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
             new StringEnumConverter { AllowIntegerValues = false },
         },
         NullValueHandling = NullValueHandling.Ignore,
+        TypeNameHandling = TypeNameHandling.None,
     };
 
     private readonly string _currentPath = XiangshuRuntimePaths.GetCurrentChatSessionPath(workingDirectory);
