@@ -16,15 +16,17 @@
 | 某个 Mod 的玩家说明、安装和运行边界 | `mods/<ModName>/README.md` |
 | 内部共享项目目录索引和共同边界 | [`shared/README.md`](shared/README.md) |
 | 某个内部共享项目 API、部署建议和项目内约定 | `shared/<ProjectName>/README.md` |
+| 生成项目文案、文档模板和输出边界 | [`templates/README.md`](templates/README.md) |
 | 创建/移除命令实现、模板变量和渲染规则 | [`tools/README.md`](tools/README.md)、[`templates/README.md`](templates/README.md) |
 
 ## 提交前检查
 
 - 提交文档变更时，按主要受众拆分玩家说明、贡献入口和维护手册。
+- 修改生成模板的 README、DEVELOPMENT 或 `Config.Lua` 展示字段时，同步复核生成后的读者路径，避免把具体 Mod 的发布说明或品牌文案预设进模板。
 - 修改 `PackageReference`、`Directory.Packages.props` 或新增项目后，运行 restore，并提交对应项目的
   `packages.lock.json`。
 - 修改文档、配置或项目文件后，运行 `dotnet msbuild repo.proj -t:Check`。
 - 修改 C# 源码后，按影响范围运行 `dotnet build Taiwu.Mods.slnx` 或对应项目构建。
 - 修改组包入口、发布目录或插件依赖部署后，运行受影响 Mod 的 `pack-mod` 命令。
 
-需要更细的命令、环境变量、发布 tag 和模板同步规则时，回到 [`docs/development/README.md`](docs/development/README.md)。
+需要更细的模板维护检查、工具安装和文档同步规则时，回到 [`docs/development/README.md`](docs/development/README.md)。

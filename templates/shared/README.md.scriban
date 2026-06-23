@@ -1,9 +1,16 @@
 # {{ project.name }}
 
-太吾绘卷 mod 仓库内部共享项目。
+{{ project.name }} 是太吾绘卷 Mod 仓库内部共享项目。
 
-这个 README 是该共享项目的维护入口。共享项目的共同边界、目标框架和引用规则见上一级
-[shared/README.md](../README.md)；本文件只维护 {{ project.name }} 自己的 API、部署建议和项目内约定。
+本文面向维护这个共享项目的人。共享项目的共同边界、目标框架和引用规则见上一级
+[shared/README.md](../README.md)；本文件只维护 {{ project.name }} 自己的约定。
+
+## API 边界
+
+`public` 类型和成员默认视为同一仓库内其它 Mod 可复用的共享入口。内部实现保持 `internal` 或更窄可见性；公开成员用 XML
+文档说明调用方需要依赖的契约。
+
+项目 README 说明模块职责、运行边界和使用路径；公开 API 的具体契约写在源码 XML 文档。导入关系应反映项目真实依赖。
 
 ## 开发
 
@@ -15,5 +22,7 @@ dotnet build shared/{{ project.name }}/{{ project.name }}.csproj
 
 目标框架、Taiwu 引用和 Publicizer 设置写在 `.csproj`。
 
-共享项目不作为独立插件入口写入 mod 包。需要部署共享项目 DLL 或其 runtime 依赖时，在引用它的
+## 引用与部署
+
+共享项目不作为独立插件入口写入 Mod 包。需要部署共享项目 DLL 或其 runtime 依赖时，在引用它的
 前端或后端插件项目中声明依赖部署动作。

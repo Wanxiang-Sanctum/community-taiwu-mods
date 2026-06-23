@@ -145,5 +145,5 @@ UGC description/summary 条目。
 Steamworks [`ISteamUGC`](https://partner.steamgames.com/doc/api/ISteamUGC) 与
 [`Workshop Implementation Guide`](https://partner.steamgames.com/doc/features/workshop/implementation)。组织内部维护者
 可以通过 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下的 `game/` 生成快照检索这些
-游戏侧路径。太吾游戏版本更新后，如果 Mod 管理界面、上传流程或 `Config.Lua` 字段发生变化，先更新对应游戏观察快照，再
-复核本文。
+游戏侧路径。太吾游戏版本更新后，如果 Mod 管理界面、上传流程或 `Config.Lua` 字段发生变化，先复核游戏侧行为；需要使用
+组织内部快照时，在 `taiwu-modkit` 中重新生成后再复核本文。

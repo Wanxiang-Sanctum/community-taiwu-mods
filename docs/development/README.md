@@ -110,7 +110,7 @@ git push origin mods/<ModName>/v<Version>
 ## 新增和移除项目
 
 本仓库的创建命令用于扩展仓库内项目。新项目生成后，真实构建、组包和部署约定由生成出的项目文件、
-`Taiwu.Mod.Pack.proj`、目录 README 和解决方案注册共同维护。
+`Taiwu.Mod.Pack.proj`、目录 README、lock file 和解决方案注册共同维护。
 
 新增实际 Mod：
 
