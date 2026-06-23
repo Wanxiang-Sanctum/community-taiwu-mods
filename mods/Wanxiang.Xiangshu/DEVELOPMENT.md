@@ -1,10 +1,10 @@
 # 相枢维护入口
 
-本文面向维护相枢源码、默认 Agent 工作区和发布内容的人。玩家使用、配置和信任边界见 `README.md`。
+本文面向维护相枢源码、默认 Agent 工作区和发布内容的人。玩家使用、配置和信任边界见 [README.md](README.md)。
 
 ## 内部设计入口
 
-`docs/README.md` 是源码维护者的内部设计文档入口，指向对话链路、日志策略和默认 Agent 工作区来源说明。
+[`docs/README.md`](docs/README.md) 是源码维护者的内部设计文档入口，指向对话链路、日志策略和默认 Agent 工作区来源说明。
 `DefaultAgentWorkspace/AGENTS.md` 是组包后运行中的本机 Agent 指令入口，承担基础相枢身份、口吻、玩家可见边界和输出
 可见性；其中的 `persona/`、`lore/`、`tool-guides/` 和技能目录应保持自包含，不依赖源码维护文档。
 

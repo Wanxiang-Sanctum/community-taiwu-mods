@@ -44,6 +44,6 @@ Harmony 观察和宿主事件转发。
 宿主事件等公开契约。
 
 ItemGrafts RPC 使用显式 payload 字段；缺省字段表示该事件或请求没有对应值。
-RPC 内容和后端观察标识由前后端实现程序集管理。前端通过 `InventoryGrafts.Install(plugin)` 绑定本 mod，
+RPC 内容和后端观察标识由前后端实现程序集管理。前端通过 `InventoryGrafts.Install(plugin)` 绑定本 Mod，
 再通过 `AttachAsync(...)` / `CreateAsync(...)` 建立 `GraftSession`；后端通过
 `BackendInventoryGrafts.Install(plugin)` 安装观察和转发。

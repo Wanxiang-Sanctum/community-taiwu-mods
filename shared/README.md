@@ -3,7 +3,7 @@
 内部共享项目目录。
 
 每个一级子目录是一个可被同一仓库内多个 Mod 引用的内部 C# 项目。共享项目为插件项目提供内部库；部署共享项目 DLL
-或其 runtime 依赖的动作，由引用它的前端或后端插件项目声明，具体 item 见 [`mods/README.md`](../mods/README.md)。
+或其运行时依赖的动作，由引用它的前端或后端插件项目声明，具体 item 见 [`mods/README.md`](../mods/README.md)。
 
 本目录 README 说明共享项目的共同边界。共享库自己的 API、运行时依赖、部署建议和维护入口由
 `shared/<ProjectName>/README.md` 维护；引用它的 Mod 负责决定是否合并、复制或不部署该 DLL。

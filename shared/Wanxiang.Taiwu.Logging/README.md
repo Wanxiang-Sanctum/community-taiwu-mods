@@ -1,6 +1,6 @@
 # Wanxiang.Taiwu.Logging
 
-太吾绘卷 mod 仓库内部共享日志项目。
+太吾绘卷 Mod 仓库内部共享日志项目。
 
 这个库不是新的日志系统，也不写入独立日志文件。它只提供一层结构化调用 API，把消息和上下文格式化成
 太吾游戏日志系统可接收的一行文本，底层仍调用 `GameData.Utilities.AdaptableLog`。
@@ -48,5 +48,5 @@ dotnet build shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj
 
 目标框架、Taiwu 引用和包引用写在 `.csproj`。
 
-共享项目不作为独立插件入口写入 mod 包。引用它的前端或后端插件项目需要在 `Taiwu.Mod.props` 中声明
+共享项目不作为独立插件入口写入 Mod 包。引用它的前端或后端插件项目需要在 `Taiwu.Mod.props` 中声明
 依赖部署动作；通常应把 `Wanxiang.Taiwu.Logging.dll` 作为 merge dependency。
