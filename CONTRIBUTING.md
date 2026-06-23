@@ -10,7 +10,7 @@
 | 变更 | 先读 |
 | --- | --- |
 | 构建、打包、发布、新增或移除项目 | [`docs/development/README.md`](docs/development/README.md) |
-| 文档结构、受众分层、模板文档同步 | [`docs/development/documentation.md`](docs/development/documentation.md) |
+| 文档结构、入口分层、模板文档同步 | [`docs/development/documentation.md`](docs/development/documentation.md) |
 | 实际 Mod 目录索引，以及所有 Mod 共同的目录约定、组包、插件入口、依赖部署规则 | [`mods/README.md`](mods/README.md) |
 | 某个 Mod 的源码模块、发布内容或内部设计 | `mods/<ModName>/DEVELOPMENT.md` |
 | 某个 Mod 的玩家说明、安装和运行边界 | `mods/<ModName>/README.md` |

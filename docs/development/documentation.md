@@ -11,10 +11,8 @@
 - GitHub 会在 issue、pull request、contribute 页面和仓库侧栏展示
   [贡献指南](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors)；
   根 `CONTRIBUTING.md` 因此保持为短入口和提交前契约，不承载完整维护手册。
-- [Diataxis](https://diataxis.fr/) 按读者需求区分教程、操作指南、参考和解释；本仓库按技术玩家、贡献者、源码维护者和
-  具体模块维护者拆分文档入口。
 
-## 受众分层
+## 入口分层
 
 - 根 `README.md` 面向外部技术玩家，说明仓库形象、获取方式、使用边界、源码入口和对外 Mod 入口表。
 - 根 `CONTRIBUTING.md` 面向准备提交 issue、讨论或 PR 的贡献者，提供变更类型路由和提交前检查入口。
@@ -23,7 +21,6 @@
 - `docs/development/README.md` 面向源码维护者，说明构建、检查、打包、发布、新增项目、文档和仓库结构。
 - `mods/README.md` 拥有实际 Mod 的一级目录索引和目录约定，以及所有 Mod 共同遵守的组包、插件入口、引用和依赖部署规则。
 - `shared/README.md` 拥有内部共享项目的一级目录索引、目录约定、目标框架和共享项目引用边界。
-- `docs/` 收纳维护本仓库实际 Mod 时使用的开发维护文档、机制参考和仓库经验。
 - `tools/README.md` 和 `templates/README.md` 说明工具实现入口、模板变量和渲染规则。
 - 具体 Mod 的 `README.md` 面向外部技术玩家，说明玩法、运行边界和配置入口。
 - 具体 Mod 的 `DEVELOPMENT.md` 面向源码维护者，说明源码模块、组包内容、构建命令和内部设计入口。
@@ -32,8 +29,8 @@
 ## 放置规则
 
 索引是否存在由文档责任决定。根 `README.md` 保留对外 Mod 入口和稳定源码入口；`mods/README.md` 和
-`shared/README.md` 完整索引各自的一级子目录；`docs/README.md` 只索引仓库级文档。开发手册、机制参考和具体设计文档
-需要项目发现时，链接目录级 README。
+`shared/README.md` 完整索引各自的一级子目录；`docs/README.md` 只索引仓库级文档。`docs/` 收纳维护本仓库实际 Mod 时
+使用的开发维护文档、机制参考和仓库经验；开发手册、机制参考和具体设计文档需要项目发现时，链接目录级 README。
 
 索引行只保留选择信息和稳定入口。实际 Mod 的玩家说明留在对应 `mods/<ModName>/README.md`；源码迭代说明留在对应
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README；共享库 API、运行时依赖和部署建议留在
