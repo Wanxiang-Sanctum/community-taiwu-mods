@@ -42,6 +42,9 @@
 嫁接物菜单入口归 `ItemGrafts/`，只在当前宿主仍在太吾行囊时触发聊天窗口打开。宿主物品实例本身不再存在时，才进入
 重新寻找或创建宿主的分支。
 
+聊天窗口隐藏时，`Chat/` 仍继续消费当前投递会话事件。隐藏状态收到相枢答复时，它通过
+`shared/Wanxiang.Taiwu.InstantNotifications` 推送前端即时通知；消息流、窗口可见性和发送入口状态仍由 `Chat/` 维护。
+
 本机 Agent 配置读取入口是 `Agent/AgentSettings.cs`，但调用时机由 `FrontendPlugin.cs` 控制：初始化时
 读取一次并注入运行时对象。工作目录、CLI 适配器、IPC manifest、MCP sidecar 和 MCP bearer token 由前端
 运行时启动流程统一重建；设置修改后由游戏重启生效。
@@ -54,4 +57,5 @@
 事件选择和字段取舍归 `docs/logging.md`。行囊物品嫁接模型来自 `shared/Wanxiang.Taiwu.ItemGrafts.Contracts`、
 `shared/Wanxiang.Taiwu.ItemGrafts.Frontend` 和 `shared/Wanxiang.Taiwu.ItemGrafts.Backend`；相枢前端负责保存
 `GraftSession`，并决定如何把它应用到聊天可用性、宿主恢复/创建和相枢特有入口。共享 UI 支持范围和消息文本处理边界归
-`shared/Wanxiang.Taiwu.ItemGrafts.Frontend`。
+`shared/Wanxiang.Taiwu.ItemGrafts.Frontend`。前端即时通知通过 `shared/Wanxiang.Taiwu.InstantNotifications`
+推送；具体触发策略由 `Chat/` 和 `ItemGrafts/` 按聊天窗口和宿主同步状态决定。

@@ -4,20 +4,28 @@ using GameData.Domains.LifeRecord.GeneralRecord;
 using GameData.Domains.World.Notification;
 using UILogic.DisplayDataStructure;
 
-namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
+namespace Wanxiang.Taiwu.InstantNotifications;
 
-internal static class GraftNotifications
+/// <summary>
+/// 推送调用方指定文本的太吾前端即时通知。
+/// </summary>
+public static class InstantNotificationPublisher
 {
-    internal const short DefaultNativeRecordType = 254;
-
     private const string NewMessageIndexKey = "NewMessageIndex";
 
-    internal static void Push(
-        string message,
-        short nativeRecordType = DefaultNativeRecordType)
+    /// <summary>
+    /// 把消息写入游戏前端即时通知列表，并触发新通知 UI 事件。
+    /// </summary>
+    /// <param name="templateId">游戏内置即时通知模板 ID，用于决定图标、通知类型和重要程度。</param>
+    /// <param name="message">玩家可见通知文本。</param>
+    /// <exception cref="ArgumentException"><paramref name="message"/> 为 null、空字符串或空白字符串。</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="templateId"/> 不存在于游戏即时通知配置。</exception>
+    public static void Push(
+        short templateId,
+        string message)
     {
         string normalizedMessage = ValidateRequiredText(message, nameof(message));
-        ValidateNativeRecordType(nativeRecordType, nameof(nativeRecordType));
+        ValidateTemplateId(templateId, nameof(templateId));
 
         DisplayTriggerModel displayTriggerModel = SingletonObject.getInstance<DisplayTriggerModel>();
         displayTriggerModel.RenderedNotificationList ??= [];
@@ -25,7 +33,7 @@ internal static class GraftNotifications
         int newMessageIndex = displayTriggerModel.RenderedNotificationList.Count;
         int currentDate = SingletonObject.getInstance<BasicGameData>().CurrDate;
         InstantNotificationRenderInfo renderInfo = new(
-            nativeRecordType,
+            templateId,
             normalizedMessage,
             normalizedMessage,
             currentDate);
@@ -42,16 +50,13 @@ internal static class GraftNotifications
             EasyPool.Get<ArgumentBox>().Set(NewMessageIndexKey, newMessageIndex));
     }
 
-    private static void ValidateNativeRecordType(
-        short nativeRecordType,
+    private static void ValidateTemplateId(
+        short templateId,
         string parameterName)
     {
-        InstantNotificationItem item = InstantNotification.Instance.GetItem(nativeRecordType)
-            ?? throw new ArgumentOutOfRangeException(parameterName, nativeRecordType, "Native instant notification record type does not exist.");
-
-        if (item.Type >= EInstantNotificationType.Count)
+        if (InstantNotification.Instance.GetItem(templateId) is null)
         {
-            throw new ArgumentOutOfRangeException(parameterName, nativeRecordType, "Native instant notification record type has an invalid display type.");
+            throw new ArgumentOutOfRangeException(parameterName, templateId, "Native instant notification template does not exist.");
         }
     }
 

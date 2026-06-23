@@ -5,7 +5,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Wanxiang.Taiwu.Logging;
+using Wanxiang.Taiwu.InstantNotifications;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
+
+using InstantNotificationConfig = Config.InstantNotification;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -68,6 +71,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
     private const string HostUnavailableButtonLabel = "离身";
+    private const string HiddenAssistantMessageNotificationText = "相枢传来新的低语。";
+    private const short HiddenAssistantMessageNotificationTemplateId = InstantNotificationConfig.DefKey.WalkThroughAbyss;
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
     private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
@@ -176,7 +181,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         IsVisible = visible;
-        gameObject.SetActive(visible);
+        ApplyRootVisibility(visible);
 
         if (!visible)
         {
@@ -223,7 +228,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _rootCanvasGroup = GetRequiredRootComponent<CanvasGroup>();
         _participants.PlayerNameChanged += UpdatePlayerSpeakerLabels;
         IsVisible = false;
-        gameObject.SetActive(false);
+        ApplyRootVisibility(visible: false);
     }
 
     private T GetRequiredRootComponent<T>()
@@ -232,6 +237,22 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return GetComponent<T>()
             ?? throw new InvalidOperationException(
                 $"Xiangshu chat window root is missing required {typeof(T).Name} component.");
+    }
+
+    private void ApplyRootVisibility(bool visible)
+    {
+        Canvas rootCanvas = _rootCanvas
+            ?? throw new InvalidOperationException("Xiangshu chat window root Canvas is not initialized.");
+        CanvasGroup rootCanvasGroup = _rootCanvasGroup
+            ?? throw new InvalidOperationException("Xiangshu chat window root CanvasGroup is not initialized.");
+        ConchShipGraphicRaycaster rootRaycaster = _rootRaycaster
+            ?? throw new InvalidOperationException("Xiangshu chat window root raycaster is not initialized.");
+
+        rootCanvas.enabled = visible;
+        rootCanvasGroup.alpha = visible ? 1f : 0f;
+        rootCanvasGroup.blocksRaycasts = visible;
+        rootCanvasGroup.interactable = visible;
+        rootRaycaster.enabled = visible;
     }
 
     private VisibilityState ExcludeFromPlayerViewCapture()
@@ -259,6 +280,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         DrainSessionEvents();
+
+        if (!IsVisible)
+        {
+            return;
+        }
+
         UpdateSendButtonState();
         UpdateInputFocusVisual();
         UpdateReplyIndicator();
@@ -308,6 +335,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Justification = "Unity invokes LateUpdate by method name.")]
     private void LateUpdate()
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         ApplyPanelLayout();
     }
 
@@ -329,11 +361,24 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             if (sessionEvent.Kind == AgentChatSessionEventKind.MessageAdded
                 && sessionEvent.Message is not null)
             {
+                NotifyHiddenAssistantMessage(sessionEvent.Message);
                 AddMessage(sessionEvent.Message);
             }
         }
 
         UpdateSendButtonState();
+    }
+
+    private void NotifyHiddenAssistantMessage(AgentChatMessage message)
+    {
+        if (IsVisible || message.Role != AgentChatRole.Assistant)
+        {
+            return;
+        }
+
+        InstantNotificationPublisher.Push(
+            HiddenAssistantMessageNotificationTemplateId,
+            HiddenAssistantMessageNotificationText);
     }
 
     private void ActivateSendButton()

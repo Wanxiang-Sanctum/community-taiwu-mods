@@ -5,7 +5,7 @@
 “嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主。Contracts 表达宿主身份、宿主模板、可选外观覆盖值和
 宿主事件；它不规定某个前端入口如何渲染外观或菜单。前端负责建立和结束嫁接会话，并决定如何把这些契约应用到可视化
 和操作入口；后端负责观察宿主存在性、角色行囊位置和宿主数据变化。Contracts 是稳定模型和跨端内部协议的所有者；
-创建宿主、外观应用、菜单、通知、观察和会话统计分别由端侧项目负责。
+创建宿主、外观应用、菜单、通知触发、观察和会话统计分别由端侧项目负责。
 
 ## 公开模型
 
@@ -29,7 +29,7 @@
 ## 模块边界
 
 `Wanxiang.Taiwu.ItemGrafts.Frontend` 负责前端入口：`InventoryGrafts.Install(plugin)`、`AttachAsync(...)`、
-`CreateAsync(...)`、`GraftSession`、共享可视化、菜单操作和即时通知。
+`CreateAsync(...)`、`GraftSession`、共享可视化和菜单操作。
 
 `Wanxiang.Taiwu.ItemGrafts.Backend` 负责后端入口：`BackendInventoryGrafts.Install(plugin)`、宿主会话统计、
 Harmony 观察和宿主事件转发。

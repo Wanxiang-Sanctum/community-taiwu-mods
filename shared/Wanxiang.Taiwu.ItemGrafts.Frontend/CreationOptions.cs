@@ -10,14 +10,9 @@ namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 public sealed class CreationOptions
 {
     /// <summary>
-    /// 获取或设置会话创建后推送的即时通知文本；为 null 时不推送，非 null 时不能为空白。
+    /// 获取或设置嫁接会话成功建立后推送的即时通知；为 null 时不推送。
     /// </summary>
-    public string? NotificationMessage { get; set; }
-
-    /// <summary>
-    /// 获取或设置与 <see cref="NotificationMessage"/> 搭配使用的原生即时通知记录类型。
-    /// </summary>
-    public short NotificationRecordType { get; set; } = GraftNotifications.DefaultNativeRecordType;
+    public GraftSuccessNotification? SuccessNotification { get; set; }
 
     /// <summary>
     /// 获取或设置从创建前后行囊快照中选择新建宿主物品的选择器；返回值会由创建动作校验为请求的宿主模板。

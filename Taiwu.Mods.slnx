@@ -42,6 +42,9 @@
     <Project
       Path="shared/Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj"
     />
+    <Project
+      Path="shared/Wanxiang.Taiwu.InstantNotifications/Wanxiang.Taiwu.InstantNotifications.csproj"
+    />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Taiwu.Mods.Cli/Taiwu.Mods.Cli.csproj" />

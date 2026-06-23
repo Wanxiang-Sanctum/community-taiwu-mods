@@ -14,6 +14,9 @@
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj"
     />
     <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.InstantNotifications/Wanxiang.Taiwu.InstantNotifications.csproj"
+    />
+    <ProjectReference
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.AsyncInterop/Wanxiang.Taiwu.AsyncInterop.csproj"
     />
     <ProjectReference

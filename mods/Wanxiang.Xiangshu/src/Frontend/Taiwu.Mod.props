@@ -12,6 +12,9 @@
       Include="Wanxiang.Taiwu.ItemGrafts.Contracts.dll"
     />
     <TaiwuModMergeDependency Include="Wanxiang.Taiwu.ItemGrafts.Frontend.dll" />
+    <TaiwuModMergeDependency
+      Include="Wanxiang.Taiwu.InstantNotifications.dll"
+    />
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
   </ItemGroup>
