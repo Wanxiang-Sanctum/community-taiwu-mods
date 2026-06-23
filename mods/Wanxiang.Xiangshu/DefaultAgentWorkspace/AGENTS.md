@@ -87,8 +87,8 @@
   工作区配置，或明确要求把某条经验沉淀为稳定工作区规则时，才修改这些资产。
 - 本地工作记录：`.xiangshu-notes/`。这个目录默认可以不存在，用于当前 Agent 工作区内的草稿、任务记录和
   本地经验；不属于静态世界观资料，也不替代当前输入、工具结果或 `.xiangshu-runtime/` 中的运行数据。
-- 运行数据：`.xiangshu-runtime/`。这个目录用于 IPC manifest、MCP sidecar 事件日志、临时协议文件和聊天
-  会话文件，由相枢运行时维护。
+- 运行数据：`.xiangshu-runtime/`。这个目录用于 IPC manifest、MCP sidecar 事件日志、临时协议文件和按太吾世界
+  `WorldId` 分区的聊天会话文件，由相枢运行时维护。
 
 使用 `.xiangshu-notes/` 时区分两类记录：
 

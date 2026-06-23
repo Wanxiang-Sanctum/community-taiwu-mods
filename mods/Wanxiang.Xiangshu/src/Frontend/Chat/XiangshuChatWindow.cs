@@ -127,9 +127,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     public bool IsVisible { get; private set; }
 
-    public static XiangshuChatWindow Create(
-        AgentChatSession session,
-        ChatParticipantIdentity participants)
+    public static XiangshuChatWindow Create(ChatParticipantIdentity participants)
     {
         GameObject root = new(
             RootGameObjectName,
@@ -140,17 +138,38 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             typeof(CanvasGroup));
         DontDestroyOnLoad(root);
         XiangshuChatWindow window = root.AddComponent<XiangshuChatWindow>();
-        window.Initialize(session, participants);
+        window.Initialize(participants);
         return window;
     }
 
-    public void Toggle()
+    public void BindSession(AgentChatSession? session)
     {
-        SetVisible(!IsVisible);
+        if (ReferenceEquals(_session, session))
+        {
+            return;
+        }
+
+        _session = session;
+
+        if (_uiBuilt)
+        {
+            ReloadVisibleMessages();
+
+            if (_session is not null)
+            {
+                UpdateSendButtonState();
+                UpdateReplyIndicator();
+            }
+        }
     }
 
     public void SetVisible(bool visible)
     {
+        if (visible && _session is null)
+        {
+            throw new InvalidOperationException("Cannot show Xiangshu chat window without a bound chat session.");
+        }
+
         if (visible && !EnsureUiBuilt())
         {
             return;
@@ -195,11 +214,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void Initialize(
-        AgentChatSession session,
-        ChatParticipantIdentity participants)
+    private void Initialize(ChatParticipantIdentity participants)
     {
-        _session = session;
         _participants = participants;
         _rootCanvas = GetRequiredRootComponent<Canvas>();
         _rootCanvasScaler = GetRequiredRootComponent<CanvasScaler>();
@@ -439,8 +455,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return;
         }
 
-        bool isReplying = _session?.IsReplying == true;
-        bool requiresReset = _session?.RequiresReset == true;
+        AgentChatSession? session = _session;
+
+        if (session is null)
+        {
+            return;
+        }
+
+        bool isReplying = session.IsReplying;
+        bool requiresReset = session.RequiresReset;
         bool isPlayerReady = _participants?.IsPlayerNameReady == true;
         bool hostInTaiwuInventory = XiangshuGraftState.IsHostInTaiwuInventory;
 

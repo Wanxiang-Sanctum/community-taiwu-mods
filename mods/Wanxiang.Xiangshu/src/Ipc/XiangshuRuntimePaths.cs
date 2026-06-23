@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace Wanxiang.Xiangshu.Ipc;
@@ -18,6 +19,8 @@ public static class XiangshuRuntimePaths
     public const string McpServerDiagnosticsDirectoryName = "McpServer";
 
     public const string ChatSessionsDirectoryName = "ChatSessions";
+
+    public const string ChatSessionWorldsDirectoryName = "Worlds";
 
     public const string CurrentChatSessionFileName = "current.json";
 
@@ -137,17 +140,36 @@ public static class XiangshuRuntimePaths
             ChatSessionsDirectoryName);
     }
 
-    public static string GetCurrentChatSessionPath(string agentWorkingDirectory)
+    public static string GetWorldChatSessionsDirectory(
+        string agentWorkingDirectory,
+        uint worldId)
     {
         return Path.Combine(
             GetChatSessionsDirectory(agentWorkingDirectory),
+            ChatSessionWorldsDirectoryName,
+            FormatWorldChatSessionKey(worldId));
+    }
+
+    public static string GetCurrentChatSessionPath(
+        string agentWorkingDirectory,
+        uint worldId)
+    {
+        return Path.Combine(
+            GetWorldChatSessionsDirectory(agentWorkingDirectory, worldId),
             CurrentChatSessionFileName);
     }
 
-    public static string GetChatSessionSnapshotsDirectory(string agentWorkingDirectory)
+    public static string GetChatSessionSnapshotsDirectory(
+        string agentWorkingDirectory,
+        uint worldId)
     {
         return Path.Combine(
-            GetChatSessionsDirectory(agentWorkingDirectory),
+            GetWorldChatSessionsDirectory(agentWorkingDirectory, worldId),
             ChatSessionSnapshotsDirectoryName);
+    }
+
+    private static string FormatWorldChatSessionKey(uint worldId)
+    {
+        return "world-" + worldId.ToString("x8", CultureInfo.InvariantCulture);
     }
 }

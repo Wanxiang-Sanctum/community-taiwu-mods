@@ -7,7 +7,7 @@ using Wanxiang.Xiangshu.Ipc;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
-internal sealed class AgentChatSessionStore(string workingDirectory)
+internal sealed class AgentChatSessionStore(string workingDirectory, uint worldId)
 {
     private const string MessageIdPrefix = "message-";
 
@@ -24,8 +24,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory)
         TypeNameHandling = TypeNameHandling.None,
     };
 
-    private readonly string _currentPath = XiangshuRuntimePaths.GetCurrentChatSessionPath(workingDirectory);
-    private readonly string _sessionsDirectory = XiangshuRuntimePaths.GetChatSessionSnapshotsDirectory(workingDirectory);
+    private readonly string _currentPath = XiangshuRuntimePaths.GetCurrentChatSessionPath(workingDirectory, worldId);
+    private readonly string _sessionsDirectory = XiangshuRuntimePaths.GetChatSessionSnapshotsDirectory(workingDirectory, worldId);
 
     public AgentChatSessionState? LoadCurrent()
     {

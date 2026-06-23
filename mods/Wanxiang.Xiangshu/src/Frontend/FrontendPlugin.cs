@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using FrameWork;
 using TaiwuModdingLib.Core.Plugin;
 using SharedInventoryGrafts = Wanxiang.Taiwu.ItemGrafts.Frontend.InventoryGrafts;
 using Wanxiang.Taiwu.Logging;
@@ -33,14 +34,13 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private AgentCliLauncher? _agentCliLauncher;
     private McpBearerToken? _mcpBearerToken;
     private ChatParticipantIdentity? _chatParticipantIdentity;
-    private AgentChatSession? _chatSession;
-    private XiangshuChatWindow? _chatWindow;
+    private CurrentWorldChatSession? _currentChatSession;
     private FrontendHotkeyDriver? _hotkeyDriver;
     private GraftHostSync? _graftHostSync;
 
     internal AgentSettings? CurrentAgentSettings { get; private set; }
 
-    internal bool IsChatWindowVisible => _chatWindow?.IsVisible == true;
+    internal bool IsChatWindowVisible => _currentChatSession?.IsWindowVisible == true;
 
     public override void Initialize()
     {
@@ -51,16 +51,14 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             _mcpBearerToken = McpBearerToken.Create();
             _agentCliLauncher = new AgentCliLauncher(_mcpBearerToken);
             _chatParticipantIdentity = new ChatParticipantIdentity();
-            _chatSession = new AgentChatSession(
+            _currentChatSession = new CurrentWorldChatSession(
                 _agentCliLauncher,
                 () => CurrentAgentSettings,
-                new AgentChatSessionStore(CurrentAgentSettings.WorkingDirectory),
-                CurrentAgentSettings.Adapter,
-                ChatParticipantIdentity.AssistantName);
-            _chatWindow = XiangshuChatWindow.Create(_chatSession, _chatParticipantIdentity);
+                _chatParticipantIdentity);
             InstallChatHotkey();
             InstallItemGraft();
-            StartFrontendIpcServer(_chatSession, CurrentAgentSettings.ModDirectory);
+            GEvent.Add(EEvents.OnGameStateChange, OnGameStateChange);
+            StartFrontendIpcServer(_currentChatSession.IpcBinding, CurrentAgentSettings.ModDirectory);
 
             StartMcpSidecar(CurrentAgentSettings);
             Log.Info(
@@ -84,25 +82,24 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
+        GEvent.Remove(EEvents.OnGameStateChange, OnGameStateChange);
         _graftHostSync?.Dispose();
         _graftHostSync = null;
         XiangshuGraftState.Reset();
         _ = SharedInventoryGrafts.Uninstall();
         _hotkeyDriver?.Dispose();
         _hotkeyDriver = null;
-        _chatWindow?.DestroyWindow();
-        _chatWindow = null;
-        _chatSession?.Dispose();
-        _chatSession = null;
+        _mcpSidecar?.Dispose();
+        _mcpSidecar = null;
+        _ipcServer?.Dispose();
+        _ipcServer = null;
+        _currentChatSession?.Dispose();
+        _currentChatSession = null;
         _chatParticipantIdentity?.Dispose();
         _chatParticipantIdentity = null;
         _agentCliLauncher?.Dispose();
         _agentCliLauncher = null;
         _mcpBearerToken = null;
-        _mcpSidecar?.Dispose();
-        _mcpSidecar = null;
-        _ipcServer?.Dispose();
-        _ipcServer = null;
         CurrentAgentSettings = null;
     }
 
@@ -133,7 +130,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     }
 
     private void StartFrontendIpcServer(
-        AgentChatSession chatSession,
+        CurrentChatSessionBinding currentChatSessionBinding,
         string modDirectory)
     {
         _ipcServer?.Dispose();
@@ -141,7 +138,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             modDirectory,
             PluginDirectoryName);
         _ipcServer = new FrontendIpcServer(
-            chatSession,
+            currentChatSessionBinding,
             pluginDirectory,
             FrontendScriptReferences.GetAdditionalAssemblyReferencePaths(pluginDirectory));
         _ = _ipcServer.Start();
@@ -165,26 +162,35 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     internal void ToggleChatWindow()
     {
-        if (_chatWindow is null)
-        {
-            throw new InvalidOperationException("Wanxiang.Xiangshu chat window is not initialized.");
-        }
-
-        _chatWindow.Toggle();
+        CurrentWorldChatSession currentChatSession =
+            _currentChatSession
+            ?? throw new InvalidOperationException("Wanxiang.Xiangshu chat session runtime is not initialized.");
+        currentChatSession.ToggleWindow();
     }
 
     internal void OpenChatWindow()
     {
-        if (_chatWindow is null)
-        {
-            throw new InvalidOperationException("Wanxiang.Xiangshu chat window is not initialized.");
-        }
-
-        _chatWindow.SetVisible(visible: true);
+        CurrentWorldChatSession currentChatSession =
+            _currentChatSession
+            ?? throw new InvalidOperationException("Wanxiang.Xiangshu chat session runtime is not initialized.");
+        currentChatSession.OpenWindow();
     }
 
     private void OnHostLeftTaiwuInventory()
     {
-        _ = _chatSession?.RequestRuntimeInterrupt(HostLeftInventoryInterruptMessage);
+        _ = _currentChatSession?.RequestRuntimeInterrupt(HostLeftInventoryInterruptMessage);
+    }
+
+    private void OnGameStateChange(ArgumentBox argBox)
+    {
+        if (!argBox.Get("newState", out Enum newState))
+        {
+            return;
+        }
+
+        if ((EGameState)(object)newState != EGameState.InGame)
+        {
+            _currentChatSession?.Clear(hideWindow: true);
+        }
     }
 }

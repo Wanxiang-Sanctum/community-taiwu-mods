@@ -15,7 +15,7 @@ using Wanxiang.Xiangshu.Scripting;
 namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer(
-    AgentChatSession chatSession,
+    CurrentChatSessionBinding currentChatSessionBinding,
     string pluginDirectory,
     IEnumerable<string>? additionalAssemblyReferencePaths) : IDisposable
 {
@@ -116,7 +116,7 @@ internal sealed class FrontendIpcServer(
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
-        _ = builder.RegisterInstance(chatSession);
+        _ = builder.RegisterInstance(currentChatSessionBinding);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
                 new ScriptHostOptions(
@@ -192,14 +192,14 @@ internal sealed class FrontendExecuteScriptHandler(XiangshuScriptRunner scriptRu
     "Performance",
     "CA1812:Avoid uninstantiated internal classes",
     Justification = "MessagePipe constructs request handlers through DI and reflection.")]
-internal sealed class FrontendIntermediateReplyHandler(AgentChatSession chatSession)
+internal sealed class FrontendIntermediateReplyHandler(CurrentChatSessionBinding currentChatSessionBinding)
     : IAsyncRequestHandler<IpcIntermediateReplyRequest, IpcNoContentResponse>
 {
     public UniTask<IpcNoContentResponse> InvokeAsync(
         IpcIntermediateReplyRequest request,
         CancellationToken cancellationToken = default)
     {
-        chatSession.AddIntermediateReply(request.Content);
+        currentChatSessionBinding.AddIntermediateReply(request.Content);
 
         return UniTask.FromResult(new IpcNoContentResponse());
     }
