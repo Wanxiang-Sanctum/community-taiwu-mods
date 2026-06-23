@@ -24,7 +24,7 @@
 ```csharp
 InstantNotificationPublisher.Push(
     InstantNotification.DefKey.WalkThroughAbyss,
-    "相枢传来新的低语。");
+    "药钵中传来低语。");
 ```
 
 ## 开发

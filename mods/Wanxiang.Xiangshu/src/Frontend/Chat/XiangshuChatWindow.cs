@@ -71,7 +71,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
     private const string HostUnavailableButtonLabel = "离身";
-    private const string HiddenAssistantMessageNotificationText = "相枢传来新的低语。";
+    private const string HiddenAssistantMessageNotificationText = "药钵中传来低语。";
     private const short HiddenAssistantMessageNotificationTemplateId = InstantNotificationConfig.DefKey.WalkThroughAbyss;
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
