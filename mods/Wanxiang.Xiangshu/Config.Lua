@@ -3,7 +3,7 @@ return {
   Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
-  GameVersion = "1.0.17",
+  GameVersion = "1.0.20",
   Author = "Wanxiang Sanctum",
   Description = [=[相枢是在太吾绘卷内接入第三方本机 CLI Agent 的对话 Mod。它不只是聊天入口：Agent 可以通过相枢投递脚本读写游戏运行时数据，理论上能触达游戏本身具备的能力，例如创建物品、影响 NPC 或改变当前运行状态。
 

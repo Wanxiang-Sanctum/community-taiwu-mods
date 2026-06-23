@@ -1,8 +1,8 @@
 # {{ mod.name }} 维护入口
 
-本文面向维护 {{ mod.name }} 源码、组包内容和发布流程的人。玩家使用说明见 `README.md`。
+本文面向维护 {{ mod.name }} 源码、组包内容和发布流程的人。玩家说明见 [README.md](README.md)。
 
-## 开发
+## 常用命令
 
 从仓库根目录构建插件项目：
 
@@ -19,11 +19,13 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 
 `pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把它声明的内容组装到仓库根目录的 `artifacts/mods/{{ mod.name }}/`。
 
-最终包内容由 `Taiwu.Mod.Pack.proj` 声明。新增静态文件、目录、额外项目或发布目录时，先看上一级
-[mods/README.md](../README.md) 的组包约定，再更新对应项目文件。
+## 组包边界
 
-插件项目的本地构建设置和需要随包部署的依赖写在对应项目的 `Taiwu.Mod.props`。依赖部署用
-`TaiwuModMergeDependency` 或 `TaiwuModCopyDependency` 声明，并只由 `pack-mod` 使用。
+最终包内容由 `Taiwu.Mod.Pack.proj` 声明。新增静态文件、目录、额外项目或发布目录时，先按上一级
+[mods/README.md](../README.md) 选择组包 item，再更新组包入口或对应项目文件。
+
+插件项目的本地构建设置和随包部署的依赖写在对应项目的 `Taiwu.Mod.props`。`pack-mod` 读取
+`TaiwuModMergeDependency` 和 `TaiwuModCopyDependency` 并组装可部署目录；普通 `dotnet build` 保持项目常规输出。
 
 ## 项目结构
 
@@ -33,3 +35,9 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `src/Frontend/`：前端插件项目，入口 DLL 默认部署到 `Plugins/`。
 - `src/Backend/`：后端插件项目，入口 DLL 默认部署到 `Plugins/`。
+
+## 同步清单
+
+- 公开配置或面向玩家的说明变化时，同步更新 [README.md](README.md)。
+- 包内容变化时，同步更新 `Taiwu.Mod.Pack.proj`、项目文件或项目旁 `Taiwu.Mod.props` 中拥有该声明的位置。
+- 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。

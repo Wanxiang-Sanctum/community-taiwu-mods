@@ -23,7 +23,9 @@
     BeforeTargets="PublicizeAssemblies"
     Condition="'$(UsePublicizer)' == 'true' And '$(TaiwuModSide)' == 'Backend'"
   >
-    <!-- Backend needs runtime access bypass only when Publicizer has a target assembly to publicize. -->
+    <!-- Krafs.Publicizer emits IgnoresAccessChecksToAttribute from publicized
+         assemblies; without a publicized assembly, the attribute receives an
+         empty assembly name. -->
     <PropertyGroup>
       <_TaiwuPublicizeTargets>@(Publicize)</_TaiwuPublicizeTargets>
       <PublicizerRuntimeStrategies

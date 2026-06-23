@@ -1,29 +1,31 @@
 # 仓库级文档入口
 
-`docs/` 面向仓库维护者，收纳跨 Mod 的开发维护文档、机制参考和仓库经验。玩家安装、使用和风险边界从根 `README.md`
-与具体 Mod 的 `README.md` 开始；提交 issue、讨论或 PR 前先看根 `CONTRIBUTING.md`。
+`docs/` 面向维护本仓库实际 Mod 的人，收纳跨 Mod 的开发维护文档、机制参考和仓库经验。玩家安装、使用和风险边界从根
+`README.md` 与具体 Mod 的 `README.md` 开始；提交 issue、讨论或 PR 前先看根 `CONTRIBUTING.md`。
 
 本目录按文档职责分三类：
 
-- 开发维护：说明仓库维护者如何构建、检查、打包、发布、扩展项目和维护文档结构。
+- 开发维护：说明本仓库实际 Mod 的构建、检查、打包、发布、项目扩展和文档结构维护。
 - 机制参考：解释太吾游戏、Steam Workshop 或外部平台的稳定语义。依据归太吾游戏本体、对应平台或公开可观察行为；
-  组织内部游戏快照只作为维护者复核工具。
+  组织内部游戏快照只作为开发维护复核工具。
 - 仓库经验：记录跨具体 Mod 复用的发布判断、维护约定或协作经验，依据归本仓库流程和已采用的项目约定。
 
-只服务单个 Mod 或单个源码模块的内容留在对应 Mod 目录内。
+只服务单个 Mod、单个共享项目或单个源码模块的内容留在对应目录内；本目录不复制这些子模块的可变清单。
 
 ## 阅读入口
 
 | 文档 | 何时阅读 |
 | --- | --- |
 | [开发维护入口](development/README.md) | 构建、检查、打包、发布、新增或移除项目，以及理解仓库结构时。 |
-| [文档分层与维护](development/documentation.md) | 调整 README、DEVELOPMENT、docs、模板文档或贡献入口的受众和同步规则时。 |
+| [文档分层与维护](development/documentation.md) | 调整 README、DEVELOPMENT、docs、模板文档或贡献入口的入口、受众和同步规则时。 |
 | [太吾游戏 Mod 配置与 Steam 发布边界](taiwu-mod-steam-publishing-boundary.md) | 理解太吾读取的 `Config.Lua`、用户设置、插件入口、Steam Workshop 字段和上传内容边界时。 |
 
 ## 所有权边界
 
-仓库级文档只保留跨 Mod 的维护入口、稳定机制解释和文档分层规则。一级实际 Mod 索引归 `mods/README.md`，内部共享项目
-索引归 `shared/README.md`；仓库级文档需要项目发现时链接这些入口，不复制可变清单。
+本目录自己的文档清单由上面的阅读入口维护；跨目录内容按最近拥有者进入。
+
+一级实际 Mod 索引归 `mods/README.md`，内部共享项目索引归 `shared/README.md`；仓库级文档需要项目发现时链接这些入口，
+不复制可变清单。
 
 具体 Mod 的玩家说明、配置和运行边界归 `mods/<ModName>/README.md`；源码模块、内部设计和组包内容归
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README。共享项目 API、事件选择和部署建议归

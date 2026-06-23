@@ -1,7 +1,7 @@
 # 开发维护入口
 
-本文面向维护本仓库源码、文档、组包流程和发布流程的人。玩家安装、使用和风险边界从根 `README.md` 与具体 Mod 的
-`README.md` 开始；提交贡献前的协作入口见根 `CONTRIBUTING.md`。
+本文面向维护本仓库实际 Mod 源码、文档、组包流程和发布流程的人。玩家安装、使用和风险边界从根 `README.md` 与具体 Mod
+的 `README.md` 开始；提交贡献前的协作入口见根 `CONTRIBUTING.md`。
 
 ## 阅读路径
 
@@ -12,7 +12,7 @@
 | 维护某个 Mod 的源码模块、发布内容和内部设计 | `../../mods/<ModName>/DEVELOPMENT.md` |
 | 维护内部共享项目 | `../../shared/README.md` |
 | 维护创建/移除命令实现或模板 | `../../tools/README.md`、`../../templates/README.md` |
-| 维护文档分层和同步规则 | `documentation.md` |
+| 维护文档入口分层和同步规则 | `documentation.md` |
 | 维护跨 Mod 复用的机制参考或仓库经验 | `../README.md` |
 
 具体 Mod 的 `README.md` 面向外部技术玩家，说明使用方式、运行边界和配置入口。内部设计、构建命令、组包细节和源码模块
@@ -24,14 +24,14 @@
 `templates/`、`tools/`、MSBuild 骨架和 GitHub Actions 以实际 Mod 需要为准保留本地适配；通用 monorepo 模板能力、
 模板仓库文档和从模板创建新仓库的说明由 `Taiwu.Mods` 维护。
 
-[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 是 Wanxiang-Sanctum 组织内部维护太吾 mod
+[`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 是 Wanxiang-Sanctum 组织内部维护太吾 Mod
 开发辅助工具、引用包和游戏观察快照的仓库。
 
 本仓库按两种方式使用它：
 
 - 本仓库引用 `Taiwu.ModKit.References.*` 和 `Taiwu.ModKit.Dependencies.*` NuGet 包。包切分、打包和发布流程归
   `taiwu-modkit` 的工具与配置维护；本仓库通过 `Directory.Packages.props` 固定版本，并通过 `NuGet.config` 配置包源。
-- 源码维护时，组织内部维护者使用 `taiwu-modkit` 仓库根目录下的 `game/` 生成快照对照太吾游戏文件和源码观察结果。
+- 维护源码时，可使用 `taiwu-modkit` 仓库根目录下的 `game/` 生成快照对照太吾游戏文件和源码观察结果。
   运行时内容以本仓库的 Mod 源码、组包入口和发布产物为准；游戏观察快照需要更新时，在 `taiwu-modkit` 中运行对应工具
   重新生成。
 
@@ -110,7 +110,7 @@ git push origin mods/<ModName>/v<Version>
 ## 新增和移除项目
 
 本仓库的创建命令用于扩展仓库内项目。新项目生成后，真实构建、组包和部署约定由生成出的项目文件、
-`Taiwu.Mod.Pack.proj`、目录 README 和解决方案注册共同维护。
+`Taiwu.Mod.Pack.proj`、目录 README、lock file 和解决方案注册共同维护。
 
 新增实际 Mod：
 
@@ -148,7 +148,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiw
 ```
 
 新增、移除或重命名实际 Mod 时，同步更新 `mods/README.md` 的一级目录索引。新增、移除或重命名内部共享项目时，同步更新
-`shared/README.md` 的一级目录索引。根 README 只在玩家入口表需要变化时更新；开发手册和机制参考需要项目发现时，链接
+`shared/README.md` 的一级目录索引。根 README 只在对外 Mod 入口需要变化时更新；开发手册和机制参考需要项目发现时，链接
 目录级 README。
 
 ## 仓库结构
@@ -157,7 +157,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- remove-shared --name MyCompany.Taiw
   发布目录项目约定见 `mods/README.md`。
 - `shared/`：本仓库内部共享项目目录。一级目录索引、共享项目目录约定、共享边界、目标框架和项目级配置入口见
   `shared/README.md`。
-- `docs/`：仓库维护者使用的跨 Mod 机制参考、仓库经验和开发维护文档。
+- `docs/`：维护本仓库实际 Mod 时使用的跨 Mod 机制参考、仓库经验和开发维护文档。
 - `tools/`：本仓库辅助命令行工具，负责创建项目、取消解决方案注册和打包可部署目录；实现入口见 `tools/README.md`。
 - `templates/`：本仓库创建命令使用的 Scriban 初始骨架；变量和渲染规则见 `templates/README.md`。
 - `.github/workflows/`：GitHub Actions 工作流，覆盖 PR 验证和 Mod release 打包。

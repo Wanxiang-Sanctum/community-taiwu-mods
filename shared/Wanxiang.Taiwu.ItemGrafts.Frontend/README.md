@@ -16,8 +16,8 @@
 `Wanxiang.Taiwu.ModRpc`。
 
 使用 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
-`InventoryGrafts.Install(this)`。该安装绑定本 mod id，使前端 `GraftSession` 可以通过
-`Wanxiang.Taiwu.ModRpc` 与同一 mod 的后端观察服务协作；它也安装共享前端可视化层。后端观察服务由
+`InventoryGrafts.Install(this)`。该安装绑定本 Mod ID，使前端 `GraftSession` 可以通过
+`Wanxiang.Taiwu.ModRpc` 与同一 Mod 的后端观察服务协作；它也安装共享前端可视化层。后端观察服务由
 `Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放。
 
 `InventoryGrafts.Uninstall()` 卸载共享前端可视化层并清空内部显示状态；它不释放已经返回给使用方的会话。
@@ -82,7 +82,7 @@
 
 示例以 `CraftTool.DefKey.Medicine0`（陶土药钵）作为非堆叠真实宿主。
 
-前端初始化时绑定本 mod id，并启用共享可视化层：
+前端初始化时绑定本 Mod ID，并启用共享可视化层：
 
 ```csharp
 InventoryGrafts.Install(this);
@@ -214,7 +214,7 @@ new CreationOptions
 再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立会话结束；后续策略由使用方负责。
 
 使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端会话订阅；后端按宿主身份统计会话，
-最后一个会话结束后才会停止观察。同一 mod 内多处 UI 或业务同时接管同一宿主时，仲裁归更高层 UI 适配定义。
+最后一个会话结束后才会停止观察。同一 Mod 内多处 UI 或业务同时接管同一宿主时，仲裁归更高层 UI 适配定义。
 
 ## 开发
 
