@@ -2,7 +2,7 @@
 
 实际 Mod 源码和组包规则目录。
 
-本文面向仓库维护者。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护一级 Mod 目录索引、Mod 目录约定，以及所有
+本文面向维护本仓库实际 Mod 的人。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护一级 Mod 目录索引、Mod 目录约定，以及所有
 Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 具体 Mod 的 `README.md` 面向外部技术玩家；源码模块、内部设计和项目内维护入口由对应
@@ -41,8 +41,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 [`docs/taiwu-mod-steam-publishing-boundary.md`](../docs/taiwu-mod-steam-publishing-boundary.md)。
 
 创建命令生成新 Mod 的初始骨架。项目创建后，真实包内容和维护入口由该 Mod 的 `Taiwu.Mod.Pack.proj`、插件项目文件和项目旁
-`Taiwu.Mod.props` 维护；`templates/` 只作为新项目起点。新增实际 Mod 时，`README.md` 只保留面向使用者的最小入口，
-`DEVELOPMENT.md` 承接源码维护入口。
+`Taiwu.Mod.props` 维护；`templates/` 只作为新项目起点。新增实际 Mod 后，`README.md` 面向玩家组织功能、安装、
+配置和运行边界，`DEVELOPMENT.md` 承接源码维护入口。
 
 ```text
 mods/MyMod/

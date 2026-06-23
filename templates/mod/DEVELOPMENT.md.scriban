@@ -1,6 +1,6 @@
 # {{ mod.name }} 维护入口
 
-本文面向维护 {{ mod.name }} 源码、组包内容和发布流程的人。使用者说明见 [README.md](README.md)。
+本文面向维护 {{ mod.name }} 源码、组包内容和发布流程的人。玩家说明见 [README.md](README.md)。
 
 ## 常用命令
 
@@ -38,6 +38,6 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 
 ## 同步清单
 
-- 公开配置或面向使用者的说明变化时，同步更新 [README.md](README.md)。
+- 公开配置或面向玩家的说明变化时，同步更新 [README.md](README.md)。
 - 包内容变化时，同步更新 `Taiwu.Mod.Pack.proj`、项目文件或项目旁 `Taiwu.Mod.props` 中拥有该声明的位置。
 - 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
