@@ -14,8 +14,8 @@ namespace Wanxiang.Xiangshu.Frontend.Chat;
     Justification = "AgentCliLauncher is owned and disposed by FrontendPlugin; the chat session only borrows it.")]
 internal sealed class AgentChatSession : IDisposable
 {
-    private const string FailureMessage = "此刻诸机不应，稍后再问。";
-    private const string ResetRequiredMessage = "此番回声未能系住，此局已断。按下重置，再来问我。";
+    private const string FailureMessage = "此刻回声未至，稍后再问。";
+    private const string ResetRequiredMessage = "此番回声未能系住。这段问答已不可续，按下重置，再来问我。";
     private const string InterruptMessage = "且慢";
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");

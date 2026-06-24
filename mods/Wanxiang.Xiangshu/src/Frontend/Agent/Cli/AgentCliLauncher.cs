@@ -15,7 +15,7 @@ namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 internal sealed class AgentCliLauncher(
     McpBearerToken bearerToken) : IDisposable
 {
-    private const string ProtocolFallbackMessage = "方才回声散乱，未能凝成清楚答复。再问我一次。";
+    private const string ProtocolFallbackMessage = "方才回声散乱，未能凝成答复。你可再问一次。";
 
     private static readonly TimeSpan McpEndpointDiscoveryWindow = TimeSpan.FromSeconds(10);
 

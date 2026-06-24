@@ -11,7 +11,7 @@ Community Taiwu Mods 是 Wanxiang-Sanctum 维护的太吾绘卷 Mod 源码集合
 
 | Mod | 适合谁 | 继续阅读 |
 | --- | --- | --- |
-| 相枢 | 想在太吾绘卷内接入本机 CLI Agent，并理解受信脚本运行风险的玩家。当前仍处于实验阶段。 | [相枢说明](mods/Wanxiang.Xiangshu/README.md) |
+| 相枢 | 借“低语的陶土药钵”把本机 CLI Agent 接入太吾；适合熟悉 Agent 工作区并能承担受信脚本风险的玩家。当前仍在试行。 | [相枢说明](mods/Wanxiang.Xiangshu/README.md) |
 | 万象引 | 订阅相枢或其它明确要求万象引的 Mod 时需要的前置依赖。它本身不提供单独玩法入口。 | [万象引说明](mods/Wanxiang.Prelude/README.md) |
 
 安装或配置某个 Mod 前，先阅读对应 Mod 的 README。只作为前置依赖存在的 Mod，通常只在目标 Mod 或 Steam Workshop

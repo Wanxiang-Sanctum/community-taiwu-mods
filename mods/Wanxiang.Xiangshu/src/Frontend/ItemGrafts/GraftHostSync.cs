@@ -13,8 +13,8 @@ namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
 internal sealed class GraftHostSync : IDisposable
 {
-    private const string AttachSuccessNotificationText = "相枢藏进了陶土药钵。";
-    private const string CreateSuccessNotificationText = "低语的陶土药钵落入囊中。";
+    private const string AttachSuccessNotificationText = "相枢已寄身陶钵。";
+    private const string CreateSuccessNotificationText = "一只低语的陶土药钵落入囊中。";
     private const short SuccessNotificationTemplateId = InstantNotification.DefKey.WalkThroughAbyss;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
