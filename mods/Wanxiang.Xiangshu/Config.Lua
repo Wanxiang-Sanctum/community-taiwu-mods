@@ -83,7 +83,7 @@ Agent 工作区提供相枢的口吻、资料和工具指引。这个 Mod 的工
       SettingType = "InputField",
       Key = "AgentWorkingDirectory",
       DisplayName = "Agent 工作区",
-      Description = "本地 Agent 使用的 Agent 工作区目录。相对路径会落在相枢 Mod 目录下；默认目录随包提供相枢 Agent 工作区，初次使用可先沿用。",
+      Description = "本地 Agent 使用的 Agent 工作区目录。相对路径会落在相枢 Mod 目录下；默认目录随包提供初始 Agent 工作区，初次使用可先沿用。",
       DefaultValue = "DefaultAgentWorkspace",
     },
   },
