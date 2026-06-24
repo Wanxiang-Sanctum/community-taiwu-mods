@@ -1,13 +1,13 @@
 ---
 name: bepinex-runtime-scripting
-description: "Use when drafting or revising Xiangshu runtime C# scripts that inspect or mutate live frontend or backend game state, especially scripts that need BepInEx helper namespaces for reflection, detours, IL manipulation, or metadata inspection. Do not use for ordinary conversation, deciding whether to call an MCP tool, static mod source edits, or broad game API cataloging."
+description: "Use when a Xiangshu player goal requires drafting or revising runtime C# scripts to inspect, verify, or mutate live frontend or backend game state, especially scripts that need BepInEx helper namespaces for reflection, detours, IL manipulation, or metadata inspection. Select this from the live-state goal, not only explicit script/tool wording. Do not use for ordinary conversation, static mod source edits, or broad game API cataloging."
 ---
 
 # BepInEx Runtime Scripting
 
 ## Scope
 
-Use this skill only after the current task has already selected Xiangshu runtime C# scripting as the implementation path. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
+Use this skill when the current Xiangshu request has reached the runtime C# scripting path, including when that path follows from the player's goal rather than an explicit script request. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
 This skill owns the script entry shape and low-level helper orientation, not game-domain selection or task-specific data shaping. Use the relevant tool guide for domain context and reference fragments, then write the current task's smallest script.
 
 ## Script Entry Contract

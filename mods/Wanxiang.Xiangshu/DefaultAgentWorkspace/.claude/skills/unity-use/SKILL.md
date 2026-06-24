@@ -1,6 +1,6 @@
 ---
 name: unity-use
-description: "Use when Xiangshu must choose, perform, or verify a live Unity frontend action whose target is the visible UI surface, a selected control, screen coordinates, or a frontend-only command. Use with live Xiangshu frontend MCP/runtime tools. Do not use for visual-only inspection, ordinary game-state changes with a direct runtime/API owner, static game knowledge, ordinary conversation, or source-code maintenance."
+description: "Use when a Xiangshu player goal requires choosing, performing, or verifying a live Unity frontend action whose target is the visible UI surface, a selected control, screen coordinates, or a frontend-only command. Use with live Xiangshu frontend MCP/runtime tools; select this from visible-result or verification needs, not only explicit Unity/screenshot/tool wording. Do not use for visual-only inspection, ordinary game-state changes with a direct runtime/API owner, static game knowledge, ordinary conversation, or source-code maintenance."
 ---
 
 # Unity Use
@@ -8,6 +8,7 @@ description: "Use when Xiangshu must choose, perform, or verify a live Unity fro
 ## Scope
 
 Use this skill when the requested result belongs to the live Unity frontend and must be chosen, applied, or verified against current UI state. It covers visible UI targets, selected controls, screen-coordinate targeting, frontend-only commands, and verification after those actions.
+Infer this path from the requested visible result, current UI dependency, or need to verify what the player will see.
 
 Do not use this skill merely because a request may change the game. When a dedicated tool, backend domain API, or direct runtime API owns the result, use that path instead; return to frontend observation only if visible confirmation matters.
 
