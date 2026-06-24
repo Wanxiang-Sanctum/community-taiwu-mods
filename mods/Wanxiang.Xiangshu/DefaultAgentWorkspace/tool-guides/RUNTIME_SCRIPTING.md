@@ -134,6 +134,9 @@ public static class XiangshuScript
 - `DomainManager.Map.GetBlock(location)`、`TryGetBlock(...)`、`GetAreaByAreaId(...)`、`GetAreaBlocks(...)`：地图和区域事实。
 - `DataContextManager.GetCurrentThreadDataContext()`：后端主线程脚本里取得当前 `DataContext`。调用带 `DataContext`
   参数的后端只读域方法时优先使用它。
+- `DomainManager.TaiwuEvent.GetDisplayingEventData()`、`ShowingEvent`、`GetTriggeredEventSummaryDisplayData()`：
+  当前事件、待处理事件和事件选项显示数据入口；需要当前事件、事件节点、选项、条件或跳转时先看 `EVENTS.md`，
+  本文件只承担脚本入口和线程规则。
 - `DomainManager.LifeRecord.GetReversedRecord(context, charId, startCount, readCount)`：角色经历分页读取原语；需要
   最近经历、生平事件、经历分类、按经历找角色、梦回经历或可见性边界时先看 `LIFE_RECORDS.md`，本文件只承担脚本入口和线程规则。
 
