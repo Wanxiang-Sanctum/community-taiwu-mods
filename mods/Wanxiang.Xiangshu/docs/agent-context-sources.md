@@ -25,7 +25,8 @@
 
 `DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。玩家视图观察边界、脚本入口、
 结果形态和工具边界以相枢源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以太吾游戏配置、
-本地化、百晓册、显示辅助和游戏侧 namespace、类型、成员为依据。默认工作区记录能帮助运行 Agent 选入口、定目标侧、
+本地化、百晓册、显示辅助和游戏侧 namespace、类型、成员为依据；GM 与调试入口以游戏前端 GM 面板、命令行、
+本地化 key、事件配置和事件脚本观察结果为依据。默认工作区记录能帮助运行 Agent 选入口、定目标侧、
 理解游戏领域事实归属，并减少无目标反射探索；它可以保留少量参考片段来固定稳定入口、字段形状和接续关系，
 也允许片段展示服务当前事实返回的局部过滤、投影、分页和结果裁剪。可复用的稳定入口、字段形状、接续点和
 局部处理范式应沉淀为领域指引或参考片段；面向单次目标的完整读取、处理和输出流水线留给当前脚本和本地
@@ -71,6 +72,8 @@ Agent 视角的说法。
 | 剑冢状态枚举 | `game/src/Backend/GameData.Shared/GameData.Domains.World/SwordTombStatus.cs` | 未完成、第一阶段击败、第二阶段击败。 |
 | 神剑碎片增加相枢侵蚀、剑冢倒计时、侵蚀上限 | `game/src/Backend/GameData.Shared/GlobalConfig.cs` | 机制说明中的数值依据。 |
 | 游戏主要命名空间路由 | `game/src/Backend/Backend.slnx`、`game/src/The Scroll Of Taiwu_Data/The Scroll Of Taiwu_Data.slnx` | `GAME_KNOWLEDGE.md` 和脚本技能中的目标侧、命名空间和反射范围地图。 |
+| GM 面板、命令行、命令属性、分组、启用参数和热键 | `game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/UI_GMWindow.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GM/`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GMFunc.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GameApp.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/CommonCommandKit.cs`、`game/text/The Scroll Of Taiwu_Data/StreamingAssets/Language_CN/ui_language.txt.yml` | `GM_COMMANDS.md` 的 GM 面板/命令行、命令名、本地化、启用条件和执行边界。 |
+| 事件里的隐藏 GM 风格选项 | `game/src/Event/EventLib/Taiwu_EventPackage_Taiwu_EventPackage_Adventure_StrangeBookAdventure_JiuSiZhenCang/ConchShip.EventConfig.Taiwu/TaiwuEvent_9e92b8756f684a39a7fac0c8ac6f2fdc.cs`、`game/text/Event/EventLanguages/Taiwu_EventPackage_Taiwu_EventPackage_Adventure_StrangeBookAdventure_JiuSiZhenCang_Language_CN.txt.yml`、`game/event-scripts/Event/EventScript/Taiwu_EventPackage_Taiwu_EventPackage_Adventure_StrangeBookAdventure_JiuSiZhenCang.twes.yml` | `GM_COMMANDS.md` 的九似真藏已知锚点和事件 GM 选项检索路线。 |
 
 ## 更新流程
 
@@ -123,6 +126,9 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   `DefaultAgentWorkspace/tool-guides/RUNTIME_SCRIPTING.md`。
 - 配置、本地化、模板/显示辅助、百晓册、命名空间路由和反射边界归入
   `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
+- GM 面板、GM 命令行、调试/作弊入口、事件隐藏 GM 风格选项和对应执行边界归入
+  `DefaultAgentWorkspace/tool-guides/GM_COMMANDS.md`；完整 GM 命令表和完整事件清单仍由游戏侧源码、运行时枚举或
+  内部游戏镜像承载。
 - 稳定高频入口的少量参考片段归入对应领域指引；片段应能减少入口和字段形状试错，并说明可接续关系。
   面向单次目标的完整读取、处理和输出流水线留在当前脚本或本地工作记录中。
 - Agent 技能触发、脚本草拟纪律或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和

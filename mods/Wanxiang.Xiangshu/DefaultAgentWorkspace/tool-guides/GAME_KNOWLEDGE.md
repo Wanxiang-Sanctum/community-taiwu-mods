@@ -40,8 +40,9 @@
   命令系统和语言辅助。
 - `GameDataExtensions`：前端显示、桥接和本地化扩展辅助。需要把后端数据转成前端展示文本时可先查。
 - `TaiwuModdingLib.*`：mod 插件基类、配置和工具辅助，主要用于 mod 生命周期和插件信息，不是当前游戏世界状态入口。
-- `EventEditor`、`AdventureEditor`、`AiEditor`、`GM`、`DisplayConfig` 等偏编辑器、调试或旧系统命名空间，只在
-  当前请求明确涉及编辑器、GM、工具面板或旧界面时再查。
+- `EventEditor`、`AdventureEditor`、`AiEditor`、`DisplayConfig` 等偏编辑器、调试或旧系统命名空间，只在
+  当前请求明确涉及编辑器、工具面板或旧界面时再查。当前请求明确涉及 GM、调试命令、作弊入口或隐藏 GM 选项时，
+  先读取 `GM_COMMANDS.md`，再按需要回到本文件补充配置、本地化和 namespace 定位。
 
 ## 配置与本地化
 
