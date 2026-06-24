@@ -3,11 +3,11 @@
 当玩家询问某个角色最近发生了什么、生平经历、过往事件、经历分类、经历摘要，或想查找符合某类经历的
 角色时，读取本文件。角色经历属于后端权威状态；优先检索数据本身，再把数据整理为玩家可理解的答复。
 
-本文件是角色经历的领域专门指引，负责说明检索模型、基础接口、可组合原语、返回数据和解释边界。脚本入口
+本文件是角色经历的领域专门指引，负责说明检索模型、基础接口、领域上下文和解释边界。脚本入口
 契约、目标侧和线程规则仍归 `RUNTIME_SCRIPTING.md`；配置、本地化和通用模板资料归 `GAME_KNOWLEDGE.md`。
 
-本文件随相枢 Mod 发布，面向订阅玩家的默认运行时；只依赖当前游戏进程中已加载的游戏程序集、配置表和相枢
-脚本工具。运行时类型、成员和工具能力以实际工具结果为准。
+本文件只依赖当前游戏进程中已加载的游戏程序集、配置表和相枢脚本工具。运行时类型、成员和工具能力以
+实际工具结果为准。
 
 ## 查询模型
 
@@ -78,63 +78,71 @@
 查询指定角色时从当前上下文、玩家可见 UI 或其它角色查询取得 `charId` 后再传入。按经历找角色复用这个读取入口，
 区别只在于外层先组织候选角色集合，再逐个读取并匹配。
 
-## 可组合运行时原语
+## 领域脚本上下文
 
-本节只提供可组合原语。入口外壳、`using`、返回值和工具参数处理由 `RUNTIME_SCRIPTING.md` 的脚本入口契约
-统一说明；本节不重复脚本外壳。
+本节说明角色经历领域的判断入口和可组合接续点。写脚本时先确定目标角色或候选角色集合，再让当前脚本返回
+回答所需的少量事实：
 
-读取某个角色的一页经历：
+- 当前太吾经历：没有指定角色时，先取当前太吾 `charId`，再分页读取最近经历。
+- 指定角色经历：`charId` 应来自当前输入、玩家可见 UI、角色搜索结果或其它已确认上下文；不要用名字猜测唯一角色。
+- 经历模板解释：用 `Config.LifeRecord.Instance[recordType]` 解释类型名、描述模板、参数类型、分类和可见性要求。
+- 按经历找角色：先收窄候选角色集合，再分页读取并匹配经历谓词；普通查询优先关系网、可见角色、地点、组织、
+  村镇或囚犯等有限范围。
+- 广域活人候选：只在玩家目标确实需要全局范围，或更窄范围无法覆盖问题时使用；返回时说明范围大、可能需要分页，
+  并限制首批结果。
+
+若成员名、类型或参数形状不确定，先做当前问题相关的小范围只读探测，返回候选类型、成员或样本字段；探测只服务
+当前问题，确认后再写当前脚本。
+
+## 参考片段
+
+这些片段只展示当前领域的核心调用主体，不重复 `RUNTIME_SCRIPTING.md` 的入口外壳。使用时按当前请求删减返回字段，
+并把所列命名空间放到脚本顶部。片段可以作为同领域事实的接续点；组合片段时，以当前问题的输入、输出和
+副作用边界收束。
+片段中的过滤、投影、分页和结果裁剪是为了展示经历数据的稳定取法和最小可读形状；当前脚本可以按玩家问题调整
+这些处理步骤。
+
+### 当前太吾最近经历
+
+前提：`backend`、`mainThread`。需要 `System.Linq`、`GameData.Common`、`GameData.Domains`。
+输入：无；页大小按当前请求调整。
+输出：当前太吾 `charId`、经历总数、对太吾好感、最近一页真实经历的日期、模板 id、模板名、模板描述、好感要求和分类。
+可接续：指定角色时只替换 `charId` 来源；按经历找角色时，把这个片段作为候选扫描的一步，先限制候选集合、
+页数和返回数量。
 
 ```csharp
 var context = DataContextManager.GetCurrentThreadDataContext();
-var data = DomainManager.LifeRecord.GetReversedRecord(context, charId, startCount, readCount);
-var records = data.Record.Where(record => record.RecordType >= 0);
+int charId = DomainManager.Taiwu.GetTaiwuCharId();
+var data = DomainManager.LifeRecord.GetReversedRecord(context, charId, startCount: 0, readCount: 10);
+
+var records = data.Record
+    .Where(record => record.RecordType >= 0)
+    .Take(10)
+    .Select(record =>
+    {
+        var item = Config.LifeRecord.Instance[record.RecordType];
+        return new
+        {
+            record.Date,
+            record.RecordType,
+            TemplateName = item?.Name,
+            TemplateDesc = item?.Desc,
+            RequiredFavorability = item?.RequiredFavorability,
+            DisplayType = item?.DisplayType
+        };
+    })
+    .ToArray();
+
+return new
+{
+    CharId = charId,
+    data.LifeRecordCount,
+    data.FavorToTaiwu,
+    records
+};
 ```
 
-解释记录模板：
-
-```csharp
-var item = Config.LifeRecord.Instance[record.RecordType];
-var displayType = item?.DisplayType;
-var requiredFavorability = item?.RequiredFavorability;
-```
-
-按结构化字段匹配经历：
-
-```csharp
-bool matched = candidateRecordTypes.Contains(record.RecordType)
-    && record.Date >= startDate
-    && record.Date <= endDate;
-```
-
-常用候选角色来源：
-
-```csharp
-int taiwuCharId = DomainManager.Taiwu.GetTaiwuCharId();
-
-var related = new HashSet<int>();
-DomainManager.Character.GetAllRelatedCharIds(taiwuCharId, related);
-
-var deadRelated = new HashSet<int>();
-DomainManager.Character.GetAllRelatedDeadCharIds(taiwuCharId, deadRelated, includeGeneral: true);
-
-var settlementChars = new List<GameData.Domains.Character.Character>();
-DomainManager.Organization.GetCharactersFromSettlement(settlementId, minGrade, maxGrade, settlementChars);
-
-var prisoners = new List<int>();
-DomainManager.Organization.GetAllPrisoner(prisoners);
-```
-
-广域活人候选源：
-
-```csharp
-var allAliveNames = DomainManager.Character.GmCmd_GetAllCharacterName();
-```
-
-`GmCmd_GetAllCharacterName()` 只读返回当前活人候选；因范围大，普通查询优先使用更窄的玩家目标、可见角色、
-关系网、村镇、组织或囚犯范围。
-
-## 数据解释
+## 记录解释边界
 
 `TransferableLifeRecordData` 继承 `TransferableRecordDataBase`，常用字段：
 

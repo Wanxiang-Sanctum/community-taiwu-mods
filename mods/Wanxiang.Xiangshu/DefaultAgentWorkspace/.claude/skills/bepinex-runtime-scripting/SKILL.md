@@ -8,6 +8,7 @@ description: "Use when drafting or revising Xiangshu runtime C# scripts that ins
 ## Scope
 
 Use this skill only after the current task has already selected Xiangshu runtime C# scripting as the implementation path. Produce a complete compilation unit, choose the frontend or backend side, use BepInEx helper namespaces when low-level access is needed, and keep live-state changes narrow and verifiable.
+This skill owns the script entry shape and low-level helper orientation, not game-domain selection or task-specific data shaping. Use the relevant tool guide for domain context and reference fragments, then write the current task's smallest script.
 
 ## Script Entry Contract
 
@@ -69,7 +70,7 @@ When drafting the script body:
 - Prefer direct public game APIs. Choose helper namespaces from the BepInEx map above only when reflection, private access, hooks, IL work, or metadata inspection is part of the task.
 - Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.
 - Bind or inspect live game objects only after the target side and helper approach are known.
-- Keep the body focused on the requested runtime state change.
+- Keep the body focused on the requested runtime state change; reusable entry points, field shapes, and local processing patterns belong in the relevant tool guide rather than inside a one-off script body.
 
 ## Runtime Discipline
 

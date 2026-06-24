@@ -5,12 +5,12 @@
 指游戏 `TaiwuEvent` 运行时事件；角色的最近经历、生平事件、经历分类和按经历找角色仍归 `LIFE_RECORDS.md`。
 事件属于后端运行态；优先检索显示数据和事件运行时对象，再把结果整理为玩家可理解的答复。
 
-本文件是事件的领域专门指引，负责说明检索模型、基础接口、领域脚本原语、返回数据和解释边界。脚本入口契约、
+本文件是事件的领域专门指引，负责说明检索模型、基础接口、领域上下文和解释边界。脚本入口契约、
 目标侧和线程规则仍归 `RUNTIME_SCRIPTING.md`；稳定机制、配置、本地化、模板显示辅助和百晓册资料仍归
 `GAME_KNOWLEDGE.md`。
 
-本文件随相枢 Mod 发布，面向订阅玩家的默认运行时；只依赖当前游戏进程中已加载的游戏程序集、配置表和相枢
-脚本工具。运行时类型、成员和工具能力以实际工具结果为准。
+本文件只依赖当前游戏进程中已加载的游戏程序集、配置表和相枢脚本工具。运行时类型、成员和工具能力以
+实际工具结果为准。
 
 ## 查询模型
 
@@ -107,179 +107,89 @@
 调用脚本时选 `targetSide = "backend"`、`entryThread = "mainThread"`。事件运行态依赖当前世界和主线程数据上下文；
 纯文本整理可以在脚本内完成，但读取 `DomainManager.TaiwuEvent` 仍使用主线程入口。
 
-## 领域脚本原语
+## 领域脚本上下文
 
-本节只提供事件领域原语。入口外壳、`using`、返回值和工具参数处理由 `RUNTIME_SCRIPTING.md` 的脚本入口契约
-统一说明；脚本片段应产出事实层选择、有限扫描、事件节点摘要、选项图、脚本/条件摘要或当前上下文可求值性。
+本节说明事件领域的判断入口和可组合接续点。写脚本时先从玩家请求选择事实层，再让当前脚本返回回答所需的
+少量事实：
 
-投影当前显示事件为玩家可见事实：
+- 当前事件：优先读取玩家实际显示的事件数据；只有显示数据不足或玩家追问内部原因时，才读后端当前事件对象。
+- 待处理事件：先读取队列摘要；需要展开正文、选项或关联角色时，再用摘要中的键继续查。
+- 事件配置库：按 GUID、事件组、正文、选项文字、触发类型或事件类型做有限检索；输出候选而不是假定已经触发。
+- 节点与选项结构：先确定目标事件和目标选项；当前事件用显示顺序或显示文本定位，调试语境才使用内部 key。
+- 条件与脚本结构：普通解释返回“有条件、消耗、脚本、跳转”等结构事实；只有当前事件存在有效 `ArgBox` 时，
+  才把 `IsVisible`、`IsAvailable` 当作当前可见性/可用性结论。
+
+若成员名、类型或返回形状不确定，先做当前问题相关的小范围只读探测，返回候选类型、成员或样本字段；探测只服务
+当前问题，确认后再写当前脚本。
+
+## 参考片段
+
+这些片段只展示当前领域的核心调用主体，不重复 `RUNTIME_SCRIPTING.md` 的入口外壳。使用时按当前请求删减返回字段，
+并把所列命名空间放到脚本顶部。片段可以作为同领域事实的接续点；组合片段时，以当前问题的输入、输出和
+副作用边界收束。
+片段中的过滤、投影和限量返回是为了展示事件数据的稳定取法和最小可读形状；当前脚本可以按玩家问题调整这些
+处理步骤。
+
+### 当前显示事件
+
+前提：`backend`、`mainThread`。需要 `System.Linq`、`GameData.Domains`。
+输入：无。
+输出：是否有当前事件、当前事件 GUID、已替换正文、可见选项的顺序、文本和状态。
+可接续：`EventGuid` 可交给“事件配置库按 GUID 读取”；可见选项文本可用于后续定位目标选项。普通答复优先使用
+这里的显示事实。
 
 ```csharp
 var data = DomainManager.TaiwuEvent.GetDisplayingEventData();
-var current = data == null || string.IsNullOrEmpty(data.EventGuid)
-    ? null
-    : new
-    {
-        data.EventGuid,
-        data.EventContent,
-        Options = data.EventOptionInfos?.Select((option, index) => new
-        {
-            index,
-            option.OptionContent,
-            option.OptionState,
-            option.OptionGuid,
-            option.OptionKey,
-            option.OptionConsumeInfos,
-            option.OptionAvailableConditionInfos
-        }).ToArray()
-    };
-```
+if (data == null || string.IsNullOrEmpty(data.EventGuid))
+{
+    return new { hasCurrentEvent = false };
+}
 
-投影待处理队列并保留可展开键：
-
-```csharp
-var pending = DomainManager.TaiwuEvent.GetTriggeredEventSummaryDisplayData()
-    .Select((item, index) => new
+return new
+{
+    hasCurrentEvent = true,
+    data.EventGuid,
+    data.EventContent,
+    Options = data.EventOptionInfos?.Select((option, index) => new
     {
         index,
-        item.EventGuid,
-        item.CharacterId
-    })
-    .ToArray();
+        option.OptionContent,
+        option.OptionState
+    }).ToArray()
+};
 ```
 
-生成事件节点结构摘要：
+### 事件配置库文字搜索
+
+前提：`backend`、`mainThread`。需要 `System`、`System.Linq`、`GameData.Domains`。
+输入：`globals.Arguments["query"]`。
+输出：有限候选的 GUID、事件组、触发类型、事件类型、选项数和正文模板。
+可接续：候选 GUID 可交给“事件配置库按 GUID 读取”或“解析事件节点与选项”。输出只证明配置可检索，不证明事件
+已经触发、入队或显示。
 
 ```csharp
-var ev = DomainManager.TaiwuEvent.GetEvent(guid);
-var config = ev?.EventConfig;
-var info = config == null
-    ? null
-    : new
-    {
-        Guid = config.Guid.ToString(),
-        config.EventGroup,
-        config.IsHeadEvent,
-        config.TriggerType,
-        config.EventType,
-        config.EventSortingOrder,
-        config.EventContent,
-        HasEnterScript = config.Script?.Instructions != null,
-        HasEnterConditions = config.Conditions?.Conditions != null,
-        Options = config.EventOptions?.Select((option, index) => new
-        {
-            index,
-            option.OptionKey,
-            option.OptionGuid,
-            option.OptionContent,
-            option.Behavior,
-            option.DefaultState,
-            option.OneTimeOnly,
-            option.Important,
-            HasVisibleConditions = option.VisibleConditions?.Conditions != null,
-            HasAvailableConditions = option.AvailableConditions?.Conditions != null,
-            HasConfiguredConditions = option.OptionAvailableConditions != null,
-            HasScript = option.Script?.Instructions != null,
-            RedirectEventGuid = option.HasRedirect ? option.RedirectOption.EventGuid : null,
-            RedirectOptionGuid = option.HasRedirect ? option.RedirectOption.OptionGuid : null
-        }).ToArray()
-    };
-```
-
-按事件配置库谓词检索候选：
-
-```csharp
+string query = globals.Arguments.TryGetValue("query", out string value) ? value : "";
 var matches = DomainManager.TaiwuEvent.GetAllEventConfigs()
     .Where(config =>
         (config.EventGroup?.IndexOf(query, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0
         || (config.EventContent?.Contains(query) ?? false)
         || (config.EventOptions?.Any(option => option.OptionContent?.Contains(query) == true) ?? false))
-    .Take(20)
+    .Take(10)
     .Select(config => new
     {
         Guid = config.Guid.ToString(),
         config.EventGroup,
-        config.IsHeadEvent,
         config.TriggerType,
         config.EventType,
         OptionCount = config.EventOptions?.Length ?? 0,
-        config.EventContent,
-        MatchedOptions = config.EventOptions?
-            .Where(option => option.OptionContent?.Contains(query) == true)
-            .Take(5)
-            .Select(option => new
-            {
-                option.OptionKey,
-                option.OptionGuid,
-                option.OptionContent,
-                HasScript = option.Script?.Instructions != null,
-                RedirectEventGuid = option.HasRedirect ? option.RedirectOption.EventGuid : null
-            })
-            .ToArray(),
-        HasEnterScript = config.Script?.Instructions != null,
-        HasEnterConditions = config.Conditions?.Conditions != null
+        config.EventContent
     })
     .ToArray();
+
+return new { query, matches };
 ```
 
-从目标事件定位选项并读取选项图：
-
-```csharp
-var ev = guid == null ? DomainManager.TaiwuEvent.ShowingEvent : DomainManager.TaiwuEvent.GetEvent(guid);
-var option = ev?.EventConfig.EventOptions.FirstOrDefault(option =>
-    option.OptionGuid == optionGuid || option.OptionKey == optionKey);
-
-var optionInfo = option == null
-    ? null
-    : new
-    {
-        option.OptionContent,
-        option.Behavior,
-        option.DefaultState,
-        option.OneTimeOnly,
-        option.Important,
-        option.IsVisible,
-        option.IsAvailable,
-        HasScript = option.Script != null,
-        HasVisibleConditions = option.VisibleConditions?.Conditions != null,
-        HasAvailableConditions = option.AvailableConditions?.Conditions != null,
-        HasConfiguredConditions = option.OptionAvailableConditions != null,
-        HasConsumes = option.OptionConsumeInfos != null,
-        RedirectEventGuid = option.HasRedirect ? option.RedirectOption.EventGuid : null,
-        RedirectOptionGuid = option.HasRedirect ? option.RedirectOption.OptionGuid : null
-    };
-```
-
-读取脚本或条件结构摘要：
-
-```csharp
-var scriptSummary = option?.Script?.Instructions?.Select((inst, index) => new
-{
-    index,
-    inst.Indent,
-    inst.FunctionId,
-    inst.AssignToVar
-}).ToArray();
-
-var visibleConditionSummary = option?.VisibleConditions?.Conditions?.Select((condition, index) => new
-{
-    index,
-    condition.Indent,
-    condition.FunctionId,
-    condition.Reverse
-}).ToArray();
-```
-
-标记当前上下文的条件可求值性：
-
-```csharp
-var showing = DomainManager.TaiwuEvent.ShowingEvent;
-bool canEvaluate = showing != null && !showing.IsEmpty && showing.ArgBox != null;
-bool? isVisible = canEvaluate && option != null ? option.IsVisible : null;
-bool? isAvailable = canEvaluate && option != null ? option.IsAvailable : null;
-```
-
-## 数据解释
+## 结果解释边界
 
 `TaiwuEventDisplayData` 是当前事件的玩家显示数据，常用字段：
 

@@ -74,8 +74,8 @@
   `GetIcon`、`IsTransferable`、`IsStackable`。
 - 角色经历模板先用 `Config.LifeRecord.Instance`。经历当前事实、分页读取、按经历条件查找角色、梦回经历和好感可见性边界由
   `LIFE_RECORDS.md` 负责；本文件只提供模板和命名空间定位。
-- 物品 `itemType` 和 `templateId` 应来自当前 `ItemKey`、配置项、refName 转换或运行时查询；工作区只维护检索路线，
-  数值枚举清单留给配置表和运行时事实。
+- 物品 `itemType` 和 `templateId` 应来自当前 `ItemKey`、配置项、refName 转换或运行时查询；需要数值枚举时，
+  以配置表和运行时事实为准。
 - 前端显示可参考 `ItemUtils.GetItemColorName(...)`、`Colors.Instance.GradeColors` 等显示辅助；回答事实问题时，
   优先返回名称、品级和说明；颜色标记只作为显示辅助。
 
