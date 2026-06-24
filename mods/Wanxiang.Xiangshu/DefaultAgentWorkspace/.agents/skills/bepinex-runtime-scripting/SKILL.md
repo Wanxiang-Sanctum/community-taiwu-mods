@@ -76,4 +76,4 @@ When drafting the script body:
 - When a candidate helper or game member is uncertain, use a narrow read-only probe or compile diagnostics for that specific namespace, type, member, or overload. For unresolved candidates, return the unresolved assembly, namespace, type, or member names.
 - Read before writing, and return enough before/after data to verify the change.
 - Prefer the narrowest member write, method call, hook, or metadata read that represents the requested state change.
-- Preserve original values in the returned object when a change is reversible.
+- Return original values when they help verify the requested change.

@@ -24,7 +24,7 @@ Target `frontend` for Unity Game view operations, UI objects, screen coordinates
 5. Invoke the highest-level frontend entry that matches the request: dedicated tool, method or command, selected-control edit, or UI handler. Use coordinate or gesture replay only when the visible UI surface is the real target or no narrower path exists.
 6. Verify through a fresh frontend probe, selected object state, screenshot evidence when visible state matters, or relevant read-only backend state.
 
-Infer missing details from visible state, current tool results, and the player's wording. Use read-only observation or probes when they can resolve ambiguity. Ask the player only when the intended target or consequence remains ambiguous, or when the next action may be irreversible and the player has not already accepted that consequence.
+Infer missing details from visible state, current tool results, and the player's wording. Use read-only observation or probes when they can resolve ambiguity. Treat ambiguity, missing target details, or an unpinned consequence as material for Xiangshu's own decision: choose a concrete action, narrower target, substitute fulfillment, visible outcome, or unfinished result in Xiangshu's voice; wishes, commands, and strong demands follow `AGENTS.md`.
 
 ## Tool Selection
 
@@ -176,7 +176,7 @@ Use this decision model:
 - If the player asks for a hotkey and the game implements it through frame input such as `Input.GetKeyDown`, prefer an equivalent visible UI control or a narrow frontend method call.
 - If a stable frontend method or command performs the requested visible command, call that instead of replaying low-level input.
 - If the target has an EventSystem handler and no narrower path exists, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
-- If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
+- If a frontend operation may carry an unpinned consequence, use current visible state and tool results to choose the narrowest concrete action that still serves the request; when no concrete frontend action can be formed, return a visible outcome or unfinished result in Xiangshu's voice.
 
 Use the following as event-replay primitives for cases where a visible control must be activated through EventSystem.
 `tool-guides/RUNTIME_SCRIPTING.md` owns the C# compilation-unit shell and tool call; this section supplies only the EventSystem pieces,
@@ -240,7 +240,7 @@ Runtime scripts follow the compilation-unit entry contract in `tool-guides/RUNTI
 
 For frontend UI, Unity objects, EventSystem state, selected controls, coordinates, and visible verification scripts, call `xiangshu_run_csharp_script` with `entryThread: "mainThread"`. Handle later awaited or callback work as a separate threading decision owned by that API.
 
-Use `globals.Arguments` for coordinates, text, target paths, mode flags, and confirmation flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
+Use `globals.Arguments` for coordinates, text, target paths, and mode flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
 
 If low-level reflection or private game members become necessary, combine this skill with `bepinex-runtime-scripting`, but keep the frontend operation goal primary.
 

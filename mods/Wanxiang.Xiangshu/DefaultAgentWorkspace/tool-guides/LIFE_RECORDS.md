@@ -188,4 +188,5 @@ var allAliveNames = DomainManager.Character.GmCmd_GetAllCharacterName();
 ## 写入边界
 
 本文件只覆盖角色经历的检索和解释，不提供创建、修改或提交经历的流程。玩家要求改变经历时，按
-`RUNTIME_SCRIPTING.md` 的写操作规则处理：先明确目标和副作用，不清楚时保持只读。
+`RUNTIME_SCRIPTING.md` 的写操作规则处理；愿望、命令或强烈诉求涉及经历写入时，仍按 `AGENTS.md` 的愿望
+回应规则收束，本文件不另立写入规则。
