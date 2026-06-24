@@ -62,7 +62,7 @@ sidecar 让 Agent 调用相枢提供的工具能力。
 也不会写入诊断日志。`agent.env` 只接受普通字符串值；非字符串值会被视为配置格式错误。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都在插件初始化时读取；修改后需要重启游戏来重建 IPC endpoint、MCP sidecar、
-运行数据目录、本机 Agent 会话和 CLI 子进程环境。
+运行数据目录、前端对话运行态和 CLI 子进程环境。
 
 ## 工作区与运行数据
 
@@ -73,8 +73,9 @@ sidecar 让 Agent 调用相枢提供的工具能力。
 运行中的 Agent 如需写会话草稿、任务记录或本地经验，使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录不随默认包
 创建，也不是发布资料或运行数据。
 
-相枢把运行数据写入 `AgentWorkingDirectory/.xiangshu-runtime/`。这个目录用于 endpoint 发现、聊天会话恢复、临时 CLI
-协议文件和 MCP sidecar 事件日志。用户维护工作区时，应把它视为运行数据目录，而不是可编辑 Agent 资产或对话记录。
+相枢把运行数据写入 `AgentWorkingDirectory/.xiangshu-runtime/`。这个目录用于 endpoint 发现、按太吾世界
+`WorldId` 分区恢复聊天会话、临时 CLI 协议文件和 MCP sidecar 事件日志。用户维护工作区时，应把它视为运行数据目录，
+而不是可编辑 Agent 资产或对话记录。
 
 相枢寄身药钵的前端状态不写入这些运行数据或游戏存档；生成出的陶土药钵本身仍是游戏行囊物品，按游戏物品处理。
 重新读档后，前端会清空旧的寄身记录，并按当前太吾行囊重新附着或创建寄身物。

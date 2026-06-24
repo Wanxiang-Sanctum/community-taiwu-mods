@@ -185,6 +185,9 @@
       "wanxiang.taiwu.asyncinterop": {
         "type": "Project"
       },
+      "wanxiang.taiwu.instantnotifications": {
+        "type": "Project"
+      },
       "wanxiang.taiwu.itemgrafts.contracts": {
         "type": "Project"
       },
@@ -192,6 +195,7 @@
         "type": "Project",
         "dependencies": {
           "Wanxiang.Taiwu.AsyncInterop": "[1.0.0, )",
+          "Wanxiang.Taiwu.InstantNotifications": "[1.0.0, )",
           "Wanxiang.Taiwu.ItemGrafts.Contracts": "[1.0.0, )",
           "Wanxiang.Taiwu.ModRpc": "[1.0.0, )"
         }

@@ -13,8 +13,9 @@ namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
 internal sealed class GraftHostSync : IDisposable
 {
-    private const string AttachNotification = "相枢藏进了陶土药钵。";
-    private const string CreateNotification = "低语的陶土药钵落入囊中。";
+    private const string AttachSuccessNotificationText = "相枢藏进了陶土药钵。";
+    private const string CreateSuccessNotificationText = "低语的陶土药钵落入囊中。";
+    private const short SuccessNotificationTemplateId = InstantNotification.DefKey.WalkThroughAbyss;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
@@ -248,7 +249,9 @@ internal sealed class GraftHostSync : IDisposable
                     definition,
                     new AttachmentOptions
                     {
-                        NotificationMessage = AttachNotification,
+                        SuccessNotification = new GraftSuccessNotification(
+                            SuccessNotificationTemplateId,
+                            AttachSuccessNotificationText),
                         OnHostEvent = OnHostEvent,
                     })
                 : await InventoryGrafts.CreateAsync(
@@ -257,7 +260,9 @@ internal sealed class GraftHostSync : IDisposable
                     definition,
                     new CreationOptions
                     {
-                        NotificationMessage = CreateNotification,
+                        SuccessNotification = new GraftSuccessNotification(
+                            SuccessNotificationTemplateId,
+                            CreateSuccessNotificationText),
                         OnHostEvent = OnHostEvent,
                     });
 

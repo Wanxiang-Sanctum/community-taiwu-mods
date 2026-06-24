@@ -30,8 +30,9 @@
 | `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
 | `Wanxiang.Taiwu.AsyncInterop/` | 前后端共用的太吾游戏异步回调与可等待对象互操作原语。 | `Wanxiang.Taiwu.AsyncInterop/README.md` |
 | `Wanxiang.Taiwu.ModRpc/` | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。 | `Wanxiang.Taiwu.ModRpc/README.md` |
+| `Wanxiang.Taiwu.InstantNotifications/` | 太吾前端即时通知发布适配层，对外入口是 `InstantNotificationPublisher`。 | `Wanxiang.Taiwu.InstantNotifications/README.md` |
 | `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 行囊物品嫁接的跨端契约，包含宿主身份、外观覆盖和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 行囊物品嫁接的前端动作、会话、共享可视化、通知和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 行囊物品嫁接的前端动作、会话、共享可视化和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
 | `Wanxiang.Taiwu.ItemGrafts.Backend/` | 行囊物品嫁接的后端观察服务，负责跟踪宿主事实并转发事件。 | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md` |
 
 这张表是 `shared/` 一级目录的索引，只保留选择信息和稳定入口。共享库 API、事件选择和部署建议留在项目自己的 README 里。
@@ -81,4 +82,4 @@ shared/MyCompany.Taiwu.Shared/
 
 共享项目不自动进入 Mod 可部署目录。需要随某个 Mod 部署时，由引用它的前端或后端插件项目通过
 `TaiwuModMergeDependency`、`TaiwuModCopyDependency` 或项目自己的发布目录声明具体动作；共享项目 README 可以说明建议，
-但不替引用方决定最终包内容。
+最终包内容由引用方插件项目声明。

@@ -11,7 +11,7 @@ Use this skill only after the current task has already selected Xiangshu runtime
 
 ## Script Entry Contract
 
-The MCP tool receives a complete C# compilation unit, not a statements snippet. Declare required `using` directives and namespaces explicitly; the runner supplies no implicit `using` list. Use this as the minimum entry shape:
+The MCP tool receives a complete C# compilation unit, not a statements snippet. Declare required `using` directives and namespaces explicitly; the runner supplies no implicit `using` list. Use this as the minimum entry contract shell only; choose the body from the current task and relevant guide fragments.
 
 ```csharp
 using Wanxiang.Xiangshu.Scripting;
@@ -20,10 +20,7 @@ public static class XiangshuScript
 {
     public static object? Execute(XiangshuScriptGlobals globals)
     {
-        return new
-        {
-            side = globals.Side,
-        };
+        return null;
     }
 }
 ```
@@ -68,7 +65,7 @@ Use this orientation as a compact map of the loaded game API surface when a scri
 When drafting the script body:
 
 - Decide the target side and `entryThread` from the requested state or action.
-- Use the entry contract above as the outer shape.
+- Use the entry contract above as the outer shape, then add only the current task's direct API or helper calls.
 - Prefer direct public game APIs. Choose helper namespaces from the BepInEx map above only when reflection, private access, hooks, IL work, or metadata inspection is part of the task.
 - Use the runtime game API orientation when the task needs a concrete game API, config ID, UI type, or state owner.
 - Bind or inspect live game objects only after the target side and helper approach are known.

@@ -13,7 +13,7 @@
 
 本项目是 ItemGrafts 的前端动作和会话实现。它面向 `netstandard2.1` 前端插件，引用
 `Taiwu.ModKit.References.Frontend`、`Taiwu.ModKit.Dependencies.UniTask`、`Wanxiang.Taiwu.AsyncInterop` 和
-`Wanxiang.Taiwu.ModRpc`。
+`Wanxiang.Taiwu.ModRpc`。动作级即时通知通过 `Wanxiang.Taiwu.InstantNotifications` 发布，游戏通知展示适配由该共享项目拥有。
 
 使用 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
 `InventoryGrafts.Install(this)`。该安装绑定本 Mod ID，使前端 `GraftSession` 可以通过
@@ -55,7 +55,7 @@
 该可视化层在本项目支持的物品显示入口应用 `GraftAppearance`。行囊物品组件、常规物品提示和制造工具提示只在对应控件
 存在时应用名称、描述、详情描述、图标和视觉品级覆盖；未提供的字段沿用真实宿主。
 `VisualGrade` 的职责限定在外观：当前支持入口可用它渲染名称颜色、品级底图和品级图标。品阶文案由宿主品级生成；类型、
-价值、重量、耐久和其它游戏事实始终沿用真实宿主。本项目不提供品级枚举或常量，也不替底层入口校验取值。
+价值、重量、耐久和其它游戏事实始终沿用真实宿主。`VisualGrade` 作为外观值透传给支持入口，具体取值语义以游戏和使用方选择为准。
 携带真实 `ItemKey` 的游戏消息文本只替换实例名称，图标、引号、颜色和其它行内格式沿用游戏原生渲染结果。只携带物品类型和
 模板 ID、没有实例 `ItemKey` 的文本无法判断具体宿主，保持原模板表现。
 
@@ -75,7 +75,7 @@
 需要自行处理同模板宿主歧义时，设置 `CreationOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，
 返回结果必须匹配请求创建的宿主模板。
 
-`AttachmentOptions` 承载动作级即时通知和宿主事件回调；`CreationOptions` 同时承载即时通知、宿主事件回调和创建宿主后的定位规则。
+`AttachmentOptions` 承载动作成功通知和宿主事件回调；`CreationOptions` 同时承载动作成功通知、宿主事件回调和创建宿主后的定位规则。
 宿主事件回调通过 `OnHostEvent` 传入建会话动作，避免动作返回后再登记回调而漏掉后端推送。
 
 ## 调用方式
@@ -118,7 +118,9 @@ GraftSession session = await InventoryGrafts.AttachAsync(
     definition: definition,
     options: new AttachmentOptions
     {
-        NotificationMessage = "相枢藏进了陶土药钵。",
+        SuccessNotification = new GraftSuccessNotification(
+            InstantNotification.DefKey.WalkThroughAbyss,
+            "相枢藏进了陶土药钵。"),
         OnHostEvent = HandleHostEvent,
     });
 
@@ -136,7 +138,9 @@ GraftSession session = await InventoryGrafts.CreateAsync(
     definition: definition,
     options: new CreationOptions
     {
-        NotificationMessage = "低语的陶土药钵落入囊中。",
+        SuccessNotification = new GraftSuccessNotification(
+            InstantNotification.DefKey.WalkThroughAbyss,
+            "低语的陶土药钵落入囊中。"),
         OnHostEvent = HandleHostEvent,
     });
 
@@ -190,21 +194,24 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 
 ## 通知
 
-两个动作默认不推送通知。需要通知时，在 `AttachmentOptions` 或 `CreationOptions` 上设置 `NotificationMessage`；
-需要替换原生即时通知模板时，再设置具体的 `NotificationRecordType`：
+两个动作默认不推送通知。需要在动作成功后提示玩家时，在 `AttachmentOptions` 或 `CreationOptions` 上设置
+`SuccessNotification`。
+
+`GraftSuccessNotification` 是一项完整的成功通知配置：`templateId` 选择游戏内置 `InstantNotification.DefKey`
+模板，`message` 提供玩家可见文本。动作成功建立 `GraftSession` 后，本项目把这项配置交给
+`Wanxiang.Taiwu.InstantNotifications` 推送为前端即时通知：
 
 ```csharp
 new CreationOptions
 {
-    NotificationMessage = "低语的陶土药钵落入囊中。",
-    NotificationRecordType = customNativeRecordType,
+    SuccessNotification = new GraftSuccessNotification(
+        InstantNotification.DefKey.WalkThroughAbyss,
+        "低语的陶土药钵落入囊中。"),
 };
 ```
 
-动作成功建立 `GraftSession` 后，才会把非空白的 `NotificationMessage` 规范化后推送为即时通知。`NotificationRecordType`
-只影响原生通知外观，不改变通知文本。
-
-即时通知属于前端展示结果；后端事实、存档状态和游戏真实机制仍由各自边界维护。
+`SuccessNotification` 为 `null` 时不推送。通知文本必须非空白；原生模板只影响通知外观、通知类型和重要程度，
+不改变玩家可见文本。即时通知属于前端展示结果；后端事实、存档状态和游戏真实机制仍由各自边界维护。
 
 ## 状态归属
 

@@ -7,7 +7,7 @@
 Agent 时默认使用对应适配器的完全信任式非交互执行方式，让一次游戏内投递轮次收束为一条相枢最终回应。
 具体 CLI 清单、命令形态、工作区入口、会话 id 来源和最终答复来源见 `agent-cli-adapters.md`。
 
-游戏内投递协议归前端会话所有；长期上下文归本机 Agent 会话所有。MCP server 的职责是作为相枢暴露给
+游戏内投递协议归前端投递会话所有；长期上下文归本机 Agent 会话所有。MCP server 的职责是作为相枢暴露给
 本机 Agent 的工具服务：前端在启动 CLI Agent 时，把当前相枢 MCP endpoint 注册给 Agent；Agent 需要
 读取或操作相枢能力时，再通过 MCP 调用相枢工具。
 
@@ -69,8 +69,8 @@ Agent 把这些文件作为工作区配置读取。如果用户把 `AgentWorking
 Agent 自己的可恢复会话维护。
 
 - `playerName`：当前玩家说话人的显示名，由前端读取当前太吾角色真实姓名。
-- `turnMessages`：当前投递轮次待投递的可见消息，按进入前端会话的顺序排列。每条消息包含 `id`、`sentAt`、
-  `role`、`origin` 和 `content`。`id` 是当前前端会话内的消息句柄，格式为 `message-<ordinal>`；
+- `turnMessages`：当前投递轮次待投递的可见消息，按进入前端投递会话的顺序排列。每条消息包含 `id`、`sentAt`、
+  `role`、`origin` 和 `content`。`id` 是当前前端投递会话内的消息句柄，格式为 `message-<ordinal>`；
   `sentAt` 写入 UTC 时间；`role` 取 `user` 或 `assistant`；`origin` 保留消息来源。
 - `origin = "runtime"` 的 assistant 消息表示相枢运行时已经显示给玩家的说明，例如协议内固定说明或失败说明。它不是本机
   Agent 自己生成的上一条答复，但玩家已经看见，应作为对话事实承接。
@@ -99,7 +99,7 @@ Agent 自己的可恢复会话维护。
 
 相枢身份由默认工作区入口指令和游戏内显示层固定，不作为投递输入字段投递；扩展人设资料只细化表达。前端
 捕获适配器返回的外部会话 id 后，在后续投递轮次通过对应 CLI 的 resume 参数恢复同一个外部会话。
-首轮 CLI 调用如果没有返回可恢复会话 id，前端把它视为 CLI 协议失败，并把当前聊天会话置为必须重置状态，
+首轮 CLI 调用如果没有返回可恢复会话 id，前端把它视为 CLI 协议失败，并把当前前端投递会话置为必须重置状态，
 不降级成无上下文的后续投递。
 
 前端要求 CLI Agent 的最终输出符合一个最小 JSON Schema：
@@ -129,7 +129,8 @@ Agent 自己的可恢复会话维护。
 - `Temp/AgentCli/`：前端启动 CLI Agent 时使用的短生命周期协议文件目录，例如 JSON Schema、Codex
   last-message 和 MCP config；需要写入临时 MCP config 的适配器会在其中包含本次运行的 `Authorization: Bearer ...`
   header。单次调用结束后删除对应调用子目录。
-- `ChatSessions/`：当前聊天会话选择和可恢复快照。文件格式是相枢前端的内部恢复数据。
+- `ChatSessions/Worlds/world-<worldId>/`：当前太吾世界的聊天会话选择和可恢复快照。`worldId` 来自太吾当前世界
+  数据，不使用可变的存档槽位；文件格式是相枢前端的内部恢复数据。
 
 ## Mod 配置语义
 
@@ -158,7 +159,7 @@ Agent 自己的可恢复会话维护。
 私有开关等本机配置，不注入游戏进程或 MCP sidecar，也不写入诊断日志。非字符串值会被视为配置格式错误。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都属于启动参数。运行时继续使用本次启动时加载的值；重启游戏后，
-前端和后端会按新配置重建 IPC endpoint、manifest 路径、MCP sidecar、前端 Agent 会话和 CLI 子进程环境。
+前端和后端会按新配置重建 IPC endpoint、manifest 路径、MCP sidecar、前端对话运行态和 CLI 子进程环境。
 游戏内修改 Mod 用户配置后，`OnModSettingUpdate` 只提示重启。
 
 ## 会话投递模型
@@ -183,7 +184,9 @@ Agent 自己的可恢复会话维护。
 玩家重置聊天时，前端新建本地投递会话，清空可见消息、待投递队列和 `agentSessionId`。如果重置发生在 CLI
 调用期间，前端取消当前调用，旧结果不会写回新会话。
 
-前端投递会话的核心状态：
+前端投递会话只在读档进入 `InGame` 后可用，并按当前太吾世界 `WorldId` 绑定。聊天窗口打开时，前端从对应
+`WorldId` 的快照恢复或创建该世界的新会话；离开 `InGame`、重新读档或切换到另一个世界时，前端释放旧世界的运行期
+会话。前端投递会话的核心状态：
 
 - `sessionId`：前端投递会话 id，由前端生成的 GUID-N 字符串。
 - `adapter`：CLI 适配器持久化 key，用于判断恢复快照是否属于当前适配器。
@@ -197,14 +200,14 @@ Agent 自己的可恢复会话维护。
 持久化快照保存 `sessionId`、`adapter`、`agentSessionId`、`requiresReset`、`lastMessageOrdinal` 和
 `visibleMessages`。`pendingMessages` 是内存态。
 
-跨游戏重启继续聊天依赖持久化的 `agentSessionId` 和可见消息快照；重启后前端会启动新的 MCP sidecar，
-生成新的 bearer token，并在下一轮 CLI resume 调用中注入新的 endpoint 和 token。正在投递的 CLI 进程和
-尚未进入投递轮次的 `pendingMessages` 不跨重启恢复。
+同一太吾世界跨游戏重启继续聊天依赖持久化的 `agentSessionId` 和可见消息快照；重启后前端会启动新的
+MCP sidecar，生成新的 bearer token，并在下一轮 CLI resume 调用中注入新的 endpoint 和 token。正在投递的 CLI
+进程和尚未进入投递轮次的 `pendingMessages` 不跨重启恢复。
 
 对话消息使用同一种内部模型。状态和错误进入会话推进、按钮状态或少量相枢说明；显示层使用当前太吾真实
 姓名与相枢两种身份：
 
-- `id`：当前前端会话内的消息句柄，格式为 `message-<ordinal>`。
+- `id`：当前前端投递会话内的消息句柄，格式为 `message-<ordinal>`。
 - `role`：`user` 或 `assistant`。
 - `speakerName`：界面显示的说话人名称。
 - `createdAt`：消息进入前端可见对话记录的 UTC 时间。
@@ -226,7 +229,7 @@ Agent 自己的可恢复会话维护。
 - `replying`：CLI 正在生成回复，发送按钮切换为可点击的“且慢”中断入口。
 - `interrupted`：玩家点击“且慢”，或寄身药钵离开太吾行囊时，当前 CLI 调用被切断；前端等待下一条普通玩家
   消息触发后续投递。
-- `failed`：如果需要让玩家知道失败，前端会话追加一条 `origin = "runtime"` 的失败说明；失败细节按日志
+- `failed`：如果需要让玩家知道失败，前端投递会话追加一条 `origin = "runtime"` 的失败说明；失败细节按日志
   策略处理。
 - `requires-reset`：首轮没有取得可恢复会话 id 时，前端追加一条 `origin = "runtime"` 的必须重置说明，并
   禁用输入和发送；玩家只能点击重置。
@@ -334,7 +337,7 @@ xiangshu_send_intermediate_reply(
 
 - `content`：显示给玩家的短文本。
 
-MCP server 收到工具调用后，通过本机 IPC 通知前端。前端当前聊天会话负责追加对话消息；可见文本由调用
+MCP server 收到工具调用后，通过本机 IPC 通知前端。当前活动世界绑定的前端投递会话负责追加对话消息；可见文本由调用
 该工具的 Agent 提供。需要交代给 Agent 的前端侧事件由投递模型中的前端事实字段承载；长期对话记录和
 Agent 调用仍归前端投递会话与本机 CLI 会话。
 

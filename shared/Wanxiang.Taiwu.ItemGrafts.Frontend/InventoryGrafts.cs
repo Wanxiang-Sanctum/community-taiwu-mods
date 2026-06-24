@@ -6,6 +6,7 @@ using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.AsyncInterop;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 using Wanxiang.Taiwu.ModRpc;
+using Wanxiang.Taiwu.InstantNotifications;
 
 namespace Wanxiang.Taiwu.ItemGrafts.Frontend;
 
@@ -64,7 +65,7 @@ public static class InventoryGrafts
     /// </summary>
     /// <param name="hostKey">已有的非堆叠宿主物品 key。</param>
     /// <param name="definition">要应用到宿主物品上的嫁接定义。</param>
-    /// <param name="options">可选通知和宿主事件行为。</param>
+    /// <param name="options">可选成功通知和宿主事件行为。</param>
     /// <param name="cancellationToken">用于停止等待后端宿主订阅的取消令牌。</param>
     /// <returns>返回已建立嫁接会话的 UniTask。</returns>
     /// <exception cref="ArgumentNullException"><paramref name="definition"/> 为 null。</exception>
@@ -87,9 +88,7 @@ public static class InventoryGrafts
         try
         {
             RegisterSession(session);
-            PushNotification(
-                options?.NotificationMessage,
-                options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+            PushNotification(options?.SuccessNotification);
         }
         catch
         {
@@ -106,7 +105,7 @@ public static class InventoryGrafts
     /// <param name="characterId">接收真实宿主物品的太吾角色 ID。</param>
     /// <param name="hostTemplate">要创建的非堆叠宿主物品模板。</param>
     /// <param name="definition">要应用到新建宿主物品上的嫁接定义。</param>
-    /// <param name="options">可选通知、宿主选择和宿主事件行为。</param>
+    /// <param name="options">可选成功通知、宿主选择和宿主事件行为。</param>
     /// <param name="cancellationToken">用于停止等待异步游戏调用和后端宿主订阅的取消令牌。</param>
     /// <returns>返回已建立嫁接会话的 UniTask。</returns>
     /// <exception cref="ArgumentNullException"><paramref name="hostTemplate"/> 或 <paramref name="definition"/> 为 null。</exception>
@@ -166,9 +165,7 @@ public static class InventoryGrafts
         try
         {
             RegisterSession(session);
-            PushNotification(
-                options?.NotificationMessage,
-                options?.NotificationRecordType ?? GraftNotifications.DefaultNativeRecordType);
+            PushNotification(options?.SuccessNotification);
         }
         catch
         {
@@ -270,14 +267,14 @@ public static class InventoryGrafts
         throw new InvalidOperationException("Created host item was not found in refreshed inventory.");
     }
 
-    private static void PushNotification(string? message, short nativeRecordType)
+    private static void PushNotification(GraftSuccessNotification? notification)
     {
-        if (message is null)
+        if (notification is null)
         {
             return;
         }
 
-        GraftNotifications.Push(message, nativeRecordType);
+        InstantNotificationPublisher.Push(notification.TemplateId, notification.Message);
     }
 
     private static Graft CreateGraft(ItemKey hostKey, GraftDefinition definition)

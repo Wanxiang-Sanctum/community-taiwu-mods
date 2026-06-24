@@ -15,6 +15,9 @@
     <ProjectReference
       Include="../Wanxiang.Taiwu.ModRpc/Wanxiang.Taiwu.ModRpc.csproj"
     />
+    <ProjectReference
+      Include="../Wanxiang.Taiwu.InstantNotifications/Wanxiang.Taiwu.InstantNotifications.csproj"
+    />
   </ItemGroup>
 
   <ItemGroup>

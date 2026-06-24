@@ -33,7 +33,7 @@ Within the frontend path, prefer result paths in this order:
 1. A dedicated Xiangshu frontend tool or stable public frontend/game API for the exact command.
 2. A concrete selected-control edit, UI model update, or frontend command call.
 3. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
-4. `xiangshu_run_csharp_script` on `frontend` with `entryThread: "mainThread"` and a complete C# compilation unit when no narrower exposed tool exists.
+4. `xiangshu_run_csharp_script` on `frontend` with `entryThread: "mainThread"`, using the entry contract from `tool-guides/RUNTIME_SCRIPTING.md`, when no narrower exposed tool exists.
 5. EventSystem pointer, scroll, drag, submit, or cancel replay through that script only when the visible UI control itself is the target.
 6. Backend read-only verification after the frontend action, if persisted state matters.
 
@@ -77,7 +77,10 @@ Probe results should include:
 
 For actions derived from player-view coordinates, run the target probe and action replay inside a short chat-window guard that temporarily suppresses the `CanvasGroup` on each active `Wanxiang.Xiangshu.ChatWindow` root, then restores it in `Dispose`/`finally`. Save and restore `alpha`, `blocksRaycasts`, and `interactable`; do not disable canvases, raycasters, or parent objects. Do not span awaits, long-running work, or unrelated probes while the guard is active.
 
-Use `System`, `System.Collections.Generic`, and `UnityEngine` at the top of the compilation unit for the helper. Action scripts usually also need `UnityEngine.EventSystems`. Place this helper type inside the complete `frontend` script's `XiangshuScript` class when acting on player-view coordinates:
+When coordinate actions need chat suppression, place a local guard helper inside the `frontend` script's `XiangshuScript` class.
+The helper is a reusable utility, not an operation recipe; keep the rest of the script body task-specific. It needs `System`,
+`System.Collections.Generic`, and `UnityEngine` at the top of the compilation unit. Action scripts usually also need
+`UnityEngine.EventSystems`.
 
 ```csharp
 private sealed class XiangshuChatWindowGuard : IDisposable
@@ -175,7 +178,11 @@ Use this decision model:
 - If the target has an EventSystem handler and no narrower path exists, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
 - If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
 
-Minimal click event-replay fragment for cases where a visible control must be activated through EventSystem, not a complete runtime script. Use `tool-guides/RUNTIME_SCRIPTING.md` for the C# compilation-unit shape and call the runtime script tool with `entryThread: "mainThread"`; supply the surrounding script context, target point, hit list, and chat-window guard from the current operation:
+Use the following as event-replay primitives for cases where a visible control must be activated through EventSystem.
+`tool-guides/RUNTIME_SCRIPTING.md` owns the C# compilation-unit shell and tool call; this section supplies only the EventSystem pieces,
+target point, hit list, and chat-window guard context for the current operation.
+
+Prepare pointer event data:
 
 ```csharp
 PointerEventData eventData = new(eventSystem)
@@ -189,39 +196,47 @@ PointerEventData eventData = new(eventSystem)
     eligibleForClick = true,
     useDragThreshold = true,
 };
+```
 
+Keep raycast and action inside the same short guard:
+
+```csharp
 using (new XiangshuChatWindowGuard(suppress: !includeXiangshuChat))
 {
     eventSystem.RaycastAll(eventData, hits);
-    if (hits.Count > 0)
+    // Choose the target and invoke only the requested handler here.
+}
+```
+
+For a plain click, use this core inside that guarded block after checking `hits.Count > 0` and choosing the accepted hit:
+
+```csharp
+RaycastResult hit = hits[0];
+GameObject target = hit.gameObject;
+eventData.pointerCurrentRaycast = hit;
+eventData.pointerPressRaycast = hit;
+eventData.rawPointerPress = target;
+
+GameObject press = ExecuteEvents.ExecuteHierarchy(target, eventData, ExecuteEvents.pointerDownHandler)
+    ?? ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
+if (press != null)
+{
+    eventData.pointerPress = press;
+    eventData.pointerClick = press;
+    eventSystem.SetSelectedGameObject(press, eventData);
+    ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerUpHandler);
+    if (ReferenceEquals(ExecuteEvents.GetEventHandler<IPointerClickHandler>(target), press))
     {
-        RaycastResult hit = hits[0];
-        GameObject target = hit.gameObject;
-        eventData.pointerCurrentRaycast = hit;
-        eventData.pointerPressRaycast = hit;
-        eventData.rawPointerPress = target;
-        GameObject press = ExecuteEvents.ExecuteHierarchy(target, eventData, ExecuteEvents.pointerDownHandler)
-            ?? ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
-        if (press != null)
-        {
-            eventData.pointerPress = press;
-            eventData.pointerClick = press;
-            eventSystem.SetSelectedGameObject(press, eventData);
-            ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerUpHandler);
-            if (ReferenceEquals(ExecuteEvents.GetEventHandler<IPointerClickHandler>(target), press))
-            {
-                ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerClickHandler);
-            }
-        }
+        ExecuteEvents.Execute(press, eventData, ExecuteEvents.pointerClickHandler);
     }
 }
 ```
 
-For scroll, drag, submit, cancel, and text input, keep the same discipline: identify the handler or selected control first, execute only the requested gesture, and return compact before/after facts. If a complete runtime script is needed, use the runtime scripting guide for the script shell and keep this fragment as the EventSystem core.
+For scroll, drag, submit, cancel, and text input, keep the same discipline: identify the handler or selected control first, execute only the requested gesture, and return compact before/after facts. When these fragments are used in a runtime script, wrap them with the runtime scripting guide's entry shell and keep this fragment as the EventSystem core.
 
 ## Runtime Script Discipline
 
-The Xiangshu runner receives a complete C# compilation unit. Follow `tool-guides/RUNTIME_SCRIPTING.md` for the entry contract, target side, async behavior, arguments, and result shape.
+Runtime scripts follow the compilation-unit entry contract in `tool-guides/RUNTIME_SCRIPTING.md`; this skill only chooses when frontend UI work needs that path and what EventSystem/UI core to place inside it.
 
 For frontend UI, Unity objects, EventSystem state, selected controls, coordinates, and visible verification scripts, call `xiangshu_run_csharp_script` with `entryThread: "mainThread"`. Handle later awaited or callback work as a separate threading decision owned by that API.
 
