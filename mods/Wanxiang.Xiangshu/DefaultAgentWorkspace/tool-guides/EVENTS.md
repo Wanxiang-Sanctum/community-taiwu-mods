@@ -1,11 +1,11 @@
 # 事件运行时检索指引
 
 当玩家询问当前正在发生的事件、待处理事件、事件节点、事件选项、选项为何出现或不可选、选项会跳向何处，
-或想按事件文字、事件组、GUID 查找事件时，读取本文件。这里的“事件”指游戏 `TaiwuEvent` 运行时事件；角色的
-最近经历、生平事件、经历分类和按经历找角色仍归 `LIFE_RECORDS.md`。事件属于后端运行态；优先检索显示数据
-和事件运行时对象，再把结果整理为玩家可理解的答复。
+或想按事件文字、事件组、GUID 查找事件配置、解析节点结构，或分析可能触发候选时，读取本文件。这里的“事件”
+指游戏 `TaiwuEvent` 运行时事件；角色的最近经历、生平事件、经历分类和按经历找角色仍归 `LIFE_RECORDS.md`。
+事件属于后端运行态；优先检索显示数据和事件运行时对象，再把结果整理为玩家可理解的答复。
 
-本文件是事件的领域专门指引，负责说明检索模型、基础接口、可组合原语、返回数据和解释边界。脚本入口契约、
+本文件是事件的领域专门指引，负责说明检索模型、基础接口、领域脚本原语、返回数据和解释边界。脚本入口契约、
 目标侧和线程规则仍归 `RUNTIME_SCRIPTING.md`；稳定机制、配置、本地化、模板显示辅助和百晓册资料仍归
 `GAME_KNOWLEDGE.md`。
 
@@ -14,15 +14,16 @@
 
 ## 查询模型
 
-先判断玩家请求属于哪种检索方向：
+先判断玩家请求属于哪一层事件事实：
 
-- 读当前事件：玩家问眼前事件、当前事件正文、当前有哪些选项、某个当前选项为什么不可点。
-- 读待处理事件：玩家问还有哪些事件待处理、过月事件队列、事件摘要或某个待处理事件是谁触发的。
-- 找已加载事件：玩家给出事件 GUID、事件组、事件名片段、正文片段或选项文字，要求定位事件节点。
-- 查选项逻辑：玩家问某个选项为何显示/隐藏/可用/不可用，或选择后会跳转、关闭、消耗、触发什么直接效果。
+- 当前与队列事件：玩家问眼前事件、当前选项、待处理事件、过月事件队列或事件摘要。
+- 事件配置库：玩家给出事件 GUID、事件组、事件名片段、正文片段、选项文字、触发类型或脚本/条件线索，
+  要求定位、索引或解析事件节点。
+- 可能触发分析：玩家问某类事件是否存在、什么情况下可能触发、哪些事件可能由当前状态或某类触发器引出。
 
-四种方向共用同一套解释规则：优先读取游戏已经生成的显示数据；显示数据不足时，再读事件配置和脚本结构；只有当前事件
-带有 `ArgBox` 时才求值可见性/可用性。解释类查询停在只读检索；选项选择、事件跳转和脚本执行都按写操作处理。
+三层事实共用同一套解释规则：玩家当前显示优先读取游戏已经生成的显示数据；事件配置库问题优先读取当前运行时可检索的
+配置和脚本结构；可能触发问题返回候选、触发器、条件和结论层级。可见性/可用性求值只适用于带有当前 `ArgBox` 的
+事件上下文。解释类查询停在只读检索；选项选择、事件跳转和脚本执行都按写操作处理。
 
 ## 读当前事件
 
@@ -41,16 +42,18 @@
 待处理事件不是当前窗口内容。默认处理顺序：
 
 1. 调用 `DomainManager.TaiwuEvent.GetTriggeredEventSummaryDisplayData()` 获取待处理事件摘要。
-2. 摘要只稳定提供 `EventGuid` 和关联 `CharacterId`；需要事件组、正文或选项时，再对每个 `EventGuid` 调用
-   `GetEvent(guid)`。
+2. 摘要以 `EventGuid` 和关联 `CharacterId` 作为稳定展开键；需要事件组、正文或选项时，再对每个 `EventGuid`
+   调用 `GetEvent(guid)`。
 3. 需要角色名时，用 `CharacterId` 查角色显示数据，再返回玩家可读名称或称谓。
 4. 结果很多时按队列顺序限量返回；玩家要求完整列表时再继续展开。
 
 处理队列属于写操作；普通检索只读摘要。玩家明确要求处理时，按写操作规则先确认目标事件和影响范围。
 
-## 找已加载事件
+## 检索事件配置库
 
-这类查询的主语不是当前窗口，而是“已加载事件集合 + 搜索谓词”。主路径是先用最窄身份定位，再有限扫描。
+这类查询的主语不是当前窗口，而是“当前运行时可检索的事件配置集合 + 搜索谓词”。它是一等检索能力，可用于当前
+并未显示的事件。这里的“配置库”指游戏加载并注册事件包后，能通过 `GetEvent(guid)` 和 `GetAllEventConfigs()`
+读取到的事件配置；配置存在的结论层级是“可检索”，触发、入队或玩家经历需要来自队列、显示事件或触发流程的证据。
 
 默认处理顺序：
 
@@ -59,10 +62,10 @@
 3. 已知触发类型、事件类型或是否头事件时，用 `EventConfig.TriggerType`、`EventType`、`IsHeadEvent` 过滤。
 4. 返回事件 GUID、事件组、事件类型、触发类型、选项数量和匹配到的正文/选项摘要。
 
-当前运行时没有面向任意文本或条件的稳定事件索引；广域搜索由 `GetAllEventConfigs()` 扫描承担。普通查询先限量返回
-候选，并说明还可以按事件组、正文、选项或触发类型继续收窄。
+事件配置库的广域搜索由 `GetAllEventConfigs()` 有限扫描承担。普通查询先限量返回候选，并说明还可以按事件组、
+正文、选项、触发类型、事件类型、是否头事件或脚本/条件线索继续收窄。
 
-## 查选项逻辑
+## 解析事件节点与选项
 
 默认处理顺序：
 
@@ -74,8 +77,21 @@
    `OptionAvailableConditions`、`Script` 和 `RedirectOption`。
 5. 解释跳转时只读 `RedirectOption` 和 `Script` 结构；真正选择、跳转或执行脚本属于写操作。
 
-非当前事件通常没有有效 `ArgBox`；这时只能解释静态结构，例如“有可见条件脚本”“有选中脚本”“重定向到某事件选项”，
-这类结果应表述为结构摘要，不表述为当前可用性判断。
+非当前事件通常没有有效 `ArgBox`；这时输出的是结构摘要，例如“有可见条件脚本”“有选中脚本”“重定向到某事件选项”，
+不表述为当前可用性判断。
+
+## 分析可能触发的事件
+
+可能触发分析的产物是候选分层。默认处理顺序：
+
+1. 先把玩家问题转成事件配置库搜索谓词，例如事件组、正文/选项文字、触发类型、事件类型、头事件、条件函数或脚本函数。
+2. 用 `GetAllEventConfigs()` 找候选事件节点，并返回触发类型、事件类型、条件/脚本摘要、入口脚本和首层选项跳转。
+3. 若玩家问题依赖当前世界状态，再读取最小必要运行时事实；条件求值仍以当前运行时上下文是否可用为准。
+4. 输出时区分“存在这样的事件配置”“结构上可能由这些条件或跳转引出”“当前状态下已确认会触发”。只有取得队列、
+   当前显示事件或触发流程中的明确上下文时，才给出已确认会触发的结论。
+
+触发链追踪优先沿静态结构展开：头事件、`RedirectOption`、进入脚本、选中脚本、触发条件和事件组命名。脚本函数含义
+不确定时，先返回函数 ID、缩进、参数和所在事件，再按当前命中的函数做小范围定位。
 
 ## 基础接口
 
@@ -84,19 +100,19 @@
 - `DomainManager.TaiwuEvent.GetDisplayingEventData()`：当前前端显示用事件数据。
 - `DomainManager.TaiwuEvent.ShowingEvent`：当前后端正在处理的事件。
 - `DomainManager.TaiwuEvent.GetTriggeredEventSummaryDisplayData()`：待处理事件摘要。
-- `DomainManager.TaiwuEvent.GetEvent(guid)`：按事件 GUID 读取已加载事件。
-- `DomainManager.TaiwuEvent.GetAllEventConfigs()`：列出已加载事件配置，用于有限搜索。
+- `DomainManager.TaiwuEvent.GetEvent(guid)`：按事件 GUID 读取已注册事件对象。
+- `DomainManager.TaiwuEvent.GetAllEventConfigs()`：列出当前运行时注册的事件配置，用于有限搜索。
 - `DomainManager.TaiwuEvent.ScriptRuntime`：事件脚本和条件运行时；解释时用于结构摘要和当前条件核对，选项脚本执行归写操作。
 
 调用脚本时选 `targetSide = "backend"`、`entryThread = "mainThread"`。事件运行态依赖当前世界和主线程数据上下文；
 纯文本整理可以在脚本内完成，但读取 `DomainManager.TaiwuEvent` 仍使用主线程入口。
 
-## 可组合运行时原语
+## 领域脚本原语
 
-本节只提供可组合原语。入口外壳、`using`、返回值和工具参数处理由 `RUNTIME_SCRIPTING.md` 的脚本入口契约
-统一说明；本节不重复脚本外壳。
+本节只提供事件领域原语。入口外壳、`using`、返回值和工具参数处理由 `RUNTIME_SCRIPTING.md` 的脚本入口契约
+统一说明；脚本片段应产出事实层选择、有限扫描、事件节点摘要、选项图、脚本/条件摘要或当前上下文可求值性。
 
-读取当前显示事件：
+投影当前显示事件为玩家可见事实：
 
 ```csharp
 var data = DomainManager.TaiwuEvent.GetDisplayingEventData();
@@ -119,7 +135,7 @@ var current = data == null || string.IsNullOrEmpty(data.EventGuid)
     };
 ```
 
-读取待处理事件摘要：
+投影待处理队列并保留可展开键：
 
 ```csharp
 var pending = DomainManager.TaiwuEvent.GetTriggeredEventSummaryDisplayData()
@@ -132,7 +148,7 @@ var pending = DomainManager.TaiwuEvent.GetTriggeredEventSummaryDisplayData()
     .ToArray();
 ```
 
-按 GUID 读取事件配置：
+生成事件节点结构摘要：
 
 ```csharp
 var ev = DomainManager.TaiwuEvent.GetEvent(guid);
@@ -148,11 +164,29 @@ var info = config == null
         config.EventType,
         config.EventSortingOrder,
         config.EventContent,
-        OptionCount = config.EventOptions?.Length ?? 0
+        HasEnterScript = config.Script?.Instructions != null,
+        HasEnterConditions = config.Conditions?.Conditions != null,
+        Options = config.EventOptions?.Select((option, index) => new
+        {
+            index,
+            option.OptionKey,
+            option.OptionGuid,
+            option.OptionContent,
+            option.Behavior,
+            option.DefaultState,
+            option.OneTimeOnly,
+            option.Important,
+            HasVisibleConditions = option.VisibleConditions?.Conditions != null,
+            HasAvailableConditions = option.AvailableConditions?.Conditions != null,
+            HasConfiguredConditions = option.OptionAvailableConditions != null,
+            HasScript = option.Script?.Instructions != null,
+            RedirectEventGuid = option.HasRedirect ? option.RedirectOption.EventGuid : null,
+            RedirectOptionGuid = option.HasRedirect ? option.RedirectOption.OptionGuid : null
+        }).ToArray()
     };
 ```
 
-有限搜索已加载事件：
+按事件配置库谓词检索候选：
 
 ```csharp
 var matches = DomainManager.TaiwuEvent.GetAllEventConfigs()
@@ -169,16 +203,30 @@ var matches = DomainManager.TaiwuEvent.GetAllEventConfigs()
         config.TriggerType,
         config.EventType,
         OptionCount = config.EventOptions?.Length ?? 0,
-        config.EventContent
+        config.EventContent,
+        MatchedOptions = config.EventOptions?
+            .Where(option => option.OptionContent?.Contains(query) == true)
+            .Take(5)
+            .Select(option => new
+            {
+                option.OptionKey,
+                option.OptionGuid,
+                option.OptionContent,
+                HasScript = option.Script?.Instructions != null,
+                RedirectEventGuid = option.HasRedirect ? option.RedirectOption.EventGuid : null
+            })
+            .ToArray(),
+        HasEnterScript = config.Script?.Instructions != null,
+        HasEnterConditions = config.Conditions?.Conditions != null
     })
     .ToArray();
 ```
 
-从当前事件定位选项并读取逻辑摘要：
+从目标事件定位选项并读取选项图：
 
 ```csharp
-var showing = DomainManager.TaiwuEvent.ShowingEvent;
-var option = showing?.EventConfig.EventOptions.FirstOrDefault(option =>
+var ev = guid == null ? DomainManager.TaiwuEvent.ShowingEvent : DomainManager.TaiwuEvent.GetEvent(guid);
+var option = ev?.EventConfig.EventOptions.FirstOrDefault(option =>
     option.OptionGuid == optionGuid || option.OptionKey == optionKey);
 
 var optionInfo = option == null
@@ -222,9 +270,10 @@ var visibleConditionSummary = option?.VisibleConditions?.Conditions?.Select((con
 }).ToArray();
 ```
 
-只在当前事件已有 `ArgBox` 时求值条件：
+标记当前上下文的条件可求值性：
 
 ```csharp
+var showing = DomainManager.TaiwuEvent.ShowingEvent;
 bool canEvaluate = showing != null && !showing.IsEmpty && showing.ArgBox != null;
 bool? isVisible = canEvaluate && option != null ? option.IsVisible : null;
 bool? isAvailable = canEvaluate && option != null ? option.IsAvailable : null;
@@ -247,12 +296,12 @@ bool? isAvailable = canEvaluate && option != null ? option.IsAvailable : null;
 - `OptionConsumeInfos`：选项消耗。
 - `OptionAvailableConditionInfos`：脚本条件提示，包含事件函数 ID、参数和通过状态；不是所有条件都会提供可读提示。
 
-`TaiwuEventSummaryDisplayData` 是待处理事件摘要：
+`TaiwuEventSummaryDisplayData` 是待处理事件摘要，提供后续展开事件配置和角色显示数据的键：
 
 - `EventGuid`：待处理事件 GUID。
 - `CharacterId`：关联角色 ID；需要显示名时另查角色显示数据。
 
-`Config.EventConfig.TaiwuEventItem` 是已加载事件配置：
+`Config.EventConfig.TaiwuEventItem` 是事件配置包注册到运行时后的事件配置：
 
 - `Guid`、`EventGroup`、`IsHeadEvent`、`TriggerType`、`EventType`、`EventSortingOrder`。
 - `MainRoleKey`、`TargetRoleKey`、`EventBackground`、`MaskControl`、`EscOptionKey`。

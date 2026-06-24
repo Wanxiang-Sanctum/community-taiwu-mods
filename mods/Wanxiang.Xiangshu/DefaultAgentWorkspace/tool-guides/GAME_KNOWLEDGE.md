@@ -68,7 +68,7 @@
 常见配置表和显示辅助能直接回答大量“这是什么、有什么属性、如何显示”的问题：
 
 - 功法、技艺、门派、人物特性、建筑、地区、资源和状态通常先查对应 `Config.*.Instance`。玩家问当前事件窗口、
-  事件节点、选项、事件条件或脚本跳转时，事件运行时由 `EVENTS.md` 负责。
+  事件配置库、事件节点、选项、事件条件、脚本跳转或可能触发候选时，事件运行时由 `EVENTS.md` 负责。
 - 物品模板先用 `GameData.Domains.Item.ItemTemplateHelper`。常用方法包括 `GetTemplateDataAllKeys`、
   `CheckTemplateValid`、`GetName`、`GetDesc`、`GetFunctionDesc`、`GetItemSubType`、`GetGrade`、`GetGroupId`、
   `GetIcon`、`IsTransferable`、`IsStackable`。
