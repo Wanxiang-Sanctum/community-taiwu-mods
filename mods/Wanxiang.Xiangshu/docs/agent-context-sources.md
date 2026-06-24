@@ -126,7 +126,7 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   `DefaultAgentWorkspace/tool-guides/RUNTIME_SCRIPTING.md`。
 - 配置、本地化、模板/显示辅助、百晓册、命名空间路由和反射边界归入
   `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
-- GM 面板、GM 命令行、调试/作弊入口、事件隐藏 GM 风格选项和对应执行边界归入
+- GM 面板、GM 命令行、预置调试入口、GM/调试入口承载的状态改动实现、事件隐藏 GM 风格选项和对应执行边界归入
   `DefaultAgentWorkspace/tool-guides/GM_COMMANDS.md`；完整 GM 命令表和完整事件清单仍由游戏侧源码、运行时枚举或
   内部游戏镜像承载。
 - 稳定高频入口的少量参考片段归入对应领域指引；片段应能减少入口和字段形状试错，并说明可接续关系。
