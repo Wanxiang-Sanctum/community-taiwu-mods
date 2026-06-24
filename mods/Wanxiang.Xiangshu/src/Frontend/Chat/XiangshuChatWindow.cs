@@ -922,7 +922,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             ReplyIndicatorFontSize,
             TextColor,
             FontStyles.Bold);
-        _replyIndicatorText.text = "推演中";
+        _replyIndicatorText.text = "窸窣作响";
         _replyIndicatorText.alignment = TextAlignmentOptions.Center;
         StretchToParent(_replyIndicatorText.rectTransform);
         _replyIndicatorText.rectTransform.offsetMin = new Vector2(8f, 3f);
@@ -1441,7 +1441,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             const int dotCount = 3;
             const float dotStepSeconds = 0.34f;
             int dots = ((int)(Time.unscaledTime / dotStepSeconds) % dotCount) + 1;
-            indicatorText.text = "推演中" + new string('.', dots);
+            indicatorText.text = "窸窣作响" + new string('.', dots);
         }
     }
 
