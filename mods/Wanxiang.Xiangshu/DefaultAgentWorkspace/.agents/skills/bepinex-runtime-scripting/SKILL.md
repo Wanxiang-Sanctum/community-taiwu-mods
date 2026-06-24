@@ -31,8 +31,8 @@ The entry type may be inside a namespace, but its simple name must be `XiangshuS
 
 Choose the `xiangshu_run_csharp_script` `entryThread` together with the target side before drafting the body:
 
-- Use `entryThread: "current"` only for pure computation, reference checks, type/member discovery, and other probes that do not touch live game objects, Unity state, backend domains, or persisted game state.
-- Use `entryThread: "mainThread"` for Unity objects, frontend UI, EventSystem state, backend `DomainManager` access, game entities, persisted state, and any mutation of live game or mod state.
+- Use `entryThread: "current"` only for pure computation, reference checks, type/member discovery, and other probes that do not touch live game objects, Unity state, backend domains, or live game state.
+- Use `entryThread: "mainThread"` for Unity objects, frontend UI, EventSystem state, backend `DomainManager` access, game entities, live game state, and any mutation of live game or mod state.
 - `entryThread` controls only the entry invocation thread. If the script deliberately schedules later work with `ExecuteAsync`, callbacks, or target-side async APIs, handle that later work according to that API's threading rules and keep it separate from entry-thread selection.
 
 ## BepInEx Helper Namespaces
@@ -51,7 +51,7 @@ Frontend scripts align with the Unity/netstandard side and should assume the com
 
 Use this orientation as a compact map of the loaded game API surface when a script needs concrete game state or UI types. For game knowledge queries, config lookup, localization, template/display helpers, Baixiaoce data, or namespace routing before a script, read `tool-guides/GAME_KNOWLEDGE.md` first.
 
-- Prefer backend for persisted or authoritative game state: Taiwu identity, inventory, characters, map/world data, organizations, items, information, combat state, monthly events, adventure state, and state mutations.
+- Prefer backend for authoritative runtime game state: Taiwu identity, inventory, characters, map/world data, organizations, items, information, combat state, monthly events, adventure state, and state mutations.
 - Backend domain APIs usually live under `GameData.Domains.*`. `GameData.Domains.Taiwu`, `GameData.Domains.Character`, `GameData.Domains.Item`, `GameData.Domains.Map`, `GameData.Domains.World`, `GameData.Domains.Organization`, `GameData.Domains.Building`, `GameData.Domains.CombatSkill`, `GameData.Domains.Combat`, `GameData.Domains.Adventure`, `GameData.Domains.TaiwuEvent`, `GameData.Domains.LifeRecord`, `GameData.Domains.Information`, `GameData.Domains.LegendaryBook`, `GameData.Domains.Merchant`, `GameData.Domains.Mod`, `GameData.Domains.Global`, `GameData.Domains.Extra`, `GameData.Domains.Story`, `GameData.Domains.TutorialChapter`, and `GameData.Domains.SpecialEffect` are common anchors.
 - `DomainManager.*` is the usual backend entry shape for domain access. For Taiwu-specific state, look for `DomainManager.Taiwu`; for characters, use `DomainManager.Character`; for event or monthly flow, use `DomainManager.TaiwuEvent` or related domain managers.
 - Shared value shapes, display data, config cells, and enum names usually come from `GameData.Shared`, `Config`, `Config.Common`, `Config.ConfigCells`, and `GameData.Domains.*` enum namespaces. Prefer reachable enum and config names over raw numeric constants.

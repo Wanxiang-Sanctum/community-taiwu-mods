@@ -13,7 +13,7 @@ Do not use this skill merely because a request may change the game. When a dedic
 
 Observation is supporting evidence, not this skill's center. For visual-only questions, use the available screenshot or frontend observation tool directly and do not load this skill unless an action, target selection, or verification of a requested operation depends on that observation.
 
-Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Within this skill, use `backend` only for read-only authoritative checks after a frontend operation when persisted game state matters.
+Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Within this skill, use `backend` only for read-only authoritative runtime checks after a frontend operation when live game state matters.
 
 ## Operating Model
 
@@ -35,7 +35,7 @@ Within the frontend path, prefer result paths in this order:
 3. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
 4. `xiangshu_run_csharp_script` on `frontend` with `entryThread: "mainThread"`, using the entry contract from `tool-guides/RUNTIME_SCRIPTING.md`, when no narrower exposed tool exists.
 5. EventSystem pointer, scroll, drag, submit, or cancel replay through that script only when the visible UI control itself is the target.
-6. Backend read-only verification after the frontend action, if persisted state matters.
+6. Backend read-only verification after the frontend action, if live game state matters.
 
 Use `tool-guides/RUNTIME_SCRIPTING.md` before drafting runtime scripts if it has not already been loaded in the current request. Check the tools exposed in the current request; actual tool descriptions override this skill.
 
