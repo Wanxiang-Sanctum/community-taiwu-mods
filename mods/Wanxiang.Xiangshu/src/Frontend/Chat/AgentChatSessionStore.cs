@@ -96,6 +96,10 @@ internal sealed class AgentChatSessionStore(string workingDirectory, uint worldI
         int lastMessageOrdinal = session.LastMessageOrdinal
             ?? throw new InvalidDataException($"Missing chat session field 'lastMessageOrdinal' in {sessionPath}.");
         ValidateLastMessageOrdinal(lastMessageOrdinal, highestMessageOrdinal, sessionPath);
+        List<string> contextAnchorIds = NormalizeContextAnchorIds(
+            session.ContextAnchorIds,
+            messages,
+            sessionPath);
 
         return new AgentChatSessionState(
             sessionId,
@@ -103,6 +107,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory, uint worldI
             NormalizeNullable(session.AgentSessionId),
             session.RequiresReset,
             lastMessageOrdinal,
+            contextAnchorIds,
             messages);
     }
 
@@ -118,6 +123,7 @@ internal sealed class AgentChatSessionStore(string workingDirectory, uint worldI
             AgentSessionId = state.AgentSessionId,
             RequiresReset = state.RequiresReset,
             LastMessageOrdinal = state.LastMessageOrdinal,
+            ContextAnchorIds = [.. state.ContextAnchorIds],
             VisibleMessages =
             [
                 .. state.VisibleMessages.Select(CreatePersistedMessage),
@@ -291,6 +297,54 @@ internal sealed class AgentChatSessionStore(string workingDirectory, uint worldI
         }
     }
 
+    private static List<string> NormalizeContextAnchorIds(
+        List<string>? contextAnchorIds,
+        IReadOnlyList<AgentChatMessage> visibleMessages,
+        string path)
+    {
+        if (contextAnchorIds is null)
+        {
+            throw new InvalidDataException($"Missing chat session field 'contextAnchorIds' in {path}.");
+        }
+
+        List<string> normalizedIds = [];
+        int previousMessageIndex = -1;
+
+        foreach (string? persistedMessageId in contextAnchorIds)
+        {
+            string messageId = NormalizeRequired(
+                persistedMessageId,
+                "contextAnchorIds[]",
+                path);
+            int messageIndex = FindMessageIndex(visibleMessages, messageId);
+            if (messageIndex <= previousMessageIndex)
+            {
+                throw new InvalidDataException(
+                    $"Invalid chat session field 'contextAnchorIds' in {path}.");
+            }
+
+            normalizedIds.Add(messageId);
+            previousMessageIndex = messageIndex;
+        }
+
+        return normalizedIds;
+    }
+
+    private static int FindMessageIndex(
+        IReadOnlyList<AgentChatMessage> visibleMessages,
+        string messageId)
+    {
+        for (int index = 0; index < visibleMessages.Count; index++)
+        {
+            if (string.Equals(visibleMessages[index].Id, messageId, StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
     private static DateTimeOffset NormalizeRequiredTimestamp(
         DateTimeOffset? value,
         string fieldName,
@@ -325,6 +379,8 @@ internal sealed class AgentChatSessionStore(string workingDirectory, uint worldI
 
         public int? LastMessageOrdinal { get; set; }
 
+        public List<string>? ContextAnchorIds { get; set; }
+
         public List<PersistedChatMessage>? VisibleMessages { get; set; }
     }
 
@@ -350,6 +406,7 @@ internal sealed class AgentChatSessionState(
     string? agentSessionId,
     bool requiresReset,
     int lastMessageOrdinal,
+    IReadOnlyList<string> contextAnchorIds,
     IReadOnlyList<AgentChatMessage> visibleMessages)
 {
     public string SessionId { get; } = sessionId;
@@ -361,6 +418,8 @@ internal sealed class AgentChatSessionState(
     public bool RequiresReset { get; } = requiresReset;
 
     public int LastMessageOrdinal { get; } = lastMessageOrdinal;
+
+    public IReadOnlyList<string> ContextAnchorIds { get; } = contextAnchorIds;
 
     public IReadOnlyList<AgentChatMessage> VisibleMessages { get; } = visibleMessages;
 }

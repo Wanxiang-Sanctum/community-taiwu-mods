@@ -5,13 +5,13 @@ namespace Wanxiang.Xiangshu.Frontend.Agent.Cli;
 internal sealed class AgentCliChatResult(
     string assistantMessage,
     string? agentSessionId,
-    bool isProtocolFallback = false)
+    bool isReplyExtractionFallback = false)
 {
     public string AssistantMessage { get; } = assistantMessage;
 
     public string? AgentSessionId { get; } = agentSessionId;
 
-    public bool IsProtocolFallback { get; } = isProtocolFallback;
+    public bool IsReplyExtractionFallback { get; } = isReplyExtractionFallback;
 }
 
 [SuppressMessage(

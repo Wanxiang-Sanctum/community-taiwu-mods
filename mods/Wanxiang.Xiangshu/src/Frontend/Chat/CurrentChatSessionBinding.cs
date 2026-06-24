@@ -32,6 +32,10 @@ internal sealed class CurrentChatSessionBinding
                     "No Wanxiang.Xiangshu chat session is bound to the active world.");
         }
 
-        session.AddIntermediateReply(content);
+        if (!session.TryAddIntermediateReply(content))
+        {
+            throw new InvalidOperationException(
+                "No active Wanxiang.Xiangshu chat dispatch accepts intermediate replies.");
+        }
     }
 }

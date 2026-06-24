@@ -28,7 +28,7 @@ internal sealed class AgentChatSession : IDisposable
     private readonly ConcurrentQueue<AgentChatSessionEvent> _events = new();
     private readonly object _syncRoot = new();
     private readonly List<AgentChatMessage> _visibleMessages = [];
-    private readonly Queue<AgentChatMessage> _pendingMessages = new();
+    private readonly Queue<AgentChatMessage> _contextAnchors = new();
     private readonly CancellationTokenSource _cancellation = new();
 
     private int _lastMessageOrdinal;
@@ -82,6 +82,7 @@ internal sealed class AgentChatSession : IDisposable
             _lastMessageOrdinal = restoredState.LastMessageOrdinal;
             _agentSessionId = restoredState.AgentSessionId;
             _requiresReset = restoredState.RequiresReset;
+            RestoreContextAnchors(restoredState.ContextAnchorIds);
         }
 
         PersistSnapshot();
@@ -142,7 +143,7 @@ internal sealed class AgentChatSession : IDisposable
                 trimmedContent,
                 AgentChatMessageOrigin.User);
             _visibleMessages.Add(message);
-            _pendingMessages.Enqueue(message);
+            _contextAnchors.Enqueue(message);
             _dispatchPaused = false;
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
@@ -182,7 +183,7 @@ internal sealed class AgentChatSession : IDisposable
                 InterruptMessage,
                 AgentChatMessageOrigin.User);
             _visibleMessages.Add(message);
-            _pendingMessages.Enqueue(message);
+            _contextAnchors.Enqueue(message);
             _dispatchPaused = true;
             activeDispatch.InterruptRequested = true;
             turnCancellation = activeDispatch.Cancellation;
@@ -226,7 +227,7 @@ internal sealed class AgentChatSession : IDisposable
                 normalizedContent,
                 AgentChatMessageOrigin.Runtime);
             _visibleMessages.Add(message);
-            _pendingMessages.Enqueue(message);
+            _contextAnchors.Enqueue(message);
             _dispatchPaused = true;
             activeDispatch.InterruptRequested = true;
             turnCancellation = activeDispatch.Cancellation;
@@ -283,7 +284,7 @@ internal sealed class AgentChatSession : IDisposable
         }
     }
 
-    public void AddIntermediateReply(string? content)
+    public bool TryAddIntermediateReply(string? content)
     {
         string normalizedContent = NormalizeMessageContent(content);
         AgentChatMessage message;
@@ -300,7 +301,7 @@ internal sealed class AgentChatSession : IDisposable
             if (_requiresReset
                 || _activeDispatch is not { InterruptRequested: false, ResetRequested: false })
             {
-                return;
+                return false;
             }
 
             message = new AgentChatMessage(
@@ -315,6 +316,7 @@ internal sealed class AgentChatSession : IDisposable
         }
 
         PersistSnapshot();
+        return true;
     }
 
     public void Dispose()
@@ -346,7 +348,7 @@ internal sealed class AgentChatSession : IDisposable
 
         lock (_syncRoot)
         {
-            if (_disposed || _dispatching || !CanDispatchPendingLocked())
+            if (_disposed || _dispatching || !CanStartDispatchLocked())
             {
                 return;
             }
@@ -360,11 +362,11 @@ internal sealed class AgentChatSession : IDisposable
             _events.Enqueue(AgentChatSessionEvent.StateChanged());
         }
 
-        ProcessPendingMessagesAsync(_cancellation.Token).Forget(
+        ProcessDispatchesAsync(_cancellation.Token).Forget(
             static ex => Log.Error(ex, "chat session processing failed"));
     }
 
-    private async UniTask ProcessPendingMessagesAsync(CancellationToken cancellationToken)
+    private async UniTask ProcessDispatchesAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -527,21 +529,21 @@ internal sealed class AgentChatSession : IDisposable
 
         lock (_syncRoot)
         {
-            if (!CanDispatchPendingLocked())
+            if (!CanStartDispatchLocked())
             {
                 dispatch = null;
             }
             else
             {
-                List<AgentChatMessage> turnMessages = [];
+                List<AgentChatMessage> contextAnchors = [];
 
-                while (_pendingMessages.Count > 0)
+                while (_contextAnchors.Count > 0)
                 {
-                    AgentChatMessage message = _pendingMessages.Dequeue();
-                    turnMessages.Add(message);
+                    contextAnchors.Add(_contextAnchors.Dequeue());
                 }
 
-                dispatch = CreateDispatch(turnMessages);
+                List<AgentChatMessage> contextMessages = CreateContextMessagesLocked(contextAnchors);
+                dispatch = CreateDispatch(contextMessages);
                 _activeDispatch = dispatch;
             }
         }
@@ -555,7 +557,46 @@ internal sealed class AgentChatSession : IDisposable
         return dispatch;
     }
 
-    private TurnDispatch CreateDispatch(List<AgentChatMessage> turnMessages)
+    private List<AgentChatMessage> CreateContextMessagesLocked(List<AgentChatMessage> contextAnchors)
+    {
+        AgentChatMessage firstContextAnchor = contextAnchors[0];
+        int firstContextAnchorIndex = FindVisibleMessageIndexLocked(firstContextAnchor.Id);
+        if (firstContextAnchorIndex < 0)
+        {
+            throw new InvalidOperationException("A chat context anchor must be present in visible messages.");
+        }
+
+        int startIndex = FindPreviousUserMessageIndexLocked(firstContextAnchorIndex) + 1;
+        return [.. _visibleMessages.Skip(startIndex).Select(CloneMessage)];
+    }
+
+    private int FindVisibleMessageIndexLocked(string messageId)
+    {
+        for (int index = 0; index < _visibleMessages.Count; index++)
+        {
+            if (string.Equals(_visibleMessages[index].Id, messageId, StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private int FindPreviousUserMessageIndexLocked(int beforeIndex)
+    {
+        for (int index = beforeIndex - 1; index >= 0; index--)
+        {
+            if (_visibleMessages[index].Role == AgentChatRole.User)
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private TurnDispatch CreateDispatch(List<AgentChatMessage> contextMessages)
     {
         CancellationTokenSource? turnCancellation = null;
 
@@ -563,10 +604,10 @@ internal sealed class AgentChatSession : IDisposable
         {
             AgentChatTurn turn = new(
                 _agentSessionId,
-                GetLastUserSpeakerName(turnMessages),
+                GetLastUserSpeakerName(contextMessages),
                 [
-                    .. turnMessages.Select(
-                        static message => new AgentChatTurnMessage(
+                    .. contextMessages.Select(
+                        static message => new AgentChatContextMessage(
                             message.Id,
                             message.CreatedAt.ToUniversalTime(),
                             message.Role,
@@ -665,7 +706,7 @@ internal sealed class AgentChatSession : IDisposable
         AgentCliChatResult result)
     {
         AgentChatMessage message;
-        bool queueForNextTurn = result.IsProtocolFallback;
+        bool anchorForNextContext = result.IsReplyExtractionFallback;
 
         lock (_syncRoot)
         {
@@ -687,9 +728,11 @@ internal sealed class AgentChatSession : IDisposable
                 result.AssistantMessage,
                 GetAgentResultOrigin(result));
             _visibleMessages.Add(message);
-            if (queueForNextTurn)
+            if (anchorForNextContext)
             {
-                _pendingMessages.Enqueue(message);
+                // The fallback is runtime text, not an agent answer; anchor it so the next
+                // player message includes the visible recovery fact in contextMessages.
+                _contextAnchors.Enqueue(message);
             }
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
@@ -712,7 +755,7 @@ internal sealed class AgentChatSession : IDisposable
             }
 
             _requiresReset = true;
-            _pendingMessages.Clear();
+            _contextAnchors.Clear();
             _dispatchPaused = true;
 
             message = new AgentChatMessage(
@@ -733,7 +776,7 @@ internal sealed class AgentChatSession : IDisposable
 
     private static AgentChatMessageOrigin GetAgentResultOrigin(AgentCliChatResult result)
     {
-        return result.IsProtocolFallback
+        return result.IsReplyExtractionFallback
             ? AgentChatMessageOrigin.Runtime
             : AgentChatMessageOrigin.Agent;
     }
@@ -759,7 +802,7 @@ internal sealed class AgentChatSession : IDisposable
                 content,
                 AgentChatMessageOrigin.Runtime);
             _visibleMessages.Add(message);
-            _pendingMessages.Enqueue(message);
+            _contextAnchors.Enqueue(message);
             _events.Enqueue(AgentChatSessionEvent.MessageAdded(message));
         }
 
@@ -774,14 +817,14 @@ internal sealed class AgentChatSession : IDisposable
         _agentSessionId = null;
         _lastMessageOrdinal = 0;
         _visibleMessages.Clear();
-        _pendingMessages.Clear();
+        _contextAnchors.Clear();
         _dispatchPaused = false;
         _requiresReset = false;
     }
 
-    private bool CanDispatchPendingLocked()
+    private bool CanStartDispatchLocked()
     {
-        return _pendingMessages.Any(static message => message.Role == AgentChatRole.User)
+        return _contextAnchors.Any(static message => message.Role == AgentChatRole.User)
             && !_dispatchPaused
             && !_requiresReset;
     }
@@ -850,7 +893,30 @@ internal sealed class AgentChatSession : IDisposable
             _agentSessionId,
             _requiresReset,
             _lastMessageOrdinal,
+            [.. _contextAnchors.Select(static message => message.Id)],
             [.. _visibleMessages.Select(CloneMessage)]);
+    }
+
+    private void RestoreContextAnchors(IReadOnlyList<string> contextAnchorIds)
+    {
+        foreach (string messageId in contextAnchorIds)
+        {
+            _contextAnchors.Enqueue(GetVisibleMessageById(messageId));
+        }
+    }
+
+    private AgentChatMessage GetVisibleMessageById(string messageId)
+    {
+        for (int index = 0; index < _visibleMessages.Count; index++)
+        {
+            AgentChatMessage message = _visibleMessages[index];
+            if (string.Equals(message.Id, messageId, StringComparison.Ordinal))
+            {
+                return message;
+            }
+        }
+
+        throw new InvalidOperationException("A chat context anchor must be present in visible messages.");
     }
 
     private static AgentChatMessage CloneMessage(AgentChatMessage message)

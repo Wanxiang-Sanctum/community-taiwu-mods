@@ -23,7 +23,7 @@
   `.xiangshu-runtime/Diagnostics/McpServer/`。
 
 `FrontendPlugin.cs` 负责组合前端生命周期；子目录之间只在稳定职责边界上协作。`Chat/` 维护当前活动世界的前端投递会话、
-待投递消息和聊天窗口，用 `Agent/Turn/` 的模型组织投递轮次，并把调用交给 `Agent/Cli/`。`Agent/Cli/` 只负责把该
+上下文锚点和聊天窗口，用 `Agent/Turn/` 的模型组织投递轮次，并把调用交给 `Agent/Cli/`。`Agent/Cli/` 只负责把该
 投递轮次转换为 CLI 调用。`PlayerView/` 捕获玩家视图，需要排除聊天窗口时只依赖 `Chat/` 提供的捕获边界，
 不直接处理聊天窗口 UI 结构。新增前端能力时优先放入既有职责目录；出现新的运行职责时再新增同级目录。
 

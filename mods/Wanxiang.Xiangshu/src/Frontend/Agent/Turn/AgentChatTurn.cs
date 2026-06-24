@@ -6,16 +6,16 @@ namespace Wanxiang.Xiangshu.Frontend.Agent.Turn;
 internal sealed class AgentChatTurn(
     string? agentSessionId,
     string playerName,
-    IReadOnlyList<AgentChatTurnMessage> messages)
+    IReadOnlyList<AgentChatContextMessage> contextMessages)
 {
     public string? AgentSessionId { get; } = agentSessionId;
 
     public string PlayerName { get; } = playerName;
 
-    public IReadOnlyList<AgentChatTurnMessage> Messages { get; } = messages;
+    public IReadOnlyList<AgentChatContextMessage> ContextMessages { get; } = contextMessages;
 }
 
-internal sealed class AgentChatTurnMessage(
+internal sealed class AgentChatContextMessage(
     string id,
     DateTimeOffset sentAt,
     AgentChatRole role,

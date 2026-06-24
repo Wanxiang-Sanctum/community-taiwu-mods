@@ -18,7 +18,7 @@ internal static class AgentChatTurnInputBuilder
     {
         AgentChatTurnInput input = new(
             playerName: turn.PlayerName,
-            turnMessages: turn.Messages);
+            contextMessages: turn.ContextMessages);
 
         return JsonConvert.SerializeObject(input, Formatting.Indented, JsonSettings);
     }
@@ -26,11 +26,11 @@ internal static class AgentChatTurnInputBuilder
 
 internal sealed class AgentChatTurnInput(
     string playerName,
-    IReadOnlyList<AgentChatTurnMessage> turnMessages)
+    IReadOnlyList<AgentChatContextMessage> contextMessages)
 {
     [JsonProperty("playerName")]
     public string PlayerName { get; } = playerName;
 
-    [JsonProperty("turnMessages")]
-    public IReadOnlyList<AgentChatTurnMessage> TurnMessages { get; } = turnMessages;
+    [JsonProperty("contextMessages")]
+    public IReadOnlyList<AgentChatContextMessage> ContextMessages { get; } = contextMessages;
 }
