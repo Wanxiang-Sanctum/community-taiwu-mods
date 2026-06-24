@@ -3,7 +3,7 @@ return {
   Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
-  GameVersion = "1.0.20",
+  GameVersion = "1.0.24",
   Author = "Wanxiang Sanctum",
   Description = [=[相枢是一款实验性对话 Mod。游戏内，它让太吾传人借“低语的陶土药钵”与相枢交谈；运行上，它会把玩家新消息和上一条玩家消息之后已经显示的可见聊天片段交给你本机已安装的第三方 CLI Agent，并把最终答复带回游戏。若工作区允许，Agent 还可通过相枢投递受信脚本，读写游戏运行时数据；这些能力可能改动物品、人物，或当前游戏中的其他状态。
 

@@ -16,18 +16,18 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.20, )",
-        "resolved": "1.0.20",
-        "contentHash": "hwgjETyfbimOVgGU71E51GROt/1AdGWxfuTHuOjhuKQe8yg9o0UCoYmqf3wv3m0oJFiBjkJzNxxPzoGPtR4RPA==",
+        "requested": "[1.0.24, )",
+        "resolved": "1.0.24",
+        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.20]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.20, )",
-        "resolved": "1.0.20",
-        "contentHash": "azIwECGkU8UM9Kv3zKZgEWHkeC0d0qU9caKOyeQsfWkACwgJcR7+uRHmtWd+mzLvRfh6QC+bcE7z7du7duEzzA=="
+        "requested": "[1.0.24, )",
+        "resolved": "1.0.24",
+        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
       }
     },
     "net8.0": {
@@ -45,18 +45,18 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.20, )",
-        "resolved": "1.0.20",
-        "contentHash": "hwgjETyfbimOVgGU71E51GROt/1AdGWxfuTHuOjhuKQe8yg9o0UCoYmqf3wv3m0oJFiBjkJzNxxPzoGPtR4RPA==",
+        "requested": "[1.0.24, )",
+        "resolved": "1.0.24",
+        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.20]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.20, )",
-        "resolved": "1.0.20",
-        "contentHash": "azIwECGkU8UM9Kv3zKZgEWHkeC0d0qU9caKOyeQsfWkACwgJcR7+uRHmtWd+mzLvRfh6QC+bcE7z7du7duEzzA=="
+        "requested": "[1.0.24, )",
+        "resolved": "1.0.24",
+        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
       }
     }
   }
