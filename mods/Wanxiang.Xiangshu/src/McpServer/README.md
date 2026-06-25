@@ -4,7 +4,7 @@
 生命周期事件写入 `.xiangshu-runtime/Diagnostics/McpServer/`。
 
 MCP endpoint 使用 Streamable HTTP stateless transport。sidecar 不维护 MCP 协议会话状态，也不使用
-`MCP-Session-Id` 做请求归属判断；相枢的聊天状态归前端投递会话，长期上下文归本机 Agent 会话。
+`MCP-Session-Id` 做请求归属判断；相枢 Mod 的聊天状态和可见片段投递归前端投递会话，更长程模型上下文归本地 Agent 会话。
 
 sidecar 负责 `/mcp` 请求门禁。前端启动 sidecar 时通过环境变量传入本次运行的 MCP bearer token；所有
 `/mcp` 请求必须用 `Authorization: Bearer ...` 携带该 token。sidecar 还会拒绝非本机 HTTP `Origin`，

@@ -71,7 +71,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float ButtonLabelFontSize = 20f;
     private const int CanvasSortingOrder = 32000;
     private const string HostUnavailableButtonLabel = "离身";
-    private const string HiddenAssistantMessageNotificationText = "药钵中传来低语。";
+    private const string HiddenAssistantMessageNotificationText = "钵中低语复起。";
     private const short HiddenAssistantMessageNotificationTemplateId = InstantNotificationConfig.DefKey.WalkThroughAbyss;
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
     private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
@@ -520,7 +520,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             SetInputFocused(focused: false);
             sendButton.interactable = false;
             sendButtonImage.color = DisabledButtonColor;
-            sendButtonText.text = "须重置";
+            sendButtonText.text = "需重置";
             sendButtonText.color = MutedTextColor;
             return;
         }
@@ -548,7 +548,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         sendButton.interactable = canSend;
         sendButtonImage.color = canSend ? ButtonColor : DisabledButtonColor;
 
-        sendButtonText.text = "送出";
+        sendButtonText.text = "传念";
         sendButtonText.color = canSend ? TextColor : MutedTextColor;
     }
 
@@ -922,7 +922,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             ReplyIndicatorFontSize,
             TextColor,
             FontStyles.Bold);
-        _replyIndicatorText.text = "推演中";
+        _replyIndicatorText.text = "窸窣作响";
         _replyIndicatorText.alignment = TextAlignmentOptions.Center;
         StretchToParent(_replyIndicatorText.rectTransform);
         _replyIndicatorText.rectTransform.offsetMin = new Vector2(8f, 3f);
@@ -1040,7 +1040,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _inputField.onValueChanged.AddListener(_ => UpdateSendButtonState());
         SetInputFocused(focused: false);
 
-        _sendButton = CreateButton("SendButton", inputArea.transform, "送出", SendButtonWidth, SendButtonHeight);
+        _sendButton = CreateButton("SendButton", inputArea.transform, "传念", SendButtonWidth, SendButtonHeight);
         _sendButton.onClick.AddListener(ActivateSendButton);
         _sendButtonText = _sendButton.GetComponentInChildren<TextMeshProUGUI>();
         _sendButtonImage = _sendButton.GetComponent<CImage>();
@@ -1441,7 +1441,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             const int dotCount = 3;
             const float dotStepSeconds = 0.34f;
             int dots = ((int)(Time.unscaledTime / dotStepSeconds) % dotCount) + 1;
-            indicatorText.text = "推演中" + new string('.', dots);
+            indicatorText.text = "窸窣作响" + new string('.', dots);
         }
     }
 

@@ -24,6 +24,7 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Publishes a brief player-visible Xiangshu message in the current in-game chat while the turn is still running. "
+        + "The call succeeds only while the frontend has an active chat dispatch accepting intermediate replies. "
         + "Use it for multi-step or long-running work, or for an early acknowledgement before the final reply. "
         + "Content must already be player-facing Xiangshu text and must not expose implementation details.")]
     public Task<string> SendIntermediateReplyAsync(
@@ -43,9 +44,11 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Executes a fully trusted C# compilation unit inside the live Wanxiang.Xiangshu frontend or backend plugin process. "
-        + "Use it when current game/mod state or a clearly requested action requires plugin APIs; "
-        + "do not use it for ordinary conversation or static knowledge. "
-        + "Mutate state only when the player's target and intent are clear. "
+        + "Use it when current game/mod state affects the answer, or when the player's goal requires plugin APIs for inspection, "
+        + "verification, or action. Select it according to the player's goal and workspace guidance. "
+        + "Do not use it for ordinary conversation or static knowledge. "
+        + "Before mutation, read current state and narrow the target, effect, and verification path from the player's wording "
+        + "and workspace guidance. "
         + "The tool returns JSON describing invocation facts: notInvoked(reason, details?), invoked(returnValue(value)), "
         + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
     public Task<string> RunCSharpScriptAsync(
@@ -86,7 +89,8 @@ internal sealed class PluginTools
         ReadOnly = true)]
     [Description(
         "Captures the current full-screen, native-resolution player-visible Unity frontend view as PNG image content. "
-        + "Use it before screen-coordinate targeting, UI inspection, or visual verification. "
+        + "Use it whenever the player's goal depends on visible screen facts, screen-coordinate targeting, UI inspection, "
+        + "or visual verification. "
         + "The capture excludes the Xiangshu chat window without changing its visible state or input focus.")]
     public async Task<CallToolResult> CapturePlayerViewAsync(CancellationToken cancellationToken = default)
     {

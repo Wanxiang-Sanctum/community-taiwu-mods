@@ -13,7 +13,7 @@
 - 维护前端、后端和 MCP server 的 endpoint manifest 注册与发现；manifest 用 endpoint `role` 区分进程角色。
 - 定义 MCP sidecar、前端和 CLI 适配器共享的 transport、path、header 和环境变量名称；请求门禁由
   `src/McpServer/` 执行。
-- 提供相枢运行目录、插件部署目录和本机 loopback endpoint 辅助方法。
+- 提供相枢 Mod 运行目录、插件部署目录和本机 loopback endpoint 辅助方法。
 
 协议约定：
 
@@ -29,7 +29,7 @@
   和事件名。
 - 跨进程语义归本模块；前端、后端和 MCP 模块只实现本侧处理器或调用端。
 
-这个模块描述跨进程协议和共享基础设施。前端 UI、后端游戏逻辑、MCP 工具语义和本机 Agent 调用由对应
+这个模块描述跨进程协议和共享基础设施。前端 UI、后端游戏逻辑、MCP 工具语义和本地 Agent 调用由对应
 运行模块实现；脚本能访问哪些游戏 API 也由目标侧插件进程决定。
 
 脚本执行本身归前端或后端 endpoint。工具意图和玩家目标判断归 MCP 调用方或 Agent 指引；入口契约与共享编译规则归

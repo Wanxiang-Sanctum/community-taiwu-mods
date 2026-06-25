@@ -7,7 +7,7 @@ endpoint、安装 shared 行囊宿主观察服务，并把 endpoint 注册到 `.
 
 行囊宿主观察由 `shared/Wanxiang.Taiwu.ItemGrafts.Backend` 提供。后端初始化时调用
 `BackendInventoryGrafts.Install(this)`；shared 组件通过 `Wanxiang.Taiwu.ModRpc` 接收前端 session 订阅，并观察宿主
-删除、角色行囊位置变化和宿主数据变化。相枢后端的边界是安装该观察服务；宿主订阅、session 统计和事件转发归 shared
+删除、角色行囊位置变化和宿主数据变化。相枢 Mod 后端的边界是安装该观察服务；宿主订阅、session 统计和事件转发归 shared
 组件。
 
 启动时，后端从游戏 Mod 管理接口取得相枢 Mod 目录，并把 `Plugins/Backend` 作为本侧插件部署目录传给共享

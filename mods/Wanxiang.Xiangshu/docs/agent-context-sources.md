@@ -1,45 +1,58 @@
 # 默认 Agent 工作区来源与维护
 
-源码中的 `DefaultAgentWorkspace/` 是默认工作区内容源，组包后输出为包内同名目录；包内工作区以随包发布的
-文件作为完整输入。
+本文面向维护相枢 Mod 默认 Agent 工作区的源码维护者，不是运行时 Agent 指令。源码中的 `DefaultAgentWorkspace/`
+是默认 Agent 工作区内容源，组包后输出为包内同名目录；包内 Agent 工作区以随包发布的文件作为完整输入。
 
-本文记录默认工作区资料如何回溯到太吾游戏文本、配置、游戏侧源码和运行时事实，以及本地工作记录、默认资产和运行数据的
-边界。相枢目录维护默认工作区内容和放置规则；组织内部
+维护者文档可以说明来源、放置规则、更新边界和为什么这样组织；运行时 Agent 工作区文件应直接服务 Agent 当前回答、
+工具选择和脚本落地。稳定锚点层级、资料来源、快照核对路径和放置规则归本文；`DefaultAgentWorkspace/`
+内只写运行 Agent 在当前回答、工具选择、脚本落地或本地工作记录中需要执行的规则。维护本文时，不把维护理由、
+来源审计或“应该如何维护文档”的话术复制到 `DefaultAgentWorkspace/` 的运行时指引里。
+
+本文记录默认 Agent 工作区资料如何回溯到太吾游戏文本、配置、游戏侧源码和运行时事实，以及本地工作记录、默认资产和运行数据的
+边界。相枢 Mod 目录维护默认 Agent 工作区内容和放置规则；组织内部
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 维护游戏观察快照的生成工具和快照更新方式。
-大段游戏文本、完整清单和可跳转镜像由内部快照承载；完整协议或工具语义保留在相枢对应源码模块中。
+大段游戏文本、完整清单和可跳转镜像由内部快照承载；完整协议或工具语义保留在相枢 Mod 对应源码模块中。
 
 `DefaultAgentWorkspace/lore/` 中的世界观资料以太吾游戏文本、配置关系、游戏侧源码和运行时行为为依据。组织内部维护者可用
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库根目录下的 `game/` 生成快照复核这些游戏侧
 资料；生成快照提供检索、跳转和观察变化的开发期证据。需要更新快照时运行该内部仓库中对应工具重新生成。
 
 `DefaultAgentWorkspace/AGENTS.md` 承担每次答复都必须遵循的基础相枢身份、口吻、玩家可见边界和输出
-可见性，包括本 Mod 的愿望回应前提：相枢被迫满足太吾传人的愿望，难以实现的愿望会被相枢趁机扭曲
-兑现，且扭曲本身不主动向太吾传人揭示。
+可见性，包括本 Mod 的愿望回应前提：太吾传人将念头递入药钵，相枢便不得不回应；Agent 应从玩家目标主动
+选择资料读取、玩家视图、运行时状态、运行工具和验证路径；目标含混、影响未明、目标矛盾、代价过高或贪求
+过甚时，偏转应由行为、执行路径、条件、波及范围或结果承载；偏转本身不主动向太吾传人揭示。
 `DefaultAgentWorkspace/persona/` 中的人设口吻以游戏文本和相枢对话体验为依据；它记录扩展校准资料，用于
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
 `DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。玩家视图观察边界、脚本入口、
-结果形态和工具边界以相枢源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以太吾游戏配置、
-本地化、百晓册、显示辅助和游戏侧 namespace、类型、成员为依据。默认工作区记录能帮助运行 Agent 选入口、定目标侧、
-减少反射探索的锚点；完整协议说明保留在相枢源码中，完整 API 清单和不稳定枚举表保留在游戏侧源码或组织内部游戏观察快照中。
-随默认工作区发布的初始运行经验应沉淀为工具指引、读取路由或稳定资产；`.xiangshu-notes/` 只记录本机运行后产生的
-草稿和本地经验。
+结果形态和工具边界以相枢 Mod 源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以太吾游戏配置、
+本地化、百晓册、显示辅助和游戏侧 namespace、类型、方法为依据；GM 与调试入口以游戏前端 GM 面板、命令行、
+本地化、事件配置和事件脚本观察结果为依据。默认 Agent 工作区记录能帮助运行 Agent 选入口、定目标侧、
+理解游戏领域事实归属，并减少无目标反射探索；它可以保留少量参考片段来固定稳定入口层级和接续关系，
+也允许片段展示服务当前事实返回的局部过滤、投影、分页和结果裁剪。可复用的稳定入口、接续点和
+局部处理范式应沉淀为领域指引或参考片段；面向单次目标的完整读取、处理和输出流水线留给当前脚本和本地
+工作记录。
+完整协议说明保留在相枢 Mod 源码中，完整 API 清单和不稳定枚举表保留在游戏侧源码
+或组织内部游戏观察快照中。随默认 Agent 工作区发布的初始运行经验应沉淀为工具指引、读取路由、领域上下文、参考片段
+或稳定资产；`.xiangshu-notes/` 只记录本地 Agent 运行后产生的草稿和本地经验。
 
 `DefaultAgentWorkspace/.agents/skills/` 与 `DefaultAgentWorkspace/.claude/skills/` 服务不同 CLI Agent 的技能发现；
 当前适配器到入口文件、技能目录的对应关系由 `agent-cli-adapters.md` 维护。当前同名技能内容保持一致；需要调整
 技能触发或执行规则时，同时更新两份副本，除非某个 CLI 的发现机制或工具能力确实需要分叉。
 
-默认工作区文件会被 CLI Agent 作为持续工作区配置读取；组包后的同名目录以随包内容作为完整输入。写这些文件时，措辞应说明
+默认 Agent 工作区文件会被 CLI Agent 持续读取，作为 Agent 工作区配置；组包后的同名目录以随包内容作为完整输入。写这些文件时，措辞应说明
 事实归属；需要描述运行时事实时，按所有权选择更明确的锚点：
 
 - `当前请求`：Agent 正在处理的玩家目标或子任务。
-- `当前输入`：CLI Agent 收到的 `playerName`、`turnMessages` 等结构化输入。
+- `当前输入`：CLI Agent 收到的 `playerName`、`contextMessages` 等结构化输入；`contextMessages` 是前端从上一条玩家消息
+  之后切出的可见对话片段，没有上一条玩家消息时从对话开头切出。
 - `当前可用工具`：Agent 当前能调用的 MCP 工具、参数和副作用说明。
+- `当前运行世界`：游戏进程内已经加载的权威世界状态；它不是静态存档文件。
 - `当前回答`：Agent 正在组织并最终写入 `reply` 的玩家可见答复。
 - `当前调用`：取消信号、工具生命周期和最终答复共同所在的一次 Agent 进程调用。
 
 `投递轮次` 是前端协议模型的稳定概念，可以继续用于描述玩家消息批次、中间答复和最终答复的归属。像“本轮”
-这类缺少所有权的临时指代会让持续工作区资产显得像一次性提示；默认工作区面向 Agent 时，优先使用上面这些
+这类缺少所有权的临时指代会让持续读取的 Agent 工作区资产显得像一次性提示；写给运行 Agent 的文件中，优先使用上面这些
 Agent 视角的说法。
 
 ## 默认资料主要证据入口
@@ -61,11 +74,13 @@ Agent 视角的说法。
 | 剑冢状态枚举 | `game/src/Backend/GameData.Shared/GameData.Domains.World/SwordTombStatus.cs` | 未完成、第一阶段击败、第二阶段击败。 |
 | 神剑碎片增加相枢侵蚀、剑冢倒计时、侵蚀上限 | `game/src/Backend/GameData.Shared/GlobalConfig.cs` | 机制说明中的数值依据。 |
 | 游戏主要命名空间路由 | `game/src/Backend/Backend.slnx`、`game/src/The Scroll Of Taiwu_Data/The Scroll Of Taiwu_Data.slnx` | `GAME_KNOWLEDGE.md` 和脚本技能中的目标侧、命名空间和反射范围地图。 |
+| GM 面板、命令行、命令类型、分组、启用路径和热键 | `game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/UI_GMWindow.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GM/`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GMFunc.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GameApp.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/CommonCommandKit.cs`、`game/text/The Scroll Of Taiwu_Data/StreamingAssets/Language_CN/ui_language.txt.yml` | `GM_COMMANDS.md` 的 GM 面板/命令行、本地化、启用路径和执行边界。 |
+| 事件里的隐藏 GM 风格选项 | `game/src/Event/EventLib/`、`game/text/Event/EventLanguages/`、`game/event-scripts/Event/EventScript/` | `GM_COMMANDS.md` 的事件 GM 选项检索路线；目标事件、选项和脚本结构按关键词或事件组重新检索。 |
 
 ## 更新流程
 
 1. 静态世界观先按太吾游戏文本、配置和游戏侧源码事实检索相关关键词；组织内部维护者可在 `taiwu-modkit`
-   仓库的 `game/text` 和 `game/src` 快照路径中检索。运行工具指引先核对相枢源码中的脚本执行器和工具声明，再按需要查
+   仓库的 `game/text` 和 `game/src` 快照路径中检索。运行工具指引先核对相枢 Mod 源码中的脚本执行器和工具声明，再按需要查
    游戏观察快照。
 2. 判断新增内容属于当前任务工作记录、Agent 侧本地经验、基础角色契约、扩展人设校准、基础世界观、相枢深入资料、
    运行工具指引，还是属于本文的来源说明。
@@ -73,12 +88,13 @@ Agent 视角的说法。
    世界观稳定概念、回答策略和小型索引写入 `DefaultAgentWorkspace/persona/` 或
    `DefaultAgentWorkspace/lore/`。大段文本和完整清单由游戏镜像承载。
 4. 涉及脚本工具、玩家视图观察、运行时目标侧、配置/本地化/模板辅助或百晓册入口时，写入
-   `DefaultAgentWorkspace/tool-guides/`；保留检索路线和边界，具体任务脚本留给运行时按当前请求目标生成。
-5. 更新本文的来源表或维护说明，确保以后能回到太吾游戏侧事实、相枢源码和内部快照重新核对。
+   `DefaultAgentWorkspace/tool-guides/`；保留检索路线、领域事实归属、边界和少量参考片段，具体任务脚本
+   留给运行时按当前请求目标生成。
+5. 更新本文的来源表或维护说明，确保以后能回到太吾游戏侧事实、相枢 Mod 源码和内部快照重新核对。
 
 ## 维护边界
 
-`DefaultAgentWorkspace/` 面向源码维护；组包后的同名目录面向运行中的本机 Agent。包内的
+`DefaultAgentWorkspace/` 面向源码维护；组包后的同名目录面向运行中的本地 Agent。包内的
 `AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`、`tool-guides/`、`.agents/skills/` 和 `.claude/skills/` 是
 稳定默认资产。`AGENTS.md` 承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
 人设、世界观、工具和技能资料。源码维护规则归本文和 `docs/README.md` 索引的其它维护文档。
@@ -88,11 +104,11 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 维护，运行数据由 `.xiangshu-runtime/` 维护。
 
 源码中的 `DefaultAgentWorkspace/` 是发布内容源；`pack-mod` 会复制其中的目录内容。源码树里出现
-`.xiangshu-notes/` 或 `.xiangshu-runtime/` 时，应把它们视为本机运行痕迹并移出或清理，而不是用仓库级
-忽略规则隐藏。这样本地记录和运行数据不会被误当成默认工作区资产或随包发布。
+`.xiangshu-notes/` 或 `.xiangshu-runtime/` 时，应把它们视为本地运行痕迹并移出或清理，而不是用仓库级
+忽略规则隐藏。这样本地记录和运行数据不会被误当成默认 Agent 工作区资产或随包发布。
 
-运行中的具体写入纪律由 `DefaultAgentWorkspace/AGENTS.md` 的“工作区边界”维护。本文只记录源码维护视角：
-`.xiangshu-notes/` 中的内容只有在已经稳定到应随默认工作区发布，且维护者明确要更新默认工作区配置时，才按
+运行中的具体写入纪律由 `DefaultAgentWorkspace/AGENTS.md` 的“Agent 工作区边界”维护。本文只记录源码维护视角：
+`.xiangshu-notes/` 中的内容只有在已经稳定到应随默认 Agent 工作区发布，且维护者明确要更新默认 Agent 工作区配置时，才按
 下面的放置规则改写进稳定资产。改写后仍需说明事实归属、来源和边界，避免把一次任务的工作记录伪装成默认
 规则。
 
@@ -108,25 +124,31 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
 - 运行工具指引入口、事实来源选择和按需读取路由归入 `DefaultAgentWorkspace/tool-guides/README.md`。
 - 玩家视图截图、可见事实、可见结果验证和可见/权威状态差异归入
   `DefaultAgentWorkspace/tool-guides/PLAYER_VIEW.md`。
-- 脚本工具目标侧、运行环境、入口契约、结果判断和运行时锚点归入
+- 脚本工具目标侧、运行环境、入口契约、结果判断、运行时锚点和最小脚本职责归入
   `DefaultAgentWorkspace/tool-guides/RUNTIME_SCRIPTING.md`。
 - 配置、本地化、模板/显示辅助、百晓册、命名空间路由和反射边界归入
   `DefaultAgentWorkspace/tool-guides/GAME_KNOWLEDGE.md`。
+- GM 面板、GM 命令行、预置调试入口、GM/调试入口承载的状态改动实现、事件隐藏 GM 风格选项和对应执行边界归入
+  `DefaultAgentWorkspace/tool-guides/GM_COMMANDS.md`；完整 GM 命令表和完整事件清单仍由游戏侧源码、运行时枚举或
+  内部游戏镜像承载。
+- 稳定高频入口的少量参考片段归入对应领域指引；片段应能减少入口层级试错，并说明可接续关系。
+  面向单次目标的完整读取、处理和输出流水线留在当前脚本或本地工作记录中。
 - Agent 技能触发、脚本草拟纪律或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
   `.claude/skills/*/SKILL.md`；同名技能默认保持内容一致。
 - 当前任务计划、待验证事实、临时脚本思路和本地经验归入 `AgentWorkingDirectory/.xiangshu-notes/`；这个
-  目录不随默认包创建，也不作为默认工作区发布资料。
+  目录不随默认包创建，也不作为默认 Agent 工作区发布资料。
 
-新增默认工作区文件应满足这些条件：
+新增默认 Agent 工作区文件应满足这些条件：
 
 - 有独立读取条件，例如某条大型主线、门派专题、某类运行工具指引或某条资料检索路线。
 - 会被 Agent 在不同任务下单独读取，能避免每次都加载无关资料。
-- 内容不是单个词条补充或单个脚本技巧，而是新的回答策略、能力边界或读取边界。
+- 内容承载新的回答策略、能力边界、领域上下文、读取边界或稳定高频入口的参考片段；单个词条补充、
+  单个脚本技巧或面向单次目标的完整读取、处理和输出流水线优先归入现有叶子文件、当前脚本或本地工作记录。
 
 归入现有文件更合适的情况：
 
 - 某个词条、工具参数或入口方法只增加少量说明，放入现有叶子文件更清楚。
-- 内容是当前版本的完整清单、枚举数值或 API 成员表，由太吾游戏侧事实、内部游戏镜像或相枢源码承载。
+- 内容是当前版本的完整清单、枚举数值或 API 成员表，由太吾游戏侧事实、内部游戏镜像或相枢 Mod 源码承载。
 - 内容是每次答复都必须遵循的身份、口吻或输出可见性边界，归入 `DefaultAgentWorkspace/AGENTS.md`。
 - 内容是扩展回答风格偏好，归入 `DefaultAgentWorkspace/persona/README.md`。
 

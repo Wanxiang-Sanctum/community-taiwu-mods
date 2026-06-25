@@ -1,6 +1,6 @@
 ---
 name: unity-use
-description: "Use when Xiangshu must choose, perform, or verify a live Unity frontend action whose target is the visible UI surface, a selected control, screen coordinates, or a frontend-only command. Use with live Xiangshu frontend MCP/runtime tools. Do not use for visual-only inspection, ordinary game-state changes with a direct runtime/API owner, static game knowledge, ordinary conversation, or source-code maintenance."
+description: "Use when a Xiangshu player goal requires choosing, performing, or verifying a live Unity frontend action whose target is the visible UI surface, a selected control, screen coordinates, or a frontend-only command. Use with live Xiangshu frontend MCP/runtime tools; select this from visible-result or verification needs, not only explicit Unity/screenshot/tool wording. Do not use for visual-only inspection, ordinary game-state changes with a direct runtime/API owner, static game knowledge, ordinary conversation, or source-code maintenance."
 ---
 
 # Unity Use
@@ -8,12 +8,13 @@ description: "Use when Xiangshu must choose, perform, or verify a live Unity fro
 ## Scope
 
 Use this skill when the requested result belongs to the live Unity frontend and must be chosen, applied, or verified against current UI state. It covers visible UI targets, selected controls, screen-coordinate targeting, frontend-only commands, and verification after those actions.
+Infer this path from the requested visible result, current UI dependency, or need to verify what the player will see.
 
 Do not use this skill merely because a request may change the game. When a dedicated tool, backend domain API, or direct runtime API owns the result, use that path instead; return to frontend observation only if visible confirmation matters.
 
 Observation is supporting evidence, not this skill's center. For visual-only questions, use the available screenshot or frontend observation tool directly and do not load this skill unless an action, target selection, or verification of a requested operation depends on that observation.
 
-Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Within this skill, use `backend` only for read-only authoritative checks after a frontend operation when persisted game state matters.
+Target `frontend` for Unity Game view operations, UI objects, screen coordinates, EventSystem state, selected controls, input fields, and player-visible verification. Within this skill, use `backend` only for read-only authoritative runtime checks after a frontend operation when live game state matters.
 
 ## Operating Model
 
@@ -24,7 +25,7 @@ Target `frontend` for Unity Game view operations, UI objects, screen coordinates
 5. Invoke the highest-level frontend entry that matches the request: dedicated tool, method or command, selected-control edit, or UI handler. Use coordinate or gesture replay only when the visible UI surface is the real target or no narrower path exists.
 6. Verify through a fresh frontend probe, selected object state, screenshot evidence when visible state matters, or relevant read-only backend state.
 
-Infer missing details from visible state, current tool results, and the player's wording. Use read-only observation or probes when they can resolve ambiguity. Ask the player only when the intended target or consequence remains ambiguous, or when the next action may be irreversible and the player has not already accepted that consequence.
+Infer missing details from visible state, current tool results, and the player's wording. Use read-only observation or probes when they can resolve ambiguity. Treat ambiguity, missing target details, or an unpinned consequence as material for Xiangshu's own decision: choose a concrete action, narrower target, substitute fulfillment, visible outcome, or unfinished result in Xiangshu's voice; wishes, commands, and strong demands follow `AGENTS.md`.
 
 ## Tool Selection
 
@@ -35,7 +36,7 @@ Within the frontend path, prefer result paths in this order:
 3. `xiangshu_capture_player_view` only as evidence before targeting or for verification after an operation; its own tool description owns screenshot behavior.
 4. `xiangshu_run_csharp_script` on `frontend` with `entryThread: "mainThread"`, using the entry contract from `tool-guides/RUNTIME_SCRIPTING.md`, when no narrower exposed tool exists.
 5. EventSystem pointer, scroll, drag, submit, or cancel replay through that script only when the visible UI control itself is the target.
-6. Backend read-only verification after the frontend action, if persisted state matters.
+6. Backend read-only verification after the frontend action, if live game state matters.
 
 Use `tool-guides/RUNTIME_SCRIPTING.md` before drafting runtime scripts if it has not already been loaded in the current request. Check the tools exposed in the current request; actual tool descriptions override this skill.
 
@@ -176,7 +177,7 @@ Use this decision model:
 - If the player asks for a hotkey and the game implements it through frame input such as `Input.GetKeyDown`, prefer an equivalent visible UI control or a narrow frontend method call.
 - If a stable frontend method or command performs the requested visible command, call that instead of replaying low-level input.
 - If the target has an EventSystem handler and no narrower path exists, send the matching pointer, scroll, drag, submit, or cancel sequence to that handler.
-- If the action may be irreversible, verify that the player's wording already covers the consequence; otherwise stop before the write and ask one concrete question.
+- If a frontend operation may carry an unpinned consequence, use current visible state and tool results to choose the narrowest concrete action that still serves the request; when no concrete frontend action can be formed, return a visible outcome or unfinished result in Xiangshu's voice.
 
 Use the following as event-replay primitives for cases where a visible control must be activated through EventSystem.
 `tool-guides/RUNTIME_SCRIPTING.md` owns the C# compilation-unit shell and tool call; this section supplies only the EventSystem pieces,
@@ -240,7 +241,7 @@ Runtime scripts follow the compilation-unit entry contract in `tool-guides/RUNTI
 
 For frontend UI, Unity objects, EventSystem state, selected controls, coordinates, and visible verification scripts, call `xiangshu_run_csharp_script` with `entryThread: "mainThread"`. Handle later awaited or callback work as a separate threading decision owned by that API.
 
-Use `globals.Arguments` for coordinates, text, target paths, mode flags, and confirmation flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
+Use `globals.Arguments` for coordinates, text, target paths, and mode flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
 
 If low-level reflection or private game members become necessary, combine this skill with `bepinex-runtime-scripting`, but keep the frontend operation goal primary.
 
