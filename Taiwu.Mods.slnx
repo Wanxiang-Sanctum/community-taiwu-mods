@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/mods/">
     <Project
+      Path="mods/Wanxiang.Fabujiashen/src/Backend/Wanxiang.Fabujiashen.Backend.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project

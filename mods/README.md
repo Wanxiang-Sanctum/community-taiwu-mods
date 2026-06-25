@@ -17,6 +17,7 @@ Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 | 目录 | 角色 | 玩家说明 | 维护入口 |
 | --- | --- | --- | --- |
+| `Wanxiang.Fabujiashen/` | 运行时赋予太吾“法不加身”规则，免疫内伤、心神、相关战斗状态和功法特殊效果。 | `Wanxiang.Fabujiashen/README.md` | `Wanxiang.Fabujiashen/DEVELOPMENT.md` |
 | `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` | `Wanxiang.Prelude/DEVELOPMENT.md` |
 | `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` | `Wanxiang.Xiangshu/DEVELOPMENT.md` |
 
