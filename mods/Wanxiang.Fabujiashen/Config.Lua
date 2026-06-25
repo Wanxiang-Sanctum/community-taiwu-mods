@@ -1,6 +1,5 @@
 return {
   Title = "法不加身",
-  Source = 1,
   FileId = 0,
   Version = "0.1.0",
   GameVersion = "1.0.24",
