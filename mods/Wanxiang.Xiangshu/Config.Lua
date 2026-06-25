@@ -47,11 +47,12 @@ Agent 工作区提供相枢的口吻、资料和工具指引。这个 Mod 的工
 开源仓库和详细 README：
 [url=https://github.com/Wanxiang-Sanctum/community-taiwu-mods]https://github.com/Wanxiang-Sanctum/community-taiwu-mods[/url]
 ]=],
-  Cover = "Cover.jpg",
-  WorkshopCover = "Cover.jpg",
+  Cover = "Cover.png",
+  WorkshopCover = "Cover.png",
   DetailImageList = {
     "DetailImage1.png",
     "DetailImage2.png",
+    "DetailImage3.png",
   },
   TagList = {
     "Extensions",
