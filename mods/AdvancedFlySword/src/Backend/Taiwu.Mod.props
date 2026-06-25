@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModSide>Backend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Backend</TaiwuModPluginSubdirectory>
+  </PropertyGroup>
+
+  <!-- Publicizer 公开 GameData 私有成员，免去反射访问 -->
+  <ItemGroup>
+    <Publicize Include="GameData" />
+  </ItemGroup>
+
+  <!-- 放松代码分析规则：迁移代码时避免大量风格/分析报错被当作编译错误 -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AnalysisMode>None</AnalysisMode>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>

@@ -24,6 +24,9 @@
     <Project
       Path="mods/Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
     />
+    <Project
+      Path="mods/AdvancedFlySword/src/Backend/AdvancedFlySword.Backend.csproj"
+    />
   </Folder>
   <Folder Name="/shared/">
     <Project
