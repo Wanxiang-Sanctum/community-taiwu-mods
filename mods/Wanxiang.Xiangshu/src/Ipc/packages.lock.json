@@ -28,11 +28,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "DaLN7dxUpBLjEKHmtbfPFUg3d13dsQg+zNVxmRi7VDNKU4tzfj5NjP8p/wjRKBTy7o2UJu6PJTr/rwKxzzWcaw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.29]"
         }
       },
       "MessagePack.Annotations": {
@@ -68,9 +68,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "MR0N3fty1kSGh9IGVWD18Pbi4B5fCthe9aSVzUSKphiksRTKErKLJPPm/x1w+708WmM58om0JymNJ3hqVdOXKw=="
       }
     },
     "net10.0": {
@@ -139,11 +139,11 @@
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "DaLN7dxUpBLjEKHmtbfPFUg3d13dsQg+zNVxmRi7VDNKU4tzfj5NjP8p/wjRKBTy7o2UJu6PJTr/rwKxzzWcaw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.29]"
         }
       },
       "MessagePack.Annotations": {
@@ -163,9 +163,9 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "MR0N3fty1kSGh9IGVWD18Pbi4B5fCthe9aSVzUSKphiksRTKErKLJPPm/x1w+708WmM58om0JymNJ3hqVdOXKw=="
       }
     }
   }

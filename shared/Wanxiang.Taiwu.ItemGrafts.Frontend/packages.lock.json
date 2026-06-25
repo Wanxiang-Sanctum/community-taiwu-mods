@@ -28,22 +28,22 @@
       },
       "Taiwu.ModKit.References.Frontend": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "cQ83qHHZPIRiDFbDjkI0l7vphT/qhgKXg8ZgxwjuF4mskCX7wGkWhnnk9YWIM7EyKqr+b51q/KKrNiEqxMyAgA==",
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "7anE8N7y9BEGqDl49jhvL2BFEsJ1yCawFwGJkTU3pHOnY4uqtHfmzRaWT7murcSNHwk/8/GZTtsMu8iyFe84jw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]",
-          "Taiwu.ModKit.References.Shared": "[1.0.24]",
-          "Taiwu.ModKit.References.Unity": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.29]",
+          "Taiwu.ModKit.References.Shared": "[1.0.29]",
+          "Taiwu.ModKit.References.Unity": "[1.0.29]"
         }
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "DaLN7dxUpBLjEKHmtbfPFUg3d13dsQg+zNVxmRi7VDNKU4tzfj5NjP8p/wjRKBTy7o2UJu6PJTr/rwKxzzWcaw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.29]"
         }
       },
       "wanxiang.taiwu.asyncinterop": {
@@ -60,15 +60,15 @@
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "MR0N3fty1kSGh9IGVWD18Pbi4B5fCthe9aSVzUSKphiksRTKErKLJPPm/x1w+708WmM58om0JymNJ3hqVdOXKw=="
       },
       "Taiwu.ModKit.References.Unity": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "3e3UDG97RQACKN4Gck3smSLU+98v9WKNHzFyGt0aQg8prcW8ESZelEk/piticTwRDwiO2OwyJDxX7O+iUuHmYQ=="
+        "requested": "[1.0.29, )",
+        "resolved": "1.0.29",
+        "contentHash": "Y5J3YzLIF4NyZmJgWhTiRY8WzMx8yP8wFm2s0DrIiqfkMVHwhjZLPRKJOX0+nF88Pn60jSuYbIeXI5wIDuq9YQ=="
       }
     }
   }
