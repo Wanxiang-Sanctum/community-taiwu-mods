@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Reflection.Emit;
 using GameData.Common;
 using GameData.Domains;
 using GameData.Domains.Character;
@@ -72,6 +74,23 @@ internal static class FabujiashenRules
             && DomainManager.Combat.IsCharInCombat(character.GetId());
     }
 
+    internal static bool IsTaiwuCombatant(int charId)
+    {
+        return IsTaiwu(charId)
+            && DomainManager.Combat.IsCharInCombat(charId, checkCombatStatus: false);
+    }
+
+    internal static bool AllowsCombatSkillEffectRegistration(int charId, sbyte effectActiveType)
+    {
+        return !IsTaiwuCombatant(charId)
+            || !IsCombatRuntimeEffect(effectActiveType);
+    }
+
+    private static bool IsCombatRuntimeEffect(sbyte effectActiveType)
+    {
+        return effectActiveType is CombatSkillEffectActiveType.Cast or CombatSkillEffectActiveType.EnterCombat;
+    }
+
     private static bool TryGetTaiwuCharId(out int taiwuCharId)
     {
         taiwuCharId = DomainManager.Taiwu.GetTaiwuCharId();
@@ -79,18 +98,18 @@ internal static class FabujiashenRules
             && DomainManager.Character.TryGetElement_Objects(taiwuCharId, out _);
     }
 
-    internal static void ShapeTaiwuCombatState(CombatCharacter character, CombatDomain combatDomain, DataContext context)
+    internal static void ShapeTaiwuCombatCharacter(CombatCharacter character, CombatDomain combatDomain, DataContext context)
     {
         if (!IsTaiwu(character))
         {
             return;
         }
 
-        ShapeDefeatMarkImmunities(character, combatDomain);
-        ShapePoisonResist(character, context);
+        ShapeTaiwuDefeatMarkImmunities(character, combatDomain);
+        ShapeTaiwuPoisonResist(character, context);
     }
 
-    internal static void ShapeDefeatMarkImmunities(CombatCharacter character, CombatDomain combatDomain)
+    internal static void ShapeTaiwuDefeatMarkImmunities(CombatCharacter character, CombatDomain combatDomain)
     {
         combatDomain.SetDefeatMarkImmunity(
             character.GetId(),
@@ -101,15 +120,56 @@ internal static class FabujiashenRules
             acupointImmunity: true);
     }
 
-    internal static void ShapePoisonResist(CombatCharacter character, DataContext context)
+    internal static void ShapeTaiwuDefeatMarkImmunityFlags(
+        int charId,
+        ref bool innerInjuryImmunity,
+        ref bool mindImmunity,
+        ref bool flawImmunity,
+        ref bool acupointImmunity)
+    {
+        if (!IsTaiwu(charId))
+        {
+            return;
+        }
+
+        innerInjuryImmunity = true;
+        mindImmunity = true;
+        flawImmunity = true;
+        acupointImmunity = true;
+    }
+
+    internal static void ShapeTaiwuPoisonResist(CombatCharacter character, DataContext context)
     {
         PoisonInts poisonResist = character.GetPoisonResist();
+        RaisePoisonResistToImmunityThreshold(ref poisonResist);
+        character.SetPoisonResist(ref poisonResist, context);
+    }
+
+    internal static bool NeedsTaiwuPoisonResistShaping(CombatCharacter character)
+    {
+        if (!IsTaiwu(character))
+        {
+            return false;
+        }
+
+        PoisonInts poisonResist = character.GetPoisonResist();
+        for (sbyte poisonType = 0; poisonType < PoisonType.Count; poisonType++)
+        {
+            if (poisonResist[poisonType] < GlobalConfig.MaxPoisonResistance)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void RaisePoisonResistToImmunityThreshold(ref PoisonInts poisonResist)
+    {
         for (sbyte poisonType = 0; poisonType < PoisonType.Count; poisonType++)
         {
             poisonResist[poisonType] = Math.Max(poisonResist[poisonType], GlobalConfig.MaxPoisonResistance);
         }
-
-        character.SetPoisonResist(ref poisonResist, context);
     }
 
     internal static void PreventInnerInjuryIncrease(ref Injuries injuries, Injuries currentInjuries)
@@ -142,18 +202,111 @@ internal static class FabujiashenRules
 }
 
 [HarmonyPatch(
-    typeof(CombatCharacter),
-    nameof(CombatCharacter.Init),
-    new[] { typeof(CombatDomain), typeof(int), typeof(DataContext) })]
-internal static class CombatCharacterInitPatch
+    typeof(CombatDomain),
+    nameof(CombatDomain.SetDefeatMarkImmunity),
+    new[]
+    {
+        typeof(int),
+        typeof(bool),
+        typeof(bool),
+        typeof(bool),
+        typeof(bool),
+        typeof(bool),
+    })]
+internal static class CombatDomainSetDefeatMarkImmunityPatch
 {
     [SuppressMessage(
         "Roslynator",
         "RCS1213:Remove unused member declaration",
         Justification = "Harmony invokes patch methods by signature.")]
-    private static void Postfix(CombatCharacter __instance, CombatDomain combatDomain, DataContext context)
+    private static void Prefix(
+        int charId,
+        ref bool innerInjuryImmunity,
+        ref bool mindImmunity,
+        ref bool flawImmunity,
+        ref bool acupointImmunity)
     {
-        FabujiashenRules.ShapeTaiwuCombatState(__instance, combatDomain, context);
+        FabujiashenRules.ShapeTaiwuDefeatMarkImmunityFlags(
+            charId,
+            ref innerInjuryImmunity,
+            ref mindImmunity,
+            ref flawImmunity,
+            ref acupointImmunity);
+    }
+}
+
+[HarmonyPatch(
+    typeof(CombatCharacter),
+    nameof(CombatCharacter.Init),
+    new[] { typeof(CombatDomain), typeof(int), typeof(DataContext) })]
+internal static class CombatCharacterInitPatch
+{
+    private static readonly MethodInfo StateMachineInitMethod =
+        AccessTools.Method(
+            typeof(CombatCharacterStateMachine),
+            nameof(CombatCharacterStateMachine.Init),
+            new[] { typeof(CombatDomain), typeof(CombatCharacter) })
+        ?? throw new MissingMethodException(
+            nameof(CombatCharacterStateMachine),
+            nameof(CombatCharacterStateMachine.Init));
+
+    private static readonly MethodInfo ShapeTaiwuCombatCharacterMethod =
+        AccessTools.Method(
+            typeof(FabujiashenRules),
+            nameof(FabujiashenRules.ShapeTaiwuCombatCharacter),
+            new[] { typeof(CombatCharacter), typeof(CombatDomain), typeof(DataContext) })
+        ?? throw new MissingMethodException(
+            nameof(FabujiashenRules),
+            nameof(FabujiashenRules.ShapeTaiwuCombatCharacter));
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        int injectionCount = 0;
+        foreach (CodeInstruction instruction in instructions)
+        {
+            yield return instruction;
+            if (!instruction.Calls(StateMachineInitMethod))
+            {
+                continue;
+            }
+
+            injectionCount++;
+            if (injectionCount > 1)
+            {
+                continue;
+            }
+
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_3);
+            yield return new CodeInstruction(OpCodes.Call, ShapeTaiwuCombatCharacterMethod);
+        }
+
+        if (injectionCount != 1)
+        {
+            throw new InvalidOperationException(
+                "Expected exactly one StateMachine.Init call when injecting Fabujiashen combat-character shaping.");
+        }
+    }
+}
+
+[HarmonyPatch(typeof(CombatCharacter), nameof(CombatCharacter.SetPoisonResist))]
+internal static class CombatCharacterSetPoisonResistPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Postfix(CombatCharacter __instance, DataContext context)
+    {
+        if (FabujiashenRules.NeedsTaiwuPoisonResistShaping(__instance))
+        {
+            FabujiashenRules.ShapeTaiwuPoisonResist(__instance, context);
+        }
     }
 }
 
@@ -623,9 +776,9 @@ internal static class SpecialEffectDomainAddCombatSkillEffectPatch
         "Roslynator",
         "RCS1213:Remove unused member declaration",
         Justification = "Harmony invokes patch methods by signature.")]
-    private static bool Prefix(int charId)
+    private static bool Prefix(int charId, sbyte effectActiveType)
     {
-        return !FabujiashenRules.IsTaiwu(charId);
+        return FabujiashenRules.AllowsCombatSkillEffectRegistration(charId, effectActiveType);
     }
 }
 
@@ -647,12 +800,12 @@ internal static class SpecialEffectDomainCalcCustomModifyEffectListPatch
             return;
         }
 
-        bool targetIsTaiwu = FabujiashenRules.IsTaiwu(dataKey.CharId);
+        bool targetIsTaiwu = FabujiashenRules.IsTaiwuCombatant(dataKey.CharId);
         _ = customEffectList.RemoveAll(
             effect =>
                 effect is CombatSkillEffectBase combatSkillEffect
                 && (targetIsTaiwu
-                    || FabujiashenRules.IsTaiwu(combatSkillEffect.SkillKey.CharId)
-                    || FabujiashenRules.IsTaiwu(combatSkillEffect.CharacterId)));
+                    || FabujiashenRules.IsTaiwuCombatant(combatSkillEffect.SkillKey.CharId)
+                    || FabujiashenRules.IsTaiwuCombatant(combatSkillEffect.CharacterId)));
     }
 }
