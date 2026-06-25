@@ -805,6 +805,19 @@ internal static class CombatDomainApplyMindInjuryPatch
     })]
 internal static class SpecialEffectDomainAddCombatSkillEffectPatch
 {
+    private static readonly MethodInfo TypeGetTypeMethod =
+        AccessTools.Method(typeof(Type), nameof(Type.GetType), new[] { typeof(string) })
+        ?? throw new MissingMethodException(nameof(Type), nameof(Type.GetType));
+
+    private static readonly MethodInfo ResolveSpecialEffectTypeMethod =
+        AccessTools.Method(
+            typeof(SpecialEffectDomainAddCombatSkillEffectPatch),
+            nameof(ResolveSpecialEffectType),
+            new[] { typeof(string) })
+        ?? throw new MissingMethodException(
+            nameof(SpecialEffectDomainAddCombatSkillEffectPatch),
+            nameof(ResolveSpecialEffectType));
+
     [SuppressMessage(
         "Roslynator",
         "RCS1213:Remove unused member declaration",
@@ -812,6 +825,38 @@ internal static class SpecialEffectDomainAddCombatSkillEffectPatch
     private static bool Prefix(int charId, sbyte effectActiveType)
     {
         return FabujiashenRules.AllowsCombatSkillEffectRegistration(charId, effectActiveType);
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        int replacementCount = 0;
+        foreach (CodeInstruction instruction in instructions)
+        {
+            if (instruction.Calls(TypeGetTypeMethod))
+            {
+                replacementCount++;
+                instruction.operand = ResolveSpecialEffectTypeMethod;
+            }
+
+            yield return instruction;
+        }
+
+        if (replacementCount != 1)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(SpecialEffectDomain)}.{nameof(SpecialEffectDomain.Add)} expected exactly one {nameof(Type)}.{nameof(Type.GetType)}(string) call, found {replacementCount}.");
+        }
+    }
+
+    private static Type? ResolveSpecialEffectType(string typeName)
+    {
+        // Add builds GameData-local special-effect type names without assembly qualifiers.
+        // Keep that lookup anchored to the Add owner after Harmony/MonoMod rewrites the method.
+        return typeof(SpecialEffectDomain).Assembly.GetType(typeName, throwOnError: false);
     }
 }
 

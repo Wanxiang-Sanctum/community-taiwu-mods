@@ -69,7 +69,7 @@
 - 不通过反射读写游戏状态；后端项目 publicize `GameData` 后强类型引用游戏 API，Harmony patch 点用 `nameof(...)` 描述。
 - `CombatCharacter.Init` 使用 Harmony transpiler 锚定唯一的 `StateMachine.Init` 调用后插入，避免初始状态切换先于战斗角色塑形发生，并在游戏时序漂移时失败暴露。
 - `SetDefeatMarkImmunity` 和 `SetPoisonResist` 入口保留同一套塑形规则，防止战斗中的游戏同步或事件调用覆盖战斗角色对象。
-- 功法特殊效果注册类型复用 `CombatSkillEffectActiveType`，只把 `Cast` 和 `EnterCombat` 视为需要拦截的战斗运行期注册；`Equipped`、`Broken`、读档和跨存档特效注册仍由游戏原逻辑拥有。
+- 功法特殊效果注册集中 patch `SpecialEffectDomain.Add`；规则判定复用 `CombatSkillEffectActiveType`，只拦截 `Cast` 和 `EnterCombat`，`Equipped`、`Broken`、读档和跨存档特效注册仍由游戏原逻辑拥有。该 patch 只额外保持 `Add` 的原版类型解析边界：方法内必须存在唯一一次 `Type.GetType(string)` 特效类型解析，并被替换为从 `SpecialEffectDomain` 所在程序集解析；调用形态漂移时失败暴露。
 - 真实人物伤毒写入兜底优先 patch 游戏已有 setter/change 入口，不通过替换配置表或给太吾新增人物特性表达规则。
 - 毒素写入遍历复用 `PoisonType.Count`，不复制毒素类型数量。
 - 新增 `ref GetPoisoned()` 原地改毒路径是毒素兜底的漂移信号；这类路径不能只靠 `SetPoisoned` 恢复旧值，需要补对应入口。
