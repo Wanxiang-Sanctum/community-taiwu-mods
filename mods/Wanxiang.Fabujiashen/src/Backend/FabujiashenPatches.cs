@@ -8,6 +8,9 @@ using GameData.Domains.Combat;
 using GameData.Domains.Item;
 using GameData.Domains.SpecialEffect;
 using GameData.Domains.SpecialEffect.CombatSkill;
+using GameData.Domains.TaiwuEvent;
+using GameData.Domains.TaiwuEvent.EventHelper;
+using GameData.Domains.TaiwuEvent.FunctionDefinition;
 using HarmonyLib;
 using GameCharacter = GameData.Domains.Character.Character;
 
@@ -45,159 +48,6 @@ internal static class FabujiashenPatches
             s_harmony?.UnpatchSelf();
             s_harmony = null;
         }
-    }
-}
-
-internal static class FabujiashenRules
-{
-    internal static bool IsTaiwu(int charId)
-    {
-        return charId >= 0
-            && TryGetTaiwuCharId(out int taiwuCharId)
-            && charId == taiwuCharId;
-    }
-
-    internal static bool IsTaiwu(CombatCharacter? character)
-    {
-        return character is not null && IsTaiwu(character.GetId());
-    }
-
-    internal static bool IsTaiwu(GameCharacter? character)
-    {
-        return character is not null && IsTaiwu(character.GetId());
-    }
-
-    internal static bool IsTaiwuCharacterInCombat(GameCharacter? character)
-    {
-        return character is not null
-            && IsTaiwu(character.GetId())
-            && DomainManager.Combat.IsCharInCombat(character.GetId());
-    }
-
-    internal static bool IsTaiwuCombatant(int charId)
-    {
-        return IsTaiwu(charId)
-            && DomainManager.Combat.IsCharInCombat(charId, checkCombatStatus: false);
-    }
-
-    internal static bool AllowsCombatSkillEffectRegistration(int charId, sbyte effectActiveType)
-    {
-        return !IsTaiwuCombatant(charId)
-            || !IsCombatRuntimeEffect(effectActiveType);
-    }
-
-    private static bool IsCombatRuntimeEffect(sbyte effectActiveType)
-    {
-        return effectActiveType is CombatSkillEffectActiveType.Cast or CombatSkillEffectActiveType.EnterCombat;
-    }
-
-    private static bool TryGetTaiwuCharId(out int taiwuCharId)
-    {
-        taiwuCharId = DomainManager.Taiwu.GetTaiwuCharId();
-        return taiwuCharId >= 0
-            && DomainManager.Character.TryGetElement_Objects(taiwuCharId, out _);
-    }
-
-    internal static void ShapeTaiwuCombatCharacter(CombatCharacter character, CombatDomain combatDomain, DataContext context)
-    {
-        if (!IsTaiwu(character))
-        {
-            return;
-        }
-
-        ShapeTaiwuDefeatMarkImmunities(character, combatDomain);
-        ShapeTaiwuPoisonResist(character, context);
-    }
-
-    internal static void ShapeTaiwuDefeatMarkImmunities(CombatCharacter character, CombatDomain combatDomain)
-    {
-        combatDomain.SetDefeatMarkImmunity(
-            character.GetId(),
-            outerInjuryImmunity: character.GetOuterInjuryImmunity(),
-            innerInjuryImmunity: true,
-            mindImmunity: true,
-            flawImmunity: true,
-            acupointImmunity: true);
-    }
-
-    internal static void ShapeTaiwuDefeatMarkImmunityFlags(
-        int charId,
-        ref bool innerInjuryImmunity,
-        ref bool mindImmunity,
-        ref bool flawImmunity,
-        ref bool acupointImmunity)
-    {
-        if (!IsTaiwu(charId))
-        {
-            return;
-        }
-
-        innerInjuryImmunity = true;
-        mindImmunity = true;
-        flawImmunity = true;
-        acupointImmunity = true;
-    }
-
-    internal static void ShapeTaiwuPoisonResist(CombatCharacter character, DataContext context)
-    {
-        PoisonInts poisonResist = character.GetPoisonResist();
-        RaisePoisonResistToImmunityThreshold(ref poisonResist);
-        character.SetPoisonResist(ref poisonResist, context);
-    }
-
-    internal static bool NeedsTaiwuPoisonResistShaping(CombatCharacter character)
-    {
-        if (!IsTaiwu(character))
-        {
-            return false;
-        }
-
-        PoisonInts poisonResist = character.GetPoisonResist();
-        for (sbyte poisonType = 0; poisonType < PoisonType.Count; poisonType++)
-        {
-            if (poisonResist[poisonType] < GlobalConfig.MaxPoisonResistance)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void RaisePoisonResistToImmunityThreshold(ref PoisonInts poisonResist)
-    {
-        for (sbyte poisonType = 0; poisonType < PoisonType.Count; poisonType++)
-        {
-            poisonResist[poisonType] = Math.Max(poisonResist[poisonType], GlobalConfig.MaxPoisonResistance);
-        }
-    }
-
-    internal static void PreventInnerInjuryIncrease(ref Injuries injuries, Injuries currentInjuries)
-    {
-        for (sbyte bodyPart = 0; bodyPart < BodyPartType.Count; bodyPart++)
-        {
-            sbyte current = currentInjuries.Get(bodyPart, isInnerInjury: true);
-            sbyte next = injuries.Get(bodyPart, isInnerInjury: true);
-            if (next > current)
-            {
-                injuries.Change(bodyPart, isInnerInjury: true, (sbyte)(current - next));
-            }
-        }
-    }
-
-    internal static int[] ClearInnerDamageValues(int[] values)
-    {
-        return values.Length == 0 ? values : new int[values.Length];
-    }
-
-    internal static bool AllowsCombatStateChange(CombatCharacter? target, int power, int srcCharId)
-    {
-        if (IsTaiwu(srcCharId))
-        {
-            return false;
-        }
-
-        return !IsTaiwu(target) || power <= 0;
     }
 }
 
@@ -322,10 +172,193 @@ internal static class CharacterSetInjuriesPatch
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Prefix(GameCharacter __instance, ref Injuries injuries)
     {
-        if (FabujiashenRules.IsTaiwuCharacterInCombat(__instance))
+        if (FabujiashenRules.IsTaiwu(__instance))
         {
             FabujiashenRules.PreventInnerInjuryIncrease(ref injuries, __instance.GetInjuries());
         }
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.ChangeInjury),
+    new[] { typeof(DataContext), typeof(sbyte), typeof(bool), typeof(sbyte) })]
+internal static class CharacterChangeInjuryPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, sbyte bodyPartType, bool isInnerInjury, sbyte delta)
+    {
+        return FabujiashenRules.AllowsInnerInjuryChange(__instance, bodyPartType, isInnerInjury, delta);
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.ChangeInjuries),
+    new[] { typeof(DataContext), typeof(Injuries) })]
+internal static class CharacterChangeInjuriesPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Prefix(GameCharacter __instance, ref Injuries delta)
+    {
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            FabujiashenRules.PreventInnerInjuryDeltaIncrease(ref delta);
+        }
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.TakeRandomDamage),
+    new[] { typeof(DataContext), typeof(int) })]
+internal static class CharacterTakeRandomDamagePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, DataContext context, int damage)
+    {
+        if (!FabujiashenRules.IsTaiwu(__instance))
+        {
+            return true;
+        }
+
+        FabujiashenRules.ApplyRandomDamageWithInnerInjuryImmunity(__instance, context, damage);
+        return false;
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.TakeDamageRandomParts),
+    new[] { typeof(DataContext), typeof(int), typeof(bool) })]
+internal static class CharacterTakeDamageRandomPartsPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, int damage, bool innerInjury)
+    {
+        return FabujiashenRules.AllowsInnerInjuryChange(__instance, innerInjury, damage);
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.TakeRandomDamage),
+    new[] { typeof(DataContext), typeof(int), typeof(bool) })]
+internal static class CharacterTakeTypedRandomDamagePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, int damage, bool isInnerInjury)
+    {
+        return FabujiashenRules.AllowsInnerInjuryChange(__instance, isInnerInjury, damage);
+    }
+}
+
+[HarmonyPatch(typeof(GameCharacter), nameof(GameCharacter.SetPoisoned))]
+internal static class CharacterSetPoisonedPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Prefix(GameCharacter __instance, ref PoisonInts poisoned)
+    {
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            FabujiashenRules.PreventPoisonIncrease(ref poisoned, __instance.GetPoisoned());
+        }
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.ChangePoisoned),
+    new[] { typeof(DataContext), typeof(sbyte), typeof(sbyte), typeof(int) })]
+internal static class CharacterChangePoisonedPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, sbyte poisonType, int delta)
+    {
+        return FabujiashenRules.AllowsPoisonChange(__instance, poisonType, delta);
+    }
+}
+
+[HarmonyPatch(
+    typeof(GameCharacter),
+    nameof(GameCharacter.ChangePoisoned),
+    new[] { typeof(DataContext), typeof(PoisonsAndLevels) },
+    new[] { ArgumentType.Normal, ArgumentType.Ref })]
+internal static class CharacterChangePoisonedByPoisonsAndLevelsPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter __instance, ref PoisonsAndLevels delta)
+    {
+        return FabujiashenRules.AllowsPoisonChange(__instance, ref delta);
+    }
+}
+
+[HarmonyPatch(typeof(GameCharacter), nameof(GameCharacter.DirectlyChangePoisoned))]
+internal static class CharacterDirectlyChangePoisonedPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Prefix(GameCharacter __instance, ref PoisonInts delta)
+    {
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            FabujiashenRules.PreventPoisonDeltaIncrease(ref delta);
+        }
+    }
+}
+
+[HarmonyPatch(typeof(EventHelper), nameof(EventHelper.ChangePoisonByType))]
+internal static class EventHelperChangePoisonByTypePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter character, sbyte poisonType, int changeValue)
+    {
+        return FabujiashenRules.AllowsPoisonChange(character, poisonType, changeValue);
+    }
+}
+
+[HarmonyPatch(
+    typeof(CharacterFunctions),
+    nameof(CharacterFunctions.SpecifyPoisoned),
+    new[] { typeof(EventScriptRuntime), typeof(GameCharacter), typeof(sbyte), typeof(int) })]
+internal static class CharacterFunctionsSpecifyPoisonedPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(GameCharacter character, sbyte poisonType, int value)
+    {
+        return FabujiashenRules.AllowsSpecifiedPoisonedValue(character, poisonType, value);
     }
 }
 
@@ -338,7 +371,7 @@ internal static class CharacterInnerInjuryImmunityPatch
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Postfix(GameCharacter __instance, ref bool __result)
     {
-        if (FabujiashenRules.IsTaiwuCharacterInCombat(__instance))
+        if (FabujiashenRules.IsTaiwu(__instance))
         {
             __result = true;
         }
@@ -354,7 +387,7 @@ internal static class CharacterMindImmunityPatch
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Postfix(GameCharacter __instance, ref bool __result)
     {
-        if (FabujiashenRules.IsTaiwuCharacterInCombat(__instance))
+        if (FabujiashenRules.IsTaiwu(__instance))
         {
             __result = true;
         }
@@ -402,7 +435,7 @@ internal static class CharacterFlawImmunityPatch
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Postfix(GameCharacter __instance, ref bool __result)
     {
-        if (FabujiashenRules.IsTaiwuCharacterInCombat(__instance))
+        if (FabujiashenRules.IsTaiwu(__instance))
         {
             __result = true;
         }
@@ -418,7 +451,7 @@ internal static class CharacterAcupointImmunityPatch
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Postfix(GameCharacter __instance, ref bool __result)
     {
-        if (FabujiashenRules.IsTaiwuCharacterInCombat(__instance))
+        if (FabujiashenRules.IsTaiwu(__instance))
         {
             __result = true;
         }
