@@ -1,0 +1,33 @@
+<Project>
+  <!--
+    Taiwu.Mod.AnalysisCompat.props
+
+    从旧代码库迁移或包含大量遗留代码的 Mod 可导入此文件，
+    以覆盖仓库根 Directory.Build.props 中的严格分析规则。
+
+    用法：在项目旁的 Taiwu.Mod.props 或 .csproj 中添加：
+      <Import Project="$(TaiwuModsModsDir)Taiwu.Mod.AnalysisCompat.props" />
+  -->
+
+  <!-- 不将警告视为错误，避免遗留代码报错 -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- 关闭所有内置代码分析规则（CA、IDE 等） -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <AnalysisMode>None</AnalysisMode>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- 关闭 Roslynator 分析器 -->
+  <ItemGroup>
+    <RoslynatorAnalyzerFiles
+      Include="@(Analyzer)"
+      Condition="$([System.String]::Copy('%(Filename)').StartsWith('Roslynator'))"
+    />
+    <Analyzer Remove="@(RoslynatorAnalyzerFiles)" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,14 @@
+<Project>
+  <!-- 导入分析兼容性配置：覆盖根 Directory.Build.props 的严格规则 -->
+  <Import Project="$(TaiwuModsModsDir)Taiwu.Mod.AnalysisCompat.props" />
+
+  <PropertyGroup>
+    <TaiwuModSide>Backend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Backend</TaiwuModPluginSubdirectory>
+  </PropertyGroup>
+
+  <!-- Publicizer 公开 GameData 私有成员，免去反射访问 -->
+  <ItemGroup>
+    <Publicize Include="GameData" />
+  </ItemGroup>
+</Project>
