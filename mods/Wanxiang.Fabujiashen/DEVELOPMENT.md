@@ -26,7 +26,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Fabujiashe
 - `src/Backend/BackendPlugin.cs`：插件入口，只安装和卸载 Harmony patch。
 - `src/Backend/FabujiashenRules.cs`：运行时规则模型，集中维护太吾身份、战斗角色塑形、公共入口允许/拒绝规则和真实人物伤毒兜底规则。
 - `src/Backend/FabujiashenPatches.cs`：Harmony 安装、卸载和 patch 接入点。patch 类只负责绑定游戏入口，并把规则判断交给 `FabujiashenRules`。
-- `src/Backend/SpecialEffectFatalSourceMethods.cs`：定位特殊效果中会调用致命伤或致命标记入口的方法，供源侧作用域 patch 使用；它不拥有规则判断。
+- `src/Backend/SpecialEffectSourceMethods.cs`：定位特殊效果中会调用致命伤、致命标记或战斗状态入口的方法，供源侧作用域 patch 使用；它不拥有规则判断。
 - `src/Backend/Taiwu.Mod.props`：声明后端侧，并 publicize `GameData`，让补丁可以用 `nameof(...)` 强类型引用游戏非 public 成员。
 - `docs/design.md`：记录三层设计、游戏侧复用、AI 可见性、Publicizer 选择和边界。
 

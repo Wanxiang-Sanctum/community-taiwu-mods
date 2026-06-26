@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
+using GameData.Combat.Math;
 using GameData.Common;
 using GameData.Domains;
 using GameData.Domains.Character;
@@ -693,6 +694,37 @@ internal static class CombatDomainAddCombatStatePatch
     }
 }
 
+[HarmonyPatch]
+internal static class SpecialEffectCombatStateSourceScopePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony discovers patch targets by convention.")]
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        return SpecialEffectCombatStateSourceMethods.Enumerate();
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Prefix(SpecialEffectBase __instance, out bool __state)
+    {
+        __state = FabujiashenRules.EnterTaiwuCombatStateSourceScope(__instance);
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Finalizer(bool __state)
+    {
+        FabujiashenRules.ExitTaiwuCombatStateSourceScope(__state);
+    }
+}
+
 internal static class InjuryOverflowFatalDamageRewriter
 {
     private static readonly MethodInfo AddFatalDamageMethod =
@@ -1116,6 +1148,187 @@ internal static class SpecialEffectDomainAddCombatSkillEffectPatch
     }
 }
 
+internal static class SpecialEffectModifierEnumerationRewriter
+{
+    private static readonly FieldInfo AffectDatasField =
+        AccessTools.Field(
+            typeof(SpecialEffectBase),
+            nameof(SpecialEffectBase.AffectDatas))
+        ?? throw new MissingFieldException(
+            nameof(SpecialEffectBase),
+            nameof(SpecialEffectBase.AffectDatas));
+
+    private static readonly MethodInfo TryGetValueMethod =
+        AccessTools.Method(
+            typeof(Dictionary<AffectedDataKey, EDataModifyType>),
+            nameof(Dictionary<,>.TryGetValue),
+            [typeof(AffectedDataKey), typeof(EDataModifyType).MakeByRefType()])
+        ?? throw new MissingMethodException(
+            nameof(Dictionary<,>),
+            nameof(Dictionary<,>.TryGetValue));
+
+    private static readonly MethodInfo AllowsCombatSkillEffectModifierMethod =
+        AccessTools.Method(
+            typeof(FabujiashenRules),
+            nameof(FabujiashenRules.AllowsCombatSkillEffectModifier),
+            [typeof(AffectedDataKey), typeof(SpecialEffectBase)])
+        ?? throw new MissingMethodException(
+            nameof(FabujiashenRules),
+            nameof(FabujiashenRules.AllowsCombatSkillEffectModifier));
+
+    internal static IEnumerable<CodeInstruction> Rewrite(
+        IEnumerable<CodeInstruction> instructions,
+        string methodName,
+        int expectedInjectionCount)
+    {
+        List<CodeInstruction> instructionList = [.. instructions];
+        int injectionCount = 0;
+        for (int i = 0; i < instructionList.Count; i++)
+        {
+            if (TryGetModifierEnumerationPattern(
+                instructionList,
+                i,
+                out Label skipModifyLabel,
+                out CodeInstruction dataKeyLoadInstruction,
+                out CodeInstruction effectLoadInstruction))
+            {
+                injectionCount++;
+                yield return CloneWithoutMetadata(dataKeyLoadInstruction);
+                yield return CloneWithoutMetadata(effectLoadInstruction);
+                yield return new CodeInstruction(OpCodes.Call, AllowsCombatSkillEffectModifierMethod);
+                yield return new CodeInstruction(OpCodes.Brfalse, skipModifyLabel);
+            }
+
+            yield return instructionList[i];
+        }
+
+        if (injectionCount != expectedInjectionCount)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(SpecialEffectDomain)}.{methodName} expected {expectedInjectionCount} special-effect modifier enumeration injections, found {injectionCount}.");
+        }
+    }
+
+    private static bool TryGetModifierEnumerationPattern(
+        List<CodeInstruction> instructions,
+        int tryGetValueCallIndex,
+        out Label skipModifyLabel,
+        out CodeInstruction dataKeyLoadInstruction,
+        out CodeInstruction effectLoadInstruction)
+    {
+        skipModifyLabel = default;
+        dataKeyLoadInstruction = new CodeInstruction(OpCodes.Nop);
+        effectLoadInstruction = new CodeInstruction(OpCodes.Nop);
+
+        if (!instructions[tryGetValueCallIndex].Calls(TryGetValueMethod))
+        {
+            return false;
+        }
+
+        if (tryGetValueCallIndex < 4 || tryGetValueCallIndex + 1 >= instructions.Count)
+        {
+            throw new InvalidOperationException(
+                "Found special-effect modifier TryGetValue call without the expected surrounding instruction window.");
+        }
+
+        CodeInstruction skipBranchInstruction = instructions[tryGetValueCallIndex + 1];
+        if ((skipBranchInstruction.opcode != OpCodes.Brfalse
+                && skipBranchInstruction.opcode != OpCodes.Brfalse_S)
+            || skipBranchInstruction.operand is not Label branchLabel)
+        {
+            throw new InvalidOperationException(
+                "Found special-effect modifier TryGetValue call without the expected false branch.");
+        }
+
+        CodeInstruction candidateEffectLoadInstruction = instructions[tryGetValueCallIndex - 4];
+        CodeInstruction candidateAffectDatasLoadInstruction = instructions[tryGetValueCallIndex - 3];
+        CodeInstruction candidateDataKeyLoadInstruction = instructions[tryGetValueCallIndex - 2];
+        if (!IsLoadLocal(candidateEffectLoadInstruction)
+            || !candidateAffectDatasLoadInstruction.LoadsField(AffectDatasField)
+            || !IsLoadLocal(candidateDataKeyLoadInstruction))
+        {
+            throw new InvalidOperationException(
+                "Found special-effect modifier TryGetValue call without the expected effect/data-key load pattern.");
+        }
+
+        skipModifyLabel = branchLabel;
+        dataKeyLoadInstruction = candidateDataKeyLoadInstruction;
+        effectLoadInstruction = candidateEffectLoadInstruction;
+        return true;
+    }
+
+    private static bool IsLoadLocal(CodeInstruction instruction)
+    {
+        return instruction.opcode == OpCodes.Ldloc
+            || instruction.opcode == OpCodes.Ldloc_S
+            || instruction.opcode == OpCodes.Ldloc_0
+            || instruction.opcode == OpCodes.Ldloc_1
+            || instruction.opcode == OpCodes.Ldloc_2
+            || instruction.opcode == OpCodes.Ldloc_3;
+    }
+
+    private static CodeInstruction CloneWithoutMetadata(CodeInstruction instruction)
+    {
+        return new CodeInstruction(instruction.opcode, instruction.operand);
+    }
+}
+
+[HarmonyPatch(
+    typeof(SpecialEffectDomain),
+    nameof(SpecialEffectDomain.GetModifyValue),
+    new[]
+    {
+        typeof(int),
+        typeof(short),
+        typeof(ushort),
+        typeof(EDataModifyType),
+        typeof(int),
+        typeof(int),
+        typeof(int),
+        typeof(EDataSumType),
+    })]
+internal static class SpecialEffectDomainGetModifyValuePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        return SpecialEffectModifierEnumerationRewriter.Rewrite(
+            instructions,
+            nameof(SpecialEffectDomain.GetModifyValue),
+            expectedInjectionCount: 1);
+    }
+}
+
+[HarmonyPatch(
+    typeof(SpecialEffectDomain),
+    nameof(SpecialEffectDomain.GetTotalPercentModifyValue),
+    new[]
+    {
+        typeof(int),
+        typeof(short),
+        typeof(ushort),
+        typeof(int),
+        typeof(int),
+        typeof(int),
+    })]
+internal static class SpecialEffectDomainGetTotalPercentModifyValuePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        return SpecialEffectModifierEnumerationRewriter.Rewrite(
+            instructions,
+            nameof(SpecialEffectDomain.GetTotalPercentModifyValue),
+            expectedInjectionCount: 1);
+    }
+}
+
 [HarmonyPatch(
     typeof(SpecialEffectDomain),
     nameof(SpecialEffectDomain.CalcCustomModifyEffectList))]
@@ -1134,12 +1347,7 @@ internal static class SpecialEffectDomainCalcCustomModifyEffectListPatch
             return;
         }
 
-        bool targetIsTaiwu = FabujiashenRules.IsTaiwuCombatant(dataKey.CharId);
         _ = customEffectList.RemoveAll(
-            effect =>
-                effect is CombatSkillEffectBase combatSkillEffect
-                && (targetIsTaiwu
-                    || FabujiashenRules.IsTaiwuCombatant(combatSkillEffect.SkillKey.CharId)
-                    || FabujiashenRules.IsTaiwuCombatant(combatSkillEffect.CharacterId)));
+            effect => !FabujiashenRules.AllowsCombatSkillEffectModifier(dataKey, effect));
     }
 }

@@ -17,6 +17,9 @@ internal static class FabujiashenRules
     [ThreadStatic]
     private static int s_taiwuDirectFatalSourceScopeDepth;
 
+    [ThreadStatic]
+    private static int s_taiwuCombatStateSourceScopeDepth;
+
     internal static bool IsTaiwu(int charId)
     {
         return charId >= 0
@@ -44,6 +47,14 @@ internal static class FabujiashenRules
     {
         return !IsTaiwuCombatant(charId)
             || !IsCombatRuntimeEffect(effectActiveType);
+    }
+
+    internal static bool AllowsCombatSkillEffectModifier(AffectedDataKey dataKey, SpecialEffectBase effect)
+    {
+        return effect is not CombatSkillEffectBase combatSkillEffect
+            || (!IsTaiwuCombatant(dataKey.CharId)
+                && !IsTaiwuCombatant(combatSkillEffect.SkillKey.CharId)
+                && !IsTaiwuCombatant(combatSkillEffect.CharacterId));
     }
 
     private static bool IsCombatRuntimeEffect(sbyte effectActiveType)
@@ -215,12 +226,31 @@ internal static class FabujiashenRules
 
     internal static bool AllowsCombatStateChange(CombatCharacter? target, int power, int srcCharId)
     {
-        if (IsTaiwu(srcCharId))
+        if (IsTaiwu(srcCharId) || s_taiwuCombatStateSourceScopeDepth > 0)
         {
             return false;
         }
 
         return !IsTaiwu(target) || power <= 0;
+    }
+
+    internal static bool EnterTaiwuCombatStateSourceScope(SpecialEffectBase effect)
+    {
+        if (!IsTaiwuCombatant(effect.CharacterId))
+        {
+            return false;
+        }
+
+        s_taiwuCombatStateSourceScopeDepth++;
+        return true;
+    }
+
+    internal static void ExitTaiwuCombatStateSourceScope(bool active)
+    {
+        if (active)
+        {
+            s_taiwuCombatStateSourceScopeDepth--;
+        }
     }
 
     internal static bool AllowsFatalDamage(CombatCharacter? target, int damageValue)

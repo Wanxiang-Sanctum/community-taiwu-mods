@@ -11,10 +11,6 @@ namespace Wanxiang.Fabujiashen.Backend;
 
 internal static class SpecialEffectFatalSourceMethods
 {
-    private static readonly OpCode[] OneByteOpCodes = BuildOpCodeLookup(oneByte: true);
-
-    private static readonly OpCode[] TwoByteOpCodes = BuildOpCodeLookup(oneByte: false);
-
     private static readonly MethodInfo[] FatalEntryMethods =
     [
         AccessTools.Method(
@@ -70,6 +66,89 @@ internal static class SpecialEffectFatalSourceMethods
 
     internal static IEnumerable<MethodBase> Enumerate()
     {
+        return SpecialEffectSourceMethodScanner.Enumerate(FatalEntryMethods);
+    }
+}
+
+internal static class SpecialEffectCombatStateSourceMethods
+{
+    private static readonly MethodInfo[] CombatStateEntryMethods =
+    [
+        AccessTools.Method(
+            typeof(CombatDomain),
+            nameof(CombatDomain.AddCombatState),
+            [typeof(DataContext), typeof(CombatCharacter), typeof(sbyte), typeof(short)])
+        ?? throw new MissingMethodException(
+            nameof(CombatDomain),
+            nameof(CombatDomain.AddCombatState)),
+        AccessTools.Method(
+            typeof(CombatDomain),
+            nameof(CombatDomain.AddCombatState),
+            [typeof(DataContext), typeof(CombatCharacter), typeof(sbyte), typeof(short), typeof(int)])
+        ?? throw new MissingMethodException(
+            nameof(CombatDomain),
+            nameof(CombatDomain.AddCombatState)),
+        AccessTools.Method(
+            typeof(CombatDomain),
+            nameof(CombatDomain.AddCombatState),
+            [
+                typeof(DataContext),
+                typeof(CombatCharacter),
+                typeof(sbyte),
+                typeof(short),
+                typeof(int),
+                typeof(bool),
+            ])
+        ?? throw new MissingMethodException(
+            nameof(CombatDomain),
+            nameof(CombatDomain.AddCombatState)),
+        AccessTools.Method(
+            typeof(CombatDomain),
+            nameof(CombatDomain.AddCombatState),
+            [
+                typeof(DataContext),
+                typeof(CombatCharacter),
+                typeof(sbyte),
+                typeof(short),
+                typeof(int),
+                typeof(bool),
+                typeof(bool),
+            ])
+        ?? throw new MissingMethodException(
+            nameof(CombatDomain),
+            nameof(CombatDomain.AddCombatState)),
+        AccessTools.Method(
+            typeof(CombatDomain),
+            nameof(CombatDomain.AddCombatState),
+            [
+                typeof(DataContext),
+                typeof(CombatCharacter),
+                typeof(sbyte),
+                typeof(short),
+                typeof(int),
+                typeof(bool),
+                typeof(bool),
+                typeof(int),
+            ])
+        ?? throw new MissingMethodException(
+            nameof(CombatDomain),
+            nameof(CombatDomain.AddCombatState)),
+    ];
+
+    internal static IEnumerable<MethodBase> Enumerate()
+    {
+        return SpecialEffectSourceMethodScanner.Enumerate(CombatStateEntryMethods);
+    }
+}
+
+internal static class SpecialEffectSourceMethodScanner
+{
+    private static readonly OpCode[] OneByteOpCodes = BuildOpCodeLookup(oneByte: true);
+
+    private static readonly OpCode[] TwoByteOpCodes = BuildOpCodeLookup(oneByte: false);
+
+    internal static IEnumerable<MethodBase> Enumerate(IReadOnlyCollection<MethodInfo> entryMethods)
+    {
         Type specialEffectBaseType = typeof(SpecialEffectBase);
         foreach (Type type in specialEffectBaseType.Assembly.GetTypes())
         {
@@ -84,7 +163,7 @@ internal static class SpecialEffectFatalSourceMethods
                          | BindingFlags.NonPublic
                          | BindingFlags.DeclaredOnly))
             {
-                if (!method.IsAbstract && CallsAnyFatalEntryMethod(method))
+                if (!method.IsAbstract && CallsAnyEntryMethod(method, entryMethods))
                 {
                     yield return method;
                 }
@@ -92,7 +171,7 @@ internal static class SpecialEffectFatalSourceMethods
         }
     }
 
-    private static bool CallsAnyFatalEntryMethod(MethodBase method)
+    private static bool CallsAnyEntryMethod(MethodBase method, IReadOnlyCollection<MethodInfo> entryMethods)
     {
         MethodBody? body = method.GetMethodBody();
         byte[]? il = body?.GetILAsByteArray();
@@ -108,7 +187,7 @@ internal static class SpecialEffectFatalSourceMethods
             if (opCode.OperandType == OperandType.InlineMethod)
             {
                 if (TryResolveMethod(method, il, ref offset, out MethodBase? calledMethod)
-                    && FatalEntryMethods.Any(fatalEntryMethod => IsSameMethod(calledMethod, fatalEntryMethod)))
+                    && entryMethods.Any(entryMethod => IsSameMethod(calledMethod, entryMethod)))
                 {
                     return true;
                 }
