@@ -11,7 +11,7 @@ Community Taiwu Mods 是 Wanxiang-Sanctum 维护的太吾绘卷 Mod 源码集合
 
 | Mod | 适合谁 | 继续阅读 |
 | --- | --- | --- |
-| 法不加身 | 想让太吾获得只在运行时生效的“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，跳过战斗中涉及太吾的功法触发效果，同时保留普通外伤、功法和真气基础数值流程的玩家。 | [法不加身说明](mods/Wanxiang.Fabujiashen/README.md) |
+| 法不加身 | 想让太吾获得只在运行时生效的“一力破万法”护身规则，免受内伤、心神、毒素、封穴破绽和战斗异状纠缠的玩家。 | [法不加身说明](mods/Wanxiang.Fabujiashen/README.md) |
 | 相枢 | 借“低语的陶土药钵”把本机 CLI Agent 接入太吾；适合熟悉 Agent 工作区并能承担受信脚本风险的玩家。当前仍在试行。 | [相枢说明](mods/Wanxiang.Xiangshu/README.md) |
 | 万象引 | 订阅相枢或其它明确要求万象引的 Mod 时需要的前置依赖。它本身不提供单独玩法入口。 | [万象引说明](mods/Wanxiang.Prelude/README.md) |
 
