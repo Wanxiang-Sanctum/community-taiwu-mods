@@ -42,7 +42,7 @@ ID，条目和 tooltip 渲染该 ID 时返回本项目运行期维护的 `Charac
 
 - `VisibleFeatures`：安装前端渲染补丁，并注册或注销指定人物的虚拟人物特性。
 - `FeatureDefinition`：虚拟特性的玩家可见显示内容。
-- `FeatureStyle`：组织并透传原生 `CharacterFeatureItem` 显示字段，包括类型、等级、期限和三组奖章布局。
+- `FeatureStyle`：组织并透传原生 `CharacterFeatureItem` 显示字段，包括类型、等级和期限。
 - `FeatureRegistration`：本次注册句柄，用于注销；同时返回本次前端运行时使用的虚拟特性 ID。
 
 本项目不向调用方暴露完整 `CharacterFeatureItem` 构造面。需要新增可复用显示能力时，优先在上述有限显示契约中加字段，
@@ -72,11 +72,9 @@ short runtimeFeatureId = registration.FeatureId;
 
 具体选择哪个人物、什么时候注册或注销，属于调用方策略。本项目只在人物特性 UI 渲染到该人物 ID 时追加显示项。
 
-需要沿用原生人物特性 UI 的类型、等级、期限或奖章布局时，通过 `FeatureStyle` 透传这些显示字段：
+需要沿用原生人物特性 UI 的类型、等级或期限时，通过 `FeatureStyle` 透传这些显示字段。虚拟特性不显示奖章布局：
 
 ```csharp
-using Config.ConfigCells.Character;
-
 VisibleFeatures.Register(
     targetCharacterId,
     new FeatureDefinition(
@@ -87,13 +85,7 @@ VisibleFeatures.Register(
                 new FeatureStyle(
                     ECharacterFeatureType.Good,
                     level: 1,
-                    duration: 0,
-                    featureMedals:
-                    [
-                        new FeatureMedals(["inc"]),
-                        new FeatureMedals([]),
-                        new FeatureMedals([]),
-                    ])));
+                    duration: 0)));
 ```
 
 本项目会从高位正数区间分配一个当前空闲 ID。该 ID 只进入前端人物特性列表和本项目的运行期显示项读取路径。

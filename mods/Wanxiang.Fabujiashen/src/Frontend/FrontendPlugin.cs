@@ -7,6 +7,15 @@ namespace Wanxiang.Fabujiashen.Frontend;
 [PluginConfig("Wanxiang.Fabujiashen.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
+    private const sbyte SpecialFeatureLevel = 0;
+
+    private const sbyte PermanentFeatureDuration = 0;
+
+    private static readonly FeatureStyle FabujiashenFeatureStyle = new(
+        ECharacterFeatureType.Special,
+        SpecialFeatureLevel,
+        PermanentFeatureDuration);
+
     private FeatureRegistration? _registration;
 
     private int _registeredTaiwuCharId = -1;
@@ -89,8 +98,9 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     {
         return new FeatureDefinition(
             "法不加身",
-            "法不近其身，妄伤难落。此为法不加身 Mod 的前端标记，不是存档中的真实人物特性。")
+            "此身不与常人相同，诸般异力皆难停驻；凡不由皮肉筋骨而生之患，及身之时，往往散作虚无。")
             .WithEffectDescription(
-                "法不加身规则正在作用于太吾：内伤、心神、破绽、封穴、毒素和相关战斗状态会按 Mod 边界被拦截或塑形。");
+                "内伤、心神、破绽、封穴、毒素及战斗状态难以加诸其身；此人出手，也多止于外伤，难以令他人生出诸般妨害。")
+            .WithStyle(FabujiashenFeatureStyle);
     }
 }

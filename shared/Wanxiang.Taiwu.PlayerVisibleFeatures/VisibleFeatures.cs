@@ -1,4 +1,5 @@
 using Config;
+using Config.ConfigCells.Character;
 using TaiwuModdingLib.Core.Plugin;
 
 namespace Wanxiang.Taiwu.PlayerVisibleFeatures;
@@ -159,7 +160,7 @@ public static class VisibleFeatures
         item.Modify(nameof(CharacterFeatureItem.Desc), definition.Description);
         item.Modify(nameof(CharacterFeatureItem.SmallVillageDesc), string.Empty);
         item.Modify(nameof(CharacterFeatureItem.EffectDesc), definition.EffectDescription);
-        item.Modify(nameof(CharacterFeatureItem.FeatureMedals), style.ToFeatureMedals());
+        item.Modify(nameof(CharacterFeatureItem.FeatureMedals), CreateEmptyFeatureMedals());
         item.Modify(nameof(CharacterFeatureItem.Level), style.Level);
         item.Modify(nameof(CharacterFeatureItem.Duration), style.Duration);
         item.Modify(nameof(CharacterFeatureItem.MutexGroupId), featureId);
@@ -198,6 +199,18 @@ public static class VisibleFeatures
         }
 
         return false;
+    }
+
+    private static FeatureMedals[] CreateEmptyFeatureMedals()
+    {
+        FeatureMedals[] featureMedals = new FeatureMedals[FeatureMedalType.Count];
+
+        for (int i = 0; i < featureMedals.Length; i++)
+        {
+            featureMedals[i] = new FeatureMedals();
+        }
+
+        return featureMedals;
     }
 
     private static int ValidateCharacterId(
