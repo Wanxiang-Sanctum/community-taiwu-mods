@@ -47,6 +47,3 @@ dotnet build shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj
 ```
 
 目标框架、Taiwu 引用和包引用写在 `.csproj`。
-
-共享项目不作为独立插件入口写入 Mod 包。引用它的前端或后端插件项目需要在 `Taiwu.Mod.props` 中声明
-依赖部署动作；通常应把 `Wanxiang.Taiwu.Logging.dll` 作为 merge dependency。

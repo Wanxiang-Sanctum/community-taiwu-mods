@@ -237,5 +237,6 @@ Krafs.Publicizer 的实现有关：它从公开化输出生成 `IgnoresAccessChe
 声明合并依赖时，入口项目会在编译时启用 `AllowUnsafeBlocks`，用于承接被合并依赖中的 Publicizer
 `Unsafe` 运行时访问策略。
 
-前后端共同引用的内部共享项目如果要随入口一起部署，由前端和后端入口项目分别声明需要合并或复制的
-DLL。这样前后端各自生成自己的最终入口 DLL。
+内部共享项目如果要随入口一起部署，由引用它的前端或后端入口项目声明为 `TaiwuModMergeDependency`。
+前后端共同引用同一个 shared 项目时，两侧入口分别合并各自目标框架的输出，生成各自的最终入口 DLL。
+`TaiwuModCopyDependency` 只用于非 shared 的独立运行时依赖。

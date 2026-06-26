@@ -13,8 +13,8 @@ ID，条目和 tooltip 渲染该 ID 时返回本项目运行期维护的 `Charac
 `Taiwu.ModKit.References.Shared`。使用方在前端插件初始化时调用 `VisibleFeatures.Install(this)`，再用
 `VisibleFeatures.Register(characterId, definition)` 为具体人物注册虚拟特性。
 
-按 shared 共同规范，本 DLL 随引用它的前端入口插件作为 merge dependency 部署。`Install(...)` 使用当前入口插件的
-Mod ID 创建 Harmony owner；这个 Mod ID 只用于补丁归属，不是虚拟特性的业务参数。重复调用 `Install(...)` 保持幂等。
+`Install(...)` 使用当前入口插件的 Mod ID 创建 Harmony owner；这个 Mod ID 只用于补丁归属，不是虚拟特性的业务参数。
+重复调用 `Install(...)` 保持幂等。
 
 `VisibleFeatures.Uninstall()` 会卸载人物特性列表渲染补丁，并清空注册状态和运行期显示项。
 

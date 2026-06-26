@@ -28,7 +28,7 @@
 不复制可变清单。
 
 具体 Mod 的玩家说明、配置和运行边界归 `mods/<ModName>/README.md`；源码模块、内部设计和组包内容归
-`mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README。共享项目 API、事件选择和部署建议归
+`mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README。共享项目 API、事件选择和项目特殊运行边界归
 `shared/<ProjectName>/README.md`。
 
 创建/移除命令的实现入口归 `tools/README.md`；模板变量、模板目录和渲染规则归 `templates/README.md`；常用命令用法和

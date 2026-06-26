@@ -230,5 +230,3 @@ new CreationOptions
 ```powershell
 dotnet build shared/Wanxiang.Taiwu.ItemGrafts.Frontend/Wanxiang.Taiwu.ItemGrafts.Frontend.csproj
 ```
-
-部署由引用它的前端插件项目决定：可以将 `Wanxiang.Taiwu.ItemGrafts.Frontend.dll` 合并、复制或随插件部署。

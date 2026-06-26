@@ -7,6 +7,9 @@
   <ItemGroup>
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
     <TaiwuModPackProject
+      Include="src/Frontend/Wanxiang.Fabujiashen.Frontend.csproj"
+    />
+    <TaiwuModPackProject
       Include="src/Backend/Wanxiang.Fabujiashen.Backend.csproj"
     />
   </ItemGroup>

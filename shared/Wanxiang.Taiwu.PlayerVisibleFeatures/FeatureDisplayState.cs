@@ -112,11 +112,6 @@ internal static class FeatureDisplayState
         CharacterDisplayData? displayData,
         int characterId)
     {
-        if (shownFeatureIds is null)
-        {
-            return;
-        }
-
         int resolvedCharacterId = ResolveCharacterId(displayData, characterId);
         RegisteredFeature[] entries = GetEntriesSnapshot();
 

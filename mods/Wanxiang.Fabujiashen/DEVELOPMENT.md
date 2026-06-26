@@ -4,9 +4,10 @@
 
 ## 常用命令
 
-从仓库根目录构建后端插件项目：
+从仓库根目录构建前端或后端插件项目：
 
 ```powershell
+dotnet build mods/Wanxiang.Fabujiashen/src/Frontend/Wanxiang.Fabujiashen.Frontend.csproj
 dotnet build mods/Wanxiang.Fabujiashen/src/Backend/Wanxiang.Fabujiashen.Backend.csproj
 ```
 
@@ -20,13 +21,15 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Fabujiashe
 
 ## 实现边界
 
+- `src/Frontend/FrontendPlugin.cs`：前端插件入口，注册只在太吾人物特性列表显示的“法不加身”虚拟特性。
+- `src/Frontend/Taiwu.Mod.props`：声明前端侧，并把 `Wanxiang.Taiwu.PlayerVisibleFeatures` 合并进入口 DLL。
 - `src/Backend/BackendPlugin.cs`：插件入口，只安装和卸载 Harmony patch。
 - `src/Backend/FabujiashenRules.cs`：运行时规则模型，集中维护太吾身份、战斗角色塑形、公共入口允许/拒绝规则和真实人物伤毒兜底规则。
 - `src/Backend/FabujiashenPatches.cs`：Harmony 安装、卸载和 patch 接入点。patch 类只负责绑定游戏入口，并把规则判断交给 `FabujiashenRules`。
 - `src/Backend/Taiwu.Mod.props`：声明后端侧，并 publicize `GameData`，让补丁可以用 `nameof(...)` 强类型引用游戏非 public 成员。
 - `docs/design.md`：记录三层设计、游戏侧复用、AI 可见性、Publicizer 选择和边界。
 
-本 Mod 当前没有前端插件，也没有随包复制的额外依赖。
+本 Mod 前端只提供玩家可见的虚拟特性显示，不提供设置项，也不写入人物真实 `FeatureIds`。
 
 ## 同步清单
 

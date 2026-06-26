@@ -35,8 +35,5 @@ InstantNotificationPublisher.Push(
 dotnet build shared/Wanxiang.Taiwu.InstantNotifications/Wanxiang.Taiwu.InstantNotifications.csproj
 ```
 
-引用它的前端插件项目需要决定部署动作；通常应在 `Taiwu.Mod.props` 中把
-`Wanxiang.Taiwu.InstantNotifications.dll` 声明为 merge dependency。
-
 本项目依赖 `Taiwu.ModKit.References.Frontend` 和 `Taiwu.ModKit.References.Shared`。当前实现使用可引用的
 前端渲染模型、配置表和 UI 事件；调用方无需为它配置 Publicizer。
