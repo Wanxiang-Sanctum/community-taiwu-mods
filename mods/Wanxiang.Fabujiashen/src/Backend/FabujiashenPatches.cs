@@ -693,6 +693,238 @@ internal static class CombatDomainAddCombatStatePatch
     }
 }
 
+internal static class InjuryOverflowFatalDamageRewriter
+{
+    private static readonly MethodInfo AddFatalDamageMethod =
+        AccessTools.Method(
+            typeof(CombatCharacter),
+            nameof(CombatCharacter.AddFatalDamage),
+            new[]
+            {
+                typeof(DataContext),
+                typeof(int),
+                typeof(int),
+                typeof(sbyte),
+                typeof(short),
+                typeof(EDamageType),
+            })
+        ?? throw new MissingMethodException(
+            nameof(CombatCharacter),
+            nameof(CombatCharacter.AddFatalDamage));
+
+    private static readonly MethodInfo AddFatalDamageFromInjuryOverflowMethod =
+        AccessTools.Method(
+            typeof(FabujiashenRules),
+            nameof(FabujiashenRules.AddFatalDamageFromInjuryOverflow),
+            new[]
+            {
+                typeof(CombatCharacter),
+                typeof(DataContext),
+                typeof(int),
+                typeof(int),
+                typeof(sbyte),
+                typeof(short),
+                typeof(EDamageType),
+            })
+        ?? throw new MissingMethodException(
+            nameof(FabujiashenRules),
+            nameof(FabujiashenRules.AddFatalDamageFromInjuryOverflow));
+
+    internal static IEnumerable<CodeInstruction> Rewrite(
+        IEnumerable<CodeInstruction> instructions,
+        string methodName,
+        int expectedReplacementCount)
+    {
+        int replacementCount = 0;
+        foreach (CodeInstruction instruction in instructions)
+        {
+            if (instruction.Calls(AddFatalDamageMethod))
+            {
+                replacementCount++;
+                instruction.opcode = OpCodes.Call;
+                instruction.operand = AddFatalDamageFromInjuryOverflowMethod;
+            }
+
+            yield return instruction;
+        }
+
+        if (replacementCount != expectedReplacementCount)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(CombatDomain)}.{methodName} expected {expectedReplacementCount} injury-overflow fatal-damage calls, found {replacementCount}.");
+        }
+    }
+}
+
+[HarmonyPatch]
+internal static class SpecialEffectDirectFatalSourceScopePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony discovers patch targets by convention.")]
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        return SpecialEffectFatalSourceMethods.Enumerate();
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Prefix(SpecialEffectBase __instance, out bool __state)
+    {
+        __state = FabujiashenRules.EnterTaiwuDirectFatalSourceScope(__instance);
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Finalizer(bool __state)
+    {
+        FabujiashenRules.ExitTaiwuDirectFatalSourceScope(__state);
+    }
+}
+
+[HarmonyPatch(
+    typeof(CombatCharacter),
+    nameof(CombatCharacter.AddFatalDamage),
+    new[]
+    {
+        typeof(DataContext),
+        typeof(int),
+        typeof(int),
+        typeof(sbyte),
+        typeof(short),
+        typeof(EDamageType),
+    })]
+internal static class CombatCharacterAddFatalDamagePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(
+        CombatCharacter __instance,
+        DataContext context,
+        int damageValue,
+        ref int __result)
+    {
+        if (FabujiashenRules.AllowsFatalDamage(__instance, damageValue))
+        {
+            return true;
+        }
+
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            __instance.ShowImmunityEffectTips(context, EMarkType.Fatal);
+        }
+
+        __result = 0;
+        return false;
+    }
+}
+
+[HarmonyPatch(
+    typeof(CombatCharacter),
+    nameof(CombatCharacter.AddFatalMark),
+    new[]
+    {
+        typeof(DataContext),
+        typeof(int),
+        typeof(int),
+        typeof(sbyte),
+        typeof(bool),
+        typeof(EDamageType),
+    })]
+internal static class CombatCharacterAddFatalMarkPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(
+        CombatCharacter __instance,
+        DataContext context,
+        int count,
+        ref int __result)
+    {
+        if (FabujiashenRules.AllowsFatalMarkIncrease(__instance, count))
+        {
+            return true;
+        }
+
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            __instance.ShowImmunityEffectTips(context, EMarkType.Fatal);
+        }
+
+        __result = 0;
+        return false;
+    }
+}
+
+[HarmonyPatch(
+    typeof(CombatCharacter),
+    nameof(CombatCharacter.AddFatalMarkImmediate),
+    new[] { typeof(DataContext), typeof(int) })]
+internal static class CombatCharacterAddFatalMarkImmediatePatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(
+        CombatCharacter __instance,
+        DataContext context,
+        int count)
+    {
+        if (FabujiashenRules.AllowsFatalMarkIncrease(__instance, count))
+        {
+            return true;
+        }
+
+        if (FabujiashenRules.IsTaiwu(__instance))
+        {
+            __instance.ShowImmunityEffectTips(context, EMarkType.Fatal);
+        }
+
+        return false;
+    }
+}
+
+[HarmonyPatch(
+    typeof(CombatCharacter),
+    nameof(CombatCharacter.TransferFatalMark),
+    new[] { typeof(DataContext), typeof(CombatCharacter), typeof(int) })]
+internal static class CombatCharacterTransferFatalMarkPatch
+{
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static bool Prefix(
+        CombatCharacter __instance,
+        DataContext context,
+        CombatCharacter target,
+        int count)
+    {
+        int transferCount = Math.Min(count, __instance.GetDefeatMarkCollection().FatalDamageMarkCount);
+        if (FabujiashenRules.AllowsFatalMarkTransfer(__instance, target, transferCount))
+        {
+            return true;
+        }
+
+        if (FabujiashenRules.IsTaiwu(target))
+        {
+            target.ShowImmunityEffectTips(context, EMarkType.Fatal);
+        }
+
+        return false;
+    }
+}
+
 [HarmonyPatch(
     typeof(CombatDomain),
     nameof(CombatDomain.AddInjuryDamageValue),
@@ -727,6 +959,18 @@ internal static class CombatDomainAddInjuryDamageValuePatch
         {
             innerDamage = 0;
         }
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        return InjuryOverflowFatalDamageRewriter.Rewrite(
+            instructions,
+            nameof(CombatDomain.AddInjuryDamageValue),
+            expectedReplacementCount: 2);
     }
 }
 
@@ -766,6 +1010,18 @@ internal static class CombatDomainApplyMixedInjuryPatch
             Inner = default,
             CriticalPercent = result.CriticalPercent,
         };
+    }
+
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused member declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        return InjuryOverflowFatalDamageRewriter.Rewrite(
+            instructions,
+            nameof(CombatDomain.ApplyMixedInjury),
+            expectedReplacementCount: 2);
     }
 }
 

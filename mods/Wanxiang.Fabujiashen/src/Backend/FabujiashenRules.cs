@@ -3,6 +3,7 @@ using GameData.Domains;
 using GameData.Domains.Character;
 using GameData.Domains.Combat;
 using GameData.Domains.Item;
+using GameData.Domains.SpecialEffect;
 using GameData.Domains.SpecialEffect.CombatSkill;
 using GameCharacter = GameData.Domains.Character.Character;
 
@@ -10,6 +11,12 @@ namespace Wanxiang.Fabujiashen.Backend;
 
 internal static class FabujiashenRules
 {
+    [ThreadStatic]
+    private static int s_outerInjuryOverflowFatalScopeDepth;
+
+    [ThreadStatic]
+    private static int s_taiwuDirectFatalSourceScopeDepth;
+
     internal static bool IsTaiwu(int charId)
     {
         return charId >= 0
@@ -214,6 +221,75 @@ internal static class FabujiashenRules
         }
 
         return !IsTaiwu(target) || power <= 0;
+    }
+
+    internal static bool AllowsFatalDamage(CombatCharacter? target, int damageValue)
+    {
+        return damageValue <= 0 || AllowsDirectFatalEntry(target);
+    }
+
+    internal static bool AllowsFatalMarkIncrease(CombatCharacter? target, int count)
+    {
+        return count <= 0 || AllowsDirectFatalEntry(target);
+    }
+
+    internal static bool AllowsFatalMarkTransfer(
+        CombatCharacter? source,
+        CombatCharacter? target,
+        int count)
+    {
+        return count <= 0
+            || (!IsTaiwu(source) && AllowsDirectFatalEntry(target));
+    }
+
+    private static bool AllowsDirectFatalEntry(CombatCharacter? target)
+    {
+        return s_outerInjuryOverflowFatalScopeDepth > 0
+            || (!IsTaiwu(target) && s_taiwuDirectFatalSourceScopeDepth <= 0);
+    }
+
+    internal static bool EnterTaiwuDirectFatalSourceScope(SpecialEffectBase effect)
+    {
+        if (!IsTaiwuCombatant(effect.CharacterId))
+        {
+            return false;
+        }
+
+        s_taiwuDirectFatalSourceScopeDepth++;
+        return true;
+    }
+
+    internal static void ExitTaiwuDirectFatalSourceScope(bool active)
+    {
+        if (active)
+        {
+            s_taiwuDirectFatalSourceScopeDepth--;
+        }
+    }
+
+    internal static int AddFatalDamageFromInjuryOverflow(
+        CombatCharacter target,
+        DataContext context,
+        int damageValue,
+        int type,
+        sbyte bodyPart,
+        short skillId,
+        EDamageType damageType)
+    {
+        if (type != 0)
+        {
+            return target.AddFatalDamage(context, damageValue, type, bodyPart, skillId, damageType);
+        }
+
+        s_outerInjuryOverflowFatalScopeDepth++;
+        try
+        {
+            return target.AddFatalDamage(context, damageValue, type, bodyPart, skillId, damageType);
+        }
+        finally
+        {
+            s_outerInjuryOverflowFatalScopeDepth--;
+        }
     }
 
     internal static void PreventPoisonIncrease(ref PoisonInts poisoned, PoisonInts currentPoisoned)
