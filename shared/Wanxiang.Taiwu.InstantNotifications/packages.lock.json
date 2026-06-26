@@ -16,35 +16,35 @@
       },
       "Taiwu.ModKit.References.Frontend": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "cQ83qHHZPIRiDFbDjkI0l7vphT/qhgKXg8ZgxwjuF4mskCX7wGkWhnnk9YWIM7EyKqr+b51q/KKrNiEqxMyAgA==",
+        "requested": "[1.0.32, )",
+        "resolved": "1.0.32",
+        "contentHash": "ZtikojN0IUxPVEVgm6EXw0v0e556Yca+aW+XXg0WXKZYq4Yii/Pi2i0RUe2xG1aFPMkTXc9Yl4WgH0UH6vcrKw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]",
-          "Taiwu.ModKit.References.Shared": "[1.0.24]",
-          "Taiwu.ModKit.References.Unity": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.32]",
+          "Taiwu.ModKit.References.Shared": "[1.0.32]",
+          "Taiwu.ModKit.References.Unity": "[1.0.32]"
         }
       },
       "Taiwu.ModKit.References.Shared": {
         "type": "Direct",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "aP3M/Ot6l0dNM4nAbuVLdJBtzRIpCgSjVxKOR77aZSjX16FHwYvblPMNI3uVLRnKOe4i1obD5G3mVdtLilArAQ==",
+        "requested": "[1.0.32, )",
+        "resolved": "1.0.32",
+        "contentHash": "0HKLyIl+LbOwGffxmuwk/YpQgOkWRGooN/qTS7D+EoBqU8wH+u8wKkO3mUNJ90lAzqgmWTU/0RoP77l1lGKMHw==",
         "dependencies": {
-          "Taiwu.ModKit.References.Plugin": "[1.0.24]"
+          "Taiwu.ModKit.References.Plugin": "[1.0.32]"
         }
       },
       "Taiwu.ModKit.References.Plugin": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "rATW+i/sUqEGLffD9c11BLBLLlu3eHWA1Oh86mP81Zfl3twf5ucdP/ud9OBsAx9fhW46A1LsakqA1lkXLSYByQ=="
+        "requested": "[1.0.32, )",
+        "resolved": "1.0.32",
+        "contentHash": "ZJ22ACrmt6wSir5Rem4Qwco4kjPr0xl3h5hOxrmjhiEtfE9YyNcAJlhXuLcIfWInfbwtLi3NSkPJVXH8Iv3xgw=="
       },
       "Taiwu.ModKit.References.Unity": {
         "type": "CentralTransitive",
-        "requested": "[1.0.24, )",
-        "resolved": "1.0.24",
-        "contentHash": "3e3UDG97RQACKN4Gck3smSLU+98v9WKNHzFyGt0aQg8prcW8ESZelEk/piticTwRDwiO2OwyJDxX7O+iUuHmYQ=="
+        "requested": "[1.0.32, )",
+        "resolved": "1.0.32",
+        "contentHash": "VTHynoIdOb/g4itJof2UgmEuhZg/0IAKWCbasZ/k6iNb2yIRADaC3UNg1FgN7+0+hnuMq84fKHgfR0eN+u5UFw=="
       }
     }
   }
