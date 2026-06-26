@@ -98,9 +98,9 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     {
         return new FeatureDefinition(
             "法不加身",
-            "此身不与常人相同，诸般异力皆难停驻；凡不由皮肉筋骨而生之患，及身之时，往往散作虚无。")
+            "此人似与常法隔了一重，诸般异力临身难驻，由身而发亦难着人；唯皮肉筋骨之创，仍循凡胎常理。")
             .WithEffectDescription(
-                "内伤、心神、破绽、封穴、毒素及战斗状态难以加诸其身；此人出手，也多止于外伤，难以令他人生出诸般妨害。")
+                "内伤、心神、毒素、破绽、封穴与诸般异状，凡加诸其身或借其手施于他人者，多半无从成事；交战之际，凡涉此人的功法异效，亦多归于无用。")
             .WithStyle(FabujiashenFeatureStyle);
     }
 }
