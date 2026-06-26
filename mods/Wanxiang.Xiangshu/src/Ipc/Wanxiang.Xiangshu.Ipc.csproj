@@ -16,7 +16,6 @@
     <PackageReference
       Include="MessagePack"
       ExcludeAssets="runtime"
-      NoWarn="NU1903"
       PrivateAssets="all"
     />
   </ItemGroup>

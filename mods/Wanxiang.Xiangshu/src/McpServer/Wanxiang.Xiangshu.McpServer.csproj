@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" NoWarn="NU1903" />
+    <PackageReference Include="MessagePack" />
     <PackageReference Include="MessagePipe" />
     <PackageReference Include="MessagePipe.Interprocess" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
