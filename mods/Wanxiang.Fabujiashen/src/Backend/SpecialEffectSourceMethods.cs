@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 using GameData.Combat.Math;
@@ -186,8 +185,8 @@ internal static class SpecialEffectSourceMethodScanner
             OpCode opCode = ReadOpCode(il, ref offset);
             if (opCode.OperandType == OperandType.InlineMethod)
             {
-                if (TryResolveMethod(method, il, ref offset, out MethodBase? calledMethod)
-                    && entryMethods.Any(entryMethod => IsSameMethod(calledMethod, entryMethod)))
+                MethodBase calledMethod = ResolveMethod(method, il, ref offset);
+                if (entryMethods.Any(entryMethod => IsSameMethod(calledMethod, entryMethod)))
                 {
                     return true;
                 }
@@ -201,27 +200,30 @@ internal static class SpecialEffectSourceMethodScanner
         return false;
     }
 
-    private static bool TryResolveMethod(
+    private static MethodBase ResolveMethod(
         MethodBase owner,
         byte[] il,
-        ref int offset,
-        [NotNullWhen(true)] out MethodBase? method)
+        ref int offset)
     {
         int token = BitConverter.ToInt32(il, offset);
         offset += sizeof(int);
         try
         {
-            method = owner.Module.ResolveMethod(
+            return owner.Module.ResolveMethod(
                 token,
                 owner.DeclaringType?.GetGenericArguments(),
-                owner.IsGenericMethod ? owner.GetGenericArguments() : Type.EmptyTypes);
-            return method is not null;
+                owner.IsGenericMethod ? owner.GetGenericArguments() : Type.EmptyTypes)
+                ?? throw new InvalidOperationException(BuildResolveFailureMessage(owner, token));
         }
-        catch (ArgumentException)
+        catch (ArgumentException ex)
         {
-            method = null;
-            return false;
+            throw new InvalidOperationException(BuildResolveFailureMessage(owner, token), ex);
         }
+    }
+
+    private static string BuildResolveFailureMessage(MethodBase owner, int token)
+    {
+        return $"Failed to resolve method token 0x{token:X8} while scanning special-effect method {owner.DeclaringType?.FullName}.{owner.Name}.";
     }
 
     private static bool IsSameMethod(MethodBase left, MethodBase right)

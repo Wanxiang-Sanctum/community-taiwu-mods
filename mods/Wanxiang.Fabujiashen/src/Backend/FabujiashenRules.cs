@@ -51,15 +51,40 @@ internal static class FabujiashenRules
 
     internal static bool AllowsCombatSkillEffectModifier(AffectedDataKey dataKey, SpecialEffectBase effect)
     {
-        return effect is not CombatSkillEffectBase combatSkillEffect
-            || (!IsTaiwuCombatant(dataKey.CharId)
-                && !IsTaiwuCombatant(combatSkillEffect.SkillKey.CharId)
-                && !IsTaiwuCombatant(combatSkillEffect.CharacterId));
+        if (effect is not CombatSkillEffectBase combatSkillEffect)
+        {
+            return true;
+        }
+
+        bool targetIsTaiwu = IsTaiwuCombatant(dataKey.CharId);
+        bool sourceIsTaiwu = IsTaiwuCombatSkillEffectSource(combatSkillEffect);
+        if (!targetIsTaiwu && !sourceIsTaiwu)
+        {
+            return true;
+        }
+
+        if (IsCombatRuntimeEffect(combatSkillEffect))
+        {
+            return false;
+        }
+
+        return targetIsTaiwu && sourceIsTaiwu;
     }
 
     private static bool IsCombatRuntimeEffect(sbyte effectActiveType)
     {
         return effectActiveType is CombatSkillEffectActiveType.Cast or CombatSkillEffectActiveType.EnterCombat;
+    }
+
+    private static bool IsCombatRuntimeEffect(CombatSkillEffectBase effect)
+    {
+        return IsCombatRuntimeEffect(Config.SpecialEffect.Instance[effect.EffectId].EffectActiveType);
+    }
+
+    private static bool IsTaiwuCombatSkillEffectSource(CombatSkillEffectBase effect)
+    {
+        return IsTaiwuCombatant(effect.SkillKey.CharId)
+            || IsTaiwuCombatant(effect.CharacterId);
     }
 
     private static bool TryGetTaiwuCharId(out int taiwuCharId)
