@@ -1182,30 +1182,48 @@ internal static class SpecialEffectModifierEnumerationRewriter
         int expectedInjectionCount)
     {
         List<CodeInstruction> instructionList = [.. instructions];
-        int injectionCount = 0;
+        Dictionary<int, ModifierEnumerationInjection> insertions = [];
         for (int i = 0; i < instructionList.Count; i++)
         {
             if (TryGetModifierEnumerationPattern(
                 instructionList,
                 i,
                 out Label skipModifyLabel,
+                out int insertionIndex,
                 out CodeInstruction dataKeyLoadInstruction,
                 out CodeInstruction effectLoadInstruction))
             {
-                injectionCount++;
-                yield return CloneWithoutMetadata(dataKeyLoadInstruction);
-                yield return CloneWithoutMetadata(effectLoadInstruction);
+                insertions.Add(
+                    insertionIndex,
+                    new ModifierEnumerationInjection(
+                        skipModifyLabel,
+                        dataKeyLoadInstruction,
+                        effectLoadInstruction));
+            }
+        }
+
+        for (int i = 0; i < instructionList.Count; i++)
+        {
+            if (insertions.TryGetValue(i, out ModifierEnumerationInjection injection))
+            {
+                CodeInstruction firstInjectedInstruction = CloneWithoutMetadata(injection.DataKeyLoadInstruction);
+                // Existing labels must reach the precheck before the original TryGetValue stack is prepared.
+                firstInjectedInstruction.labels.AddRange(instructionList[i].labels);
+                instructionList[i].labels.Clear();
+
+                yield return firstInjectedInstruction;
+                yield return CloneWithoutMetadata(injection.EffectLoadInstruction);
                 yield return new CodeInstruction(OpCodes.Call, AllowsCombatSkillEffectModifierMethod);
-                yield return new CodeInstruction(OpCodes.Brfalse, skipModifyLabel);
+                yield return new CodeInstruction(OpCodes.Brfalse, injection.SkipModifyLabel);
             }
 
             yield return instructionList[i];
         }
 
-        if (injectionCount != expectedInjectionCount)
+        if (insertions.Count != expectedInjectionCount)
         {
             throw new InvalidOperationException(
-                $"{nameof(SpecialEffectDomain)}.{methodName} expected {expectedInjectionCount} special-effect modifier enumeration injections, found {injectionCount}.");
+                $"{nameof(SpecialEffectDomain)}.{methodName} expected {expectedInjectionCount} special-effect modifier enumeration injections, found {insertions.Count}.");
         }
     }
 
@@ -1213,10 +1231,12 @@ internal static class SpecialEffectModifierEnumerationRewriter
         List<CodeInstruction> instructions,
         int tryGetValueCallIndex,
         out Label skipModifyLabel,
+        out int insertionIndex,
         out CodeInstruction dataKeyLoadInstruction,
         out CodeInstruction effectLoadInstruction)
     {
         skipModifyLabel = default;
+        insertionIndex = -1;
         dataKeyLoadInstruction = new CodeInstruction(OpCodes.Nop);
         effectLoadInstruction = new CodeInstruction(OpCodes.Nop);
 
@@ -1252,6 +1272,7 @@ internal static class SpecialEffectModifierEnumerationRewriter
         }
 
         skipModifyLabel = branchLabel;
+        insertionIndex = tryGetValueCallIndex - 4;
         dataKeyLoadInstruction = candidateDataKeyLoadInstruction;
         effectLoadInstruction = candidateEffectLoadInstruction;
         return true;
@@ -1271,6 +1292,11 @@ internal static class SpecialEffectModifierEnumerationRewriter
     {
         return new CodeInstruction(instruction.opcode, instruction.operand);
     }
+
+    private readonly record struct ModifierEnumerationInjection(
+        Label SkipModifyLabel,
+        CodeInstruction DataKeyLoadInstruction,
+        CodeInstruction EffectLoadInstruction);
 }
 
 [HarmonyPatch(
