@@ -3,7 +3,7 @@ return {
   Source = 1,
   FileId = 3752091543,
   Version = "0.1.0",
-  GameVersion = "1.0.32",
+  GameVersion = "1.0.36",
   Author = "Wanxiang Sanctum",
   Description = [=[[h1]法不加身[/h1]
 [h2]一力破万法[/h2]
