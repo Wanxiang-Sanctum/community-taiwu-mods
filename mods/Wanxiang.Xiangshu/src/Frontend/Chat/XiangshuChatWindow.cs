@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Cysharp.Threading.Tasks;
 using FrameWork.UISystem.UIElements;
+using Game.Views.MouseTips;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,7 +10,9 @@ using Wanxiang.Taiwu.Logging;
 using Wanxiang.Taiwu.InstantNotifications;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
+using CraftToolConfig = Config.CraftTool;
 using InstantNotificationConfig = Config.InstantNotification;
+using StoryScrollConfig = Config.StoryScroll;
 
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
@@ -25,16 +28,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 {
     internal const string RootGameObjectName = "Wanxiang.Xiangshu.ChatWindow";
 
-    private const string HeaderIconSprite = "map_icon_xiangshu";
-    private const string HeaderPortraitTexturePath =
-        "RemakeResources/Textures/GameLineScroll/npcface_image_2001_0";
-    private const string HeaderPortraitFrameSprite = "gamelinescroll_icon_big_charm_2001";
-    private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
-    private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
-    private const string ScrollbarHandleSprite = "sp_gn_gundong_7";
-    private const string HeaderCloseButtonNormalSprite = "ui9_btn_close_0";
-    private const string HeaderCloseButtonHighlightedSprite = "ui9_btn_close_1";
-    private const string HeaderCloseButtonDisabledSprite = "ui9_btn_close_3";
+    private const string GameLineScrollTextureDirectory = "GameLineScroll/";
+    private static string HeaderIconSprite => CraftToolConfig.DefValue.Medicine0.Icon;
+    private static string HeaderPortraitTexturePath =>
+        TextureInfo.TexturesBasePath
+        + GameLineScrollTextureDirectory
+        + StoryScrollConfig.DefValue.MonvBegin.StoryImage;
+    private static string HeaderPortraitFrameSprite => StoryScrollConfig.DefValue.MonvBegin.StoryCharm;
+    private const string AssistantBubbleSprite = AiActionAreaNormal.bubbleBgInProcess;
+    private const string UserBubbleSprite = AiActionAreaNormal.bubbleBgNotFinish;
     private const float PreferredPanelWidth = 860f;
     private const float PreferredPanelHeight = 820f;
     private const float MinimumPanelWidth = 640f;
@@ -121,8 +123,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color ScrollbarTrackColor = new(0.018f, 0.015f, 0.012f, 0.46f);
     private static readonly Color ScrollbarHandleColor = new(0.34f, 0.20f, 0.08f, 0.76f);
     private static readonly Color ScrollbarHandleMarkColor = new(0.83f, 0.48f, 0.18f, 0.95f);
-
-    private delegate void SpriteStateMutator(ref SpriteState state, Sprite sprite);
 
     private static TMP_FontAsset? s_gameFontAsset;
     private static Material? s_gameFontMaterial;
@@ -902,14 +902,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         BuildReplyIndicator(header.transform);
 
-        Button close = CreateSpriteSwapButton(
+        CButton close = CreateCommonCloseButton(
             "CloseButton",
             header.transform,
             HeaderCloseButtonSize,
-            HeaderCloseButtonSize,
-            HeaderCloseButtonNormalSprite,
-            HeaderCloseButtonHighlightedSprite,
-            HeaderCloseButtonDisabledSprite);
+            HeaderCloseButtonSize);
         close.onClick.AddListener(() => SetVisible(visible: false));
 
         HeaderDragHandle dragHandle = header.AddComponent<HeaderDragHandle>();
@@ -1580,66 +1577,80 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return button;
     }
 
+    private static CButton CreateCommonCloseButton(
+        string name,
+        Transform parent,
+        float width,
+        float height)
+    {
+        CButton? sourceButton = GameUiResources.CommonCloseButton;
+        Image? sourceImage = sourceButton?.targetGraphic as Image;
+        if (sourceButton == null || sourceImage == null || sourceImage.sprite == null)
+        {
+            Log.Warning("Common close button source is unavailable; using local emergency close control.");
+            return CreateEmergencyCloseButton(name, parent, width, height);
+        }
+
+        return CreateSpriteSwapButton(
+            name,
+            parent,
+            width,
+            height,
+            sourceButton,
+            sourceImage);
+    }
+
+    private static CButton CreateEmergencyCloseButton(
+        string name,
+        Transform parent,
+        float width,
+        float height)
+    {
+        GameObject buttonObject = CreateChild(name, parent);
+        CImage hitArea = AddSolidImage(buttonObject, Color.clear);
+
+        CButton button = buttonObject.AddComponent<CButton>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = hitArea;
+        _ = SetFixedLayoutSize(buttonObject, width, height);
+
+        TextMeshProUGUI text = CreateText(
+            "Label",
+            buttonObject.transform,
+            HeaderControlFontSize,
+            TextColor,
+            FontStyles.Bold);
+        text.text = "X";
+        text.alignment = TextAlignmentOptions.Center;
+        StretchToParent(text.rectTransform);
+        return button;
+    }
+
     private static CButton CreateSpriteSwapButton(
         string name,
         Transform parent,
         float width,
         float height,
-        string normalSpriteName,
-        string highlightedSpriteName,
-        string disabledSpriteName)
+        CButton sourceButton,
+        Image sourceImage)
     {
         GameObject buttonObject = CreateChild(name, parent);
-        CImage image = AddSpriteImage(buttonObject, Color.white, normalSpriteName);
-        image.preserveAspect = true;
+        CImage image = AddSpriteImage(
+            buttonObject,
+            sourceImage.color,
+            sourceImage.sprite,
+            sourceImage.type);
+        image.preserveAspect = sourceImage.preserveAspect;
 
         CButton button = buttonObject.AddComponent<CButton>();
         button.transition = Selectable.Transition.SpriteSwap;
         button.targetGraphic = image;
+        button.spriteState = sourceButton.spriteState;
+        button.colors = sourceButton.colors;
+        button.animationTriggers = sourceButton.animationTriggers;
         _ = SetFixedLayoutSize(buttonObject, width, height);
 
-        LoadButtonStateSprite(
-            button,
-            highlightedSpriteName,
-            ApplyHighlightedSprite);
-        LoadButtonStateSprite(
-            button,
-            disabledSpriteName,
-            ApplyDisabledSprite);
-
         return button;
-    }
-
-    private static void LoadButtonStateSprite(
-        CButton button,
-        string spriteName,
-        SpriteStateMutator mutate)
-    {
-        _ = AtlasInfo.Instance.GetSprite(
-            spriteName,
-            sprite =>
-            {
-                if (button == null || sprite == null)
-                {
-                    return;
-                }
-
-                SpriteState spriteState = button.spriteState;
-                mutate(ref spriteState, sprite);
-                button.spriteState = spriteState;
-            });
-    }
-
-    private static void ApplyHighlightedSprite(ref SpriteState state, Sprite sprite)
-    {
-        state.highlightedSprite = sprite;
-        state.selectedSprite = sprite;
-        state.pressedSprite = sprite;
-    }
-
-    private static void ApplyDisabledSprite(ref SpriteState state, Sprite sprite)
-    {
-        state.disabledSprite = sprite;
     }
 
     private static GameObject BuildHoverFrame(
@@ -1726,13 +1737,27 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         handleMarkRect.pivot = new Vector2(0.5f, 0.5f);
         handleMarkRect.anchoredPosition = Vector2.zero;
         handleMarkRect.sizeDelta = new Vector2(ScrollbarHandleMarkWidth, 0f);
-        CImage handleMarkImage = AddSpriteImage(handleMark, ScrollbarHandleMarkColor, ScrollbarHandleSprite);
+        CImage handleMarkImage = AddScrollbarHandleMarkImage(handleMark);
         handleMarkImage.raycastTarget = false;
         handleMarkImage.preserveAspect = true;
 
         scrollbar.targetGraphic = handleImage;
         scrollbar.handleRect = handleRect;
         return scrollbar;
+    }
+
+    private static CImage AddScrollbarHandleMarkImage(GameObject target)
+    {
+        string? spriteName = GameUiResources.ScrollbarHandleMarkName;
+        if (!string.IsNullOrEmpty(spriteName))
+        {
+            return AddSpriteImage(target, ScrollbarHandleMarkColor, spriteName);
+        }
+
+        Log.Warning("SystemOption scrollbar handle mark source is unavailable; leaving handle mark empty.");
+        CImage image = AddSolidImage(target, Color.clear);
+        image.SetEnabled(shouldBeEnabled: false);
+        return image;
     }
 
     private static LayoutElement SetFixedLayoutSize(
@@ -1820,6 +1845,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             onSpriteChange: () => UpdateSpriteImageEnabled(image));
         UpdateSpriteImageEnabled(image);
 
+        return image;
+    }
+
+    private static CImage AddSpriteImage(
+        GameObject target,
+        Color color,
+        Sprite sprite,
+        Image.Type imageType)
+    {
+        CImage image = target.AddComponent<CImage>();
+        image.color = color;
+        image.type = imageType;
+        image.sprite = sprite;
+        UpdateSpriteImageEnabled(image);
         return image;
     }
 
