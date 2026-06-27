@@ -1,4 +1,6 @@
 <Project>
+  <Import Project="$(TaiwuModsRoot)Directory.Build.targets" />
+
   <Import Project="$(TaiwuModsModsDir)Taiwu.Mod.Project.Pack.targets" />
   <Import
     Project="$(TaiwuModsModsDir)Taiwu.Mod.Plugin.Pack.targets"
