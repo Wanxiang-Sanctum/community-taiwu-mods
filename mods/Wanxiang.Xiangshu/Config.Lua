@@ -1,46 +1,34 @@
 return {
-  Title = "相枢 Mod：在游戏中驱动本地 AI Agent",
+  Title = "相枢：接入太吾运行时的本地 AI Agent",
   Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
   GameVersion = "1.0.36",
   Author = "Wanxiang Sanctum",
-  Description = [=[[h1]相枢 Mod：在游戏中驱动本地 AI Agent[/h1]
-[h2]玩法入口[/h2]
-太吾行囊中，会多出一只“低语的陶土药钵”。它自称相枢。打开相枢窗口后，你可以输入问题，或写下想让它判断、查验、处理的目标。
+  Description = [=[[h1]相枢：接入太吾运行时的本地 AI Agent[/h1]
+[h2]先看是否适合[/h2]
+相枢把本地 CLI Agent 接入当前运行中的太吾绘卷。你在游戏里提出愿望、问题或命令，Agent 会按目标动态执行脚本，尝试完成与游戏内容有关的查找、判断或改动；结果由相枢带回游戏内对话。
 
-卡在事件选项前，可以问它该看哪条线索；看不懂当前界面，可以让它先看清你眼前有什么；想追一个人的旧事、核对一件物品、弄明白某条机制，也可以把目标交给它。药钵离身时，发送入口会显示“离身”，本轮回应也会中断。
+目前适配 Codex CLI、Claude Code 和 CodeBuddy Code。
 
 [hr][/hr]
 
-[h2]把问题交给本地 Agent[/h2]
-相枢 Mod 会把游戏内的问题或目标交给你本地安装的 Codex CLI、Claude Code 或 CodeBuddy Code，由这些 Agent 完成推理和回复。
+[h2]游戏内入口[/h2]
+一只“低语的陶土药钵”会落入太吾行囊。它自称相枢，听你把疑问、欲求与命令递入钵中。
 
-Agent 工作区提供相枢的口吻、资料和工具指引。这个 Mod 的工具链负责把 Agent 接回当前游戏：观察画面、读取运行状态、查询机制资料，并在受信边界内执行脚本。
+卡在事件选项前，可以让它窥清眼前所见；追查人物旧事、核对物品来历、辨认机制牵连时，也可以把目标交给它。若你要它动手，它会先寻证，再沿可落成的路径下手；成败、代价和余波都会回到这只药钵里。药钵在身时方可传念，离身则声息沉寂，本轮回应也会中断。
 
 [h2]使用方式[/h2]
 [list]
-[*]在太吾 Mod 设置中选择你本地安装的 Agent；需要指定命令或路径时，在“CLI 入口”填写命令名或可执行文件路径。
-[*]确认“Agent 工作区”。默认值是 DefaultAgentWorkspace；也可以改成你自己维护的目录。
-[*]应用设置后重启游戏；进入存档后，在可响应游戏快捷键的界面按 Ctrl+\ 打开相枢窗口，输入内容并点击“传念”发送。
+[*]在太吾 Mod 设置中选择本地 Agent；必要时填写“CLI 入口”和“Agent 工作区”。
+[*]应用设置后重启游戏；进入存档后按 Ctrl+\ 打开相枢窗口，也可从药钵操作菜单进入。
 [/list]
 
-[h2]可选：环境变量[/h2]
-如果你的本地 Agent 需要代理等环境变量，在相枢 Mod 目录下创建与 Config.Lua 同级的 LocalSettings.json：
-[code]{
-  "agent": {
-    "env": {
-      "HTTPS_PROXY": "http://127.0.0.1:7890"
-    }
-  }
-}[/code]
-这些变量只写入本地 Agent 子进程环境，不传给游戏进程，也不会写入诊断日志。修改后同样需要重启游戏。
-
-[h2]使用门槛与边界[/h2]
+[h2]本地数据与信任边界[/h2]
 [list]
-[*]需要有本地 AI Agent 使用经验；没有可用的本地 Agent，这个 Mod 无法提供服务。
-[*]这个 Mod 不设置远程服务器；游戏内会话只写入本地运行数据，所选本地 Agent 也可能按自己的机制保留会话或记录。
-[*]不要使用不信任的 Agent 工作区；受信脚本可能读取或改变当前游戏状态。
+[*]相枢 Mod 自己不设置远程服务器；游戏内会话写入本地运行数据，所选 Agent 也可能按自己的机制保留记录。
+[*]当玩家目标需要行动时，Agent 可借脚本读取或改变当前游戏、界面和 Mod 状态。脚本在插件进程内运行，不提供沙箱。
+[*]对话窗口状态不写入游戏存档。
 [/list]
 
 [h2]更多说明[/h2]
@@ -65,7 +53,7 @@ Agent 工作区提供相枢的口吻、资料和工具指引。这个 Mod 的工
       SettingType = "Dropdown",
       Key = "AgentAdapter",
       DisplayName = "本地 Agent",
-      Description = "选择这个 Mod 要调用的本地 Agent。",
+      Description = "选择相枢要调用的本地 Agent。",
       Options = {
         "Codex CLI",
         "Claude Code",
@@ -84,7 +72,7 @@ Agent 工作区提供相枢的口吻、资料和工具指引。这个 Mod 的工
       SettingType = "InputField",
       Key = "AgentWorkingDirectory",
       DisplayName = "Agent 工作区",
-      Description = "本地 Agent 使用的 Agent 工作区目录。相对路径会落在相枢 Mod 目录下；默认目录随包提供初始 Agent 工作区，初次使用可先沿用。",
+      Description = "本地 Agent 使用的 Agent 工作区目录，负责相枢口吻、资料路线、工具用法和可动手范围。相对路径会落在相枢 Mod 目录下；默认目录随包提供。",
       DefaultValue = "DefaultAgentWorkspace",
     },
   },
