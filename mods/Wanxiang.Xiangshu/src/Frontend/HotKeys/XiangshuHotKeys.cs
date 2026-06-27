@@ -1,4 +1,5 @@
 using System;
+using FrameWork.UISystem.UIElements;
 using UnityEngine;
 using Wanxiang.Taiwu.Logging;
 
@@ -6,67 +7,199 @@ namespace Wanxiang.Xiangshu.Frontend.HotKeys;
 
 internal static class XiangshuHotKeys
 {
-    private const byte ToggleChatCommandId = 101;
+    /// <summary>
+    /// Preferred stable id for player custom hotkey persistence.
+    /// </summary>
+    private const byte PreferredToggleChatCommandId = 101;
 
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
 
-    internal static readonly HotKeyCommand ToggleChat = new(
-        ToggleChatCommandId,
-        LanguageKey.LK_Mod,
-        KeyCode.Backslash,
-        KeyCode.LeftControl);
+    internal static HotKeyCommand? ToggleChat { get; private set; }
 
     public static void RegisterWithGameCommandKit()
     {
         CommandKitBase kit = CommandKitBase.MapCommandKit;
 
-        if (kit.GroupCommand.Any(command => ReferenceEquals(command, ToggleChat)))
+        if (ToggleChat is not null
+            && kit.GroupCommand.Any(command => ReferenceEquals(command, ToggleChat)))
         {
             return;
         }
 
-        if (kit.GroupCommand.Any(command => command.Id == ToggleChatCommandId))
+        byte? commandId = TryAllocateToggleChatCommandId(kit);
+        if (commandId is null)
         {
-            Log.Warning(
-                "cannot register chat hotkey in MapCommandKit because command id is already used",
+            Log.Error(
+                "cannot register chat hotkey in MapCommandKit because no command id is available",
                 new
                 {
-                    commandId = ToggleChatCommandId,
-                    fallbackHotkey = "Ctrl+Backslash",
+                    preferredCommandId = PreferredToggleChatCommandId,
                 });
             return;
         }
 
+        if (commandId != PreferredToggleChatCommandId)
+        {
+            Log.Warning(
+                "preferred chat hotkey command id is already used; registering with fallback command id",
+                new
+                {
+                    preferredCommandId = PreferredToggleChatCommandId,
+                    commandId,
+                });
+        }
+
+        HotKeyCommand toggleChat = CreateToggleChatCommand(commandId.Value);
+        ToggleChat = toggleChat;
         kit.GroupCommand =
         [
             .. kit.GroupCommand,
-            ToggleChat,
+            toggleChat,
         ];
         CommandKitBase.Init();
     }
 
+    private static HotKeyCommand CreateToggleChatCommand(byte commandId)
+    {
+        return new HotKeyCommand(
+            commandId,
+            LanguageKey.LK_Mod,
+            KeyCode.Backslash,
+            KeyCode.LeftControl);
+    }
+
+    private static byte? TryAllocateToggleChatCommandId(CommandKitBase kit)
+    {
+        if (!kit.GroupCommand.Any(command => command.Id == PreferredToggleChatCommandId))
+        {
+            return PreferredToggleChatCommandId;
+        }
+
+        for (int commandId = byte.MaxValue; commandId > 0; commandId--)
+        {
+            byte candidate = (byte)commandId;
+            if (candidate != PreferredToggleChatCommandId
+                && kit.GroupCommand.All(command => command.Id != candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
     public static bool CanOpenChatInCurrentUi()
     {
-        UIManager uiManager = UIManager.Instance;
-        if (uiManager is null)
+        return GameApp.Instance is not null
+            && GameApp.Instance.GetCurrentGameStateName() == EGameState.InGame
+            && UIManager.Instance is not null;
+    }
+
+    public static bool IsToggleChatPressed(bool ignoreChatInputFocus)
+    {
+        HotKeyCommand? toggleChat = ToggleChat;
+        if (toggleChat is null)
         {
             return false;
         }
 
-        return uiManager.IsFocusElement(UIElement.StateMainWorld)
-            || uiManager.IsFocusElement(UIElement.WorldMap)
-            || uiManager.IsFocusElement(UIElement.Bottom);
+        if (!ignoreChatInputFocus)
+        {
+            return toggleChat.Check(
+                UIElement.Bottom,
+                holdCheck: false,
+                downCheck: true,
+                isIgnoreBlockHotKey: false,
+                fnKeyCheckNone: false,
+                isIgnoreElement: true);
+        }
+
+        if (UIManager.Instance?.BlockHotKey == true)
+        {
+            return false;
+        }
+
+        HotKeyGroup keyGroup = toggleChat.KeyGroup;
+        return IsKeyDown(keyGroup.Key, keyGroup.FunctionKey, checkIsFunctionKey: true)
+            || IsKeyDown(keyGroup.MouseKey, keyGroup.FunctionMouseKey, checkIsFunctionKey: false);
     }
 
-    public static bool IsToggleChatPressed(bool ignoreBlockHotKey)
+    private static bool IsKeyDown(
+        KeyCode key,
+        KeyCode functionKey,
+        bool checkIsFunctionKey)
     {
-        return ToggleChat.Check(
-            UIElement.Bottom,
-            holdCheck: false,
-            downCheck: true,
-            isIgnoreBlockHotKey: ignoreBlockHotKey,
-            fnKeyCheckNone: false,
-            isIgnoreElement: true);
+        if (key == KeyCode.None)
+        {
+            return false;
+        }
+
+        bool keyDown = IsTriggerKeyDown(key);
+        if (checkIsFunctionKey && IsModifierKey(key))
+        {
+            return keyDown;
+        }
+
+        return IsFunctionKeyPressed(functionKey) && keyDown;
+    }
+
+    private static bool IsTriggerKeyDown(KeyCode key)
+    {
+        if (IsMouseScrollKey(key))
+        {
+            if (CScrollRect.IsPointerOverAnyCScrollRect)
+            {
+                return false;
+            }
+
+            float scrollY = Input.mouseScrollDelta.y;
+            return key == MapCommandKit.ViewScrollUp.KeyGroup.Key
+                ? scrollY > 0.5f
+                : scrollY < -0.5f;
+        }
+
+        return Input.GetKeyDown(key);
+    }
+
+    private static bool IsMouseScrollKey(KeyCode key)
+    {
+        return key == MapCommandKit.ViewScrollUp.KeyGroup.Key
+            || key == MapCommandKit.ViewScrollDown.KeyGroup.Key;
+    }
+
+    private static bool IsFunctionKeyPressed(KeyCode key)
+    {
+        if (key == KeyCode.None)
+        {
+            return true;
+        }
+
+        if (key is KeyCode.LeftControl or KeyCode.RightControl)
+        {
+            return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        }
+
+        if (key is KeyCode.LeftShift or KeyCode.RightShift)
+        {
+            return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        }
+
+        if (key is KeyCode.LeftAlt or KeyCode.RightAlt)
+        {
+            return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+        }
+
+        return Input.GetKey(key);
+    }
+
+    private static bool IsModifierKey(KeyCode key)
+    {
+        return key is KeyCode.LeftControl
+            or KeyCode.RightControl
+            or KeyCode.LeftShift
+            or KeyCode.RightShift
+            or KeyCode.LeftAlt
+            or KeyCode.RightAlt;
     }
 }
 
@@ -123,7 +256,7 @@ internal sealed class FrontendHotkeyDriver : IDisposable
             return;
         }
 
-        if (!XiangshuHotKeys.IsToggleChatPressed(ignoreBlockHotKey: chatWindowVisible))
+        if (!XiangshuHotKeys.IsToggleChatPressed(ignoreChatInputFocus: plugin.IsChatInputSelected))
         {
             return;
         }

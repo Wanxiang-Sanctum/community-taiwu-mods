@@ -32,6 +32,8 @@ internal sealed class CurrentWorldChatSession(
 
     public bool IsWindowVisible => _window.IsVisible;
 
+    public bool IsInputSelected => _window.IsInputSelected;
+
     public void ToggleWindow()
     {
         ThrowIfDisposed();

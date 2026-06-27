@@ -148,6 +148,17 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     public bool IsVisible { get; private set; }
 
+    internal bool IsInputSelected
+    {
+        get
+        {
+            DisableHotkeyInputField? inputField = _inputField;
+            return IsVisible
+                && inputField?.gameObject.activeInHierarchy == true
+                && EventSystem.current?.currentSelectedGameObject == inputField.gameObject;
+        }
+    }
+
     public static XiangshuChatWindow Create(ChatParticipantIdentity participants)
     {
         GameObject root = new(

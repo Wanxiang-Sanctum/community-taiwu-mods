@@ -42,6 +42,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     internal bool IsChatWindowVisible => _currentChatSession?.IsWindowVisible == true;
 
+    internal bool IsChatInputSelected => _currentChatSession?.IsInputSelected == true;
+
     public override void Initialize()
     {
         try
