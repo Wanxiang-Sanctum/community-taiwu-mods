@@ -1,9 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using GameData.Common;
 using GameData.Domains;
-using GameData.Domains.Character;
 using GameData.Domains.Item;
-using GameData.Domains.Taiwu;
 using HarmonyLib;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 
@@ -15,16 +13,11 @@ internal static class GraftHostObserver
 
     private static readonly object SyncRoot = new();
 
-    [ThreadStatic]
-    private static int s_characterInventoryTransferDepth;
-
     private static Harmony? s_harmony;
 
     internal static event EventHandler<GraftHostEventArgs>? HostEvent;
 
     internal static bool IsInstalled => s_harmony is not null;
-
-    internal static bool IsCharacterInventoryTransferInProgress => s_characterInventoryTransferDepth > 0;
 
     internal static void Install(string validatedModId)
     {
@@ -48,19 +41,6 @@ internal static class GraftHostObserver
             s_harmony = null;
             ObservedGraftHosts.Clear();
             HostEvent = null;
-        }
-    }
-
-    internal static void EnterCharacterInventoryTransfer()
-    {
-        s_characterInventoryTransferDepth++;
-    }
-
-    internal static void ExitCharacterInventoryTransfer()
-    {
-        if (s_characterInventoryTransferDepth > 0)
-        {
-            s_characterInventoryTransferDepth--;
         }
     }
 
@@ -88,17 +68,20 @@ internal static class GraftHostObserver
         }
     }
 
-    internal static void NotifyHostLocationChanged(
+    internal static void NotifyHostOwnerChanged(
         ItemKey hostKey,
-        int? fromCharacterId,
-        int? toCharacterId)
+        ItemOwnerKey fromOwner,
+        ItemOwnerKey toOwner)
     {
-        HostEvent?.Invoke(
-            null,
-            GraftHostEventArgs.LocationChanged(
-                hostKey,
-                fromCharacterId,
-                toCharacterId));
+        if (ObservedGraftHosts.ContainsHost(hostKey))
+        {
+            HostEvent?.Invoke(
+                null,
+                GraftHostEventArgs.OwnerChanged(
+                    hostKey,
+                    ToContractOwner(fromOwner),
+                    ToContractOwner(toOwner)));
+        }
     }
 
     internal static void NotifyHostDataChanged(ItemKey hostKey)
@@ -107,6 +90,30 @@ internal static class GraftHostObserver
         {
             HostEvent?.Invoke(null, GraftHostEventArgs.DataChanged(hostKey));
         }
+    }
+
+    internal static void NotifyHostOwnerMaybeChanged(
+        ItemBase item,
+        ItemOwnerKey previousOwner)
+    {
+        ItemOwnerKey currentOwner = item.Owner;
+
+        if (previousOwner.Equals(currentOwner))
+        {
+            return;
+        }
+
+        NotifyHostOwnerChanged(
+            item.GetItemKey(),
+            previousOwner,
+            currentOwner);
+    }
+
+    private static GraftHostOwnerKey? ToContractOwner(ItemOwnerKey owner)
+    {
+        return owner.OwnerType == ItemOwnerType.None
+            ? null
+            : new GraftHostOwnerKey((sbyte)owner.OwnerType, owner.OwnerId);
     }
 }
 
@@ -207,108 +214,90 @@ internal static class GraftHostForceRemoveItemPatch
 
 #pragma warning disable IDE0300
 [HarmonyPatch(
-    typeof(Character),
-    nameof(Character.AddInventoryItem),
+    typeof(ItemBase),
+    nameof(ItemBase.SetOwner),
     new[]
     {
-        typeof(DataContext),
-        typeof(ItemKey),
+        typeof(ItemOwnerType),
         typeof(int),
-        typeof(bool),
-        typeof(EItemAutoOperationSource),
     })]
 #pragma warning restore IDE0300
-internal static class GraftHostCharacterInventoryItemAddedPatch
+internal static class GraftHostItemOwnerSetPatch
 {
     [SuppressMessage(
         "Roslynator",
         "RCS1213:Remove unused method declaration",
         Justification = "Harmony invokes patch methods by signature.")]
-    private static void Postfix(
-        Character __instance,
-        ItemKey itemKey,
-        int amount,
-        bool __result)
+    private static void Prefix(
+        ItemBase __instance,
+        out ItemOwnerKey __state)
     {
-        ItemKey hostKey = GraftHostObserver.ResolveCurrentHostKey(itemKey);
+        __state = __instance.Owner;
+    }
 
-        if (__result
-            && amount > 0
-            && !GraftHostObserver.IsCharacterInventoryTransferInProgress
-            && GraftHostObserver.IsHostObserved(hostKey))
-        {
-            GraftHostObserver.NotifyHostLocationChanged(
-                hostKey,
-                null,
-                __instance.GetId());
-        }
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused method declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Postfix(
+        ItemBase __instance,
+        ItemOwnerKey __state)
+    {
+        GraftHostObserver.NotifyHostOwnerMaybeChanged(__instance, __state);
     }
 }
 
 #pragma warning disable IDE0300
 [HarmonyPatch(
-    typeof(Character),
-    nameof(Character.RemoveInventoryItem),
+    typeof(ItemBase),
+    nameof(ItemBase.RemoveOwner),
     new[]
     {
-        typeof(DataContext),
-        typeof(ItemKey),
+        typeof(ItemOwnerType),
         typeof(int),
-        typeof(bool),
-        typeof(bool),
     })]
 #pragma warning restore IDE0300
-internal static class GraftHostCharacterInventoryItemRemovedPatch
+internal static class GraftHostItemOwnerRemovePatch
 {
     [SuppressMessage(
         "Roslynator",
         "RCS1213:Remove unused method declaration",
         Justification = "Harmony invokes patch methods by signature.")]
-    private static void Postfix(
-        Character __instance,
-        ItemKey itemKey,
-        int amount)
+    private static void Prefix(
+        ItemBase __instance,
+        out ItemOwnerKey __state)
     {
-        ItemKey hostKey = GraftHostObserver.ResolveCurrentHostKey(itemKey);
+        __state = __instance.Owner;
+    }
 
-        if (amount <= 0
-            || GraftHostObserver.IsCharacterInventoryTransferInProgress
-            || !GraftHostObserver.IsHostObserved(hostKey)
-            || __instance.GetInventory().Items.ContainsKey(itemKey))
-        {
-            return;
-        }
-
-        GraftHostObserver.NotifyHostLocationChanged(
-            hostKey,
-            __instance.GetId(),
-            null);
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1213:Remove unused method declaration",
+        Justification = "Harmony invokes patch methods by signature.")]
+    private static void Postfix(
+        ItemBase __instance,
+        ItemOwnerKey __state)
+    {
+        GraftHostObserver.NotifyHostOwnerMaybeChanged(__instance, __state);
     }
 }
 
 #pragma warning disable IDE0300
 [HarmonyPatch(
-    typeof(CharacterDomain),
-    nameof(CharacterDomain.TransferInventoryItem),
-    new[]
-    {
-        typeof(DataContext),
-        typeof(Character),
-        typeof(Character),
-        typeof(ItemKey),
-        typeof(int),
-        typeof(EItemAutoOperationSource),
-    })]
+    typeof(ItemBase),
+    nameof(ItemBase.ResetOwner))]
 #pragma warning restore IDE0300
-internal static class GraftHostCharacterInventoryItemTransferredPatch
+internal static class GraftHostItemOwnerResetPatch
 {
     [SuppressMessage(
         "Roslynator",
         "RCS1213:Remove unused method declaration",
         Justification = "Harmony invokes patch methods by signature.")]
-    private static void Prefix()
+    private static void Prefix(
+        ItemBase __instance,
+        out ItemOwnerKey __state)
     {
-        GraftHostObserver.EnterCharacterInventoryTransfer();
+        __state = __instance.Owner;
     }
 
     [SuppressMessage(
@@ -316,32 +305,9 @@ internal static class GraftHostCharacterInventoryItemTransferredPatch
         "RCS1213:Remove unused method declaration",
         Justification = "Harmony invokes patch methods by signature.")]
     private static void Postfix(
-        Character srcChar,
-        Character destChar,
-        ItemKey itemKey,
-        int amount)
+        ItemBase __instance,
+        ItemOwnerKey __state)
     {
-        ItemKey hostKey = GraftHostObserver.ResolveCurrentHostKey(itemKey);
-
-        if (amount <= 0
-            || !GraftHostObserver.IsHostObserved(hostKey)
-            || !destChar.GetInventory().Items.ContainsKey(itemKey))
-        {
-            return;
-        }
-
-        GraftHostObserver.NotifyHostLocationChanged(
-            hostKey,
-            srcChar.GetId(),
-            destChar.GetId());
-    }
-
-    [SuppressMessage(
-        "Roslynator",
-        "RCS1213:Remove unused method declaration",
-        Justification = "Harmony invokes patch methods by signature.")]
-    private static void Finalizer()
-    {
-        GraftHostObserver.ExitCharacterInventoryTransfer();
+        GraftHostObserver.NotifyHostOwnerMaybeChanged(__instance, __state);
     }
 }

@@ -27,7 +27,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         try
         {
             StartIpcServer();
-            BackendInventoryGrafts.Install(this);
+            BackendItemGrafts.Install(this);
         }
         catch (Exception ex)
         {
@@ -43,7 +43,7 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
 
     public override void Dispose()
     {
-        _ = BackendInventoryGrafts.Uninstall();
+        _ = BackendItemGrafts.Uninstall();
         _ipcServer?.Dispose();
         _ipcServer = null;
         _scriptEntryDispatcher?.Dispose();

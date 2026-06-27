@@ -44,21 +44,21 @@ public abstract class GraftHostEventArgs : EventArgs
     }
 
     /// <summary>
-    /// 创建表示真实宿主物品角色行囊位置发生变化的事件。
+    /// 创建表示真实宿主物品 owner 发生变化的事件。
     /// </summary>
     /// <param name="hostKey">当前宿主物品 key。</param>
-    /// <param name="fromCharacterId">变化前的角色行囊端点；不在角色行囊中时为 null。</param>
-    /// <param name="toCharacterId">变化后的角色行囊端点；不在角色行囊中时为 null。</param>
-    /// <returns>宿主位置变化事件。</returns>
-    public static GraftHostEventArgs LocationChanged(
+    /// <param name="fromOwner">变化前的物品 owner；变化前无 owner 时为 null。</param>
+    /// <param name="toOwner">变化后的物品 owner；变化后无 owner 时为 null。</param>
+    /// <returns>宿主 owner 变化事件。</returns>
+    public static GraftHostEventArgs OwnerChanged(
         ItemKey hostKey,
-        int? fromCharacterId,
-        int? toCharacterId)
+        GraftHostOwnerKey? fromOwner,
+        GraftHostOwnerKey? toOwner)
     {
-        return new GraftHostLocationChangedEventArgs(
+        return new GraftHostOwnerChangedEventArgs(
             hostKey,
-            fromCharacterId,
-            toCharacterId);
+            fromOwner,
+            toOwner);
     }
 
     /// <summary>
@@ -69,19 +69,6 @@ public abstract class GraftHostEventArgs : EventArgs
     public static GraftHostEventArgs DataChanged(ItemKey hostKey)
     {
         return new GraftHostDataChangedEventArgs(hostKey);
-    }
-
-    internal static int ValidateCharacterId(int characterId, string parameterName)
-    {
-        if (characterId < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                parameterName,
-                characterId,
-                "Character id must be valid.");
-        }
-
-        return characterId;
     }
 }
 
@@ -100,44 +87,37 @@ public sealed class GraftHostRemovedEventArgs : GraftHostEventArgs
 }
 
 /// <summary>
-/// 表示真实宿主物品进入、离开或转移于角色行囊之间。
+/// 表示真实宿主物品的游戏 owner 已变化。
 /// </summary>
-public sealed class GraftHostLocationChangedEventArgs : GraftHostEventArgs
+public sealed class GraftHostOwnerChangedEventArgs : GraftHostEventArgs
 {
-    internal GraftHostLocationChangedEventArgs(
+    internal GraftHostOwnerChangedEventArgs(
         ItemKey hostKey,
-        int? fromCharacterId,
-        int? toCharacterId)
+        GraftHostOwnerKey? fromOwner,
+        GraftHostOwnerKey? toOwner)
         : base(hostKey)
     {
-        FromCharacterId = ValidateCharacterId(fromCharacterId, nameof(fromCharacterId));
-        ToCharacterId = ValidateCharacterId(toCharacterId, nameof(toCharacterId));
+        FromOwner = fromOwner;
+        ToOwner = toOwner;
 
-        if (FromCharacterId is null && ToCharacterId is null)
+        if (FromOwner is null && ToOwner is null)
         {
-            throw new ArgumentException("Host location event must have at least one character endpoint.");
+            throw new ArgumentException("Host owner change event must have at least one endpoint.");
         }
     }
 
     /// <inheritdoc />
-    public override GraftHostEventKind Kind => GraftHostEventKind.LocationChanged;
+    public override GraftHostEventKind Kind => GraftHostEventKind.OwnerChanged;
 
     /// <summary>
-    /// 获取变化前的角色行囊端点；变化前不在角色行囊中时为 null。
+    /// 获取变化前的物品 owner；变化前无 owner 时为 null。
     /// </summary>
-    public int? FromCharacterId { get; }
+    public GraftHostOwnerKey? FromOwner { get; }
 
     /// <summary>
-    /// 获取变化后的角色行囊端点；变化后不在角色行囊中时为 null。
+    /// 获取变化后的物品 owner；变化后无 owner 时为 null。
     /// </summary>
-    public int? ToCharacterId { get; }
-
-    private static int? ValidateCharacterId(int? characterId, string parameterName)
-    {
-        return characterId.HasValue
-            ? GraftHostEventArgs.ValidateCharacterId(characterId.Value, parameterName)
-            : null;
-    }
+    public GraftHostOwnerKey? ToOwner { get; }
 }
 
 /// <summary>

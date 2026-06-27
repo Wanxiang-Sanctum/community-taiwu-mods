@@ -123,7 +123,7 @@ internal static class InventoryItemMenuPatch
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            GLog.TagError("InventoryGrafts", ex);
+            GLog.TagError("ItemGrafts", ex);
         }
     }
 }

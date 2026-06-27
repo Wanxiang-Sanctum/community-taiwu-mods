@@ -11,9 +11,9 @@ public enum GraftHostEventKind
     Removed = 0,
 
     /// <summary>
-    /// 真实宿主物品进入、离开或转移于角色行囊之间。
+    /// 真实宿主物品的游戏 owner 已变化。
     /// </summary>
-    LocationChanged = 1,
+    OwnerChanged = 1,
 
     /// <summary>
     /// 真实宿主物品数据已变化，调用方应按需重新查询。

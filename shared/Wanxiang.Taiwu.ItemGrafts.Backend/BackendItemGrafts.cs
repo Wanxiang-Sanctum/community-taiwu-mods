@@ -1,3 +1,5 @@
+using GameData.Common;
+using GameData.Domains.Item;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 using Wanxiang.Taiwu.ItemGrafts.Contracts.Internal;
@@ -8,7 +10,7 @@ namespace Wanxiang.Taiwu.ItemGrafts.Backend;
 /// <summary>
 /// 提供观察嫁接宿主物品事实并转发给前端的后端入口。
 /// </summary>
-public static class BackendInventoryGrafts
+public static class BackendItemGrafts
 {
     private static readonly object SyncRoot = new();
 
@@ -109,6 +111,9 @@ public static class BackendInventoryGrafts
             registrations.Add(RpcPeer.Register(
                 GraftHostRpcProtocol.UnsubscribeHostMethodName,
                 UnsubscribeHost));
+            registrations.Add(RpcPeer.Register(
+                GraftHostRpcProtocol.CreateHostMethodName,
+                CreateHost));
         }
         catch
         {
@@ -128,7 +133,7 @@ public static class BackendInventoryGrafts
     }
 
     private static string SubscribeHost(
-        GameData.Common.DataContext context,
+        DataContext context,
         string payloadJson)
     {
         _ = context;
@@ -137,12 +142,29 @@ public static class BackendInventoryGrafts
     }
 
     private static string UnsubscribeHost(
-        GameData.Common.DataContext context,
+        DataContext context,
         string payloadJson)
     {
         _ = context;
         _ = ObservedGraftHosts.RemoveSession(GraftHostRpcProtocol.ReadHostKey(payloadJson));
         return GraftHostRpcProtocol.NullPayload;
+    }
+
+    private static string CreateHost(
+        DataContext context,
+        string payloadJson)
+    {
+        GraftHostRpcProtocol.ReadHostCreationRequest(
+            payloadJson,
+            out GraftHostOwnerKey targetOwner,
+            out GraftHostTemplate hostTemplate);
+
+        ItemKey hostKey = GraftHostCreation.CreateInOwner(
+            context,
+            targetOwner,
+            hostTemplate);
+
+        return GraftHostRpcProtocol.CreateHostPayload(hostKey);
     }
 
     private static void PublishHostEvent(GraftHostEventArgs hostEvent)
