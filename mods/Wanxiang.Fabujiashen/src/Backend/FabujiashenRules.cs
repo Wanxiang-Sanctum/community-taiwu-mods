@@ -3,6 +3,7 @@ using GameData.Domains;
 using GameData.Domains.Character;
 using GameData.Domains.Combat;
 using GameData.Domains.Item;
+using GameData.Domains.SpecialEffect;
 using GameData.Domains.SpecialEffect.CombatSkill;
 using GameCharacter = GameData.Domains.Character.Character;
 
@@ -10,6 +11,15 @@ namespace Wanxiang.Fabujiashen.Backend;
 
 internal static class FabujiashenRules
 {
+    [ThreadStatic]
+    private static int s_outerInjuryOverflowFatalScopeDepth;
+
+    [ThreadStatic]
+    private static int s_taiwuDirectFatalSourceScopeDepth;
+
+    [ThreadStatic]
+    private static int s_taiwuCombatStateSourceScopeDepth;
+
     internal static bool IsTaiwu(int charId)
     {
         return charId >= 0
@@ -39,9 +49,42 @@ internal static class FabujiashenRules
             || !IsCombatRuntimeEffect(effectActiveType);
     }
 
+    internal static bool AllowsCombatSkillEffectModifier(AffectedDataKey dataKey, SpecialEffectBase effect)
+    {
+        if (effect is not CombatSkillEffectBase combatSkillEffect)
+        {
+            return true;
+        }
+
+        bool targetIsTaiwu = IsTaiwuCombatant(dataKey.CharId);
+        bool sourceIsTaiwu = IsTaiwuCombatSkillEffectSource(combatSkillEffect);
+        if (!targetIsTaiwu && !sourceIsTaiwu)
+        {
+            return true;
+        }
+
+        if (IsCombatRuntimeEffect(combatSkillEffect))
+        {
+            return false;
+        }
+
+        return targetIsTaiwu && sourceIsTaiwu;
+    }
+
     private static bool IsCombatRuntimeEffect(sbyte effectActiveType)
     {
         return effectActiveType is CombatSkillEffectActiveType.Cast or CombatSkillEffectActiveType.EnterCombat;
+    }
+
+    private static bool IsCombatRuntimeEffect(CombatSkillEffectBase effect)
+    {
+        return IsCombatRuntimeEffect(Config.SpecialEffect.Instance[effect.EffectId].EffectActiveType);
+    }
+
+    private static bool IsTaiwuCombatSkillEffectSource(CombatSkillEffectBase effect)
+    {
+        return IsTaiwuCombatant(effect.SkillKey.CharId)
+            || IsTaiwuCombatant(effect.CharacterId);
     }
 
     private static bool TryGetTaiwuCharId(out int taiwuCharId)
@@ -208,12 +251,100 @@ internal static class FabujiashenRules
 
     internal static bool AllowsCombatStateChange(CombatCharacter? target, int power, int srcCharId)
     {
-        if (IsTaiwu(srcCharId))
+        if (IsTaiwu(srcCharId) || s_taiwuCombatStateSourceScopeDepth > 0)
         {
             return false;
         }
 
         return !IsTaiwu(target) || power <= 0;
+    }
+
+    internal static bool EnterTaiwuCombatStateSourceScope(SpecialEffectBase effect)
+    {
+        if (!IsTaiwuCombatant(effect.CharacterId))
+        {
+            return false;
+        }
+
+        s_taiwuCombatStateSourceScopeDepth++;
+        return true;
+    }
+
+    internal static void ExitTaiwuCombatStateSourceScope(bool active)
+    {
+        if (active)
+        {
+            s_taiwuCombatStateSourceScopeDepth--;
+        }
+    }
+
+    internal static bool AllowsFatalDamage(CombatCharacter? target, int damageValue)
+    {
+        return damageValue <= 0 || AllowsDirectFatalEntry(target);
+    }
+
+    internal static bool AllowsFatalMarkIncrease(CombatCharacter? target, int count)
+    {
+        return count <= 0 || AllowsDirectFatalEntry(target);
+    }
+
+    internal static bool AllowsFatalMarkTransfer(
+        CombatCharacter? source,
+        CombatCharacter? target,
+        int count)
+    {
+        return count <= 0
+            || (!IsTaiwu(source) && AllowsDirectFatalEntry(target));
+    }
+
+    private static bool AllowsDirectFatalEntry(CombatCharacter? target)
+    {
+        return s_outerInjuryOverflowFatalScopeDepth > 0
+            || (!IsTaiwu(target) && s_taiwuDirectFatalSourceScopeDepth <= 0);
+    }
+
+    internal static bool EnterTaiwuDirectFatalSourceScope(SpecialEffectBase effect)
+    {
+        if (!IsTaiwuCombatant(effect.CharacterId))
+        {
+            return false;
+        }
+
+        s_taiwuDirectFatalSourceScopeDepth++;
+        return true;
+    }
+
+    internal static void ExitTaiwuDirectFatalSourceScope(bool active)
+    {
+        if (active)
+        {
+            s_taiwuDirectFatalSourceScopeDepth--;
+        }
+    }
+
+    internal static int AddFatalDamageFromInjuryOverflow(
+        CombatCharacter target,
+        DataContext context,
+        int damageValue,
+        int type,
+        sbyte bodyPart,
+        short skillId,
+        EDamageType damageType)
+    {
+        if (type != 0)
+        {
+            return target.AddFatalDamage(context, damageValue, type, bodyPart, skillId, damageType);
+        }
+
+        s_outerInjuryOverflowFatalScopeDepth++;
+        try
+        {
+            return target.AddFatalDamage(context, damageValue, type, bodyPart, skillId, damageType);
+        }
+        finally
+        {
+            s_outerInjuryOverflowFatalScopeDepth--;
+        }
     }
 
     internal static void PreventPoisonIncrease(ref PoisonInts poisoned, PoisonInts currentPoisoned)

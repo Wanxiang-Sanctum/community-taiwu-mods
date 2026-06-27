@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModSide>Frontend</TaiwuModSide>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TaiwuModMergeDependency
+      Include="Wanxiang.Taiwu.PlayerVisibleFeatures.dll"
+    />
+  </ItemGroup>
+</Project>

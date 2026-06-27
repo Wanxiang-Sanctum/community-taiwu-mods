@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <UsePublicizer>true</UsePublicizer>
+    <PublicizerRuntimeStrategies>Unsafe</PublicizerRuntimeStrategies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Krafs.Publicizer"
+      ExcludeAssets="runtime"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Frontend"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Taiwu.ModKit.References.Shared"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Publicize
+      Include="Assembly-CSharp:Game.Components.Character.FeatureScroll.infinityScroll"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+    <Publicize
+      Include="Assembly-CSharp:Game.Components.Character.FeatureScroll._showFeatureList"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+    />
+  </ItemGroup>
+</Project>

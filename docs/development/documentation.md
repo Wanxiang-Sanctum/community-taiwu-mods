@@ -24,7 +24,7 @@
 - `tools/README.md` 和 `templates/README.md` 说明工具实现入口、模板变量和渲染规则。
 - 具体 Mod 的 `README.md` 面向外部技术玩家，说明玩法、运行边界和配置入口。
 - 具体 Mod 的 `DEVELOPMENT.md` 面向源码维护者，说明源码模块、组包内容、构建命令和内部设计入口。
-- 共享项目和源码子目录的 README 说明各自的模块边界、API、部署建议和项目内约定。
+- 共享项目和源码子目录的 README 说明各自的模块边界、API、运行时依赖和项目内约定。
 
 ## 放置规则
 
@@ -33,7 +33,7 @@
 使用的开发维护文档、机制参考和仓库经验；开发手册、机制参考和具体设计文档需要项目发现时，链接目录级 README。
 
 索引行只保留选择信息和稳定入口。实际 Mod 的玩家说明留在对应 `mods/<ModName>/README.md`；源码迭代说明留在对应
-`mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README；共享库 API、运行时依赖和部署建议留在
+`mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README；共享库 API、运行时依赖和项目特殊运行边界留在
 对应 `shared/<ProjectName>/README.md`。
 
 同一个命令或概念需要面向多个读者出现时，只在最近的拥有者文档解释语义；其它入口保留最短可执行路径、必要前置条件和链接。

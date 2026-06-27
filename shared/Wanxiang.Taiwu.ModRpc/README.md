@@ -3,8 +3,8 @@
 太吾 Mod 内部前后端 JSON RPC 封装。
 
 本项目同时产出前端 `netstandard2.1` 和后端 `net8.0` 目标框架；程序集名和命名空间保持为
-`Wanxiang.Taiwu.ModRpc`。实际 Mod 包会把本 DLL 合并进入口 DLL，因此一个入口 DLL 内的
-`Wanxiang.Taiwu.ModRpc` 副本只服务于一个 Mod 的前后端通信，不提供跨 Mod 路由。
+`Wanxiang.Taiwu.ModRpc`。一个入口 DLL 内的 `Wanxiang.Taiwu.ModRpc` 副本只服务于一个 Mod 的前后端通信，不提供跨
+Mod 路由。
 
 调用方只使用 `RpcPeer` 和 `ModRpcException`。底层 `CallModMethod`、`ModDisplayEvent`、`SerializableModData`、
 响应 method 和内部 envelope 都是实现细节。
@@ -17,7 +17,7 @@
 RpcPeer.Bind("My.Mod.Id");
 ```
 
-`Bind(...)` 可用同一个 Mod ID 重复调用；如果同一个合并副本试图绑定到不同 Mod ID，会失败。绑定之后，
+`Bind(...)` 建立当前入口 DLL 的本地 Mod ID；使用同一个 Mod ID 重复调用是幂等的，冲突绑定会失败。绑定之后，
 `RpcPeer` 在前端和后端提供同一组概念入口；这些入口只面向本 Mod 对端，不接收目标 Mod ID：
 
 - `Notify(methodName, payloadJson)`：向本 Mod 对端发送单向通知，不等待返回。

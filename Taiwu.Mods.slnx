@@ -4,6 +4,9 @@
       Path="mods/Wanxiang.Fabujiashen/src/Backend/Wanxiang.Fabujiashen.Backend.csproj"
     />
     <Project
+      Path="mods/Wanxiang.Fabujiashen/src/Frontend/Wanxiang.Fabujiashen.Frontend.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project
@@ -47,6 +50,9 @@
     />
     <Project
       Path="shared/Wanxiang.Taiwu.InstantNotifications/Wanxiang.Taiwu.InstantNotifications.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.PlayerVisibleFeatures/Wanxiang.Taiwu.PlayerVisibleFeatures.csproj"
     />
   </Folder>
   <Folder Name="/tools/">

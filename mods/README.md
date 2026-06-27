@@ -17,7 +17,7 @@ Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 | 目录 | 角色 | 玩家说明 | 维护入口 |
 | --- | --- | --- | --- |
-| `Wanxiang.Fabujiashen/` | 运行时赋予太吾“法不加身”规则，免疫内伤、心神、相关战斗状态，战斗外拦截新增内伤和毒素，并跳过战斗中涉及太吾的功法特殊效果。 | `Wanxiang.Fabujiashen/README.md` | `Wanxiang.Fabujiashen/DEVELOPMENT.md` |
+| `Wanxiang.Fabujiashen/` | 运行时赋予太吾“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，并跳过战斗中涉及太吾的功法触发效果；普通外伤、功法和真气基础数值流程保留。 | `Wanxiang.Fabujiashen/README.md` | `Wanxiang.Fabujiashen/DEVELOPMENT.md` |
 | `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` | `Wanxiang.Prelude/DEVELOPMENT.md` |
 | `Wanxiang.Xiangshu/` | 太吾绘卷本机 Agent 对话 Mod。 | `Wanxiang.Xiangshu/README.md` | `Wanxiang.Xiangshu/DEVELOPMENT.md` |
 
@@ -237,5 +237,6 @@ Krafs.Publicizer 的实现有关：它从公开化输出生成 `IgnoresAccessChe
 声明合并依赖时，入口项目会在编译时启用 `AllowUnsafeBlocks`，用于承接被合并依赖中的 Publicizer
 `Unsafe` 运行时访问策略。
 
-前后端共同引用的内部共享项目如果要随入口一起部署，由前端和后端入口项目分别声明需要合并或复制的
-DLL。这样前后端各自生成自己的最终入口 DLL。
+内部共享项目如果要随入口一起部署，由引用它的前端或后端入口项目声明为 `TaiwuModMergeDependency`。
+前后端共同引用同一个 shared 项目时，两侧入口分别合并各自目标框架的输出，生成各自的最终入口 DLL。
+`TaiwuModCopyDependency` 只用于非 shared 的独立运行时依赖。

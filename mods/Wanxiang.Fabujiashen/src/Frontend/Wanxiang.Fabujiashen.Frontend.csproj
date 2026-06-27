@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.PlayerVisibleFeatures/Wanxiang.Taiwu.PlayerVisibleFeatures.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Frontend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>
