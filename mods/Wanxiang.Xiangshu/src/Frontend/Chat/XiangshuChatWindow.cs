@@ -12,8 +12,6 @@ using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
 using CraftToolConfig = Config.CraftTool;
 using InstantNotificationConfig = Config.InstantNotification;
-using StoryScrollConfig = Config.StoryScroll;
-
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 [SuppressMessage(
@@ -28,13 +26,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 {
     internal const string RootGameObjectName = "Wanxiang.Xiangshu.ChatWindow";
 
-    private const string GameLineScrollTextureDirectory = "GameLineScroll/";
     private static string HeaderIconSprite => CraftToolConfig.DefValue.Medicine0.Icon;
-    private static string HeaderPortraitTexturePath =>
-        TextureInfo.TexturesBasePath
-        + GameLineScrollTextureDirectory
-        + StoryScrollConfig.DefValue.MonvBegin.StoryImage;
-    private static string HeaderPortraitFrameSprite => StoryScrollConfig.DefValue.MonvBegin.StoryCharm;
+    private static string HeaderIconBackgroundSprite => ItemView.GetGradeBack(CraftToolConfig.DefValue.Medicine0.Grade);
     private const string AssistantBubbleSprite = AiActionAreaNormal.bubbleBgInProcess;
     private const string UserBubbleSprite = AiActionAreaNormal.bubbleBgNotFinish;
     private const float PreferredPanelWidth = 860f;
@@ -44,12 +37,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MinimumPanelScreenMargin = 12f;
     private const int PanelContentInset = 16;
     private const float PanelSectionSpacing = 12f;
-    private const float HeaderPortraitSize = 64f;
+    private const float HeaderIconFrameSize = 64f;
     private const int HeaderLeftPadding = 14;
     private const int HeaderRightPadding = 8;
     private const int HeaderVerticalPadding = 12;
-    private const float HeaderHeight = HeaderPortraitSize + (HeaderVerticalPadding * 2f);
-    private const float HeaderIconSize = 26f;
+    private const float HeaderHeight = HeaderIconFrameSize + (HeaderVerticalPadding * 2f);
+    private const float HeaderIconInset = 7f;
     private const float HeaderResetButtonWidth = 58f;
     private const float HeaderResetButtonHeight = 38f;
     private const float HeaderCloseButtonSize = 34f;
@@ -864,30 +857,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             HeaderControlFontSize);
         reset.onClick.AddListener(ResetChatSession);
 
-        GameObject portraitFrame = CreateChild("XiangshuPortraitFrame", header.transform);
-        CImage portraitFrameImage = AddSpriteImage(portraitFrame, new Color(0.42f, 0.25f, 0.13f, 0.82f), HeaderPortraitFrameSprite);
-        portraitFrameImage.raycastTarget = false;
-        portraitFrameImage.preserveAspect = true;
-        _ = SetFixedLayoutSize(portraitFrame, HeaderPortraitSize, HeaderPortraitSize);
+        GameObject iconFrame = CreateChild("XiangshuIconFrame", header.transform);
+        CImage iconBackground = AddSpriteImage(iconFrame, Color.white, HeaderIconBackgroundSprite);
+        iconBackground.raycastTarget = false;
+        iconBackground.preserveAspect = true;
+        _ = SetFixedLayoutSize(iconFrame, HeaderIconFrameSize, HeaderIconFrameSize);
 
-        GameObject portraitObject = CreateChild("XiangshuPortrait", portraitFrame.transform);
-        RectTransform portraitRect = portraitObject.GetComponent<RectTransform>();
-        StretchToParent(portraitRect);
-        portraitRect.offsetMin = new Vector2(5f, 5f);
-        portraitRect.offsetMax = new Vector2(-5f, -5f);
-        CRawImage portrait = AddTextureImage(portraitObject, Color.white, HeaderPortraitTexturePath);
-        portrait.raycastTarget = false;
-
-        GameObject iconObject = CreateChild("XiangshuIcon", portraitFrame.transform);
+        GameObject iconObject = CreateChild("XiangshuIcon", iconFrame.transform);
         RectTransform iconRect = iconObject.GetComponent<RectTransform>();
-        iconRect.anchorMin = new Vector2(1f, 0f);
-        iconRect.anchorMax = new Vector2(1f, 0f);
-        iconRect.pivot = new Vector2(1f, 0f);
-        iconRect.anchoredPosition = new Vector2(2f, -2f);
-        CImage icon = AddSpriteImage(iconObject, new Color(0.92f, 0.61f, 0.24f, 1f), HeaderIconSprite);
+        StretchToParent(iconRect);
+        iconRect.offsetMin = new Vector2(HeaderIconInset, HeaderIconInset);
+        iconRect.offsetMax = new Vector2(-HeaderIconInset, -HeaderIconInset);
+        CImage icon = AddSpriteImage(iconObject, Color.white, HeaderIconSprite);
         icon.raycastTarget = false;
         icon.preserveAspect = true;
-        _ = SetFixedLayoutSize(iconObject, HeaderIconSize, HeaderIconSize);
 
         TextMeshProUGUI title = CreateText(
             "Title",
@@ -1870,46 +1853,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         image.SetEnabled(image.sprite != null);
-    }
-
-    private static CRawImage AddTextureImage(
-        GameObject target,
-        Color color,
-        string texturePath)
-    {
-        CRawImage image = target.AddComponent<CRawImage>();
-        image.color = color;
-        image.enabled = false;
-
-        ResLoader.Load<Texture2D>(
-            texturePath,
-            texture =>
-            {
-                if (image == null)
-                {
-                    return;
-                }
-
-                image.texture = texture;
-                image.enabled = true;
-            },
-            path =>
-            {
-                if (image != null)
-                {
-                    image.texture = null;
-                    image.enabled = false;
-                }
-
-                Log.Warning(
-                    "chat window texture failed to load",
-                    new
-                    {
-                        path,
-                    });
-            });
-
-        return image;
     }
 
     private static void StretchToParent(RectTransform rectTransform)
