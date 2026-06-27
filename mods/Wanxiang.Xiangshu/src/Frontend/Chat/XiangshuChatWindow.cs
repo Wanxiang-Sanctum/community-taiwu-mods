@@ -38,16 +38,22 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float PreferredPanelWidth = 860f;
     private const float PreferredPanelHeight = 820f;
     private const float MinimumPanelWidth = 640f;
-    private const float MinimumPanelHeight = 580f;
     private const float PanelScreenMargin = 36f;
-    private const float HeaderHeight = 88f;
+    private const float MinimumPanelScreenMargin = 12f;
+    private const int PanelContentInset = 16;
+    private const float PanelSectionSpacing = 12f;
     private const float HeaderPortraitSize = 64f;
+    private const int HeaderLeftPadding = 14;
+    private const int HeaderRightPadding = 8;
+    private const int HeaderVerticalPadding = 12;
+    private const float HeaderHeight = HeaderPortraitSize + (HeaderVerticalPadding * 2f);
     private const float HeaderIconSize = 26f;
     private const float HeaderResetButtonWidth = 58f;
     private const float HeaderResetButtonHeight = 38f;
     private const float HeaderCloseButtonSize = 34f;
     private const float HeaderReplyIndicatorWidth = 130f;
     private const float HeaderReplyIndicatorHeight = 36f;
+    private const float HeaderItemSpacing = 12f;
     private const float ScrollbarReservedWidth = 30f;
     private const float ScrollbarRailWidth = 13f;
     private const float ScrollbarHandleWidth = 6f;
@@ -60,11 +66,25 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float MinimumMessageBubbleWidth = 300f;
     private const float PreferredMessageBubbleWidth = 660f;
     private const float MaximumMessageBubbleWidth = 680f;
+    private const float MinimumMessageAreaHeight = 360f;
+    private const int MessageContentVerticalPadding = 10;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
-    private const float InputAreaHeight = 108f;
-    private const float InputFieldHeight = 100f;
+    private const float InputVisibleLineCount = 3.5f;
+    private const float InputLinePitch = 24.5f;
+    private const float InputViewportHorizontalPadding = 12f;
+    private const float InputViewportVerticalPadding = 7f;
+    private const int InputAreaVerticalPadding = 4;
+    private const float InputAreaSpacing = 10f;
+    private const float InputFieldHeight =
+        (InputLinePitch * InputVisibleLineCount) + (InputViewportVerticalPadding * 2f);
+    private const float InputAreaHeight = InputFieldHeight + (InputAreaVerticalPadding * 2f);
     private const float SendButtonWidth = 74f;
-    private const float SendButtonHeight = 100f;
+    private const float MinimumPanelHeight =
+        HeaderHeight
+        + MinimumMessageAreaHeight
+        + InputAreaHeight
+        + (PanelSectionSpacing * 2f)
+        + (PanelContentInset * 2f);
     private const float FallbackCanvasScaleFactor = 1f;
     private const float DefaultReferencePixelsPerUnit = 100f;
     private const float HeaderTitleFontSize = 26f;
@@ -801,15 +821,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         GameObject column = CreateChild("Column", panel.transform);
         RectTransform columnRect = column.GetComponent<RectTransform>();
         StretchToParent(columnRect);
-        columnRect.offsetMin = new Vector2(16f, 16f);
-        columnRect.offsetMax = new Vector2(-16f, -16f);
+        columnRect.offsetMin = new Vector2(PanelContentInset, PanelContentInset);
+        columnRect.offsetMax = new Vector2(-PanelContentInset, -PanelContentInset);
 
         VerticalLayoutGroup panelLayout = column.AddComponent<VerticalLayoutGroup>();
         panelLayout.childControlHeight = true;
         panelLayout.childControlWidth = true;
         panelLayout.childForceExpandHeight = false;
         panelLayout.childForceExpandWidth = true;
-        panelLayout.spacing = 12f;
+        panelLayout.spacing = PanelSectionSpacing;
 
         BuildHeader(column.transform);
         BuildMessageArea(column.transform);
@@ -820,10 +840,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         GameObject header = CreateChild("Header", parent);
         _ = AddSolidImage(header, Color.clear);
-        LayoutElement headerLayoutElement = header.AddComponent<LayoutElement>();
-        headerLayoutElement.minHeight = HeaderHeight;
-        headerLayoutElement.preferredHeight = HeaderHeight;
-        headerLayoutElement.flexibleHeight = 0f;
+        _ = SetFixedLayoutHeight(header, HeaderHeight);
 
         HorizontalLayoutGroup headerLayout = header.AddComponent<HorizontalLayoutGroup>();
         headerLayout.childAlignment = TextAnchor.MiddleLeft;
@@ -831,10 +848,14 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         headerLayout.childControlWidth = true;
         headerLayout.childForceExpandHeight = false;
         headerLayout.childForceExpandWidth = false;
-        headerLayout.padding = new RectOffset(14, 8, 8, 8);
-        headerLayout.spacing = 12f;
+        headerLayout.padding = new RectOffset(
+            HeaderLeftPadding,
+            HeaderRightPadding,
+            HeaderVerticalPadding,
+            HeaderVerticalPadding);
+        headerLayout.spacing = HeaderItemSpacing;
 
-        Button reset = CreateTransparentTextButton(
+        Button reset = CreateHeaderTextButton(
             "ResetButton",
             header.transform,
             "重置",
@@ -922,9 +943,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildMessageArea(Transform parent)
     {
         GameObject scrollObject = CreateChild("Messages", parent);
-        LayoutElement scrollLayout = scrollObject.AddComponent<LayoutElement>();
-        scrollLayout.flexibleHeight = 1f;
-        scrollLayout.minHeight = 360f;
+        _ = SetFlexibleLayoutHeight(scrollObject, MinimumMessageAreaHeight);
 
         _ = AddSolidImage(scrollObject, MessageAreaColor);
         _scrollRect = scrollObject.AddComponent<ScrollRect>();
@@ -954,7 +973,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         contentLayout.childForceExpandHeight = false;
         contentLayout.childForceExpandWidth = true;
         contentLayout.spacing = 0f;
-        contentLayout.padding = new RectOffset(0, 0, 10, 10);
+        contentLayout.padding = new RectOffset(
+            0,
+            0,
+            MessageContentVerticalPadding,
+            MessageContentVerticalPadding);
         ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -967,10 +990,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildInputArea(Transform parent)
     {
         GameObject inputArea = CreateChild("InputArea", parent);
-        LayoutElement inputAreaLayoutElement = inputArea.AddComponent<LayoutElement>();
-        inputAreaLayoutElement.minHeight = InputAreaHeight;
-        inputAreaLayoutElement.preferredHeight = InputAreaHeight;
-        inputAreaLayoutElement.flexibleHeight = 0f;
+        _ = SetFixedLayoutHeight(inputArea, InputAreaHeight);
 
         HorizontalLayoutGroup inputAreaLayout = inputArea.AddComponent<HorizontalLayoutGroup>();
         inputAreaLayout.childAlignment = TextAnchor.MiddleCenter;
@@ -978,8 +998,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         inputAreaLayout.childControlWidth = true;
         inputAreaLayout.childForceExpandHeight = false;
         inputAreaLayout.childForceExpandWidth = false;
-        inputAreaLayout.padding = new RectOffset(0, 0, 4, 4);
-        inputAreaLayout.spacing = 10f;
+        inputAreaLayout.padding = new RectOffset(
+            0,
+            0,
+            InputAreaVerticalPadding,
+            InputAreaVerticalPadding);
+        inputAreaLayout.spacing = InputAreaSpacing;
 
         GameObject inputObject = CreateInactiveChild("InputField", inputArea.transform);
         CImage inputImage = AddSolidImage(inputObject, InputColor);
@@ -987,11 +1011,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Outline inputBorder = inputObject.AddComponent<Outline>();
         inputBorder.effectColor = InputBorderColor;
         inputBorder.effectDistance = new Vector2(2f, -2f);
-        LayoutElement inputLayout = inputObject.AddComponent<LayoutElement>();
+        LayoutElement inputLayout = SetFixedLayoutHeight(inputObject, InputFieldHeight);
         inputLayout.flexibleWidth = 1f;
-        inputLayout.minHeight = InputFieldHeight;
-        inputLayout.preferredHeight = InputFieldHeight;
-        inputLayout.flexibleHeight = 0f;
 
         _inputField = inputObject.AddComponent<DisableHotkeyInputField>();
         _inputField.transition = Selectable.Transition.None;
@@ -1008,8 +1029,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         RectTransform textViewportRect = textViewport.GetComponent<RectTransform>();
         textViewportRect.anchorMin = Vector2.zero;
         textViewportRect.anchorMax = Vector2.one;
-        textViewportRect.offsetMin = new Vector2(12f, 7f);
-        textViewportRect.offsetMax = new Vector2(-12f, -7f);
+        textViewportRect.offsetMin = new Vector2(
+            InputViewportHorizontalPadding,
+            InputViewportVerticalPadding);
+        textViewportRect.offsetMax = new Vector2(
+            -InputViewportHorizontalPadding,
+            -InputViewportVerticalPadding);
         _ = textViewport.AddComponent<RectMask2D>();
 
         TextMeshProUGUI inputText = CreateText(
@@ -1029,7 +1054,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         UpdateInputFieldStateVisual();
         inputObject.SetActive(true);
 
-        _sendButton = CreateButton("SendButton", inputArea.transform, "传念", SendButtonWidth, SendButtonHeight);
+        _sendButton = CreateButton("SendButton", inputArea.transform, "传念", SendButtonWidth, InputFieldHeight);
         _sendButton.onClick.AddListener(ActivateSendButton);
         _sendButtonText = _sendButton.GetComponentInChildren<TextMeshProUGUI>();
         _sendButtonImage = _sendButton.GetComponent<CImage>();
@@ -1265,7 +1290,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return PanelScreenMargin;
         }
 
-        return Mathf.Min(PanelScreenMargin, Mathf.Max(12f, availableSize * 0.025f));
+        return Mathf.Min(PanelScreenMargin, Mathf.Max(MinimumPanelScreenMargin, availableSize * 0.025f));
     }
 
     private static float ClampPanelExtent(
@@ -1521,7 +1546,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return button;
     }
 
-    private static Button CreateTransparentTextButton(
+    private static Button CreateHeaderTextButton(
         string name,
         Transform parent,
         string label,
@@ -1576,7 +1601,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         LoadButtonStateSprite(
             button,
             highlightedSpriteName,
-            ApplyCloseButtonHighlightedSprite);
+            ApplyHighlightedSprite);
         LoadButtonStateSprite(
             button,
             disabledSpriteName,
@@ -1605,7 +1630,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             });
     }
 
-    private static void ApplyCloseButtonHighlightedSprite(ref SpriteState state, Sprite sprite)
+    private static void ApplyHighlightedSprite(ref SpriteState state, Sprite sprite)
     {
         state.highlightedSprite = sprite;
         state.selectedSprite = sprite;
@@ -1718,8 +1743,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         RectTransform rectTransform = target.GetComponent<RectTransform>();
         rectTransform.sizeDelta = new Vector2(width, height);
 
-        LayoutElement layout = target.GetComponent<LayoutElement>()
-            ?? target.AddComponent<LayoutElement>();
+        LayoutElement layout = GetOrAddLayoutElement(target);
         layout.minWidth = width;
         layout.preferredWidth = width;
         layout.flexibleWidth = 0f;
@@ -1727,6 +1751,34 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         layout.preferredHeight = height;
         layout.flexibleHeight = 0f;
         return layout;
+    }
+
+    private static LayoutElement SetFixedLayoutHeight(
+        GameObject target,
+        float height)
+    {
+        LayoutElement layout = GetOrAddLayoutElement(target);
+        layout.minHeight = height;
+        layout.preferredHeight = height;
+        layout.flexibleHeight = 0f;
+        return layout;
+    }
+
+    private static LayoutElement SetFlexibleLayoutHeight(
+        GameObject target,
+        float minimumHeight)
+    {
+        LayoutElement layout = GetOrAddLayoutElement(target);
+        layout.minHeight = minimumHeight;
+        layout.preferredHeight = minimumHeight;
+        layout.flexibleHeight = 1f;
+        return layout;
+    }
+
+    private static LayoutElement GetOrAddLayoutElement(GameObject target)
+    {
+        return target.GetComponent<LayoutElement>()
+            ?? target.AddComponent<LayoutElement>();
     }
 
     private static GameObject CreateInactiveChild(
