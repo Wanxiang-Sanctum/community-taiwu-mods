@@ -40,7 +40,6 @@ return {
   DetailImageList = {
     "DetailImage1.png",
     "DetailImage2.png",
-    "DetailImage3.png",
   },
   TagList = {
     "Extensions",
