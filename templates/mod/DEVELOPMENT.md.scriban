@@ -24,8 +24,9 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 最终包内容由 `Taiwu.Mod.Pack.proj` 声明。新增静态文件、目录、额外项目或发布目录时，先按上一级
 [mods/README.md](../README.md) 选择组包 item，再更新组包入口或对应项目文件。
 
-插件项目的本地构建设置和随包部署的依赖写在对应项目的 `Taiwu.Mod.props`。`pack-mod` 读取
-`TaiwuModMergeDependency` 和 `TaiwuModCopyDependency` 并组装可部署目录；普通 `dotnet build` 保持项目常规输出。
+插件项目的本地构建设置写在对应项目的 `Taiwu.Mod.props`。引用的 `shared/` 项目会由 `pack-mod`
+自动合并；非 shared 依赖需要合并或复制时，再通过 `TaiwuModMergeDependency` 和 `TaiwuModCopyDependency`
+声明。普通 `dotnet build` 保持项目常规输出。
 
 ## 项目结构
 
@@ -40,4 +41,4 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name {{ mod.name }}
 
 - 公开配置或面向玩家的说明变化时，同步更新 [README.md](README.md)。
 - 包内容变化时，同步更新 `Taiwu.Mod.Pack.proj`、项目文件或项目旁 `Taiwu.Mod.props` 中拥有该声明的位置。
-- 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
+- 非 shared 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。

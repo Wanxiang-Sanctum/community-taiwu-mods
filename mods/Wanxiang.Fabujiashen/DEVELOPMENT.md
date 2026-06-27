@@ -22,7 +22,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Fabujiashe
 ## 实现边界
 
 - `src/Frontend/FrontendPlugin.cs`：前端插件入口，注册只在太吾人物特性列表显示的“法不加身”虚拟特性。
-- `src/Frontend/Taiwu.Mod.props`：声明前端侧，并把 `Wanxiang.Taiwu.PlayerVisibleFeatures` 合并进入口 DLL。
+- `src/Frontend/Taiwu.Mod.props`：声明前端侧；`Wanxiang.Taiwu.PlayerVisibleFeatures` 由前端项目引用，并在组包时自动合并进入口 DLL。
 - `src/Backend/BackendPlugin.cs`：插件入口，只安装和卸载 Harmony patch。
 - `src/Backend/FabujiashenRules.cs`：运行时规则模型，集中维护太吾身份、战斗角色塑形、公共入口允许/拒绝规则和真实人物伤毒兜底规则。
 - `src/Backend/FabujiashenPatches.cs`：Harmony 安装、卸载和 patch 接入点。patch 类只负责绑定游戏入口，并把规则判断交给 `FabujiashenRules`。
