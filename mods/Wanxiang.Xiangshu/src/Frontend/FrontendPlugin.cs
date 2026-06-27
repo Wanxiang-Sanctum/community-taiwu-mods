@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using FrameWork;
 using TaiwuModdingLib.Core.Plugin;
-using SharedInventoryGrafts = Wanxiang.Taiwu.ItemGrafts.Frontend.InventoryGrafts;
+using SharedItemGraftActions = Wanxiang.Taiwu.ItemGrafts.Frontend.ItemGraftActions;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Frontend.Agent;
 using Wanxiang.Xiangshu.Frontend.Agent.Cli;
@@ -41,6 +41,8 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     internal AgentSettings? CurrentAgentSettings { get; private set; }
 
     internal bool IsChatWindowVisible => _currentChatSession?.IsWindowVisible == true;
+
+    internal bool IsChatInputSelected => _currentChatSession?.IsInputSelected == true;
 
     public override void Initialize()
     {
@@ -86,7 +88,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _graftHostSync?.Dispose();
         _graftHostSync = null;
         XiangshuGraftState.Reset();
-        _ = SharedInventoryGrafts.Uninstall();
+        _ = SharedItemGraftActions.Uninstall();
         _hotkeyDriver?.Dispose();
         _hotkeyDriver = null;
         _mcpSidecar?.Dispose();
@@ -154,7 +156,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     private void InstallItemGraft()
     {
-        SharedInventoryGrafts.Install(this);
+        SharedItemGraftActions.Install(this);
         XiangshuGraftState.Configure(OpenChatWindow);
         _graftHostSync?.Dispose();
         _graftHostSync = GraftHostSync.Create(OnHostLeftTaiwuInventory);

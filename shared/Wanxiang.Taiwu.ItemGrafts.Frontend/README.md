@@ -1,13 +1,13 @@
 # Wanxiang.Taiwu.ItemGrafts.Frontend
 
-太吾绘卷前端行囊物品嫁接实现项目。
+太吾绘卷前端物品嫁接实现项目。
 
-“嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主。本项目在支持的前端行囊和提示入口应用
-`GraftAppearance` 外观覆盖，在太吾行囊菜单中提供嫁接操作，并在携带真实 `ItemKey` 的物品消息入口里替换实例名称。
-游戏后端、存档、交易、丢弃、转移以及其它未被使用方接管的游戏交互，仍然处理原来的真实物品。
+“嫁接”使用一个游戏后端真实存在的非堆叠 `ItemKey` 作为宿主。本项目在当前支持的物品显示入口应用
+`GraftAppearance` 外观覆盖，在太吾行囊入口提供 `Replace` 菜单适配，并在携带真实 `ItemKey` 的物品消息入口里替换
+实例名称。游戏后端、存档、交易、丢弃、转移以及其它未被使用方接管的游戏交互，仍然处理原来的真实物品。
 
 本项目提供两个前端动作：把已有宿主建立为 `GraftSession`，以及创建真实宿主后立即建立 `GraftSession`。动作成功返回时，
-前端会话、共享可视化状态和后端宿主观察都已经建立；使用方保存返回的会话，用于业务状态、生命周期和持久化锚点。
+前端会话、共享可视化状态和后端宿主订阅都已经建立；使用方保存返回的会话，用于业务状态、生命周期和持久化锚点。
 
 ## 边界
 
@@ -15,24 +15,24 @@
 `Taiwu.ModKit.References.Frontend`、`Taiwu.ModKit.Dependencies.UniTask`、`Wanxiang.Taiwu.AsyncInterop` 和
 `Wanxiang.Taiwu.ModRpc`。动作级即时通知通过 `Wanxiang.Taiwu.InstantNotifications` 发布，游戏通知展示适配由该共享项目拥有。
 
-使用 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
-`InventoryGrafts.Install(this)`。该安装绑定本 Mod ID，使前端 `GraftSession` 可以通过
-`Wanxiang.Taiwu.ModRpc` 与同一 Mod 的后端观察服务协作；它也安装共享前端可视化层。后端观察服务由
+使用 `ItemGraftActions.AttachAsync(...)` / `CreateAsync(...)` 前，前端需在插件初始化时调用
+`ItemGraftActions.Install(this)`。该安装绑定本 Mod ID，使前端 `GraftSession` 可以通过
+`Wanxiang.Taiwu.ModRpc` 与同一 Mod 的后端创建与观察服务协作；它也安装共享前端可视化层。后端服务由
 `Wanxiang.Taiwu.ItemGrafts.Backend` 安装和释放。
 
-`InventoryGrafts.Uninstall()` 卸载共享前端可视化层并清空内部显示状态；它不释放已经返回给使用方的会话。
+`ItemGraftActions.Uninstall()` 卸载共享前端可视化层并清空内部显示状态；它不释放已经返回给使用方的会话。
 每个会话资源仍由对应的 `GraftSession.DisposeAsync()` 释放。
 
-`InventoryGrafts.CreateAsync(...)` 调用游戏的创建行囊物品能力创建真实宿主，再从前端行囊快照定位该宿主。真实物品字段、
-使用方状态和未适配交互表现分别归游戏流程或使用方；本项目负责创建、定位、建立前端嫁接会话，并在支持的前端入口提供
-共享可视化。
+`ItemGraftActions.CreateAsync(...)` 把游戏 owner 和宿主模板发给同一 Mod 的后端，由后端创建真实宿主，并通过游戏集合 API 写入目标 owner 后返回
+新宿主 `ItemKey`。本项目不为使用方选择业务 owner；真实物品字段、使用方状态和未适配交互表现分别归游戏流程或使用方。本项目负责
+发起创建、建立前端嫁接会话，并在支持的前端入口提供共享可视化。
 
 ## 前端模型
 
 `GraftSession` 是一次前端嫁接会话。它持有 `Graft`，把宿主事件交给创建时传入的回调，并管理宿主订阅生命周期。
 
 `Graft` 是已嫁接宿主的前端状态。它绑定一个有效的非堆叠真实 `ItemKey`，并携带稳定的 `GraftHostId`、外观、操作和菜单策略。
-会话通过 `InventoryGrafts.AttachAsync(...)` / `CreateAsync(...)` 产生；使用方从返回的 `session.Graft` 读取已校验状态。
+会话通过 `ItemGraftActions.AttachAsync(...)` / `CreateAsync(...)` 产生；使用方从返回的 `session.Graft` 读取已校验状态。
 
 `GraftHostId` 是宿主实例身份，由物品类型、模板 ID 和物品实例 ID 组成，不包含 `ModificationState`。`Graft.HostKey`
 是当前可传给游戏 API 的完整 key；宿主精炼、淬毒等数据变化可能让完整 key 改变，会话会在收到宿主事件时更新
@@ -43,17 +43,18 @@
 `VisualGrade` 为 `null` 时不提供视觉品级覆盖。`GraftOperation` 描述前端可展示的自定义操作；启用操作执行时接收宿主
 `ItemKey`，禁用操作只提供标签和原因文案，不表达宿主固有能力或真实数值。
 
-`GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
-`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只在前端动作和会话生命周期里使用这些契约；宿主身份、事件种类和
-跨端协议归 Contracts 项目说明。
+`GraftHostOwnerKey`、`GraftHostTemplate`、`GraftHostId`、`GraftAppearance` 和 `GraftHostEventArgs` 来自
+`Wanxiang.Taiwu.ItemGrafts.Contracts`。本项目只在前端动作和会话生命周期里使用这些契约；owner 传输、宿主身份、
+事件种类和跨端协议归 Contracts 项目说明。
 
 ## 可视化与菜单
 
-共享前端可视化层维护一份内部显示状态，只用于判断哪些宿主物品应应用嫁接外观。使用方为了业务、存档或恢复流程维护的
-`GraftHostId` 到 `GraftSession` 索引归使用方所有，不作为该可视化层的依赖。
+共享前端可视化层维护一份内部显示状态，只用于判断哪些宿主物品应应用嫁接外观。物品 owner 判定、业务状态和存档恢复
+归使用方自己的状态管理；使用方维护的 `GraftHostId` 到 `GraftSession` 索引不作为该可视化层的依赖。
 
 该可视化层在本项目支持的物品显示入口应用 `GraftAppearance`。行囊物品组件、常规物品提示和制造工具提示只在对应控件
-存在时应用名称、描述、详情描述、图标和视觉品级覆盖；未提供的字段沿用真实宿主。
+存在时应用名称、描述、详情描述、图标和视觉品级覆盖；未提供的字段沿用真实宿主。这个支持范围只描述前端显示入口，
+不限制 `CreateAsync(...)` 可接收的游戏 owner 类型。
 `VisualGrade` 的职责限定在外观：当前支持入口可用它渲染名称颜色、品级底图和品级图标。品阶文案由宿主品级生成；类型、
 价值、重量、耐久和其它游戏事实始终沿用真实宿主。`VisualGrade` 作为外观值透传给支持入口，具体取值语义以游戏和使用方选择为准。
 携带真实 `ItemKey` 的游戏消息文本只替换实例名称，图标、引号、颜色和其它行内格式沿用游戏原生渲染结果。只携带物品类型和
@@ -66,16 +67,14 @@
 
 ## 动作
 
-`InventoryGrafts.AttachAsync(...)` 嫁接已有宿主。它用于使用方已经从行囊数据中选定宿主的场景，接收宿主 `ItemKey`、
+`ItemGraftActions.AttachAsync(...)` 嫁接已有宿主。它用于使用方已经持有真实宿主 `ItemKey` 的场景，接收宿主 `ItemKey`、
 `GraftDefinition` 和可选的 `AttachmentOptions`，返回 `UniTask<GraftSession>`。
 
-`InventoryGrafts.CreateAsync(...)` 创建已嫁接物。它接收角色 ID、`GraftHostTemplate`、`GraftDefinition` 和可选的
-`CreationOptions`。执行时创建一个数量为 1 的真实宿主，再从行囊快照中定位新宿主并返回 `UniTask<GraftSession>`。
-默认定位规则从创建前后快照的差集中选择同模板 `ItemDisplayData.RealKey`；快照里没有可匹配真实宿主时动作失败。
-需要自行处理同模板宿主歧义时，设置 `CreationOptions.SelectCreatedHost`；该选择器接收创建前、创建后的同子类行囊列表，
-返回结果必须匹配请求创建的宿主模板。
+`ItemGraftActions.CreateAsync(...)` 创建宿主并建立嫁接会话。它接收 `GraftHostOwnerKey`、`GraftHostTemplate`、`GraftDefinition`
+和可选的 `CreationOptions`。执行时请求后端创建一个数量为 1 的真实宿主，把它写入目标 owner 对应的游戏集合，使用后端返回的
+`ItemKey` 建立嫁接会话并返回 `UniTask<GraftSession>`。目标 owner 没有对应游戏集合写入路径时，创建请求失败。
 
-`AttachmentOptions` 承载动作成功通知和宿主事件回调；`CreationOptions` 同时承载动作成功通知、宿主事件回调和创建宿主后的定位规则。
+`AttachmentOptions` 和 `CreationOptions` 承载动作成功通知和宿主事件回调。
 宿主事件回调通过 `OnHostEvent` 传入建会话动作，避免动作返回后再登记回调而漏掉后端推送。
 
 ## 调用方式
@@ -85,7 +84,7 @@
 前端初始化时绑定本 Mod ID，并启用共享可视化层：
 
 ```csharp
-InventoryGrafts.Install(this);
+ItemGraftActions.Install(this);
 ```
 
 定义嫁接内容。示例中，`description` 描写物件异状，`detailDescription` 交代可用能力和离身边界；`visualGrade: 8`
@@ -113,7 +112,7 @@ GraftDefinition definition = new(
 嫁接已有物品时，使用方已经持有一个真实宿主 `ItemKey`：
 
 ```csharp
-GraftSession session = await InventoryGrafts.AttachAsync(
+GraftSession session = await ItemGraftActions.AttachAsync(
     hostKey: existingMedicineBowlKey,
     definition: definition,
     options: new AttachmentOptions
@@ -127,11 +126,13 @@ GraftSession session = await InventoryGrafts.AttachAsync(
 sessionsByHost[session.Graft.HostId] = session;
 ```
 
-创建已嫁接物时，使用方提供宿主模板；创建、定位和宿主订阅由该动作完成：
+创建宿主并立即建立嫁接会话时，使用方提供目标 owner 和宿主模板；创建、写入目标 owner 和宿主订阅由该动作完成：
 
 ```csharp
-GraftSession session = await InventoryGrafts.CreateAsync(
-    characterId: taiwuCharId,
+int taiwuCharId = SingletonObject.getInstance<BasicGameData>().TaiwuCharId;
+
+GraftSession session = await ItemGraftActions.CreateAsync(
+    targetOwner: GraftHostOwnerKey.CharacterInventory(taiwuCharId),
     hostTemplate: new GraftHostTemplate(
         itemType: ItemType.CraftTool,
         templateId: CraftTool.DefKey.Medicine0),
@@ -160,10 +161,10 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 {
     switch (hostEvent)
     {
-        case GraftHostLocationChangedEventArgs locationChanged:
-            _ = locationChanged.FromCharacterId;
-            _ = locationChanged.ToCharacterId;
-            // 使用方在这里处理宿主行囊位置变化。
+        case GraftHostOwnerChangedEventArgs ownerChanged:
+            _ = ownerChanged.FromOwner;
+            _ = ownerChanged.ToOwner;
+            // 使用方在这里处理宿主 owner 变化。
             break;
         case GraftHostDataChangedEventArgs:
             // 使用方在这里重新查询关心的宿主数据。
@@ -187,8 +188,8 @@ static void HandleHostEvent(GraftHostEventArgs hostEvent)
 但不会删除真实宿主物品。若宿主被游戏流程删除，后端会推送 `Removed` 事件，会话自动结束并把 `EndReason`
 设为 `HostRemoved`。
 
-后端还会推送 `LocationChanged` 和 `DataChanged`。`LocationChanged` 表示宿主进入、离开或转移到角色行囊；
-`FromCharacterId` 和 `ToCharacterId` 是变化前后的角色行囊端点，非角色行囊端用 `null` 表示。
+后端还会推送 `OwnerChanged` 和 `DataChanged`。`OwnerChanged` 表示宿主的游戏 owner 已变化；
+`FromOwner` 和 `ToOwner` 是变化前后的 owner，端点无 owner 时用 `null` 表示。
 `DataChanged` 表示宿主真实物品数据已经变化，具体字段由使用方按自己的 UI 需要重新查询。前端可以通过
 `AttachmentOptions.OnHostEvent` 或 `CreationOptions.OnHostEvent` 处理这些事件。
 
@@ -217,7 +218,7 @@ new CreationOptions
 
 使用方拥有持久化状态、存档格式和 `GraftHostId` 到 `GraftSession` 的运行期索引。
 
-需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时先读取真实行囊，确认宿主物品仍存在，
+需要随存档恢复时，使用方自行持久化状态，并用宿主 `GraftHostId` 作为锚点。前端恢复时按自己的状态和游戏数据确认宿主物品仍存在，
 再重新建立 `GraftSession`。如果宿主物品不存在，恢复流程以未建立会话结束；后续策略由使用方负责。
 
 使用方应直接用自己的集合或字典维护关心的 `GraftHostId`。同一个宿主可以被多个前端会话订阅；后端按宿主身份统计会话，

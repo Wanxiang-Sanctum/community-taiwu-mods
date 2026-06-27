@@ -10,7 +10,7 @@ internal static class XiangshuGraftState
     private const string BowlName = "低语的陶土药钵";
     private const string BowlDescription = "陶钵泥胎微冷，药杵轻触，便有低语自钵中泛起；其言自称相枢，似有万相回声寄于其中。";
     private const string BowlDetailDescription =
-        "轻叩钵沿，可问人物、眼前事与已露的征兆；亦可托其查验所见、拨弄近前可及之物。" +
+        "心有所疑，欲有所求，轻叩钵沿，便似有低语循念而来；所问或有回声，所求亦有去处。" +
         "钵若离身，则声息沉寂；复归身侧，方可续言。";
     private const sbyte BowlVisualGrade = 8;
     private const string ChatOperationLabel = "对话";

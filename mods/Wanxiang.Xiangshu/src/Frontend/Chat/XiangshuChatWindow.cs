@@ -1,5 +1,8 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Cysharp.Threading.Tasks;
+using FrameWork.UISystem.UIElements;
+using Game.Views.MouseTips;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,8 +11,8 @@ using Wanxiang.Taiwu.Logging;
 using Wanxiang.Taiwu.InstantNotifications;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 
+using CraftToolConfig = Config.CraftTool;
 using InstantNotificationConfig = Config.InstantNotification;
-
 namespace Wanxiang.Xiangshu.Frontend.Chat;
 
 [SuppressMessage(
@@ -24,82 +27,97 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 {
     internal const string RootGameObjectName = "Wanxiang.Xiangshu.ChatWindow";
 
-    private const string HeaderIconSprite = "map_icon_xiangshu";
-    private const string HeaderPortraitTexturePath =
-        "RemakeResources/Textures/GameLineScroll/npcface_image_2001_0";
-    private const string HeaderPortraitFrameSprite = "gamelinescroll_icon_big_charm_2001";
-    private const string AssistantBubbleSprite = "ui9_back_mousetip_base_npcthink_1";
-    private const string UserBubbleSprite = "ui9_back_mousetip_base_npcthink_2";
-    private const string ScrollbarHandleSprite = "sp_gn_gundong_7";
-    private const float PreferredPanelWidth = 680f;
-    private const float PreferredPanelHeight = 720f;
-    private const float MinimumPanelWidth = 540f;
-    private const float MinimumPanelHeight = 520f;
-    private const float PanelScreenMargin = 32f;
-    private const float HeaderHeight = 78f;
-    private const float HeaderPortraitSize = 56f;
-    private const float HeaderIconSize = 24f;
-    private const float HeaderResetButtonWidth = 58f;
+    private static string HeaderIconSprite => CraftToolConfig.DefValue.Medicine0.Icon;
+    private static string HeaderIconBackgroundSprite => ItemView.GetGradeBack(CraftToolConfig.DefValue.Medicine0.Grade);
+    private const string AssistantBubbleSprite = AiActionAreaNormal.bubbleBgInProcess;
+    private const string UserBubbleSprite = AiActionAreaNormal.bubbleBgNotFinish;
+    private const float PreferredPanelWidth = 860f;
+    private const float PreferredPanelHeight = 820f;
+    private const float MinimumPanelWidth = 640f;
+    private const float PanelScreenMargin = 36f;
+    private const float MinimumPanelScreenMargin = 12f;
+    private const int PanelContentInset = 16;
+    private const float PanelSectionSpacing = 12f;
+    private const float HeaderIconFrameSize = 64f;
+    private const int HeaderLeftPadding = 14;
+    private const int HeaderRightPadding = 8;
+    private const int HeaderVerticalPadding = 12;
+    private const float HeaderHeight = HeaderIconFrameSize + (HeaderVerticalPadding * 2f);
+    private const float HeaderIconInset = 7f;
+    private const float HeaderResetButtonWidth = 64f;
     private const float HeaderResetButtonHeight = 40f;
-    private const float HeaderCloseButtonSize = 40f;
-    private const float HeaderReplyIndicatorWidth = 118f;
-    private const float HeaderReplyIndicatorHeight = 34f;
-    private const float ScrollbarReservedWidth = 28f;
-    private const float ScrollbarRailWidth = 12f;
-    private const float ScrollbarHandleWidth = 5f;
-    private const float ScrollbarRightInset = 9f;
+    private const float HeaderReplyIndicatorWidth = 130f;
+    private const float HeaderReplyIndicatorHeight = 40f;
+    private const float HeaderCloseButtonSize = 56f;
+    private const float HeaderItemSpacing = 12f;
+    private const float ScrollbarReservedWidth = 30f;
+    private const float ScrollbarRailWidth = 13f;
+    private const float ScrollbarHandleWidth = 6f;
+    private const float ScrollbarRightInset = 10f;
     private const float ScrollbarVerticalInset = 12f;
     private const float ScrollbarHandleMarkWidth = 8f;
-    private const float MessageRowEdgePadding = 14f;
-    private const float MessageRowOppositeGutter = 58f;
+    private const float MessageRowEdgePadding = 20f;
+    private const float MessageRowOppositeGutter = 86f;
     private const float MessageBubbleWidthRatio = 0.94f;
-    private const float MinimumMessageBubbleWidth = 260f;
-    private const float PreferredMessageBubbleWidth = 500f;
-    private const float MaximumMessageBubbleWidth = 500f;
+    private const float MinimumMessageBubbleWidth = 280f;
+    private const float PreferredMessageBubbleWidth = 620f;
+    private const float MaximumMessageBubbleWidth = 640f;
+    private const float MinimumMessageAreaHeight = 360f;
+    private const int MessageContentVerticalPadding = 14;
     private const float MinimumDraggedPanelVisibleMargin = 8f;
-    private const float InputAreaHeight = 108f;
-    private const float InputFieldMinimumHeight = 84f;
-    private const float SendButtonWidth = 84f;
-    private const float SendButtonHeight = 84f;
-    private const float FallbackCanvasScaleFactor = 1f;
-    private const float DefaultReferencePixelsPerUnit = 100f;
-    private const float HeaderTitleFontSize = 24f;
-    private const float ReplyIndicatorFontSize = 16f;
-    private const float MessageSpeakerFontSize = 18f;
-    private const float MessageBodyFontSize = 24f;
-    private const float InputTextFontSize = 22f;
+    private const float InputVisibleLineCount = 3.5f;
+    private const float InputLinePitch = 24.5f;
+    private const float InputViewportHorizontalPadding = 12f;
+    private const float InputViewportVerticalPadding = 7f;
+    private const int InputAreaVerticalPadding = 4;
+    private const float InputAreaSpacing = 10f;
+    private const float InputFieldHeight =
+        (InputLinePitch * InputVisibleLineCount) + (InputViewportVerticalPadding * 2f);
+    private const float InputAreaHeight = InputFieldHeight + (InputAreaVerticalPadding * 2f);
+    private const float SendButtonWidth = 80f;
+    private const float SendButtonHeight = 76f;
+    private const float MinimumPanelHeight =
+        HeaderHeight
+        + MinimumMessageAreaHeight
+        + InputAreaHeight
+        + (PanelSectionSpacing * 2f)
+        + (PanelContentInset * 2f);
+    private const float HeaderTitleFontSize = 26f;
+    private const float ReplyIndicatorFontSize = 15f;
+    private const float MessageSpeakerFontSize = 17f;
+    private const float MessageBodyFontSize = 22f;
+    private const float InputTextFontSize = 20f;
     private const float ButtonLabelFontSize = 20f;
+    private const float HeaderControlFontSize = 17f;
+    private const float HeaderControlHoverFrameThickness = 2f;
     private const int CanvasSortingOrder = 32000;
     private const string HostUnavailableButtonLabel = "离身";
     private const string HiddenAssistantMessageNotificationText = "钵中低语复起。";
     private const short HiddenAssistantMessageNotificationTemplateId = InstantNotificationConfig.DefKey.WalkThroughAbyss;
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Xiangshu");
-    private static readonly Color PanelColor = new(0.055f, 0.049f, 0.041f, 0.97f);
-    private static readonly Color PanelEdgeColor = new(0.42f, 0.25f, 0.13f, 0.9f);
-    private static readonly Color HeaderColor = new(0.12f, 0.087f, 0.058f, 0.98f);
-    private static readonly Color MessageAreaColor = new(0.022f, 0.020f, 0.019f, 0.97f);
-    private static readonly Color InputColor = new(0.08f, 0.074f, 0.063f, 0.98f);
-    private static readonly Color FocusedInputColor = new(0.105f, 0.092f, 0.071f, 0.99f);
-    private static readonly Color InputFocusOutlineColor = new(0.82f, 0.59f, 0.28f, 0.72f);
-    private static readonly Color AssistantBubbleColor = new(0.42f, 0.30f, 0.18f, 0.99f);
-    private static readonly Color UserBubbleColor = new(0.10f, 0.38f, 0.42f, 0.99f);
-    private static readonly Color AssistantBubbleOutlineColor = new(0.92f, 0.57f, 0.24f, 0.58f);
-    private static readonly Color UserBubbleOutlineColor = new(0.25f, 0.86f, 0.90f, 0.60f);
+    private static readonly Color PanelColor = new(0.078f, 0.113f, 0.108f, 0.97f);
+    private static readonly Color PanelOuterLineColor = new(0.020f, 0.029f, 0.027f, 0.98f);
+    private static readonly Color MessageAreaColor = new(0.012f, 0.024f, 0.022f, 0.96f);
+    private static readonly Color InputColor = new(0.056f, 0.040f, 0.030f, 0.96f);
+    private static readonly Color DisabledInputColor = new(0.038f, 0.035f, 0.031f, 0.86f);
+    private static readonly Color InputBorderColor = new(0.46f, 0.26f, 0.08f, 0.90f);
+    private static readonly Color InputCaretColor = new(0.95f, 0.72f, 0.34f, 0.96f);
+    private static readonly Color InputSelectionColor = new(0.82f, 0.56f, 0.25f, 0.24f);
+    private static readonly Color AssistantBubbleColor = new(0.18f, 0.15f, 0.09f, 0.86f);
+    private static readonly Color UserBubbleColor = new(0.045f, 0.14f, 0.15f, 0.88f);
+    private static readonly Color AssistantBubbleOutlineColor = new(0.70f, 0.42f, 0.16f, 0.34f);
+    private static readonly Color UserBubbleOutlineColor = new(0.25f, 0.58f, 0.60f, 0.34f);
     private static readonly Color AccentColor = new(0.82f, 0.59f, 0.28f, 1f);
+    private static readonly Color UserSpeakerColor = new(0.72f, 0.88f, 0.90f, 1f);
     private static readonly Color TextColor = new(0.92f, 0.88f, 0.78f, 1f);
-    private static readonly Color MutedTextColor = new(0.67f, 0.62f, 0.52f, 1f);
-    private static readonly Color ButtonColor = new(0.24f, 0.16f, 0.08f, 1f);
-    private static readonly Color InterruptButtonColor = new(0.34f, 0.20f, 0.08f, 1f);
-    private static readonly Color DisabledButtonColor = new(0.13f, 0.105f, 0.08f, 1f);
-    private static readonly Color ReplyIndicatorColor = new(0.125f, 0.079f, 0.039f, 0.86f);
-    private static readonly Color ReplyIndicatorLineColor = new(0.95f, 0.61f, 0.22f, 0.78f);
+    private static readonly Color MutedTextColor = new(0.64f, 0.60f, 0.50f, 1f);
+    private static readonly Color ButtonColor = new(0.20f, 0.105f, 0.035f, 0.98f);
+    private static readonly Color InterruptButtonColor = new(0.30f, 0.125f, 0.035f, 0.98f);
+    private static readonly Color DisabledButtonColor = new(0.075f, 0.064f, 0.052f, 0.88f);
+    private static readonly Color HeaderControlHoverFrameColor = new(0.68f, 0.64f, 0.54f, 0.66f);
     private static readonly Color ScrollbarTrackColor = new(0.018f, 0.015f, 0.012f, 0.46f);
     private static readonly Color ScrollbarHandleColor = new(0.34f, 0.20f, 0.08f, 0.76f);
     private static readonly Color ScrollbarHandleMarkColor = new(0.83f, 0.48f, 0.18f, 0.95f);
-
-    private static TMP_FontAsset? s_gameFontAsset;
-    private static Material? s_gameFontMaterial;
-    private static TMP_SpriteAsset? s_gameSpriteAsset;
 
     private AgentChatSession? _session;
     private RectTransform? _panelRect;
@@ -111,7 +129,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private ConchShipGraphicRaycaster? _rootRaycaster;
     private CanvasGroup? _rootCanvasGroup;
     private CImage? _inputFieldImage;
-    private Outline? _inputFocusOutline;
     private Button? _sendButton;
     private CImage? _sendButtonImage;
     private TextMeshProUGUI? _sendButtonText;
@@ -122,7 +139,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private readonly List<TextMeshProUGUI> _playerSpeakerTexts = [];
     private readonly HashSet<string> _renderedMessageIds = new(StringComparer.Ordinal);
     private bool _uiBuilt;
-    private bool _inputFocused;
     private bool _scrollToBottomScheduled;
     private float _lastMessageBubbleWidth = PreferredMessageBubbleWidth;
     private Vector2 _panelOffset;
@@ -131,6 +147,17 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private bool _panelDragActive;
 
     public bool IsVisible { get; private set; }
+
+    internal bool IsInputSelected
+    {
+        get
+        {
+            DisableHotkeyInputField? inputField = _inputField;
+            return IsVisible
+                && inputField?.gameObject.activeInHierarchy == true
+                && EventSystem.current?.currentSelectedGameObject == inputField.gameObject;
+        }
+    }
 
     public static XiangshuChatWindow Create(ChatParticipantIdentity participants)
     {
@@ -186,7 +213,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         if (!visible)
         {
             _inputField?.DeactivateInputField();
-            SetInputFocused(focused: false);
+            UpdateInputFieldStateVisual();
             return;
         }
 
@@ -287,7 +314,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         }
 
         UpdateSendButtonState();
-        UpdateInputFocusVisual();
         UpdateReplyIndicator();
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -513,11 +539,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         bool hostInTaiwuInventory = XiangshuGraftState.IsHostInTaiwuInventory;
 
         inputField.interactable = !requiresReset;
+        UpdateInputFieldStateVisual();
 
         if (requiresReset)
         {
             inputField.DeactivateInputField();
-            SetInputFocused(focused: false);
             sendButton.interactable = false;
             sendButtonImage.color = DisabledButtonColor;
             sendButtonText.text = "需重置";
@@ -601,7 +627,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             message.SpeakerName,
             bubble.transform,
             MessageSpeakerFontSize,
-            isUser ? new Color(0.72f, 0.88f, 0.9f, 1f) : AccentColor,
+            isUser ? UserSpeakerColor : AccentColor,
             FontStyles.Bold);
         speaker.text = message.SpeakerName;
         speaker.alignment = isUser
@@ -763,7 +789,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         CImage backgroundImage = AddSpriteImage(
             background,
             isUser ? UserBubbleColor : AssistantBubbleColor,
-            isUser ? UserBubbleSprite : AssistantBubbleSprite);
+            isUser ? UserBubbleSprite : AssistantBubbleSprite,
+            Image.Type.Sliced);
         backgroundImage.raycastTarget = false;
 
         Outline outline = background.AddComponent<Outline>();
@@ -785,34 +812,27 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         GameObject panel = CreateChild("Panel", transform);
         _panelRect = panel.GetComponent<RectTransform>();
-        _panelRect.anchorMin = new Vector2(1f, 0.5f);
-        _panelRect.anchorMax = new Vector2(1f, 0.5f);
-        _panelRect.pivot = new Vector2(1f, 0.5f);
+        _panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        _panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        _panelRect.pivot = new Vector2(0.5f, 0.5f);
         ApplyPanelLayout();
         _ = AddSolidImage(panel, PanelColor);
-
-        GameObject edge = CreateChild("Edge", panel.transform);
-        RectTransform edgeRect = edge.GetComponent<RectTransform>();
-        edgeRect.anchorMin = new Vector2(0f, 0f);
-        edgeRect.anchorMax = new Vector2(0f, 1f);
-        edgeRect.pivot = new Vector2(0f, 0.5f);
-        edgeRect.sizeDelta = new Vector2(4f, 0f);
-        edgeRect.anchoredPosition = Vector2.zero;
-        CImage edgeImage = AddSolidImage(edge, PanelEdgeColor);
-        edgeImage.raycastTarget = false;
+        Outline panelOutline = panel.AddComponent<Outline>();
+        panelOutline.effectColor = PanelOuterLineColor;
+        panelOutline.effectDistance = new Vector2(2f, -2f);
 
         GameObject column = CreateChild("Column", panel.transform);
         RectTransform columnRect = column.GetComponent<RectTransform>();
         StretchToParent(columnRect);
-        columnRect.offsetMin = new Vector2(12f, 12f);
-        columnRect.offsetMax = new Vector2(-12f, -12f);
+        columnRect.offsetMin = new Vector2(PanelContentInset, PanelContentInset);
+        columnRect.offsetMax = new Vector2(-PanelContentInset, -PanelContentInset);
 
         VerticalLayoutGroup panelLayout = column.AddComponent<VerticalLayoutGroup>();
         panelLayout.childControlHeight = true;
         panelLayout.childControlWidth = true;
         panelLayout.childForceExpandHeight = false;
         panelLayout.childForceExpandWidth = true;
-        panelLayout.spacing = 10f;
+        panelLayout.spacing = PanelSectionSpacing;
 
         BuildHeader(column.transform);
         BuildMessageArea(column.transform);
@@ -822,11 +842,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildHeader(Transform parent)
     {
         GameObject header = CreateChild("Header", parent);
-        _ = AddSolidImage(header, HeaderColor);
-        LayoutElement headerLayoutElement = header.AddComponent<LayoutElement>();
-        headerLayoutElement.minHeight = HeaderHeight;
-        headerLayoutElement.preferredHeight = HeaderHeight;
-        headerLayoutElement.flexibleHeight = 0f;
+        _ = AddSolidImage(header, Color.clear);
+        _ = SetFixedLayoutHeight(header, HeaderHeight);
 
         HorizontalLayoutGroup headerLayout = header.AddComponent<HorizontalLayoutGroup>();
         headerLayout.childAlignment = TextAnchor.MiddleLeft;
@@ -834,41 +851,36 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         headerLayout.childControlWidth = true;
         headerLayout.childForceExpandHeight = false;
         headerLayout.childForceExpandWidth = false;
-        headerLayout.padding = new RectOffset(14, 8, 8, 8);
-        headerLayout.spacing = 12f;
+        headerLayout.padding = new RectOffset(
+            HeaderLeftPadding,
+            HeaderRightPadding,
+            HeaderVerticalPadding,
+            HeaderVerticalPadding);
+        headerLayout.spacing = HeaderItemSpacing;
 
-        Button reset = CreateButton(
+        Button reset = CreateHeaderTextButton(
             "ResetButton",
             header.transform,
             "重置",
             HeaderResetButtonWidth,
-            HeaderResetButtonHeight);
+            HeaderResetButtonHeight,
+            HeaderControlFontSize);
         reset.onClick.AddListener(ResetChatSession);
 
-        GameObject portraitFrame = CreateChild("XiangshuPortraitFrame", header.transform);
-        CImage portraitFrameImage = AddSpriteImage(portraitFrame, new Color(0.42f, 0.25f, 0.13f, 0.82f), HeaderPortraitFrameSprite);
-        portraitFrameImage.raycastTarget = false;
-        portraitFrameImage.preserveAspect = true;
-        _ = SetFixedLayoutSize(portraitFrame, HeaderPortraitSize, HeaderPortraitSize);
+        GameObject iconFrame = CreateChild("XiangshuIconFrame", header.transform);
+        CImage iconBackground = AddSpriteImage(iconFrame, Color.white, HeaderIconBackgroundSprite);
+        iconBackground.raycastTarget = false;
+        iconBackground.preserveAspect = true;
+        _ = SetFixedLayoutSize(iconFrame, HeaderIconFrameSize, HeaderIconFrameSize);
 
-        GameObject portraitObject = CreateChild("XiangshuPortrait", portraitFrame.transform);
-        RectTransform portraitRect = portraitObject.GetComponent<RectTransform>();
-        StretchToParent(portraitRect);
-        portraitRect.offsetMin = new Vector2(5f, 5f);
-        portraitRect.offsetMax = new Vector2(-5f, -5f);
-        CRawImage portrait = AddTextureImage(portraitObject, Color.white, HeaderPortraitTexturePath);
-        portrait.raycastTarget = false;
-
-        GameObject iconObject = CreateChild("XiangshuIcon", portraitFrame.transform);
+        GameObject iconObject = CreateChild("XiangshuIcon", iconFrame.transform);
         RectTransform iconRect = iconObject.GetComponent<RectTransform>();
-        iconRect.anchorMin = new Vector2(1f, 0f);
-        iconRect.anchorMax = new Vector2(1f, 0f);
-        iconRect.pivot = new Vector2(1f, 0f);
-        iconRect.anchoredPosition = new Vector2(2f, -2f);
-        CImage icon = AddSpriteImage(iconObject, new Color(0.92f, 0.61f, 0.24f, 1f), HeaderIconSprite);
+        StretchToParent(iconRect);
+        iconRect.offsetMin = new Vector2(HeaderIconInset, HeaderIconInset);
+        iconRect.offsetMax = new Vector2(-HeaderIconInset, -HeaderIconInset);
+        CImage icon = AddSpriteImage(iconObject, Color.white, HeaderIconSprite);
         icon.raycastTarget = false;
         icon.preserveAspect = true;
-        _ = SetFixedLayoutSize(iconObject, HeaderIconSize, HeaderIconSize);
 
         TextMeshProUGUI title = CreateText(
             "Title",
@@ -883,12 +895,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         BuildReplyIndicator(header.transform);
 
-        Button close = CreateButton(
+        CButton close = CreateCommonCloseButton(
             "CloseButton",
-            header.transform,
-            "×",
-            HeaderCloseButtonSize,
-            HeaderCloseButtonSize);
+            header.transform);
         close.onClick.AddListener(() => SetVisible(visible: false));
 
         HeaderDragHandle dragHandle = header.AddComponent<HeaderDragHandle>();
@@ -899,28 +908,16 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     {
         GameObject indicator = CreateChild("ReplyIndicator", parent);
         _replyIndicator = indicator;
-        CImage indicatorImage = AddSolidImage(indicator, ReplyIndicatorColor);
-        indicatorImage.raycastTarget = false;
         _ = SetFixedLayoutSize(
             indicator,
             HeaderReplyIndicatorWidth,
             HeaderReplyIndicatorHeight);
 
-        GameObject accentLine = CreateChild("AccentLine", indicator.transform);
-        RectTransform accentLineRect = accentLine.GetComponent<RectTransform>();
-        accentLineRect.anchorMin = new Vector2(0f, 0f);
-        accentLineRect.anchorMax = new Vector2(1f, 0f);
-        accentLineRect.pivot = new Vector2(0.5f, 0f);
-        accentLineRect.anchoredPosition = new Vector2(0f, 2f);
-        accentLineRect.sizeDelta = new Vector2(-18f, 2f);
-        CImage accentLineImage = AddSolidImage(accentLine, ReplyIndicatorLineColor);
-        accentLineImage.raycastTarget = false;
-
         _replyIndicatorText = CreateText(
             "Label",
             indicator.transform,
             ReplyIndicatorFontSize,
-            TextColor,
+            MutedTextColor,
             FontStyles.Bold);
         _replyIndicatorText.text = "窸窣作响";
         _replyIndicatorText.alignment = TextAlignmentOptions.Center;
@@ -934,9 +931,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildMessageArea(Transform parent)
     {
         GameObject scrollObject = CreateChild("Messages", parent);
-        LayoutElement scrollLayout = scrollObject.AddComponent<LayoutElement>();
-        scrollLayout.flexibleHeight = 1f;
-        scrollLayout.minHeight = 300f;
+        _ = SetFlexibleLayoutHeight(scrollObject, MinimumMessageAreaHeight);
 
         _ = AddSolidImage(scrollObject, MessageAreaColor);
         _scrollRect = scrollObject.AddComponent<ScrollRect>();
@@ -966,7 +961,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         contentLayout.childForceExpandHeight = false;
         contentLayout.childForceExpandWidth = true;
         contentLayout.spacing = 0f;
-        contentLayout.padding = new RectOffset(0, 0, 10, 10);
+        contentLayout.padding = new RectOffset(
+            0,
+            0,
+            MessageContentVerticalPadding,
+            MessageContentVerticalPadding);
         ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -979,30 +978,29 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private void BuildInputArea(Transform parent)
     {
         GameObject inputArea = CreateChild("InputArea", parent);
-        CImage inputAreaImage = AddSolidImage(inputArea, new Color(0.045f, 0.039f, 0.032f, 0.88f));
-        inputAreaImage.raycastTarget = false;
-        LayoutElement inputAreaLayoutElement = inputArea.AddComponent<LayoutElement>();
-        inputAreaLayoutElement.preferredHeight = InputAreaHeight;
+        _ = SetFixedLayoutHeight(inputArea, InputAreaHeight);
 
         HorizontalLayoutGroup inputAreaLayout = inputArea.AddComponent<HorizontalLayoutGroup>();
         inputAreaLayout.childAlignment = TextAnchor.MiddleCenter;
         inputAreaLayout.childControlHeight = true;
         inputAreaLayout.childControlWidth = true;
-        inputAreaLayout.childForceExpandHeight = true;
+        inputAreaLayout.childForceExpandHeight = false;
         inputAreaLayout.childForceExpandWidth = false;
-        inputAreaLayout.padding = new RectOffset(12, 12, 12, 12);
-        inputAreaLayout.spacing = 10f;
+        inputAreaLayout.padding = new RectOffset(
+            0,
+            0,
+            InputAreaVerticalPadding,
+            InputAreaVerticalPadding);
+        inputAreaLayout.spacing = InputAreaSpacing;
 
-        GameObject inputObject = CreateChild("InputField", inputArea.transform);
+        GameObject inputObject = CreateInactiveChild("InputField", inputArea.transform);
         CImage inputImage = AddSolidImage(inputObject, InputColor);
         _inputFieldImage = inputImage;
-        _inputFocusOutline = inputObject.AddComponent<Outline>();
-        _inputFocusOutline.effectColor = InputFocusOutlineColor;
-        _inputFocusOutline.effectDistance = new Vector2(2f, -2f);
-        _inputFocusOutline.enabled = false;
-        LayoutElement inputLayout = inputObject.AddComponent<LayoutElement>();
+        Outline inputBorder = inputObject.AddComponent<Outline>();
+        inputBorder.effectColor = InputBorderColor;
+        inputBorder.effectDistance = new Vector2(2f, -2f);
+        LayoutElement inputLayout = SetFixedLayoutHeight(inputObject, InputFieldHeight);
         inputLayout.flexibleWidth = 1f;
-        inputLayout.minHeight = InputFieldMinimumHeight;
 
         _inputField = inputObject.AddComponent<DisableHotkeyInputField>();
         _inputField.transition = Selectable.Transition.None;
@@ -1010,19 +1008,21 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _inputField.characterLimit = 4000;
         _inputField.targetGraphic = inputImage;
         _inputField.customCaretColor = true;
-        _inputField.caretColor = AccentColor;
-        _inputField.caretWidth = 2;
+        _inputField.caretColor = InputCaretColor;
+        _inputField.caretWidth = 3;
         _inputField.caretBlinkRate = 0.8f;
-        _inputField.selectionColor = new Color(0.8f, 0.55f, 0.25f, 0.32f);
-        _inputField.onSelect.AddListener(_ => SetInputFocused(focused: true));
-        _inputField.onDeselect.AddListener(_ => SetInputFocused(focused: false));
+        _inputField.selectionColor = InputSelectionColor;
 
         GameObject textViewport = CreateChild("TextViewport", inputObject.transform);
         RectTransform textViewportRect = textViewport.GetComponent<RectTransform>();
         textViewportRect.anchorMin = Vector2.zero;
         textViewportRect.anchorMax = Vector2.one;
-        textViewportRect.offsetMin = new Vector2(12f, 8f);
-        textViewportRect.offsetMax = new Vector2(-12f, -8f);
+        textViewportRect.offsetMin = new Vector2(
+            InputViewportHorizontalPadding,
+            InputViewportVerticalPadding);
+        textViewportRect.offsetMax = new Vector2(
+            -InputViewportHorizontalPadding,
+            -InputViewportVerticalPadding);
         _ = textViewport.AddComponent<RectMask2D>();
 
         TextMeshProUGUI inputText = CreateText(
@@ -1034,11 +1034,13 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         inputText.text = string.Empty;
         inputText.alignment = TextAlignmentOptions.TopLeft;
         StretchToParent(inputText.rectTransform);
+        inputText.margin = Vector4.zero;
 
         _inputField.textViewport = textViewportRect;
         _inputField.textComponent = inputText;
         _inputField.onValueChanged.AddListener(_ => UpdateSendButtonState());
-        SetInputFocused(focused: false);
+        UpdateInputFieldStateVisual();
+        inputObject.SetActive(true);
 
         _sendButton = CreateButton("SendButton", inputArea.transform, "传念", SendButtonWidth, SendButtonHeight);
         _sendButton.onClick.AddListener(ActivateSendButton);
@@ -1059,7 +1061,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return true;
         }
 
-        CaptureGameTextStyle();
         BuildUi();
         ReplayVisibleMessages();
         _uiBuilt = true;
@@ -1077,12 +1078,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return false;
         }
 
-        RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop)
-            ?? uiManager.GetLayer(UILayer.LayerPopUp);
+        RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop);
 
         if (layer is null)
         {
-            Log.Warning("chat window cannot build because no Taiwu UI layer is available");
+            Log.Warning("chat window cannot build because Taiwu top UI layer is unavailable");
 
             return false;
         }
@@ -1145,17 +1145,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         CanvasScaler scaler,
         RectTransform gameUiLayer)
     {
-        CanvasScaler? gameScaler = gameUiLayer.GetComponentInParent<CanvasScaler>();
-
-        if (gameScaler is not null)
-        {
-            CopyCanvasScalerSettings(gameScaler, scaler);
-            return;
-        }
-
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-        scaler.scaleFactor = FallbackCanvasScaleFactor;
-        scaler.referencePixelsPerUnit = DefaultReferencePixelsPerUnit;
+        CanvasScaler gameScaler = gameUiLayer.GetComponentInParent<CanvasScaler>()
+            ?? throw new InvalidOperationException("Taiwu UI layer is missing its CanvasScaler.");
+        CopyCanvasScalerSettings(gameScaler, scaler);
     }
 
     private static void CopyCanvasScalerSettings(
@@ -1200,9 +1192,8 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             parentSize,
             width,
             height,
-            horizontalMargin,
             verticalMargin);
-        _panelRect.anchoredPosition = new Vector2(-horizontalMargin, 0f) + _panelOffset;
+        _panelRect.anchoredPosition = _panelOffset;
         _panelRect.sizeDelta = new Vector2(width, height);
         ReflowMessageBubbles();
     }
@@ -1277,7 +1268,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return PanelScreenMargin;
         }
 
-        return Mathf.Min(PanelScreenMargin, Mathf.Max(12f, availableSize * 0.025f));
+        return Mathf.Min(PanelScreenMargin, Mathf.Max(MinimumPanelScreenMargin, availableSize * 0.025f));
     }
 
     private static float ClampPanelExtent(
@@ -1307,7 +1298,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Vector2 parentSize,
         float panelWidth,
         float panelHeight,
-        float horizontalMargin,
         float verticalMargin)
     {
         if (parentSize.x <= 0f || parentSize.y <= 0f)
@@ -1315,14 +1305,12 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return offset;
         }
 
-        float horizontalVisibleMargin = Mathf.Min(
-            MinimumDraggedPanelVisibleMargin,
-            horizontalMargin);
+        const float horizontalVisibleMargin = MinimumDraggedPanelVisibleMargin;
         float verticalVisibleMargin = Mathf.Min(
             MinimumDraggedPanelVisibleMargin,
             verticalMargin);
-        float minimumX = panelWidth - parentSize.x + horizontalVisibleMargin + horizontalMargin;
-        float maximumX = horizontalMargin - horizontalVisibleMargin;
+        float minimumX = (-parentSize.x * 0.5f) + horizontalVisibleMargin + (panelWidth * 0.5f);
+        float maximumX = (parentSize.x * 0.5f) - horizontalVisibleMargin - (panelWidth * 0.5f);
         float minimumY = (-parentSize.y * 0.5f) + verticalVisibleMargin + (panelHeight * 0.5f);
         float maximumY = (parentSize.y * 0.5f) - verticalVisibleMargin - (panelHeight * 0.5f);
 
@@ -1354,7 +1342,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         inputField.Select();
         inputField.ActivateInputField();
-        SetInputFocused(focused: true);
         RefocusInputNextFrameAsync(WindowLifetimeToken).Forget(
             static ex => Log.Error(ex, "chat input refocus failed"));
     }
@@ -1381,37 +1368,15 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
 
         inputField.ActivateInputField();
-        SetInputFocused(focused: true);
     }
 
-    private void UpdateInputFocusVisual()
+    private void UpdateInputFieldStateVisual()
     {
-        bool focused = _session?.RequiresReset != true
-            && _inputField?.isFocused == true;
-
-        if (_inputFocused == focused)
-        {
-            return;
-        }
-
-        SetInputFocused(focused);
-    }
-
-    private void SetInputFocused(bool focused)
-    {
-        _inputFocused = focused;
-
         if (_inputFieldImage is { } inputFieldImage)
         {
-            Color inputColor = focused ? FocusedInputColor : InputColor;
             inputFieldImage.color = _session?.RequiresReset == true
-                ? DisabledButtonColor
-                : inputColor;
-        }
-
-        if (_inputFocusOutline is { } inputFocusOutline)
-        {
-            inputFocusOutline.enabled = focused;
+                ? DisabledInputColor
+                : InputColor;
         }
     }
 
@@ -1559,6 +1524,174 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         return button;
     }
 
+    private static Button CreateHeaderTextButton(
+        string name,
+        Transform parent,
+        string label,
+        float width,
+        float height,
+        float fontSize)
+    {
+        GameObject buttonObject = CreateChild(name, parent);
+        CImage hitArea = AddSolidImage(buttonObject, Color.clear);
+        GameObject hoverFrame = BuildHoverFrame(
+            buttonObject,
+            HeaderControlHoverFrameColor,
+            HeaderControlHoverFrameThickness);
+        ButtonHoverFrame buttonHoverFrame = buttonObject.AddComponent<ButtonHoverFrame>();
+        buttonHoverFrame.Initialize(hoverFrame);
+
+        Button button = buttonObject.AddComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = hitArea;
+        _ = SetFixedLayoutSize(buttonObject, width, height);
+
+        TextMeshProUGUI text = CreateText(
+            "Label",
+            buttonObject.transform,
+            fontSize,
+            MutedTextColor,
+            FontStyles.Bold);
+        text.text = label;
+        text.alignment = TextAlignmentOptions.Center;
+        StretchToParent(text.rectTransform);
+        return button;
+    }
+
+    private static CButton CreateCommonCloseButton(
+        string name,
+        Transform parent)
+    {
+        CButton sourceButton = GameUiResources.CommonCloseButton;
+        Image sourceImage = sourceButton.targetGraphic as Image
+            ?? throw new InvalidOperationException("Game common close button is missing an image target graphic.");
+        if (sourceImage.sprite == null)
+        {
+            throw new InvalidOperationException("Game common close button image is missing its normal sprite.");
+        }
+
+        Vector2 buttonSize = FitWithin(
+            GetSourceButtonSize(sourceButton),
+            HeaderCloseButtonSize,
+            HeaderCloseButtonSize);
+        return CreateSpriteSwapButton(
+            name,
+            parent,
+            buttonSize.x,
+            buttonSize.y,
+            sourceButton,
+            sourceImage);
+    }
+
+    private static CButton CreateSpriteSwapButton(
+        string name,
+        Transform parent,
+        float width,
+        float height,
+        CButton sourceButton,
+        Image sourceImage)
+    {
+        GameObject buttonObject = CreateChild(name, parent);
+        CImage image = AddSpriteImage(
+            buttonObject,
+            sourceImage.color,
+            sourceImage.sprite,
+            sourceImage.type);
+        image.preserveAspect = sourceImage.preserveAspect;
+
+        CButton button = buttonObject.AddComponent<CButton>();
+        button.transition = Selectable.Transition.SpriteSwap;
+        button.targetGraphic = image;
+        button.spriteState = sourceButton.spriteState;
+        button.colors = sourceButton.colors;
+        button.animationTriggers = sourceButton.animationTriggers;
+        _ = SetFixedLayoutSize(buttonObject, width, height);
+
+        return button;
+    }
+
+    private static Vector2 GetSourceButtonSize(CButton sourceButton)
+    {
+        RectTransform sourceRect = sourceButton.GetComponent<RectTransform>()
+            ?? throw new InvalidOperationException("Game common close button is missing its RectTransform.");
+
+        Vector2 rectSize = sourceRect.rect.size;
+        if (rectSize.x > 0f && rectSize.y > 0f)
+        {
+            return rectSize;
+        }
+
+        Vector2 sizeDelta = sourceRect.sizeDelta;
+        if (sizeDelta.x > 0f && sizeDelta.y > 0f)
+        {
+            return sizeDelta;
+        }
+
+        throw new InvalidOperationException("Game common close button has no positive RectTransform size.");
+    }
+
+    private static Vector2 FitWithin(
+        Vector2 size,
+        float maximumWidth,
+        float maximumHeight)
+    {
+        if (size.x <= maximumWidth && size.y <= maximumHeight)
+        {
+            return size;
+        }
+
+        float scale = Mathf.Min(maximumWidth / size.x, maximumHeight / size.y);
+        return size * scale;
+    }
+
+    private static GameObject BuildHoverFrame(
+        GameObject target,
+        Color color,
+        float thickness)
+    {
+        GameObject frame = CreateChild("HoverFrame", target.transform);
+        frame.AddComponent<LayoutElement>().ignoreLayout = true;
+        StretchToParent(frame.GetComponent<RectTransform>());
+
+        CreateBorderLine(frame.transform, "Top", color, true, 1f, thickness);
+        CreateBorderLine(frame.transform, "Bottom", color, true, 0f, thickness);
+        CreateBorderLine(frame.transform, "Left", color, false, 0f, thickness);
+        CreateBorderLine(frame.transform, "Right", color, false, 1f, thickness);
+
+        frame.SetActive(false);
+        return frame;
+    }
+
+    private static void CreateBorderLine(
+        Transform parent,
+        string name,
+        Color color,
+        bool horizontal,
+        float anchor,
+        float thickness)
+    {
+        GameObject line = CreateChild(name, parent);
+        RectTransform rect = line.GetComponent<RectTransform>();
+        if (horizontal)
+        {
+            rect.anchorMin = new Vector2(0f, anchor);
+            rect.anchorMax = new Vector2(1f, anchor);
+            rect.pivot = new Vector2(0.5f, anchor);
+            rect.sizeDelta = new Vector2(0f, thickness);
+        }
+        else
+        {
+            rect.anchorMin = new Vector2(anchor, 0f);
+            rect.anchorMax = new Vector2(anchor, 1f);
+            rect.pivot = new Vector2(anchor, 0.5f);
+            rect.sizeDelta = new Vector2(thickness, 0f);
+        }
+
+        rect.anchoredPosition = Vector2.zero;
+        CImage image = AddSolidImage(line, color);
+        image.raycastTarget = false;
+    }
+
     private static Scrollbar BuildVerticalScrollbar(Transform parent)
     {
         GameObject track = CreateChild("Scrollbar", parent);
@@ -1595,7 +1728,10 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         handleMarkRect.pivot = new Vector2(0.5f, 0.5f);
         handleMarkRect.anchoredPosition = Vector2.zero;
         handleMarkRect.sizeDelta = new Vector2(ScrollbarHandleMarkWidth, 0f);
-        CImage handleMarkImage = AddSpriteImage(handleMark, ScrollbarHandleMarkColor, ScrollbarHandleSprite);
+        CImage handleMarkImage = AddSpriteImage(
+            handleMark,
+            ScrollbarHandleMarkColor,
+            GameUiResources.ScrollbarHandleMarkName);
         handleMarkImage.raycastTarget = false;
         handleMarkImage.preserveAspect = true;
 
@@ -1612,8 +1748,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         RectTransform rectTransform = target.GetComponent<RectTransform>();
         rectTransform.sizeDelta = new Vector2(width, height);
 
-        LayoutElement layout = target.GetComponent<LayoutElement>()
-            ?? target.AddComponent<LayoutElement>();
+        LayoutElement layout = GetOrAddLayoutElement(target);
         layout.minWidth = width;
         layout.preferredWidth = width;
         layout.flexibleWidth = 0f;
@@ -1621,6 +1756,34 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         layout.preferredHeight = height;
         layout.flexibleHeight = 0f;
         return layout;
+    }
+
+    private static LayoutElement SetFixedLayoutHeight(
+        GameObject target,
+        float height)
+    {
+        LayoutElement layout = GetOrAddLayoutElement(target);
+        layout.minHeight = height;
+        layout.preferredHeight = height;
+        layout.flexibleHeight = 0f;
+        return layout;
+    }
+
+    private static LayoutElement SetFlexibleLayoutHeight(
+        GameObject target,
+        float minimumHeight)
+    {
+        LayoutElement layout = GetOrAddLayoutElement(target);
+        layout.minHeight = minimumHeight;
+        layout.preferredHeight = minimumHeight;
+        layout.flexibleHeight = 1f;
+        return layout;
+    }
+
+    private static LayoutElement GetOrAddLayoutElement(GameObject target)
+    {
+        return target.GetComponent<LayoutElement>()
+            ?? target.AddComponent<LayoutElement>();
     }
 
     private static GameObject CreateInactiveChild(
@@ -1650,18 +1813,41 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         Color color,
         string spriteName)
     {
-        CImage image = target.AddComponent<CImage>();
-        image.color = color;
-
-        image.type = spriteName.StartsWith("ui9_back_", StringComparison.Ordinal)
+        Image.Type imageType = spriteName.StartsWith("ui9_back_", StringComparison.Ordinal)
             ? Image.Type.Sliced
             : Image.Type.Simple;
+        return AddSpriteImage(target, color, spriteName, imageType);
+    }
+
+    private static CImage AddSpriteImage(
+        GameObject target,
+        Color color,
+        string spriteName,
+        Image.Type imageType)
+    {
+        CImage image = target.AddComponent<CImage>();
+        image.color = color;
+        image.type = imageType;
         image.SetEnabled(shouldBeEnabled: false);
         image.SetSprite(
             spriteName,
             onSpriteChange: () => UpdateSpriteImageEnabled(image));
         UpdateSpriteImageEnabled(image);
 
+        return image;
+    }
+
+    private static CImage AddSpriteImage(
+        GameObject target,
+        Color color,
+        Sprite sprite,
+        Image.Type imageType)
+    {
+        CImage image = target.AddComponent<CImage>();
+        image.color = color;
+        image.type = imageType;
+        image.sprite = sprite;
+        UpdateSpriteImageEnabled(image);
         return image;
     }
 
@@ -1675,46 +1861,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         image.SetEnabled(image.sprite != null);
     }
 
-    private static CRawImage AddTextureImage(
-        GameObject target,
-        Color color,
-        string texturePath)
-    {
-        CRawImage image = target.AddComponent<CRawImage>();
-        image.color = color;
-        image.enabled = false;
-
-        ResLoader.Load<Texture2D>(
-            texturePath,
-            texture =>
-            {
-                if (image == null)
-                {
-                    return;
-                }
-
-                image.texture = texture;
-                image.enabled = true;
-            },
-            path =>
-            {
-                if (image != null)
-                {
-                    image.texture = null;
-                    image.enabled = false;
-                }
-
-                Log.Warning(
-                    "chat window texture failed to load",
-                    new
-                    {
-                        path,
-                    });
-            });
-
-        return image;
-    }
-
     private static void StretchToParent(RectTransform rectTransform)
     {
         rectTransform.anchorMin = Vector2.zero;
@@ -1726,51 +1872,62 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         rectTransform.offsetMax = Vector2.zero;
     }
 
-    private static void CaptureGameTextStyle()
+    private static void ApplyGameTextStyle(TextMeshProUGUI text)
     {
-        if (s_gameFontAsset is not null)
+        GameTextStyle style = GameUiResources.CommonTextStyle;
+
+        text.font = style.Font;
+
+        if (style.FontMaterial is not null)
         {
-            return;
+            text.fontSharedMaterial = style.FontMaterial;
         }
 
-        UIManager uiManager = UIManager.Instance;
-
-        if (uiManager is null)
+        if (style.SpriteAsset is not null)
         {
-            return;
-        }
-
-        foreach (TextMeshProUGUI text in uiManager.GetComponentsInChildren<TextMeshProUGUI>(includeInactive: true))
-        {
-            if (text is null || text.font is null)
-            {
-                continue;
-            }
-
-            s_gameFontAsset = text.font;
-            s_gameFontMaterial = text.fontSharedMaterial;
-            s_gameSpriteAsset = text.spriteAsset;
-            return;
+            text.spriteAsset = style.SpriteAsset;
         }
     }
 
-    private static void ApplyGameTextStyle(TextMeshProUGUI text)
+    private sealed class ButtonHoverFrame : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
     {
-        CaptureGameTextStyle();
+        private GameObject? _frame;
+        private bool _hovered;
+        private bool _selected;
 
-        if (s_gameFontAsset is not null)
+        public void Initialize(GameObject frame)
         {
-            text.font = s_gameFontAsset;
+            _frame = frame;
+            UpdateVisibility();
         }
 
-        if (s_gameFontMaterial is not null)
+        public void OnPointerEnter(PointerEventData eventData)
         {
-            text.fontSharedMaterial = s_gameFontMaterial;
+            _hovered = true;
+            UpdateVisibility();
         }
 
-        if (s_gameSpriteAsset is not null)
+        public void OnPointerExit(PointerEventData eventData)
         {
-            text.spriteAsset = s_gameSpriteAsset;
+            _hovered = false;
+            UpdateVisibility();
+        }
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            _selected = true;
+            UpdateVisibility();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            _selected = false;
+            UpdateVisibility();
+        }
+
+        private void UpdateVisibility()
+        {
+            _frame?.SetActive(_hovered || _selected);
         }
     }
 

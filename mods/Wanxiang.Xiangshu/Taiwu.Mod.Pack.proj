@@ -15,10 +15,6 @@
       Include="DetailImage2.png"
       PackagePath="DetailImage2.png"
     />
-    <TaiwuModPackFile
-      Include="DetailImage3.png"
-      PackagePath="DetailImage3.png"
-    />
     <TaiwuModPackDirectory
       Include="DefaultAgentWorkspace"
       PackagePath="DefaultAgentWorkspace"

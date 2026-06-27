@@ -9,6 +9,15 @@
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Publicize
+      Include="Assembly-CSharp"
+      IncludeCompilerGeneratedMembers="false"
+      IncludeVirtualMembers="false"
+      MemberPattern="^(Game\.Views\.MouseTips\.AiActionAreaNormal\..*|Game\.Views\.CharacterMenu\..*|UIElement\..*|CScrollbarLegacy\..*)$"
+    />
+  </ItemGroup>
+
   <!--
   <ItemGroup>
     <Publicize

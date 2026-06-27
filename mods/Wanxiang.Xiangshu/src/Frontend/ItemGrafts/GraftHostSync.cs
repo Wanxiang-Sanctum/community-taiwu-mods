@@ -7,6 +7,7 @@ using GameData.Domains.Item.Display;
 using Wanxiang.Taiwu.AsyncInterop;
 using Wanxiang.Taiwu.ItemGrafts.Contracts;
 using Wanxiang.Taiwu.ItemGrafts.Frontend;
+using SharedItemGraftActions = Wanxiang.Taiwu.ItemGrafts.Frontend.ItemGraftActions;
 using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Xiangshu.Frontend.ItemGrafts;
@@ -115,9 +116,9 @@ internal sealed class GraftHostSync : IDisposable
         {
             NotifyHostRemoved(removed.HostKey);
         }
-        else if (hostEvent is GraftHostLocationChangedEventArgs locationChanged)
+        else if (hostEvent is GraftHostOwnerChangedEventArgs ownerChanged)
         {
-            NotifyHostLocationChanged(locationChanged);
+            NotifyHostOwnerChanged(ownerChanged);
         }
         else if (hostEvent is GraftHostDataChangedEventArgs)
         {
@@ -156,15 +157,15 @@ internal sealed class GraftHostSync : IDisposable
         RequestSync();
     }
 
-    private void NotifyHostLocationChanged(GraftHostLocationChangedEventArgs hostEvent)
+    private void NotifyHostOwnerChanged(GraftHostOwnerChangedEventArgs hostEvent)
     {
         if (_disposed || !TryGetTaiwuCharId(out int taiwuCharId))
         {
             return;
         }
 
-        bool fromTaiwuInventory = hostEvent.FromCharacterId == taiwuCharId;
-        bool toTaiwuInventory = hostEvent.ToCharacterId == taiwuCharId;
+        bool fromTaiwuInventory = IsTaiwuInventoryOwner(hostEvent.FromOwner, taiwuCharId);
+        bool toTaiwuInventory = IsTaiwuInventoryOwner(hostEvent.ToOwner, taiwuCharId);
 
         if (fromTaiwuInventory == toTaiwuInventory
             || !XiangshuGraftState.SetHostInTaiwuInventory(
@@ -244,7 +245,7 @@ internal sealed class GraftHostSync : IDisposable
             GraftDefinition definition = XiangshuGraftState.CreateDefinition();
 
             GraftSession session = existingHost.IsValid()
-                ? await InventoryGrafts.AttachAsync(
+                ? await SharedItemGraftActions.AttachAsync(
                     existingHost,
                     definition,
                     new AttachmentOptions
@@ -254,8 +255,8 @@ internal sealed class GraftHostSync : IDisposable
                             AttachSuccessNotificationText),
                         OnHostEvent = OnHostEvent,
                     })
-                : await InventoryGrafts.CreateAsync(
-                    taiwuCharId,
+                : await SharedItemGraftActions.CreateAsync(
+                    GraftHostOwnerKey.CharacterInventory(taiwuCharId),
                     hostTemplate,
                     definition,
                     new CreationOptions
@@ -425,6 +426,13 @@ internal sealed class GraftHostSync : IDisposable
         return key.IsValid()
             && key.ItemType == GameData.Domains.Item.ItemType.CraftTool
             && key.TemplateId == CraftTool.DefKey.Medicine0;
+    }
+
+    private static bool IsTaiwuInventoryOwner(
+        GraftHostOwnerKey? owner,
+        int taiwuCharId)
+    {
+        return owner.HasValue && owner.Value.IsCharacterInventory(taiwuCharId);
     }
 
     private static GraftHostTemplate CreateBowlHostTemplate()

@@ -1,0 +1,15 @@
+<Project>
+  <!-- MessagePack is pinned by the Taiwu/MessagePipe runtime stack. Suppress
+       only its NuGet audit warnings so other package audit warnings still
+       surface, and remove this target when MessagePack can be upgraded. -->
+  <Target
+    Name="SuppressMessagePackNuGetAuditWarnings"
+    BeforeTargets="CollectPackageReferences"
+  >
+    <ItemGroup>
+      <PackageReference Update="MessagePack">
+        <NoWarn>%(PackageReference.NoWarn);NU1902;NU1903</NoWarn>
+      </PackageReference>
+    </ItemGroup>
+  </Target>
+</Project>
