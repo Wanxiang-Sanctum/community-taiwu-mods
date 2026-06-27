@@ -8,5 +8,6 @@
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
     <TaiwuModPackFile Include="快剑.png" PackagePath="快剑.png" />
     <TaiwuModPackProject Include="src/Backend/JQKJ.Combo.Backend.csproj" />
+    <TaiwuModPackProject Include="src/Frontend/JQKJ.Combo.Frontend.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,5 @@
 using GameData.Common;
 using GameData.Domains;
-using GameData.Domains.Character;
 using GameData.Domains.Combat;
 using GameData.Domains.SpecialEffect.CombatSkill.Jieqingmen.Sword;
 using GameData.Domains.TaiwuEvent.EventHelper;
@@ -10,40 +9,32 @@ using TaiwuModdingLib.Core.Plugin;
 
 namespace JieQingCombo
 {
-    /// <summary>
-    /// 界青快剑-连击版：施展界青快剑时概率触发连击，持续消耗杀式。
-    /// 初始连击几率受福缘影响，每次连击后几率递减，保底20%。
-    /// 连击时释放进度逐次增加，最高99%。
-    /// </summary>
     [PluginConfig("界青快剑-连击版", "duma", "2.0.0.4")]
     public class JieQingComboPlugin : TaiwuRemakePlugin
     {
-        public static JieQingComboPlugin Instance { get; private set; }
-
-        private Harmony _harmony;
-
         public override void Initialize()
         {
-            Instance = this;
-            _harmony = new Harmony("com.yourname.jieqing.combo");
+            _harmony = new Harmony("JieQingCombo.Plugin");
 
+            var methodOnCastEnd = AccessTools.Method(typeof(JieQingKuaiJian), "OnCastSkillEnd");
             _harmony.Patch(
-                AccessTools.Method(typeof(JieQingKuaiJian), "OnCastSkillEnd"),
+                methodOnCastEnd,
                 prefix: new HarmonyMethod(GetType(), nameof(PrefixCastSkillEnd))
             );
+
+            var methodOnPrepare = AccessTools.Method(typeof(JieQingKuaiJian), "OnPrepareSkillBegin");
             _harmony.Patch(
-                AccessTools.Method(typeof(JieQingKuaiJian), "OnPrepareSkillBegin"),
+                methodOnPrepare,
                 prefix: new HarmonyMethod(GetType(), nameof(PrefixPrepareSkillBegin))
             );
+
+            var methodEndCombat = AccessTools.Method(typeof(CombatDomain), "EndCombat");
             _harmony.Patch(
-                AccessTools.Method(typeof(CombatDomain), "EndCombat"),
-                postfix: new HarmonyMethod(GetType(), nameof(PostfixCombatEnd))
+                methodEndCombat,
+                postfix: new HarmonyMethod(GetType(), nameof(PostfixEndCombat))
             );
         }
 
-        /// <summary>
-        /// 施展技能结束时判定连击：根据几率判定是否继续连击，消耗杀式并增加释放进度。
-        /// </summary>
         [HarmonyPrefix]
         public static bool PrefixCastSkillEnd(
             JieQingKuaiJian __instance,
@@ -52,34 +43,53 @@ namespace JieQingCombo
             bool isAlly,
             short skillId,
             sbyte power,
-            bool interrupted,
-            ref bool __runOriginal)
+            bool interrupted)
         {
             try
             {
-                if (skillId != __instance.SkillTemplateId || charId != __instance.CharacterId)
+                if (interrupted)
                 {
-                    if (interrupted)
-                    {
-                        _comboStates.Remove(charId);
-                    }
-                    return true;
+                    _comboStates.Remove(charId);
+                    return false;
+                }
+
+                bool idMatch = (skillId == __instance.SkillTemplateId && charId == __instance.CharacterId);
+                if (!idMatch)
+                {
+                    return false;
                 }
 
                 if (!_comboStates.TryGetValue(charId, out ComboData comboData))
                 {
-                    comboData = CreateComboData();
+                    comboData = CreateComboData(__instance, context);
                     _comboStates[charId] = comboData;
                 }
 
-                if (!__instance.PowerMatchAffectRequire(power, 0) ||
-                    !__instance.PowerMatchAffectRequire(power, 1) ||
-                    !DomainManager.Combat.CanCastSkill(__instance.CombatChar, __instance.SkillTemplateId, true, false))
+                bool power0 = __instance.PowerMatchAffectRequire(power, 0);
+                bool power1 = __instance.PowerMatchAffectRequire(power, 1);
+
+                if (!power0 && !power1)
                 {
-                    return true;
+                    ResetComboData(comboData);
+                    return false;
                 }
 
-                int odds = Math.Max(comboData!.CurrentOdds, 20);
+                // 正逆练杀式获取：只在首次施展时发放，连击递归不重复发放
+                var enemyChar = DomainManager.Combat.GetCombatCharacter(!isAlly, false);
+                if (comboData.Count == 0)
+                {
+                    if (power0)
+                    {
+                        DomainManager.Combat.AddTrick(context, __instance.CombatChar, 19, true);
+                    }
+                    if (power1)
+                    {
+                        DomainManager.Combat.AddTrick(context, enemyChar, 19, false);
+                    }
+                }
+
+                // 连击几率判定（上限100%，溢出部分保留用于后续递减）
+                int odds = Math.Min(Math.Max(comboData.CurrentOdds, 20), 100);
                 int roll = EventHelper.GetRandom(0, 100);
 
                 if (roll < odds)
@@ -92,6 +102,8 @@ namespace JieQingCombo
 
                     DomainManager.Combat.CastSkillFree(context, __instance.CombatChar, __instance.SkillTemplateId, ECombatCastFreePriority.Normal);
                     __instance.ShowSpecialEffectTips(1);
+
+                    // 连击成功补 1 个杀式，维持连击链
                     DomainManager.Combat.AddTrick(
                         context,
                         __instance.IsDirect
@@ -99,70 +111,88 @@ namespace JieQingCombo
                             : DomainManager.Combat.GetCombatCharacter(!isAlly, false),
                         19,
                         __instance.IsDirect);
-
-                    __runOriginal = false;
-                    return false;
+                }
+                else
+                {
+                    ResetComboData(comboData);
                 }
 
-                ResetComboData(comboData);
-                __runOriginal = false;
                 return false;
             }
             catch (Exception ex)
             {
-                AdaptableLog.Error("[JieQingFix] PrefixCastSkillEnd: " + ex);
-                return true;
+                AdaptableLog.Error("[JQKJ] PrefixCastSkillEnd 异常: " + ex);
+                return false;
             }
         }
 
-        /// <summary>
-        /// 准备施展技能前：如果处于连击状态，根据连击数提升释放进度。
-        /// </summary>
         [HarmonyPrefix]
         public static bool PrefixPrepareSkillBegin(
             JieQingKuaiJian __instance,
             DataContext context,
             int charId,
             bool isAlly,
-            short skillId,
-            ref bool __runOriginal)
+            short skillId)
         {
             try
             {
-                if (skillId != __instance.SkillTemplateId || charId != __instance.CharacterId)
+                bool idMatch = (skillId == __instance.SkillTemplateId && charId == __instance.CharacterId);
+                if (!idMatch)
                 {
                     return true;
                 }
 
-                if (_comboStates.TryGetValue(charId, out ComboData comboData))
+                if (_comboStates.TryGetValue(charId, out ComboData comboData) && comboData.Count > 0)
                 {
-                    int progress = comboData!.Count == 0
-                        ? 0
-                        : __instance.CombatChar.SkillPrepareTotalProgress * comboData.PrepareBonus / 100;
-
+                    int progress = __instance.CombatChar.SkillPrepareTotalProgress * comboData.PrepareBonus / 100;
                     DomainManager.Combat.ChangeSkillPrepareProgress(__instance.CombatChar, progress);
-                    __runOriginal = false;
                     return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AdaptableLog.Error("[JQKJ] PrefixPrepareSkillBegin 异常: " + ex);
+                return true;
+            }
+        }
+
+        [HarmonyPostfix]
+        public static void PostfixEndCombat()
+        {
+            try
+            {
+                foreach (ComboData data in _comboStates.Values)
+                {
+                    data.Count = 0;
+                    data.PrepareBonus = 50;
+                }
+                int taiwuFortune = (int)(EventHelper.GetRolePersonality(DomainManager.Taiwu.GetTaiwu(), 5) / 2);
+                foreach (ComboData data in _comboStates.Values)
+                {
+                    data.CurrentOdds = 60 + taiwuFortune;
                 }
             }
             catch (Exception ex)
             {
-                AdaptableLog.Error("[JieQingFix] PrefixPrepareSkillBegin: " + ex);
+                AdaptableLog.Error("[JQKJ] PostfixEndCombat 异常: " + ex);
             }
-            return true;
         }
 
         /// <summary>
-        /// 根据太吾福缘计算初始连击几率：60% + 福缘/2，最高100%。
+        /// 根据太吾福缘创建初始连击数据：初始几率 = 60% + 福缘/2。
+        /// 不截断上限，溢出值留给连击递减消耗。
         /// </summary>
-        private static ComboData CreateComboData()
+        private static ComboData CreateComboData(JieQingKuaiJian kuaiJian, DataContext context)
         {
             int taiwuFortune = (int)(EventHelper.GetRolePersonality(DomainManager.Taiwu.GetTaiwu(), 5) / 2);
+            int odds = 60 + taiwuFortune;
             return new ComboData
             {
                 Count = 0,
-                CurrentOdds = Math.Min(60 + taiwuFortune, 100),
-                PrepareBonus = 50
+                CurrentOdds = odds,
+                PrepareBonus = 50,
             };
         }
 
@@ -171,29 +201,7 @@ namespace JieQingCombo
             data.Count = 0;
             data.PrepareBonus = 50;
             int taiwuFortune = (int)(EventHelper.GetRolePersonality(DomainManager.Taiwu.GetTaiwu(), 5) / 2);
-            data.CurrentOdds = Math.Min(60 + taiwuFortune, 100);
-        }
-
-        /// <summary>
-        /// 战斗结束时重置所有角色的连击状态。
-        /// </summary>
-        [HarmonyPostfix]
-        public static void PostfixCombatEnd()
-        {
-            try
-            {
-                foreach (int charId in _comboStates.Keys)
-                {
-                    if (_comboStates.TryGetValue(charId, out ComboData data))
-                    {
-                        ResetComboData(data!);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AdaptableLog.Error("[JieQingFix] PostfixCombatEnd: " + ex);
-            }
+            data.CurrentOdds = 60 + taiwuFortune;
         }
 
         public override void Dispose()
@@ -202,6 +210,7 @@ namespace JieQingCombo
             _comboStates.Clear();
         }
 
+        private Harmony _harmony;
         private static readonly Dictionary<int, ComboData> _comboStates = new();
 
         private class ComboData

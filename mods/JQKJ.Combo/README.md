@@ -1,6 +1,5 @@
 # 界青快剑-连击版
 
-施展**界青快剑**时概率触发连击，持续消耗杀式，无需手动重复施放。
 
 ## 功能
 
@@ -16,3 +15,4 @@
 ## 依赖
 
 - 后端插件：`Plugins/Backend/JQKJ.Combo.Backend.dll`
+- 前端插件：`Plugins/JQKJ.Combo.Frontend.dll`
