@@ -10,12 +10,4 @@
       IncludeVirtualMembers="false"
     />
   </ItemGroup>
-
-  <!-- 依赖名只写 DLL 文件名；对应 DLL 必须来自本项目构建输出。 -->
-  <!--
-  <ItemGroup>
-    <TaiwuModMergeDependency Include="Your.Assembly.dll" />
-    <TaiwuModCopyDependency Include="Other.Assembly.dll" />
-  </ItemGroup>
-  -->
 </Project>

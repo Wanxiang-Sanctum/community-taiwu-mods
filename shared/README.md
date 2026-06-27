@@ -2,9 +2,9 @@
 
 内部共享项目目录。
 
-每个一级子目录是一个可被同一仓库内多个 Mod 引用的内部 C# 项目。共享项目为插件项目提供源码级内部库；需要进入
-运行时插件包时，由引用它的前端或后端入口项目把共享项目 DLL 声明为 merge dependency，具体 item 见
-[`mods/README.md`](../mods/README.md)。
+每个一级子目录是一个可被同一仓库内多个 Mod 引用的内部 C# 项目。共享项目为插件项目提供源码级内部库；
+前端或后端入口项目通过标准 `ProjectReference` 引用后，`pack-mod` 会把 shared 输出自动合并进入口 DLL。
+具体组包规则见 [`mods/README.md`](../mods/README.md)。
 
 本目录 README 说明共享项目的共同边界。共享库自己的 API、运行时依赖、项目特殊运行边界和维护入口由
 `shared/<ProjectName>/README.md` 维护；共享项目不作为独立 DLL 复制部署。
@@ -56,7 +56,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-shared --name MyCompany.Taiw
 新建后，项目目录包含项目内 README 和一个 C# class library 项目。
 
 创建命令生成共享项目的初始骨架。项目创建后，目标框架、Taiwu 引用、Publicizer 和特殊运行边界以项目自己的 `.csproj`、
-README，以及引用它的插件项目配置为准。
+README，以及引用它的插件项目文件为准。
 
 ```text
 shared/MyCompany.Taiwu.Shared/
@@ -82,6 +82,6 @@ shared/MyCompany.Taiwu.Shared/
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的工具配置管理；共享项目通过稳定包 ID 和本仓库固定版本
 引用这些包，DLL 清单以该内部仓库的工具配置为准。
 
-共享项目不自动进入 Mod 可部署目录。需要随某个 Mod 入口部署时，由引用它的前端或后端入口项目通过
-`TaiwuModMergeDependency` 声明合并；共享项目 README 只在存在特殊端侧要求或额外运行时依赖时补充说明。
+共享项目不作为独立 DLL 复制部署。需要随某个 Mod 入口部署时，由引用它的前端或后端入口项目维护标准
+`ProjectReference`；组包时会自动合并对应 shared 输出。共享项目 README 只在存在特殊端侧要求或额外运行时依赖时补充说明。
 `TaiwuModCopyDependency` 用于入口项目的非 shared 独立运行时依赖，不用于 `shared/` 项目本身。
