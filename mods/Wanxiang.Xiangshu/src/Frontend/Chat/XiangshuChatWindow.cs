@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Cysharp.Threading.Tasks;
 using FrameWork.UISystem.UIElements;
@@ -45,7 +46,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private const float HeaderIconInset = 7f;
     private const float HeaderResetButtonWidth = 58f;
     private const float HeaderResetButtonHeight = 38f;
-    private const float HeaderCloseButtonSize = 34f;
     private const float HeaderReplyIndicatorWidth = 130f;
     private const float HeaderReplyIndicatorHeight = 36f;
     private const float HeaderItemSpacing = 12f;
@@ -80,8 +80,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         + InputAreaHeight
         + (PanelSectionSpacing * 2f)
         + (PanelContentInset * 2f);
-    private const float FallbackCanvasScaleFactor = 1f;
-    private const float DefaultReferencePixelsPerUnit = 100f;
     private const float HeaderTitleFontSize = 26f;
     private const float ReplyIndicatorFontSize = 16f;
     private const float MessageSpeakerFontSize = 18f;
@@ -116,10 +114,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private static readonly Color ScrollbarTrackColor = new(0.018f, 0.015f, 0.012f, 0.46f);
     private static readonly Color ScrollbarHandleColor = new(0.34f, 0.20f, 0.08f, 0.76f);
     private static readonly Color ScrollbarHandleMarkColor = new(0.83f, 0.48f, 0.18f, 0.95f);
-
-    private static TMP_FontAsset? s_gameFontAsset;
-    private static Material? s_gameFontMaterial;
-    private static TMP_SpriteAsset? s_gameSpriteAsset;
 
     private AgentChatSession? _session;
     private RectTransform? _panelRect;
@@ -887,9 +881,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         CButton close = CreateCommonCloseButton(
             "CloseButton",
-            header.transform,
-            HeaderCloseButtonSize,
-            HeaderCloseButtonSize);
+            header.transform);
         close.onClick.AddListener(() => SetVisible(visible: false));
 
         HeaderDragHandle dragHandle = header.AddComponent<HeaderDragHandle>();
@@ -1053,7 +1045,6 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return true;
         }
 
-        CaptureGameTextStyle();
         BuildUi();
         ReplayVisibleMessages();
         _uiBuilt = true;
@@ -1071,12 +1062,11 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
             return false;
         }
 
-        RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop)
-            ?? uiManager.GetLayer(UILayer.LayerPopUp);
+        RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop);
 
         if (layer is null)
         {
-            Log.Warning("chat window cannot build because no Taiwu UI layer is available");
+            Log.Warning("chat window cannot build because Taiwu top UI layer is unavailable");
 
             return false;
         }
@@ -1139,17 +1129,9 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         CanvasScaler scaler,
         RectTransform gameUiLayer)
     {
-        CanvasScaler? gameScaler = gameUiLayer.GetComponentInParent<CanvasScaler>();
-
-        if (gameScaler is not null)
-        {
-            CopyCanvasScalerSettings(gameScaler, scaler);
-            return;
-        }
-
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-        scaler.scaleFactor = FallbackCanvasScaleFactor;
-        scaler.referencePixelsPerUnit = DefaultReferencePixelsPerUnit;
+        CanvasScaler gameScaler = gameUiLayer.GetComponentInParent<CanvasScaler>()
+            ?? throw new InvalidOperationException("Taiwu UI layer is missing its CanvasScaler.");
+        CopyCanvasScalerSettings(gameScaler, scaler);
     }
 
     private static void CopyCanvasScalerSettings(
@@ -1562,51 +1544,24 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
     private static CButton CreateCommonCloseButton(
         string name,
-        Transform parent,
-        float width,
-        float height)
+        Transform parent)
     {
-        CButton? sourceButton = GameUiResources.CommonCloseButton;
-        Image? sourceImage = sourceButton?.targetGraphic as Image;
-        if (sourceButton == null || sourceImage == null || sourceImage.sprite == null)
+        CButton sourceButton = GameUiResources.CommonCloseButton;
+        Image sourceImage = sourceButton.targetGraphic as Image
+            ?? throw new InvalidOperationException("Game common close button is missing an image target graphic.");
+        if (sourceImage.sprite == null)
         {
-            Log.Warning("Common close button source is unavailable; using local emergency close control.");
-            return CreateEmergencyCloseButton(name, parent, width, height);
+            throw new InvalidOperationException("Game common close button image is missing its normal sprite.");
         }
 
+        Vector2 buttonSize = GetSourceButtonSize(sourceButton);
         return CreateSpriteSwapButton(
             name,
             parent,
-            width,
-            height,
+            buttonSize.x,
+            buttonSize.y,
             sourceButton,
             sourceImage);
-    }
-
-    private static CButton CreateEmergencyCloseButton(
-        string name,
-        Transform parent,
-        float width,
-        float height)
-    {
-        GameObject buttonObject = CreateChild(name, parent);
-        CImage hitArea = AddSolidImage(buttonObject, Color.clear);
-
-        CButton button = buttonObject.AddComponent<CButton>();
-        button.transition = Selectable.Transition.None;
-        button.targetGraphic = hitArea;
-        _ = SetFixedLayoutSize(buttonObject, width, height);
-
-        TextMeshProUGUI text = CreateText(
-            "Label",
-            buttonObject.transform,
-            HeaderControlFontSize,
-            TextColor,
-            FontStyles.Bold);
-        text.text = "X";
-        text.alignment = TextAlignmentOptions.Center;
-        StretchToParent(text.rectTransform);
-        return button;
     }
 
     private static CButton CreateSpriteSwapButton(
@@ -1634,6 +1589,26 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         _ = SetFixedLayoutSize(buttonObject, width, height);
 
         return button;
+    }
+
+    private static Vector2 GetSourceButtonSize(CButton sourceButton)
+    {
+        RectTransform sourceRect = sourceButton.GetComponent<RectTransform>()
+            ?? throw new InvalidOperationException("Game common close button is missing its RectTransform.");
+
+        Vector2 rectSize = sourceRect.rect.size;
+        if (rectSize.x > 0f && rectSize.y > 0f)
+        {
+            return rectSize;
+        }
+
+        Vector2 sizeDelta = sourceRect.sizeDelta;
+        if (sizeDelta.x > 0f && sizeDelta.y > 0f)
+        {
+            return sizeDelta;
+        }
+
+        throw new InvalidOperationException("Game common close button has no positive RectTransform size.");
     }
 
     private static GameObject BuildHoverFrame(
@@ -1720,27 +1695,16 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         handleMarkRect.pivot = new Vector2(0.5f, 0.5f);
         handleMarkRect.anchoredPosition = Vector2.zero;
         handleMarkRect.sizeDelta = new Vector2(ScrollbarHandleMarkWidth, 0f);
-        CImage handleMarkImage = AddScrollbarHandleMarkImage(handleMark);
+        CImage handleMarkImage = AddSpriteImage(
+            handleMark,
+            ScrollbarHandleMarkColor,
+            GameUiResources.ScrollbarHandleMarkName);
         handleMarkImage.raycastTarget = false;
         handleMarkImage.preserveAspect = true;
 
         scrollbar.targetGraphic = handleImage;
         scrollbar.handleRect = handleRect;
         return scrollbar;
-    }
-
-    private static CImage AddScrollbarHandleMarkImage(GameObject target)
-    {
-        string? spriteName = GameUiResources.ScrollbarHandleMarkName;
-        if (!string.IsNullOrEmpty(spriteName))
-        {
-            return AddSpriteImage(target, ScrollbarHandleMarkColor, spriteName);
-        }
-
-        Log.Warning("SystemOption scrollbar handle mark source is unavailable; leaving handle mark empty.");
-        CImage image = AddSolidImage(target, Color.clear);
-        image.SetEnabled(shouldBeEnabled: false);
-        return image;
     }
 
     private static LayoutElement SetFixedLayoutSize(
@@ -1866,51 +1830,20 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         rectTransform.offsetMax = Vector2.zero;
     }
 
-    private static void CaptureGameTextStyle()
-    {
-        if (s_gameFontAsset is not null)
-        {
-            return;
-        }
-
-        UIManager uiManager = UIManager.Instance;
-
-        if (uiManager is null)
-        {
-            return;
-        }
-
-        foreach (TextMeshProUGUI text in uiManager.GetComponentsInChildren<TextMeshProUGUI>(includeInactive: true))
-        {
-            if (text is null || text.font is null)
-            {
-                continue;
-            }
-
-            s_gameFontAsset = text.font;
-            s_gameFontMaterial = text.fontSharedMaterial;
-            s_gameSpriteAsset = text.spriteAsset;
-            return;
-        }
-    }
-
     private static void ApplyGameTextStyle(TextMeshProUGUI text)
     {
-        CaptureGameTextStyle();
+        GameTextStyle style = GameUiResources.CommonTextStyle;
 
-        if (s_gameFontAsset is not null)
+        text.font = style.Font;
+
+        if (style.FontMaterial is not null)
         {
-            text.font = s_gameFontAsset;
+            text.fontSharedMaterial = style.FontMaterial;
         }
 
-        if (s_gameFontMaterial is not null)
+        if (style.SpriteAsset is not null)
         {
-            text.fontSharedMaterial = s_gameFontMaterial;
-        }
-
-        if (s_gameSpriteAsset is not null)
-        {
-            text.spriteAsset = s_gameSpriteAsset;
+            text.spriteAsset = style.SpriteAsset;
         }
     }
 
