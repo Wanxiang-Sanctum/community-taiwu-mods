@@ -3,15 +3,16 @@
 [![Ask Zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/Wanxiang-Sanctum/community-taiwu-mods)
 
 Community Taiwu Mods 是 Wanxiang-Sanctum 维护的太吾绘卷 Mod 源码集合，面向愿意了解安装边界、运行要求和源码来源的
-技术玩家。
+技术玩家和 Mod 制作者。
 
 ## Mod 入口
 
-本节是面向玩家的入口表，帮助判断先读哪个 Mod。
+本节是面向使用者的入口表，帮助判断先读哪个 Mod。
 
 | Mod      | 适合谁                                                                                                                                                           | 继续阅读                                            |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | 法不加身 | 想让太吾获得只在运行时生效的“一力破万法”护身规则，免受内伤、心神、毒素、封穴破绽和战斗异状纠缠的玩家。                                                           | [法不加身说明](mods/Wanxiang.Fabujiashen/README.md) |
+| 观象台   | 维护太吾 Mod、准备用本机 MCP 服务接入太吾运行时的制作者；当前只提供 MCP server 启动、鉴权和入口定位基础。                                                        | [观象台说明](mods/Wanxiang.Guanxiangtai/README.md)  |
 | 相枢     | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。当前仍在试行。 | [相枢说明](mods/Wanxiang.Xiangshu/README.md)        |
 | 万象引   | 订阅相枢或其它明确要求万象引的 Mod 时需要的前置依赖。它本身不提供单独玩法入口。                                                                                  | [万象引说明](mods/Wanxiang.Prelude/README.md)       |
 

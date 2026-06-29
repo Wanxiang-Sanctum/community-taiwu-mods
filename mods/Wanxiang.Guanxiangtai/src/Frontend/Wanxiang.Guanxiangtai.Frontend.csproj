@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/McpServerRuntime/Wanxiang.Guanxiangtai.McpServerRuntime.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Frontend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

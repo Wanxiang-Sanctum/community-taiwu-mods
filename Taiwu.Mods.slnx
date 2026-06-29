@@ -7,6 +7,15 @@
       Path="mods/Wanxiang.Fabujiashen/src/Frontend/Wanxiang.Fabujiashen.Frontend.csproj"
     />
     <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/McpServerRuntime/Wanxiang.Guanxiangtai.McpServerRuntime.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Frontend/Wanxiang.Guanxiangtai.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/McpServer/Wanxiang.Guanxiangtai.McpServer.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project

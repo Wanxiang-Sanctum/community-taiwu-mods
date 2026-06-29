@@ -5,7 +5,7 @@
 本文面向维护本仓库实际 Mod 的人。每个一级子目录是一个本仓库拥有的独立 Mod；本文维护一级 Mod 目录索引、Mod 目录约定，以及所有
 Mod 共同遵守的组包、插件入口、引用和部署规则。
 
-具体 Mod 的 `README.md` 面向外部技术玩家；源码模块、内部设计和项目内维护入口由对应
+具体 Mod 的 `README.md` 面向外部使用者；源码模块、内部设计和项目内维护入口由对应
 `mods/<ModName>/DEVELOPMENT.md`、`mods/<ModName>/docs/` 或源码子目录 README 维护。
 
 ## 目录约定
@@ -15,13 +15,14 @@ Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 ## 文档入口
 
-| 目录                    | 角色                                                                                                                                                 | 玩家说明                         | 维护入口                              |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------- |
-| `Wanxiang.Fabujiashen/` | 运行时赋予太吾“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，并跳过战斗中涉及太吾的功法触发效果；普通外伤、功法和真气基础数值流程保留。 | `Wanxiang.Fabujiashen/README.md` | `Wanxiang.Fabujiashen/DEVELOPMENT.md` |
-| `Wanxiang.Prelude/`     | 提供共享运行时和插件依赖加载规则的前置 Mod。                                                                                                         | `Wanxiang.Prelude/README.md`     | `Wanxiang.Prelude/DEVELOPMENT.md`     |
-| `Wanxiang.Xiangshu/`    | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。   | `Wanxiang.Xiangshu/README.md`    | `Wanxiang.Xiangshu/DEVELOPMENT.md`    |
+| 目录                     | 角色                                                                                                                                                 | 使用说明                          | 维护入口                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------- |
+| `Wanxiang.Fabujiashen/`  | 运行时赋予太吾“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，并跳过战斗中涉及太吾的功法触发效果；普通外伤、功法和真气基础数值流程保留。 | `Wanxiang.Fabujiashen/README.md`  | `Wanxiang.Fabujiashen/DEVELOPMENT.md`  |
+| `Wanxiang.Guanxiangtai/` | 面向太吾 Mod 制作者的本机 MCP 服务；当前只提供 MCP server 启动入口、鉴权和入口定位基础。                                                             | `Wanxiang.Guanxiangtai/README.md` | `Wanxiang.Guanxiangtai/DEVELOPMENT.md` |
+| `Wanxiang.Prelude/`      | 提供共享运行时和插件依赖加载规则的前置 Mod。                                                                                                         | `Wanxiang.Prelude/README.md`      | `Wanxiang.Prelude/DEVELOPMENT.md`      |
+| `Wanxiang.Xiangshu/`     | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。   | `Wanxiang.Xiangshu/README.md`     | `Wanxiang.Xiangshu/DEVELOPMENT.md`     |
 
-这张表是 `mods/` 一级目录的索引，只保留选择信息和稳定入口。玩家说明留在对应 `README.md`，源码模块说明留在对应
+这张表是 `mods/` 一级目录的索引，只保留选择信息和稳定入口。使用说明留在对应 `README.md`，源码模块说明留在对应
 `DEVELOPMENT.md`、`docs/` 或源码子目录 README。新增、移除或重命名一级 Mod 目录时，同步更新这张表；共同组包规则或
 目录约定变化时，再修改本文其它部分。
 
@@ -42,7 +43,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- create-mod --name MyMod
 [`docs/taiwu-mod-steam-publishing-boundary.md`](../docs/taiwu-mod-steam-publishing-boundary.md)。
 
 创建命令生成新 Mod 的初始骨架。项目创建后，真实包内容和维护入口由该 Mod 的 `Taiwu.Mod.Pack.proj`、插件项目文件和项目旁
-`Taiwu.Mod.props` 维护；`templates/` 只作为新项目起点。新增实际 Mod 后，`README.md` 面向玩家组织功能、安装、
+`Taiwu.Mod.props` 维护；`templates/` 只作为新项目起点。新增实际 Mod 后，`README.md` 面向使用者组织功能、安装、
 配置和运行边界，`DEVELOPMENT.md` 承接源码维护入口。
 
 ```text
