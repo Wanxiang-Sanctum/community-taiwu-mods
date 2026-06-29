@@ -3,7 +3,7 @@ return {
   Source = 1,
   FileId = 3747731025,
   Version = "0.1.0",
-  GameVersion = "1.0.36",
+  GameVersion = "1.0.44",
   Author = "Wanxiang Sanctum",
   Description = [=[如果你不清楚万象引的作用，请不要主动订阅，也不要为了“保险”单独订阅。它不是可游玩的内容 Mod，不会单独新增玩法、剧情或游戏内功能；只有你订阅的其他 Mod 明确要求它，或 Steam 自动提示需要依赖时，才需要订阅。
 

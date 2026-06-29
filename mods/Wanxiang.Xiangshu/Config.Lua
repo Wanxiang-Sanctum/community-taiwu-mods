@@ -3,7 +3,7 @@ return {
   Source = 1,
   FileId = 3747795330,
   Version = "0.1.0",
-  GameVersion = "1.0.36",
+  GameVersion = "1.0.44",
   Author = "Wanxiang Sanctum",
   Description = [=[[h1]相枢：接入太吾运行时的本地 AI Agent[/h1]
 [h2]先看是否适合[/h2]
