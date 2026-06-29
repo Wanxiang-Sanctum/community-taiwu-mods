@@ -1,0 +1,7 @@
+<Project>
+  <Import Project="$(TaiwuModsRoot)Directory.Build.targets" />
+
+  <PropertyGroup Condition="'$(UsePublicizer)' == 'true'">
+    <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+  </PropertyGroup>
+</Project>

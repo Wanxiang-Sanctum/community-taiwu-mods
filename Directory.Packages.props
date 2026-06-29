@@ -9,7 +9,7 @@
     <RoslynGameRuntimeVersion>4.13.0</RoslynGameRuntimeVersion>
     <RoslynatorVersion>4.15.0</RoslynatorVersion>
     <TaiwuGameUnityVersion>2022.3.62f2</TaiwuGameUnityVersion>
-    <TaiwuModKitReferencesVersion>1.0.36</TaiwuModKitReferencesVersion>
+    <TaiwuModKitReferencesVersion>1.0.44</TaiwuModKitReferencesVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,7 +39,7 @@
       Include="Roslynator.Formatting.Analyzers"
       Version="$(RoslynatorVersion)"
     />
-    <PackageVersion Include="Scriban" Version="7.2.4" />
+    <PackageVersion Include="Scriban" Version="7.2.5" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />

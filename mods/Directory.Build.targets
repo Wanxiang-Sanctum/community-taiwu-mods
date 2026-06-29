@@ -7,6 +7,10 @@
     Condition="'$(TaiwuModSide)' == 'Frontend' Or '$(TaiwuModSide)' == 'Backend'"
   />
 
+  <PropertyGroup Condition="'$(UsePublicizer)' == 'true'">
+    <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(TaiwuModCompatibilityProfile)' == 'GameRuntime'">
     <PackageReference
       Update="Microsoft.CodeAnalysis.CSharp"

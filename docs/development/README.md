@@ -5,15 +5,15 @@
 
 ## 阅读路径
 
-| 任务 | 入口 |
-| --- | --- |
-| 构建、打包、发布现有 Mod | 本文 |
-| 维护所有 Mod 共同的组包、插件入口、依赖部署规则 | `../../mods/README.md` |
-| 维护某个 Mod 的源码模块、发布内容和内部设计 | `../../mods/<ModName>/DEVELOPMENT.md` |
-| 维护内部共享项目 | `../../shared/README.md` |
-| 维护创建/移除命令实现或模板 | `../../tools/README.md`、`../../templates/README.md` |
-| 维护文档入口分层和同步规则 | `documentation.md` |
-| 维护跨 Mod 复用的机制参考或仓库经验 | `../README.md` |
+| 任务                                            | 入口                                                 |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| 构建、打包、发布现有 Mod                        | 本文                                                 |
+| 维护所有 Mod 共同的组包、插件入口、依赖部署规则 | `../../mods/README.md`                               |
+| 维护某个 Mod 的源码模块、发布内容和内部设计     | `../../mods/<ModName>/DEVELOPMENT.md`                |
+| 维护内部共享项目                                | `../../shared/README.md`                             |
+| 维护创建/移除命令实现或模板                     | `../../tools/README.md`、`../../templates/README.md` |
+| 维护文档入口分层和同步规则                      | `documentation.md`                                   |
+| 维护跨 Mod 复用的机制参考或仓库经验             | `../README.md`                                       |
 
 具体 Mod 的 `README.md` 面向外部技术玩家，说明使用方式、运行边界和配置入口。内部设计、构建命令、组包细节和源码模块
 入口放在该 Mod 的 `DEVELOPMENT.md` 或源码子目录 README。
