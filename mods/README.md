@@ -15,11 +15,11 @@ Mod 共同遵守的组包、插件入口、引用和部署规则。
 
 ## 文档入口
 
-| 目录 | 角色 | 玩家说明 | 维护入口 |
-| --- | --- | --- | --- |
+| 目录                    | 角色                                                                                                                                                 | 玩家说明                         | 维护入口                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------- |
 | `Wanxiang.Fabujiashen/` | 运行时赋予太吾“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，并跳过战斗中涉及太吾的功法触发效果；普通外伤、功法和真气基础数值流程保留。 | `Wanxiang.Fabujiashen/README.md` | `Wanxiang.Fabujiashen/DEVELOPMENT.md` |
-| `Wanxiang.Prelude/` | 提供共享运行时和插件依赖加载规则的前置 Mod。 | `Wanxiang.Prelude/README.md` | `Wanxiang.Prelude/DEVELOPMENT.md` |
-| `Wanxiang.Xiangshu/` | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。 | `Wanxiang.Xiangshu/README.md` | `Wanxiang.Xiangshu/DEVELOPMENT.md` |
+| `Wanxiang.Prelude/`     | 提供共享运行时和插件依赖加载规则的前置 Mod。                                                                                                         | `Wanxiang.Prelude/README.md`     | `Wanxiang.Prelude/DEVELOPMENT.md`     |
+| `Wanxiang.Xiangshu/`    | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。   | `Wanxiang.Xiangshu/README.md`    | `Wanxiang.Xiangshu/DEVELOPMENT.md`    |
 
 这张表是 `mods/` 一级目录的索引，只保留选择信息和稳定入口。玩家说明留在对应 `README.md`，源码模块说明留在对应
 `DEVELOPMENT.md`、`docs/` 或源码子目录 README。新增、移除或重命名一级 Mod 目录时，同步更新这张表；共同组包规则或
@@ -76,14 +76,12 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 ## 组包声明
 
 每个 Mod 的 `Taiwu.Mod.Pack.proj` 是可部署目录的组包入口。它只描述最终目录由哪些文件、目录和
-项目组成，不给项目额外标记类型；太吾插件、共享 DLL、发布目录和普通静态文件都走同一条
-组合路径。
+项目组成，不给项目额外标记类型；太吾插件入口、额外依赖 DLL、发布目录和普通静态文件都走同一套
+组包流程。
 
 ```xml
 <Project>
-  <Import
-    Project="$([MSBuild]::GetPathOfFileAbove('Taiwu.Mods.Paths.props', '$(MSBuildThisFileDirectory)'))"
-  />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Taiwu.Mods.Paths.props', '$(MSBuildThisFileDirectory)'))" />
   <Import Project="$(TaiwuModsModsDir)Taiwu.Mod.Pack.targets" />
 
   <ItemGroup>
@@ -106,7 +104,10 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 
 ```xml
 <ItemGroup>
-  <TaiwuModPackFile Include="$(TargetDir)MyMod.Ipc.dll" PackagePath="Plugins/MyMod.Ipc.dll" />
+  <TaiwuModPackFile
+    Include="$(TargetDir)MyMod.Ipc.dll"
+    PackagePath="Plugins/MyMod.Ipc.dll"
+  />
 </ItemGroup>
 ```
 
@@ -172,6 +173,14 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name MyMod
 只有在声明了 `Publicize` 或 `PublicizeAll=true` 时才使用 `IgnoresAccessChecksTo`；没有公开化目标时保持 `Unsafe`。这与
 Krafs.Publicizer 的实现有关：它从公开化输出生成 `IgnoresAccessChecksToAttribute`，没有公开化输出时，该 attribute
 的程序集名会为空。
+
+仓库启用 Krafs.Publicizer 官方的 `PublicizerClearCacheOnClean`，所以 `dotnet clean` 会删除项目
+`$(IntermediateOutputPath)PublicizedAssemblies` 下的公开化缓存。同一项目的后续构建可以复用 Publicizer 已经生成的公开化程序集。
+如果构建在 Publicizer 写缓存时中断，先运行 `dotnet clean` 清理该项目缓存，再重新构建。
+
+Krafs.Publicizer 官方 targets 把公开化输出目录固定传给当前项目的
+`$(IntermediateOutputPath)PublicizedAssemblies`，没有提供稳定的跨项目共享缓存属性。本仓库不重写官方
+`PublicizeAssemblies` target，因此不同插件项目公开化同一个游戏 DLL 时仍可能各自生成缓存。
 
 需要关闭默认 Publicizer 支持时，可以在 `Taiwu.Mod.props` 中设置：
 

@@ -26,16 +26,16 @@
 
 ## 文档入口
 
-| 目录 | 角色 | 继续阅读 |
-| --- | --- | --- |
-| `Wanxiang.Taiwu.Logging/` | 前后端插件共用的太吾游戏日志格式化适配层。 | `Wanxiang.Taiwu.Logging/README.md` |
-| `Wanxiang.Taiwu.AsyncInterop/` | 前后端共用的太吾游戏异步回调与可等待对象互操作原语。 | `Wanxiang.Taiwu.AsyncInterop/README.md` |
-| `Wanxiang.Taiwu.ModRpc/` | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。 | `Wanxiang.Taiwu.ModRpc/README.md` |
-| `Wanxiang.Taiwu.InstantNotifications/` | 太吾前端即时通知发布适配层，对外入口是 `InstantNotificationPublisher`。 | `Wanxiang.Taiwu.InstantNotifications/README.md` |
-| `Wanxiang.Taiwu.PlayerVisibleFeatures/` | 玩家可见虚拟人物特性的前端显示适配层。 | `Wanxiang.Taiwu.PlayerVisibleFeatures/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Contracts/` | 物品嫁接的跨端契约，包含宿主身份、owner 传输键、外观覆盖和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Frontend/` | 物品嫁接的前端动作、会话、共享可视化和菜单操作实现。 | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md` |
-| `Wanxiang.Taiwu.ItemGrafts.Backend/` | 物品嫁接的后端创建与观察服务，负责创建宿主、跟踪宿主事实并转发事件。 | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md` |
+| 目录                                    | 角色                                                                     | 继续阅读                                         |
+| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
+| `Wanxiang.Taiwu.Logging/`               | 前后端插件共用的太吾游戏日志格式化适配层。                               | `Wanxiang.Taiwu.Logging/README.md`               |
+| `Wanxiang.Taiwu.AsyncInterop/`          | 前后端共用的太吾游戏异步回调与可等待对象互操作原语。                     | `Wanxiang.Taiwu.AsyncInterop/README.md`          |
+| `Wanxiang.Taiwu.ModRpc/`                | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。              | `Wanxiang.Taiwu.ModRpc/README.md`                |
+| `Wanxiang.Taiwu.InstantNotifications/`  | 太吾前端即时通知发布适配层，对外入口是 `InstantNotificationPublisher`。  | `Wanxiang.Taiwu.InstantNotifications/README.md`  |
+| `Wanxiang.Taiwu.PlayerVisibleFeatures/` | 玩家可见虚拟人物特性的前端显示适配层。                                   | `Wanxiang.Taiwu.PlayerVisibleFeatures/README.md` |
+| `Wanxiang.Taiwu.ItemGrafts.Contracts/`  | 物品嫁接的跨端契约，包含宿主身份、owner 传输键、外观覆盖和宿主事件模型。 | `Wanxiang.Taiwu.ItemGrafts.Contracts/README.md`  |
+| `Wanxiang.Taiwu.ItemGrafts.Frontend/`   | 物品嫁接的前端动作、会话、共享可视化和菜单操作实现。                     | `Wanxiang.Taiwu.ItemGrafts.Frontend/README.md`   |
+| `Wanxiang.Taiwu.ItemGrafts.Backend/`    | 物品嫁接的后端创建与观察服务，负责创建宿主、跟踪宿主事实并转发事件。     | `Wanxiang.Taiwu.ItemGrafts.Backend/README.md`    |
 
 这张表是 `shared/` 一级目录的索引，只保留选择信息和稳定入口。共享库 API、事件选择、运行时依赖和项目特殊运行边界留在项目自己的 README 里。
 新增、移除或重命名内部共享项目时，同步更新这张表；共享项目共同边界或目录约定变化时，再修改本文其它部分。
@@ -68,7 +68,7 @@ shared/MyCompany.Taiwu.Shared/
 和 `Frontend` 项目目标框架为 `netstandard2.1`，`Backend` 项目目标框架为 `net8.0`。纯共享抽象
 或通用实现可以保持为普通 C# class library。
 
-## 引用与部署边界
+## 引用与合并边界
 
 同一个共享项目如果会同时被前端和后端插件引用，并且依赖 `Taiwu.ModKit.References.*` 游戏引用包，
 需要同时产出前端和后端运行时目标框架，例如 `netstandard2.1;net8.0`。这样前端插件消费
@@ -77,11 +77,14 @@ shared/MyCompany.Taiwu.Shared/
 需要访问游戏 API 时，再按实际代码需要添加 `Taiwu.ModKit.References.Frontend` 或
 `Taiwu.ModKit.References.Backend` 等引用包。需要访问游戏 DLL 的非 public API 时，在项目自己的
 `.csproj` 中显式添加 `Krafs.Publicizer` 引用、启用 `UsePublicizer`，并声明具体 `Publicize` 项。
+启用 Publicizer 后，共享项目也会使用仓库公共 Publicizer 缓存清理规则；清理行为和跨项目复用边界见
+[`mods/README.md`](../mods/README.md#taiwu-引用和-publicizer)。
 
 `Taiwu.ModKit.References.*` 包的生成、分类和发布归组织内部
 [`taiwu-modkit`](https://github.com/Wanxiang-Sanctum/taiwu-modkit) 仓库的工具配置管理；共享项目通过稳定包 ID 和本仓库固定版本
 引用这些包，DLL 清单以该内部仓库的工具配置为准。
 
-共享项目不作为独立 DLL 复制部署。需要随某个 Mod 入口部署时，由引用它的前端或后端入口项目维护标准
-`ProjectReference`；组包时会自动合并对应 shared 输出。共享项目 README 只在存在特殊端侧要求或额外运行时依赖时补充说明。
+共享项目不作为独立 DLL 复制部署。需要随某个 Mod 入口进入包时，由引用它的前端或后端入口项目维护标准
+`ProjectReference`；组包时会自动合并对应 shared 输出。共享项目 README 只记录供引用方判断的特殊端侧要求或额外运行时依赖，
+不声明合并或复制动作。
 `TaiwuModCopyDependency` 用于入口项目的非 shared 独立运行时依赖，不用于 `shared/` 项目本身。
