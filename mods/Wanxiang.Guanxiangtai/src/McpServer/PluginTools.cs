@@ -49,7 +49,8 @@ internal sealed class PluginTools
         string targetSide,
         [Description(
             "Complete C# compilation unit, not a snippet. Include using directives and define exactly one "
-            + "public static non-generic GuanxiangtaiScript class with public static Execute or ExecuteAsync "
+            + "public static non-generic class whose full name is Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScript "
+            + "with public static Execute or ExecuteAsync "
             + "taking Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals. "
             + "The host supplies the Wanxiang.Guanxiangtai.Scripting reference. "
             + "The entry return value is serialized to JSON.")]

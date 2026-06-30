@@ -333,9 +333,9 @@ xiangshu_run_csharp_script(
 - `entryThread`：可选入口调用线程，取 `current` 或 `mainThread`；默认 `current`。
 - `argumentsJson`：可选 JSON object，转为 `XiangshuScriptGlobals.Arguments`。
 
-脚本通道传递完整 C# 编译单元。脚本自己声明 `using`、namespace、类型和入口；入口契约由
-`src/Scripting/README.md` 维护。入口契约不满足时，运行器返回 `notInvoked(reason, details?)`，不把它归类为
-MCP 或 IPC 转发失败。
+脚本通道传递完整 C# 编译单元。脚本必须声明满足入口契约的入口类型；其余 `using`、辅助类型和返回结构由脚本自己组织。
+入口契约由 `src/Scripting/README.md` 维护。入口契约不满足时，运行器返回 `notInvoked(reason, details?)`，
+不把它归类为 MCP 或 IPC 转发失败。
 
 MCP server 只把 `entryThread` 写入 IPC 请求并转发；`mainThread` 的实际切换由目标侧插件负责。访问 Unity 对象、前端 UI、
 后端 `DomainManager` 数据域或其它线程敏感的游戏运行态时使用 `mainThread`。

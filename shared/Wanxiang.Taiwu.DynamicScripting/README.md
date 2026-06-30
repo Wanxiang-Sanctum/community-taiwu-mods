@@ -24,7 +24,7 @@
 
 - 脚本在目标插件进程内完全信任运行；沙箱或权限分级不属于本模块承诺。
 - MCP 工具名称、参数描述、agent 可见响应 JSON 和 MessagePack/MessagePipe IPC 契约归调用方的 IPC/MCP 边界。
-- 前端或后端游戏 API facade、`ScriptGlobals` 类型、入口类型名和命名空间归调用方的脚本适配层。
+- 前端或后端游戏 API facade、`ScriptGlobals` 类型和入口类型完整名归调用方的脚本适配层。
 - 宿主选择、参数字典和其它调用方请求字段如果要暴露给脚本，应由调用方放进自己的 globals 类型。
 
 调用方应保留自己的窄适配层，例如把 Mod 内部 IPC 请求拆成 `DynamicScriptRunRequest` 和调用方自己的 globals 对象，
@@ -39,11 +39,11 @@
 
 `DynamicScriptEntryContract` 描述某个 Mod 自己暴露给脚本作者的入口契约：
 
-- `EntryTypeSimpleName`：入口类型简单名，例如 `GuanxiangtaiScript` 或 `XiangshuScript`。
+- `EntryTypeFullName`：入口类型完整名，例如 `Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScript`。
 - `ScriptGlobalsType`：入口方法唯一参数的精确类型。
-- `ScriptGlobalsDisplayName`：诊断消息中显示的 globals 类型名。
-- `ScriptAssemblyNamePrefix`：临时脚本程序集名称前缀。
-- `AsyncEntryMethodName` / `SyncEntryMethodName`：入口方法名，默认是 `ExecuteAsync` 和 `Execute`。
+
+入口方法名固定为 `ExecuteAsync` 或 `Execute`。诊断中显示的 globals 类型名和临时脚本程序集名由运行器自行派生；
+调用方不配置这些名称。
 
 `DynamicScriptRunRequest` 描述单次执行请求：
 
@@ -90,10 +90,8 @@ namespace MyMod.Scripting;
 public sealed class MyScriptRunner
 {
     private static readonly DynamicScriptEntryContract Contract = new(
-        "MyScript",
-        typeof(MyScriptGlobals),
-        "MyMod.Scripting.MyScriptGlobals",
-        "MyMod.DynamicScript");
+        "MyMod.Scripting.MyScript",
+        typeof(MyScriptGlobals));
 
     private readonly DynamicScriptRunner _runner;
 
@@ -130,7 +128,8 @@ public sealed class MyScriptRunner
 
 ```csharp
 using System.Threading.Tasks;
-using MyMod.Scripting;
+
+namespace MyMod.Scripting;
 
 public static class MyScript
 {

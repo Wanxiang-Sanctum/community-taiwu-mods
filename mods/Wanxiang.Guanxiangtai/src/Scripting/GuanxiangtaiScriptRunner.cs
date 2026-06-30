@@ -5,15 +5,11 @@ namespace Wanxiang.Guanxiangtai.Scripting;
 
 public sealed class GuanxiangtaiScriptRunner
 {
-    private const string EntryTypeSimpleName = "GuanxiangtaiScript";
-    private const string ScriptGlobalsFullName =
-        "Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals";
+    private const string EntryTypeFullName = "Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScript";
 
     private static readonly DynamicScriptEntryContract Contract = new(
-        EntryTypeSimpleName,
-        typeof(GuanxiangtaiScriptGlobals),
-        ScriptGlobalsFullName,
-        "Wanxiang.Guanxiangtai.DynamicScript");
+        EntryTypeFullName,
+        typeof(GuanxiangtaiScriptGlobals));
 
     private readonly ScriptRunnerOptions _options;
     private readonly DynamicScriptRunner _runner;

@@ -71,9 +71,8 @@ token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 
 - `guanxiangtai_status`：检测 MCP server 是否能通过内部 IPC 向观象台前端和后端插件分别完成状态请求。返回体只报告
   `frontend`、`backend` 两侧的判别联合：`available` 或 `unavailable(reason)`，不包含 MCP server 自身可用性，
   也不暴露内部 IPC 地址。
-- `guanxiangtai_run_csharp_script`：在观象台前端或后端插件进程内执行受信 C# 编译单元。脚本入口是
-  `public static GuanxiangtaiScript.Execute` 或 `ExecuteAsync`，参数为
-  `Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals`。工具返回入口未调用、入口返回值或入口异常的结构化 JSON。
+- `guanxiangtai_run_csharp_script`：在观象台前端或后端插件进程内执行受信 C# 编译单元。脚本入口契约由
+  [脚本执行适配模块](src/Scripting/README.md#入口契约)维护。工具返回入口未调用、入口返回值或入口异常的结构化 JSON。
 
 ## 运行态文件
 

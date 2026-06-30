@@ -14,6 +14,8 @@ public sealed class DynamicScriptRunner
 {
     private const string CompilationFailureReason =
         "Compilation could not produce an assembly.";
+    private const string AsyncEntryMethodName = "ExecuteAsync";
+    private const string SyncEntryMethodName = "Execute";
 
     private readonly DynamicScriptEntryContract _contract;
     private readonly ScriptReferenceResolver _referenceResolver;
@@ -136,7 +138,7 @@ public sealed class DynamicScriptRunner
         CompilationReferences references =
             _referenceResolver.CollectReferences(
                 _contract.ScriptGlobalsType.Assembly,
-                _contract.ScriptGlobalsDisplayName);
+                GetScriptGlobalsTypeName());
         if (!references.HasRequiredReferences)
         {
             return new ScriptCompilationResult.Rejected(
@@ -149,7 +151,7 @@ public sealed class DynamicScriptRunner
             new CSharpParseOptions(LanguageVersion.Latest),
             cancellationToken: cancellationToken);
         CSharpCompilation compilation = CSharpCompilation.Create(
-            $"{_contract.ScriptAssemblyNamePrefix}.{Guid.NewGuid():N}",
+            CreateScriptAssemblyName(),
             [syntaxTree],
             references.References,
             new CSharpCompilationOptions(
@@ -186,7 +188,7 @@ public sealed class DynamicScriptRunner
         {
             throw new ArgumentException(
                 $"Script globals object has type {globals.GetType().FullName}, "
-                + $"but the script contract requires {_contract.ScriptGlobalsDisplayName}.",
+                + $"but the script contract requires {GetScriptGlobalsTypeName()}.",
                 nameof(globals));
         }
     }
@@ -217,24 +219,8 @@ public sealed class DynamicScriptRunner
 
     private Type FindEntryType(Assembly assembly)
     {
-        Type[] candidates =
-        [
-            .. assembly.GetTypes().Where(IsValidEntryType),
-        ];
-
-        if (candidates.Length == 1)
-        {
-            return candidates[0];
-        }
-
-        if (candidates.Length > 1)
-        {
-            throw new InvalidOperationException(
-                "The compiled script has multiple public static "
-                + $"{_contract.EntryTypeSimpleName} entry types. Keep only one entry type.");
-        }
-
-        throw new InvalidOperationException(GetEntryTypeContractMessage());
+        return assembly.GetTypes().FirstOrDefault(IsValidEntryType)
+            ?? throw new InvalidOperationException(GetEntryTypeContractMessage());
     }
 
     private MethodInfo FindEntryMethod(Type scriptType)
@@ -262,8 +248,8 @@ public sealed class DynamicScriptRunner
         {
             throw new InvalidOperationException(
                 "The compiled script has multiple matching entry methods. "
-                + $"Keep only one {_contract.AsyncEntryMethodName}"
-                + $" or {_contract.SyncEntryMethodName} overload with one parameter whose type resolves to {_contract.ScriptGlobalsDisplayName}.");
+                + $"Keep only one {AsyncEntryMethodName}"
+                + $" or {SyncEntryMethodName} overload with one parameter whose type resolves to {GetScriptGlobalsTypeName()}.");
         }
 
         throw new InvalidOperationException(GetEntryMethodContractMessage());
@@ -271,7 +257,7 @@ public sealed class DynamicScriptRunner
 
     private bool IsValidEntryType(Type type)
     {
-        return type.Name == _contract.EntryTypeSimpleName
+        return type.FullName == _contract.EntryTypeFullName
             && type.IsClass
             && type.IsAbstract
             && type.IsSealed
@@ -279,10 +265,9 @@ public sealed class DynamicScriptRunner
             && !type.ContainsGenericParameters;
     }
 
-    private bool IsEntryMethodName(string name)
+    private static bool IsEntryMethodName(string name)
     {
-        return name == _contract.AsyncEntryMethodName
-            || name == _contract.SyncEntryMethodName;
+        return name is AsyncEntryMethodName or SyncEntryMethodName;
     }
 
     private bool HasScriptGlobalsParameter(MethodInfo method)
@@ -295,15 +280,29 @@ public sealed class DynamicScriptRunner
     private string GetEntryTypeContractMessage()
     {
         return "Entry type contract was not satisfied. Define exactly one public static "
-            + $"non-generic class named {_contract.EntryTypeSimpleName}.";
+            + $"non-generic class named {_contract.EntryTypeFullName}.";
     }
 
     private string GetEntryMethodContractMessage()
     {
         return "Entry method contract was not satisfied. Define exactly one public static "
-            + $"{_contract.EntryTypeSimpleName}.{_contract.AsyncEntryMethodName} or "
-            + $"{_contract.EntryTypeSimpleName}.{_contract.SyncEntryMethodName} method with one "
-            + $"parameter whose type resolves to {_contract.ScriptGlobalsDisplayName}.";
+            + $"{_contract.EntryTypeFullName}.{AsyncEntryMethodName} or "
+            + $"{_contract.EntryTypeFullName}.{SyncEntryMethodName} method with one "
+            + $"parameter whose type resolves to {GetScriptGlobalsTypeName()}.";
+    }
+
+    private string GetScriptGlobalsTypeName()
+    {
+        return _contract.ScriptGlobalsType.FullName ?? _contract.ScriptGlobalsType.Name;
+    }
+
+    private string CreateScriptAssemblyName()
+    {
+        string? globalsAssemblyName = _contract.ScriptGlobalsType.Assembly.GetName().Name;
+        string assemblyNamePrefix = string.IsNullOrWhiteSpace(globalsAssemblyName)
+            ? _contract.EntryTypeFullName
+            : globalsAssemblyName;
+        return $"{assemblyNamePrefix}.DynamicScript.{Guid.NewGuid():N}";
     }
 
     private static async Task<object?> ResolveReturnValueAsync(
