@@ -55,9 +55,12 @@
 运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
-注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求，前端侧入口分派和脚本引用选项创建复用
-`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`，并固定加入 UniTask 编译引用。`entryThread = mainThread`
-的入口调用切换到 Unity 主线程。入口契约和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared
+注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求。前端侧入口分派复用
+`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。`entryThread = mainThread` 的入口调用切换到 Unity 主线程。
+脚本引用选项由 `Ipc/` 创建：脚本契约 DLL 路径来自 `src/Scripting/`，前端额外加入 `Wanxiang.Prelude`
+运行时提供的 UniTask 编译引用。
+
+入口契约、契约 DLL 引用路径和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared
 动态脚本运行核心。
 
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；

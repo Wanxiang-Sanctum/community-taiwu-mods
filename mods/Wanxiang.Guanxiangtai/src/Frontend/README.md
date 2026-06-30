@@ -7,7 +7,13 @@
   role 为 `frontend` 的内部入口。
 - 承接前端侧状态检测和受信 C# 脚本执行请求。
 
-`entryThread = mainThread` 的脚本入口会切到 Unity 主线程。Unity 主线程分派和前端脚本引用选项创建复用
-`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`；该前端适配固定加入 UniTask 编译引用。入口契约和 Mod 侧响应映射归
-`src/Scripting/`，通用编译和临时程序集依赖解析归 shared 动态脚本运行核心。
+`entryThread = mainThread` 的脚本入口会切到 Unity 主线程。Unity 主线程分派复用
+`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。
+
+脚本引用选项由本模块创建：脚本契约 DLL 路径来自 `src/Scripting/`，前端额外加入 `Wanxiang.Prelude`
+运行时提供的 UniTask 编译引用。
+
+入口契约、契约 DLL 引用路径和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared
+动态脚本运行核心。
+
 前端游戏进程不作为 agent 可直接连接入口；agent 仍只连接 MCP server。

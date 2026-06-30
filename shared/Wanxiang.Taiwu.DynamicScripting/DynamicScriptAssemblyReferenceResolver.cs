@@ -12,13 +12,10 @@ public static class DynamicScriptAssemblyReferenceResolver
     /// Resolves the assembly that defines the supplied marker type to a metadata reference path.
     /// </summary>
     /// <param name="markerType">A type defined by the assembly to reference.</param>
-    /// <param name="searchDirectories">Explicit directories to search when the loaded assembly has no usable location.</param>
     /// <returns>The resolved assembly reference path.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="markerType"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">The assembly cannot be resolved to a metadata reference path.</exception>
-    public static string ResolveRequiredAssemblyReferencePath(
-        Type markerType,
-        IEnumerable<string>? searchDirectories = null)
+    public static string ResolveRequiredAssemblyReferencePath(Type markerType)
     {
 #if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(markerType);
@@ -29,20 +26,17 @@ public static class DynamicScriptAssemblyReferenceResolver
         }
 #endif
 
-        return ResolveRequiredAssemblyReferencePath(markerType.Assembly, searchDirectories);
+        return ResolveRequiredAssemblyReferencePath(markerType.Assembly);
     }
 
     /// <summary>
     /// Resolves the supplied assembly to a metadata reference path.
     /// </summary>
     /// <param name="assembly">The assembly to reference.</param>
-    /// <param name="searchDirectories">Explicit directories to search when the loaded assembly has no usable location.</param>
     /// <returns>The resolved assembly reference path.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="assembly"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">The assembly cannot be resolved to a metadata reference path.</exception>
-    public static string ResolveRequiredAssemblyReferencePath(
-        Assembly assembly,
-        IEnumerable<string>? searchDirectories = null)
+    public static string ResolveRequiredAssemblyReferencePath(Assembly assembly)
     {
 #if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(assembly);
@@ -53,31 +47,111 @@ public static class DynamicScriptAssemblyReferenceResolver
         }
 #endif
 
-        if (TryResolveAssemblyReferencePath(
-            assembly,
-            searchDirectories,
-            out string? referencePath))
+        if (TryGetAssemblyLocation(assembly, out string? referencePath))
         {
             return referencePath;
         }
 
         throw new InvalidOperationException(
             "Could not resolve a metadata reference path for assembly "
-            + $"'{assembly.GetName().FullName}'. Pass an explicit DLL path through "
-            + "DynamicScriptReferenceOptions, or provide a search directory that contains "
-            + "the matching assembly.");
+            + $"'{assembly.GetName().FullName}'. Pass the exact DLL path through "
+            + "DynamicScriptReferenceOptions.");
     }
 
-    private static bool TryResolveAssemblyReferencePath(
-        Assembly assembly,
-        IEnumerable<string>? searchDirectories,
-        [NotNullWhen(true)] out string? referencePath)
+    /// <summary>
+    /// Gets a normalized reference path after verifying that it matches the assembly that defines a marker type.
+    /// </summary>
+    /// <param name="markerType">A type defined by the assembly to reference.</param>
+    /// <param name="referencePath">The exact DLL file to reference.</param>
+    /// <returns>The normalized assembly reference path.</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="markerType"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the marker assembly.</exception>
+    public static string GetVerifiedAssemblyReferencePath(
+        Type markerType,
+        string referencePath)
     {
-        return TryGetAssemblyLocation(assembly, out referencePath)
-            || TryFindAssemblyInSearchDirectories(
-                assembly.GetName(),
-                NormalizeSearchDirectories(searchDirectories),
-                out referencePath);
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(markerType);
+#else
+        if (markerType is null)
+        {
+            throw new ArgumentNullException(nameof(markerType));
+        }
+#endif
+
+        return GetVerifiedAssemblyReferencePath(markerType.Assembly, referencePath);
+    }
+
+    /// <summary>
+    /// Gets a normalized reference path after verifying that it matches the supplied assembly.
+    /// </summary>
+    /// <param name="assembly">The assembly to reference.</param>
+    /// <param name="referencePath">The exact DLL file to reference.</param>
+    /// <returns>The normalized assembly reference path.</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the assembly.</exception>
+    public static string GetVerifiedAssemblyReferencePath(
+        Assembly assembly,
+        string referencePath)
+    {
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(assembly);
+#else
+        if (assembly is null)
+        {
+            throw new ArgumentNullException(nameof(assembly));
+        }
+#endif
+
+        return GetVerifiedAssemblyReferencePath(assembly.GetName(), referencePath);
+    }
+
+    /// <summary>
+    /// Gets a normalized reference path after verifying that it matches the supplied assembly identity.
+    /// </summary>
+    /// <param name="assemblyName">The exact assembly identity to reference.</param>
+    /// <param name="referencePath">The exact DLL file to reference.</param>
+    /// <returns>The normalized assembly reference path.</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="assemblyName"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the assembly identity.</exception>
+    public static string GetVerifiedAssemblyReferencePath(
+        AssemblyName assemblyName,
+        string referencePath)
+    {
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(assemblyName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(referencePath);
+#else
+        if (assemblyName is null)
+        {
+            throw new ArgumentNullException(nameof(assemblyName));
+        }
+
+        if (string.IsNullOrWhiteSpace(referencePath))
+        {
+            throw new ArgumentException("Assembly reference path is required.", nameof(referencePath));
+        }
+#endif
+
+        string normalizedReferencePath = Path.GetFullPath(
+            Environment.ExpandEnvironmentVariables(referencePath.Trim()));
+        if (!File.Exists(normalizedReferencePath))
+        {
+            throw new InvalidOperationException(
+                $"Assembly reference path does not exist: '{normalizedReferencePath}'.");
+        }
+
+        if (!AssemblyIdentityMatches(normalizedReferencePath, assemblyName))
+        {
+            throw new InvalidOperationException(
+                "Assembly reference path does not match expected assembly identity "
+                + $"'{assemblyName.FullName}': '{normalizedReferencePath}'.");
+        }
+
+        return normalizedReferencePath;
     }
 
     internal static bool TryGetAssemblyLocation(
@@ -139,54 +213,4 @@ public static class DynamicScriptAssemblyReferenceResolver
         }
     }
 
-    private static bool TryFindAssemblyInSearchDirectories(
-        AssemblyName assemblyName,
-        IReadOnlyList<string> searchDirectories,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-        if (string.IsNullOrWhiteSpace(assemblyName.Name))
-        {
-            return false;
-        }
-
-        string fileName = assemblyName.Name + ".dll";
-        foreach (string searchDirectory in searchDirectories)
-        {
-            string candidatePath = Path.Combine(searchDirectory, fileName);
-            if (File.Exists(candidatePath) && AssemblyIdentityMatches(candidatePath, assemblyName))
-            {
-                referencePath = candidatePath;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string[] NormalizeSearchDirectories(IEnumerable<string>? searchDirectories)
-    {
-        if (searchDirectories is null)
-        {
-            return [];
-        }
-
-        List<string> normalizedDirectories = [];
-        foreach (string searchDirectory in searchDirectories)
-        {
-            if (string.IsNullOrWhiteSpace(searchDirectory))
-            {
-                continue;
-            }
-
-            string normalizedDirectory = Path.GetFullPath(
-                Environment.ExpandEnvironmentVariables(searchDirectory.Trim()));
-            if (!normalizedDirectories.Contains(normalizedDirectory, StringComparer.OrdinalIgnoreCase))
-            {
-                normalizedDirectories.Add(normalizedDirectory);
-            }
-        }
-
-        return [.. normalizedDirectories];
-    }
 }

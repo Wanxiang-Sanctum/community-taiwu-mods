@@ -20,7 +20,7 @@ MCP 工具承担三类路由：把 C# 脚本请求转发到前端或后端 IPC e
 内部的嵌套判别联合整理为 Agent 可读 JSON：未调用入口时返回原因和可选诊断；已调用入口时再区分入口返回值和入口异常。
 实际线程切换由目标侧插件实现。
 
-MCP server 不参与脚本编译引用解析，也不维护前后端 DLL 清单。入口契约和 Mod 侧响应映射归目标插件进程内的
-`src/Scripting/`；通用编译、入口调用和运行事实归 shared 动态脚本运行核心；前端主线程分派和前端脚本引用选项创建归
-`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`，后端主循环分派归 `shared/Wanxiang.Taiwu.DynamicScripting.Backend`。
-可部署依赖仍由打包项目维护。
+MCP server 不参与脚本编译引用解析，也不维护前后端 DLL 清单。入口契约、Mod 侧响应映射和脚本契约 DLL 引用路径归
+目标插件进程内的 `src/Scripting/`；前端额外脚本引用归前端插件，后端主循环分派归
+`shared/Wanxiang.Taiwu.DynamicScripting.Backend`，前端主线程分派归 `shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。
+通用编译、入口调用和运行事实归 shared 动态脚本运行核心。可部署依赖仍由打包项目维护。

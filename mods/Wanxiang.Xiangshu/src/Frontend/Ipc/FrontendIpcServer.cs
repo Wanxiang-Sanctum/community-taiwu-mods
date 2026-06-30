@@ -114,9 +114,7 @@ internal sealed class FrontendIpcServer(
 
     private static DynamicScriptReferenceOptions CreateScriptReferenceOptions(string pluginDirectory)
     {
-        return FrontendScriptReferences.CreateOptions(
-            pluginDirectory,
-            typeof(XiangshuScriptGlobals));
+        return ScriptReferences.Create(pluginDirectory);
     }
 
     private void ConfigureContainer(

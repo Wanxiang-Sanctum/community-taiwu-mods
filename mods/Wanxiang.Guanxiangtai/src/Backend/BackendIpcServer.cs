@@ -168,9 +168,7 @@ internal sealed class BackendIpcServer(
     {
         return new DynamicScriptReferenceOptions(
         [
-            DynamicScriptAssemblyReferenceResolver.ResolveRequiredAssemblyReferencePath(
-                typeof(GuanxiangtaiScriptGlobals),
-                [pluginDirectory]),
+            ScriptReferencePaths.GetContractReferencePath(pluginDirectory),
         ]);
     }
 
