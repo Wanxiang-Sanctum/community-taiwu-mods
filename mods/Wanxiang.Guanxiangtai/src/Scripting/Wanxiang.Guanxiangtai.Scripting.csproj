@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Scripting.Contracts/Wanxiang.Guanxiangtai.Scripting.Contracts.csproj"
+    />
+    <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
     />
     <ProjectReference

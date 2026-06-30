@@ -29,6 +29,8 @@ internal sealed class BackendIpcServer(
             return _endpoint!;
         }
 
+        DynamicScriptReferenceOptions scriptReferences =
+            CreateScriptReferences(pluginDirectory);
         Exception? lastException = null;
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
@@ -37,7 +39,7 @@ internal sealed class BackendIpcServer(
 
             try
             {
-                return StartOnPort(port);
+                return StartOnPort(port, scriptReferences);
             }
             catch (SocketException ex)
             {
@@ -67,7 +69,9 @@ internal sealed class BackendIpcServer(
         _provider = null;
     }
 
-    private IpcEndpoint StartOnPort(int port)
+    private IpcEndpoint StartOnPort(
+        int port,
+        DynamicScriptReferenceOptions scriptReferences)
     {
         ServiceCollection services = new();
         IMessagePipeBuilder messagePipeBuilder = services.AddMessagePipe(
@@ -79,7 +83,7 @@ internal sealed class BackendIpcServer(
             });
         RegisterIpcScriptHandler(
             services,
-            pluginDirectory,
+            scriptReferences,
             scriptEntryDispatcher);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
@@ -125,7 +129,7 @@ internal sealed class BackendIpcServer(
 
     private static void RegisterIpcScriptHandler(
         IServiceCollection services,
-        string pluginDirectory,
+        DynamicScriptReferenceOptions scriptReferences,
         IDynamicScriptEntryDispatcher scriptEntryDispatcher)
     {
         _ = services
@@ -133,7 +137,7 @@ internal sealed class BackendIpcServer(
                 new XiangshuScriptRunner(
                     new ScriptRunnerOptions(
                         IpcRuntime.BackendEndpointRole,
-                        referenceDirectories: [pluginDirectory]),
+                        references: scriptReferences),
                     scriptEntryDispatcher))
             .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
             .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(
@@ -144,6 +148,16 @@ internal sealed class BackendIpcServer(
             typeof(IpcRunScriptRequest),
             typeof(IpcRunScriptResponse),
             typeof(BackendExecuteScriptHandler));
+    }
+
+    private static DynamicScriptReferenceOptions CreateScriptReferences(string pluginDirectory)
+    {
+        return new DynamicScriptReferenceOptions(
+        [
+            DynamicScriptAssemblyReferenceResolver.ResolveRequiredAssemblyReferencePath(
+                typeof(XiangshuScriptGlobals),
+                [pluginDirectory]),
+        ]);
     }
 
     private void ThrowIfDisposed()

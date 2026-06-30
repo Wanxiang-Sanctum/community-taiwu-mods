@@ -16,12 +16,12 @@ public sealed class XiangshuScriptRunner
 
     public XiangshuScriptRunner(
         string side,
-        IEnumerable<string>? referenceDirectories = null,
+        DynamicScriptReferenceOptions references,
         IDynamicScriptEntryDispatcher? entryDispatcher = null)
         : this(
             new ScriptRunnerOptions(
                 side,
-                referenceDirectories: referenceDirectories),
+                references: references),
             entryDispatcher)
     {
     }

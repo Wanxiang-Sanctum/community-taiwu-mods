@@ -42,7 +42,8 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - `docs/`：内部设计说明，入口见 `docs/README.md`。
 - `src/McpServerRuntime/`：前端启动器和 MCP server 本体共享的运行态协调模块，维护 MCP server 外部入口文件。
 - `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、endpoint manifest、状态检测和脚本执行消息。
-- `src/Scripting/`：观象台脚本入口适配层，声明脚本入口契约，并复用 shared 动态脚本运行核心。
+- `src/Scripting.Contracts/`：观象台脚本可见的窄契约程序集，承载脚本入口参数等稳定脚本契约。
+- `src/Scripting/`：观象台脚本入口适配层，声明入口类型约定、运行器适配和响应映射，并复用 shared 动态脚本运行核心。
 - `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责确保 MCP server 进程启动、发布前端 IPC endpoint，
   并承接前端侧脚本执行。
 - `src/Backend/`：后端插件项目，入口 DLL 部署到 `Plugins/Backend/`，负责发布后端 IPC endpoint，并承接后端侧脚本执行。

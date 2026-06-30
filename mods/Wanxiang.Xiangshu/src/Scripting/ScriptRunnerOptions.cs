@@ -6,24 +6,25 @@ public sealed class ScriptRunnerOptions
 {
     public ScriptRunnerOptions(
         string side,
-        IEnumerable<string>? referenceDirectories = null,
-        IEnumerable<string>? assemblyReferencePaths = null)
+        DynamicScriptReferenceOptions references)
     {
 #if NET6_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(side);
+        ArgumentNullException.ThrowIfNull(references);
 #else
         if (string.IsNullOrWhiteSpace(side))
         {
             throw new ArgumentException("Side is required.", nameof(side));
         }
+
+        if (references is null)
+        {
+            throw new ArgumentNullException(nameof(references));
+        }
 #endif
 
-        DynamicScriptReferenceOptions referenceOptions = new(
-            referenceDirectories,
-            assemblyReferencePaths);
-
         Side = side;
-        References = referenceOptions;
+        References = references;
     }
 
     public string Side { get; }

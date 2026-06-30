@@ -30,7 +30,7 @@
 | ------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------- |
 | `Wanxiang.Taiwu.Logging/`                   | 前后端插件共用的太吾游戏日志格式化适配层。                               | `Wanxiang.Taiwu.Logging/README.md`                   |
 | `Wanxiang.Taiwu.DynamicScripting/`          | 前后端插件共用的受信 C# 动态脚本编译、引用解析和入口调用核心。           | `Wanxiang.Taiwu.DynamicScripting/README.md`          |
-| `Wanxiang.Taiwu.DynamicScripting.Frontend/` | 前端插件共用的动态脚本 Unity 主线程分派和额外程序集引用解析适配层。      | `Wanxiang.Taiwu.DynamicScripting.Frontend/README.md` |
+| `Wanxiang.Taiwu.DynamicScripting.Frontend/` | 前端插件共用的动态脚本 Unity 主线程分派和显式前端能力引用解析适配层。    | `Wanxiang.Taiwu.DynamicScripting.Frontend/README.md` |
 | `Wanxiang.Taiwu.DynamicScripting.Backend/`  | 后端插件共用的动态脚本 GameData 主循环入口分派适配层。                   | `Wanxiang.Taiwu.DynamicScripting.Backend/README.md`  |
 | `Wanxiang.Taiwu.AsyncInterop/`              | 前后端共用的太吾游戏异步回调与可等待对象互操作原语。                     | `Wanxiang.Taiwu.AsyncInterop/README.md`              |
 | `Wanxiang.Taiwu.ModRpc/`                    | 太吾单 mod 内部前后端 JSON RPC 封装，对外入口是 `RpcPeer`。              | `Wanxiang.Taiwu.ModRpc/README.md`                    |

@@ -225,8 +225,12 @@
         "type": "Project",
         "dependencies": {
           "Wanxiang.Taiwu.DynamicScripting": "[1.0.0, )",
-          "Wanxiang.Xiangshu.Ipc": "[1.0.0, )"
+          "Wanxiang.Xiangshu.Ipc": "[1.0.0, )",
+          "Wanxiang.Xiangshu.Scripting.Contracts": "[1.0.0, )"
         }
+      },
+      "wanxiang.xiangshu.scripting.contracts": {
+        "type": "Project"
       },
       "Microsoft.CodeAnalysis.CSharp": {
         "type": "CentralTransitive",

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 
@@ -8,7 +7,6 @@ internal sealed class ScriptReferenceResolver
 {
     private const string TrustedPlatformAssembliesKey = "TRUSTED_PLATFORM_ASSEMBLIES";
 
-    private readonly List<string> _referenceDirectories;
     private readonly List<string> _assemblyReferencePaths;
 
     public ScriptReferenceResolver(DynamicScriptReferenceOptions referenceOptions)
@@ -22,7 +20,6 @@ internal sealed class ScriptReferenceResolver
         }
 #endif
 
-        _referenceDirectories = [.. referenceOptions.ReferenceDirectories];
         _assemblyReferencePaths = [.. referenceOptions.AssemblyReferencePaths];
     }
 
@@ -61,12 +58,6 @@ internal sealed class ScriptReferenceResolver
             referenceAssemblyIdentities,
             referenceDiagnostics);
 
-        AddReferenceDirectoryReferences(
-            references,
-            referencePaths,
-            referenceAssemblyIdentities,
-            referenceDiagnostics);
-
         bool hasRequiredReferences = TryAddRequiredAssemblyReference(
             requiredAssembly,
             requiredAssemblyDisplayName,
@@ -92,9 +83,7 @@ internal sealed class ScriptReferenceResolver
 
     public AssemblyResolutionScope CreateAssemblyResolutionScope()
     {
-        return new AssemblyResolutionScope(
-            _referenceDirectories,
-            _assemblyReferencePaths);
+        return new AssemblyResolutionScope(_assemblyReferencePaths);
     }
 
     private void AddExplicitAssemblyReferences(
@@ -132,8 +121,11 @@ internal sealed class ScriptReferenceResolver
         HashSet<string> referenceAssemblyIdentities,
         List<string> referenceDiagnostics)
     {
-        if (!TryGetAssemblyReferencePath(assembly, out string? referencePath)
-            && !TryFindReferenceDirectoryAssembly(assembly.GetName(), out referencePath))
+        if (!DynamicScriptAssemblyReferenceResolver.TryGetAssemblyLocation(assembly, out string? referencePath)
+            && !DynamicScriptAssemblyReferenceResolver.TryFindAssemblyReferencePath(
+                assembly.GetName(),
+                _assemblyReferencePaths,
+                out referencePath))
         {
             referenceDiagnostics.Add(
                 $"The assembly that defines {assemblyDisplayName} is not available "
@@ -162,7 +154,7 @@ internal sealed class ScriptReferenceResolver
         HashSet<string> referencePaths,
         HashSet<string> referenceAssemblyIdentities)
     {
-        if (TryGetAssemblyReferencePath(assembly, out string? referencePath))
+        if (DynamicScriptAssemblyReferenceResolver.TryGetAssemblyLocation(assembly, out string? referencePath))
         {
             _ = TryAddMetadataReference(
                 referencePath,
@@ -170,29 +162,6 @@ internal sealed class ScriptReferenceResolver
                 referencePaths,
                 referenceAssemblyIdentities);
         }
-    }
-
-    private static bool TryGetAssemblyReferencePath(
-        Assembly assembly,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-
-        if (assembly.IsDynamic)
-        {
-            return false;
-        }
-
-        try
-        {
-            referencePath = assembly.Location;
-        }
-        catch (NotSupportedException)
-        {
-        }
-
-        return !string.IsNullOrWhiteSpace(referencePath)
-            && File.Exists(referencePath);
     }
 
     private static void AddTrustedPlatformAssemblyReferences(
@@ -216,84 +185,6 @@ internal sealed class ScriptReferenceResolver
                     referenceAssemblyIdentities);
             }
         }
-    }
-
-    private void AddReferenceDirectoryReferences(
-        List<MetadataReference> references,
-        HashSet<string> referencePaths,
-        HashSet<string> referenceAssemblyIdentities,
-        List<string> referenceDiagnostics)
-    {
-        foreach (string referenceDirectory in _referenceDirectories)
-        {
-            if (!Directory.Exists(referenceDirectory))
-            {
-                referenceDiagnostics.Add(
-                    $"Script reference directory does not exist: '{referenceDirectory}'.");
-                continue;
-            }
-
-            foreach (string referencePath in EnumerateReferenceDirectoryAssemblies(referenceDirectory))
-            {
-                _ = TryAddMetadataReference(
-                    referencePath,
-                    references,
-                    referencePaths,
-                    referenceAssemblyIdentities);
-            }
-        }
-    }
-
-    private bool TryFindReferenceDirectoryAssembly(
-        AssemblyName assemblyName,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-        if (string.IsNullOrWhiteSpace(assemblyName.Name))
-        {
-            return false;
-        }
-
-        string fileName = assemblyName.Name + ".dll";
-        foreach (string referenceDirectory in _referenceDirectories)
-        {
-            string candidatePath = Path.Combine(referenceDirectory, fileName);
-            if (File.Exists(candidatePath) && AssemblyIdentityMatches(candidatePath, assemblyName))
-            {
-                referencePath = candidatePath;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool AssemblyIdentityMatches(string path, AssemblyName expectedName)
-    {
-        try
-        {
-            AssemblyName candidateName = AssemblyName.GetAssemblyName(path);
-            return string.Equals(
-                    candidateName.FullName,
-                    expectedName.FullName,
-                    StringComparison.OrdinalIgnoreCase)
-                || AssemblyName.ReferenceMatchesDefinition(expectedName, candidateName);
-        }
-        catch (Exception ex) when (ex is ArgumentException
-            or BadImageFormatException
-            or IOException
-            or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
-
-    private static string[] EnumerateReferenceDirectoryAssemblies(string referenceDirectory)
-    {
-        return
-        [
-            .. Directory.EnumerateFiles(referenceDirectory, "*.dll", SearchOption.TopDirectoryOnly),
-        ];
     }
 
     private static bool TryAddMetadataReference(

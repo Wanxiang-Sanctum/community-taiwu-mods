@@ -5,15 +5,14 @@ using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
+using Wanxiang.Taiwu.DynamicScripting;
 using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.Scripting;
 
 namespace Wanxiang.Guanxiangtai.Frontend;
 
-internal sealed class FrontendIpcServer(
-    string pluginDirectory,
-    IEnumerable<string>? additionalAssemblyReferencePaths) : IDisposable
+internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptReferences) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -114,8 +113,7 @@ internal sealed class FrontendIpcServer(
             new GuanxiangtaiScriptRunner(
                 new ScriptRunnerOptions(
                     IpcRuntime.FrontendEndpointRole,
-                    referenceDirectories: [pluginDirectory],
-                    assemblyReferencePaths: additionalAssemblyReferencePaths),
+                    references: scriptReferences),
                 new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,

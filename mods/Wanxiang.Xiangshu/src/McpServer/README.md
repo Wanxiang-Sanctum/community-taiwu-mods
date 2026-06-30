@@ -21,5 +21,6 @@ MCP 工具承担三类路由：把 C# 脚本请求转发到前端或后端 IPC e
 实际线程切换由目标侧插件实现。
 
 MCP server 不参与脚本编译引用解析，也不维护前后端 DLL 清单。入口契约和 Mod 侧响应映射归目标插件进程内的
-`src/Scripting/`；通用编译、入口调用和运行事实归 shared 动态脚本运行核心；前端/后端线程分派与前端额外引用发现归
-`shared/Wanxiang.Taiwu.DynamicScripting.*` 侧别适配层；可部署依赖仍由打包项目维护。
+`src/Scripting/`；通用编译、入口调用和运行事实归 shared 动态脚本运行核心；前端主线程分派和显式前端能力引用解析归
+`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`，后端主循环分派归 `shared/Wanxiang.Taiwu.DynamicScripting.Backend`。
+可部署依赖仍由打包项目维护。

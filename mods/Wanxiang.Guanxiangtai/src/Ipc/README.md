@@ -15,5 +15,5 @@ MCP server 的 HTTP `/mcp`。
 
 状态检测语义保持窄边界：某侧 `available` 结果只表示 MCP server 已经通过内部 IPC 收到该侧状态响应。
 
-脚本入口契约和 Mod 侧响应映射归 `src/Scripting/`；实际编译、入口调用和通用运行事实归 shared 动态脚本运行核心。IPC
-模块只承载跨进程请求与响应。
+脚本入口契约和 Mod 侧响应映射归 `src/Scripting/`；实际编译、入口调用和通用运行事实归 shared 动态脚本运行核心。
+目标侧可见 API 和显式引用配置归前端或后端插件宿主。IPC 模块只承载跨进程请求与响应。

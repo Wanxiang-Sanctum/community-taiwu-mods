@@ -1,27 +1,24 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Describes reference discovery inputs for dynamic script compilation.
+/// Describes explicit assembly reference inputs for dynamic script compilation.
 /// </summary>
-/// <param name="referenceDirectories">Directories whose top-level DLLs are available as compilation and runtime references.</param>
-/// <param name="assemblyReferencePaths">Specific assembly files to add as compilation references.</param>
+/// <param name="assemblyReferencePaths">Specific assembly files to add as compilation and runtime references.</param>
+/// <exception cref="ArgumentException"><paramref name="assemblyReferencePaths"/> contains a null or whitespace path.</exception>
 public sealed class DynamicScriptReferenceOptions(
-    IEnumerable<string>? referenceDirectories = null,
     IEnumerable<string>? assemblyReferencePaths = null)
 {
     /// <summary>
-    /// Gets directories whose top-level DLLs are available as compilation and runtime references.
-    /// </summary>
-    public IReadOnlyList<string> ReferenceDirectories { get; } =
-        NormalizePaths(referenceDirectories);
-
-    /// <summary>
-    /// Gets specific assembly files to add as compilation references.
+    /// Gets specific assembly files to add as compilation and runtime references.
     /// </summary>
     public IReadOnlyList<string> AssemblyReferencePaths { get; } =
-        NormalizePaths(assemblyReferencePaths);
+        NormalizePaths(
+            assemblyReferencePaths,
+            nameof(assemblyReferencePaths));
 
-    private static List<string> NormalizePaths(IEnumerable<string>? paths)
+    private static List<string> NormalizePaths(
+        IEnumerable<string>? paths,
+        string parameterName)
     {
         if (paths is null)
         {
@@ -30,11 +27,13 @@ public sealed class DynamicScriptReferenceOptions(
 
         List<string> normalizedPaths = [];
         HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in paths)
+        foreach (string? path in paths)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
-                continue;
+                throw new ArgumentException(
+                    "Assembly reference paths cannot contain null or whitespace entries.",
+                    parameterName);
             }
 
             string normalizedPath = Path.GetFullPath(

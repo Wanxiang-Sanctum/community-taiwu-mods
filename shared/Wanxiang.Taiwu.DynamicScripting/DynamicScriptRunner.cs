@@ -32,7 +32,7 @@ public sealed class DynamicScriptRunner
     /// Initializes a new instance of the <see cref="DynamicScriptRunner"/> class.
     /// </summary>
     /// <param name="contract">The mod-specific script entry contract.</param>
-    /// <param name="referenceOptions">The reference discovery inputs.</param>
+    /// <param name="referenceOptions">The explicit assembly reference inputs.</param>
     /// <param name="entryDispatcher">An optional dispatcher for host thread selection.</param>
     public DynamicScriptRunner(
         DynamicScriptEntryContract contract,

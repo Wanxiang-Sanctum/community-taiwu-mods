@@ -11,9 +11,11 @@ using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.Mcp;
+using Wanxiang.Taiwu.DynamicScripting;
 using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
+using Wanxiang.Xiangshu.Scripting;
 
 namespace Wanxiang.Xiangshu.Frontend;
 
@@ -141,10 +143,22 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             PluginDirectoryName);
         _ipcServer = new FrontendIpcServer(
             currentChatSessionBinding,
-            pluginDirectory,
-            FrontendScriptReferencePaths.GetAdditionalAssemblyReferencePaths(pluginDirectory));
+            CreateScriptReferences(pluginDirectory));
         _ = _ipcServer.Start();
         Log.Info("frontend IPC ready");
+    }
+
+    private static DynamicScriptReferenceOptions CreateScriptReferences(string pluginDirectory)
+    {
+        return new DynamicScriptReferenceOptions(
+        [
+            DynamicScriptAssemblyReferenceResolver.ResolveRequiredAssemblyReferencePath(
+                typeof(XiangshuScriptGlobals),
+                [pluginDirectory]),
+            .. FrontendScriptReferencePaths.GetAssemblyReferencePaths(
+                pluginDirectory,
+                FrontendScriptReferenceFeatures.UniTask),
+        ]);
     }
 
     private void InstallChatHotkey()

@@ -55,7 +55,7 @@
 运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
-注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求，前端侧入口分派和额外程序集引用解析复用
+注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求，前端侧入口分派和显式能力引用解析复用
 `shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。`entryThread = mainThread` 的入口调用切换到 Unity 主线程。
 入口契约和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared 动态脚本运行核心。
 

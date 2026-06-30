@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <TaiwuModCopyDependency Include="Wanxiang.Xiangshu.Ipc.dll" />
+    <TaiwuModCopyDependency
+      Include="Wanxiang.Xiangshu.Scripting.Contracts.dll"
+    />
     <TaiwuModMergeDependency Include="Wanxiang.Xiangshu.Scripting.dll" />
   </ItemGroup>
 

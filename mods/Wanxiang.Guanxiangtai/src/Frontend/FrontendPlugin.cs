@@ -1,7 +1,9 @@
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.DynamicScripting;
 using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
+using Wanxiang.Guanxiangtai.Scripting;
 using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Guanxiangtai.Frontend;
@@ -53,8 +55,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
             string pluginDirectory = GetPluginDirectory(modDirectory);
             _ipcServer = new FrontendIpcServer(
-                pluginDirectory,
-                FrontendScriptReferencePaths.GetAdditionalAssemblyReferencePaths(pluginDirectory));
+                CreateScriptReferences(pluginDirectory));
             _ = _ipcServer.Start();
             Log.Info("frontend IPC ready");
         }
@@ -72,5 +73,18 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             modDirectory,
             PluginsDirectoryName,
             PluginDirectoryName);
+    }
+
+    private static DynamicScriptReferenceOptions CreateScriptReferences(string pluginDirectory)
+    {
+        return new DynamicScriptReferenceOptions(
+        [
+            DynamicScriptAssemblyReferenceResolver.ResolveRequiredAssemblyReferencePath(
+                typeof(GuanxiangtaiScriptGlobals),
+                [pluginDirectory]),
+            .. FrontendScriptReferencePaths.GetAssemblyReferencePaths(
+                pluginDirectory,
+                FrontendScriptReferenceFeatures.UniTask),
+        ]);
     }
 }

@@ -26,8 +26,9 @@
 Agent 可读 JSON：未调用入口时返回原因和可选诊断；已调用入口时再区分入口返回值和入口异常。实际线程切换由目标侧插件实现。
 
 MCP server 不参与脚本编译引用解析，也不维护前后端 DLL 清单。入口契约和 Mod 侧响应映射归目标插件进程内的
-`src/Scripting/`；通用编译、入口调用和运行事实归 shared 动态脚本运行核心；前端/后端线程分派与前端额外引用发现归
-`shared/Wanxiang.Taiwu.DynamicScripting.*` 侧别适配层；可部署依赖仍由打包项目维护。
+`src/Scripting/`；通用编译、入口调用和运行事实归 shared 动态脚本运行核心；前端主线程分派和显式前端能力引用解析归
+`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`，后端主循环分派归 `shared/Wanxiang.Taiwu.DynamicScripting.Backend`。
+可部署依赖仍由打包项目维护。
 
 包内运行时，server 会从 `Processes/Wanxiang.Guanxiangtai.McpServer/` 反推 Mod 目录。开发态直接运行项目时，server 输出目录作为运行目录的基准目录。
 完整运行模型见 [../../docs/mcp-server-runtime.md](../../docs/mcp-server-runtime.md)。

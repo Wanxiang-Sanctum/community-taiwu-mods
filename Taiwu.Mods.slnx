@@ -22,6 +22,9 @@
       Path="mods/Wanxiang.Guanxiangtai/src/McpServer/Wanxiang.Guanxiangtai.McpServer.csproj"
     />
     <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Scripting.Contracts/Wanxiang.Guanxiangtai.Scripting.Contracts.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Guanxiangtai/src/Scripting/Wanxiang.Guanxiangtai.Scripting.csproj"
     />
     <Project
@@ -44,6 +47,9 @@
     />
     <Project
       Path="mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Xiangshu/src/Scripting.Contracts/Wanxiang.Xiangshu.Scripting.Contracts.csproj"
     />
     <Project
       Path="mods/Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"

@@ -192,8 +192,12 @@
         "type": "Project",
         "dependencies": {
           "Wanxiang.Guanxiangtai.Ipc": "[1.0.0, )",
+          "Wanxiang.Guanxiangtai.Scripting.Contracts": "[1.0.0, )",
           "Wanxiang.Taiwu.DynamicScripting": "[1.0.0, )"
         }
+      },
+      "wanxiang.guanxiangtai.scripting.contracts": {
+        "type": "Project"
       },
       "wanxiang.taiwu.dynamicscripting": {
         "type": "Project",

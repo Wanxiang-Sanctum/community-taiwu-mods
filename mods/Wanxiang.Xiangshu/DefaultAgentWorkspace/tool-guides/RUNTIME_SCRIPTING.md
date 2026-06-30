@@ -96,6 +96,7 @@ public static class XiangshuScript
 - `CancellationToken`：当前脚本调用的取消信号。
 
 `globals` 的公共成员只有以上三项；游戏 facade、服务容器和命名空间声明由脚本或目标侧 API 自行处理。
+宿主会提供相枢脚本契约引用，并按目标侧显式开放少量能力引用；不会把插件目录中的 DLL 全量作为脚本编译引用。
 
 ## 结果判断
 

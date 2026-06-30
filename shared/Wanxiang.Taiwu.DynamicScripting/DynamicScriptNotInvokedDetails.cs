@@ -5,7 +5,7 @@ namespace Wanxiang.Taiwu.DynamicScripting;
 /// <summary>
 /// Contains diagnostics for a script that could not be compiled or referenced.
 /// </summary>
-/// <param name="referenceDiagnostics">Reference discovery diagnostics.</param>
+/// <param name="referenceDiagnostics">Reference resolution diagnostics.</param>
 /// <param name="compilationDiagnostics">Compilation diagnostics.</param>
 public sealed class DynamicScriptNotInvokedDetails(
     IReadOnlyList<string>? referenceDiagnostics,
@@ -15,7 +15,7 @@ public sealed class DynamicScriptNotInvokedDetails(
         new ReadOnlyCollection<string>([]);
 
     /// <summary>
-    /// Gets reference discovery diagnostics.
+    /// Gets reference resolution diagnostics.
     /// </summary>
     public IReadOnlyList<string> ReferenceDiagnostics { get; } =
         NormalizeList(referenceDiagnostics);

@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using FrameWork.ModSystem;
 using GameData.Domains.Mod;
 
@@ -11,26 +9,50 @@ namespace Wanxiang.Taiwu.DynamicScripting.Frontend;
 public static class FrontendScriptReferencePaths
 {
     private const string PluginsDirectoryName = "Plugins";
+    private const FrontendScriptReferenceFeatures SupportedFeatures =
+        FrontendScriptReferenceFeatures.UniTask;
 
     /// <summary>
-    /// Gets additional frontend assembly reference paths needed by common script entry code.
+    /// Gets frontend assembly reference paths for explicitly enabled script features.
     /// </summary>
     /// <param name="pluginDirectory">The current frontend plugin deployment directory.</param>
-    /// <returns>Additional assembly reference paths.</returns>
-    public static IReadOnlyList<string> GetAdditionalAssemblyReferencePaths(string pluginDirectory)
+    /// <param name="features">The frontend script reference features to expose.</param>
+    /// <returns>Explicit assembly reference paths for the requested features.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="features"/> contains unsupported flags.</exception>
+    /// <exception cref="InvalidOperationException">A requested feature assembly cannot be resolved.</exception>
+    public static IReadOnlyList<string> GetAssemblyReferencePaths(
+        string pluginDirectory,
+        FrontendScriptReferenceFeatures features)
     {
-        return TryResolveAssemblyReferencePath(
-            typeof(Cysharp.Threading.Tasks.UniTask).Assembly,
-            GetAssemblySearchDirectories(pluginDirectory),
-            out string? uniTaskPath)
-            ? [uniTaskPath]
-            : [];
+        ThrowIfUnsupportedFeatures(features);
+
+        List<string> referencePaths = [];
+        if ((features & FrontendScriptReferenceFeatures.UniTask) != FrontendScriptReferenceFeatures.None)
+        {
+            referencePaths.Add(
+                DynamicScriptAssemblyReferenceResolver.ResolveRequiredAssemblyReferencePath(
+                    typeof(Cysharp.Threading.Tasks.UniTask).Assembly,
+                    GetAssemblySearchDirectories(pluginDirectory)));
+        }
+
+        return referencePaths;
+    }
+
+    private static void ThrowIfUnsupportedFeatures(FrontendScriptReferenceFeatures features)
+    {
+        if ((features & SupportedFeatures) != features)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(features),
+                features,
+                "Unsupported frontend script reference features.");
+        }
     }
 
     private static string[] GetAssemblySearchDirectories(string pluginDirectory)
     {
-        List<string> searchDirectories = [];
-        AddSearchDirectory(searchDirectories, pluginDirectory);
+        List<string> resolvedSearchDirectories = [];
+        AddSearchDirectory(resolvedSearchDirectories, pluginDirectory);
 
         foreach (ModId modId in global::ModManager.EnabledMods)
         {
@@ -51,13 +73,13 @@ public static class FrontendScriptReferencePaths
                 }
 
                 AddSearchDirectory(
-                    searchDirectories,
+                    resolvedSearchDirectories,
                     Path.GetDirectoryName(Path.Combine(modPluginDirectory, frontendPlugin)));
-                AddSearchDirectory(searchDirectories, modPluginDirectory);
+                AddSearchDirectory(resolvedSearchDirectories, modPluginDirectory);
             }
         }
 
-        return [.. searchDirectories];
+        return [.. resolvedSearchDirectories];
     }
 
     private static void AddSearchDirectory(
@@ -73,88 +95,6 @@ public static class FrontendScriptReferencePaths
         if (!searchDirectories.Contains(normalizedDirectory, StringComparer.OrdinalIgnoreCase))
         {
             searchDirectories.Add(normalizedDirectory);
-        }
-    }
-
-    private static bool TryResolveAssemblyReferencePath(
-        Assembly assembly,
-        IReadOnlyList<string> searchDirectories,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        if (TryGetAssemblyLocation(assembly, out referencePath))
-        {
-            return true;
-        }
-
-        return TryFindAssemblyReferencePath(
-            assembly.GetName(),
-            searchDirectories,
-            out referencePath);
-    }
-
-    private static bool TryGetAssemblyLocation(
-        Assembly assembly,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-        if (assembly.IsDynamic)
-        {
-            return false;
-        }
-
-        try
-        {
-            referencePath = assembly.Location;
-        }
-        catch (NotSupportedException)
-        {
-        }
-
-        return !string.IsNullOrWhiteSpace(referencePath)
-            && File.Exists(referencePath);
-    }
-
-    private static bool TryFindAssemblyReferencePath(
-        AssemblyName assemblyName,
-        IReadOnlyList<string> searchDirectories,
-        [NotNullWhen(true)] out string? referencePath)
-    {
-        referencePath = null;
-        if (string.IsNullOrWhiteSpace(assemblyName.Name))
-        {
-            return false;
-        }
-
-        string fileName = assemblyName.Name + ".dll";
-        foreach (string searchDirectory in searchDirectories)
-        {
-            string candidatePath = Path.Combine(searchDirectory, fileName);
-            if (File.Exists(candidatePath) && AssemblyIdentityMatches(candidatePath, assemblyName))
-            {
-                referencePath = candidatePath;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool AssemblyIdentityMatches(string path, AssemblyName expectedName)
-    {
-        try
-        {
-            AssemblyName candidateName = AssemblyName.GetAssemblyName(path);
-            return string.Equals(
-                candidateName.FullName,
-                expectedName.FullName,
-                StringComparison.Ordinal);
-        }
-        catch (Exception ex) when (ex is ArgumentException
-            or BadImageFormatException
-            or IOException
-            or UnauthorizedAccessException)
-        {
-            return false;
         }
     }
 }
