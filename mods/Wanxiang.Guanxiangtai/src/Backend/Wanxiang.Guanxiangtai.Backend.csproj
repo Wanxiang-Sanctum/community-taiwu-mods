@@ -10,11 +10,9 @@
     <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
     />
-    <ProjectReference
-      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/McpServerRuntime/Wanxiang.Guanxiangtai.McpServerRuntime.csproj"
-    />
   </ItemGroup>
 
+  <!-- Runtime DLLs are provided by Wanxiang.Prelude.Backend; this project only needs compile assets. -->
   <ItemGroup>
     <PackageReference
       Include="MessagePack"
@@ -22,32 +20,22 @@
       PrivateAssets="all"
     />
     <PackageReference
-      Include="Taiwu.ModKit.Dependencies.MessagePipe"
+      Include="MessagePipe"
       ExcludeAssets="runtime"
       PrivateAssets="all"
     />
     <PackageReference
-      Include="Taiwu.ModKit.Dependencies.MessagePipe.VContainer"
+      Include="MessagePipe.Interprocess"
       ExcludeAssets="runtime"
       PrivateAssets="all"
     />
     <PackageReference
-      Include="Taiwu.ModKit.Dependencies.MessagePipe.Interprocess"
+      Include="Microsoft.Extensions.DependencyInjection"
       ExcludeAssets="runtime"
       PrivateAssets="all"
     />
     <PackageReference
-      Include="Taiwu.ModKit.Dependencies.UniTask"
-      ExcludeAssets="runtime"
-      PrivateAssets="all"
-    />
-    <PackageReference
-      Include="Taiwu.ModKit.Dependencies.VContainer"
-      ExcludeAssets="runtime"
-      PrivateAssets="all"
-    />
-    <PackageReference
-      Include="Taiwu.ModKit.References.Frontend"
+      Include="Taiwu.ModKit.References.Backend"
       PrivateAssets="all"
     />
   </ItemGroup>

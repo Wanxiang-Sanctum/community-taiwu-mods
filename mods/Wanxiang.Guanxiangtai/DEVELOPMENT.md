@@ -10,6 +10,7 @@
 
 ```powershell
 dotnet build mods/Wanxiang.Guanxiangtai/src/Frontend/Wanxiang.Guanxiangtai.Frontend.csproj
+dotnet build mods/Wanxiang.Guanxiangtai/src/Backend/Wanxiang.Guanxiangtai.Backend.csproj
 dotnet build mods/Wanxiang.Guanxiangtai/src/McpServer/Wanxiang.Guanxiangtai.McpServer.csproj
 ```
 
@@ -20,7 +21,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 ```
 
 `pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把它声明的内容组装到仓库根目录的 `artifacts/mods/Wanxiang.Guanxiangtai/`。
-当前包内容包括 `Config.Lua`、前端插件入口，以及 `Processes/Wanxiang.Guanxiangtai.McpServer/` 下的 MCP server 发布目录。
+当前包内容包括 `Config.Lua`、前端和后端插件入口，以及 `Processes/Wanxiang.Guanxiangtai.McpServer/` 下的 MCP server 发布目录。
 
 ## 组包边界
 
@@ -34,14 +35,16 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 ## 项目结构
 
 - `Config.Lua`：游戏读取的 Mod 配置；字段语义见仓库级文档
-  [太吾游戏 Mod 配置与 Steam 发布边界](../../docs/taiwu-mod-steam-publishing-boundary.md)。当前不公开 Mod 设置。
+  [太吾游戏 Mod 配置与 Steam 发布边界](../../docs/taiwu-mod-steam-publishing-boundary.md)。当前不公开 Mod 设置。观象台声明
+  万象引为前置依赖，承接游戏进程内 MessagePipe 运行时和插件子目录依赖解析。
 - `Guanxiangtai.Local.json`：用户手工放在 Mod 目录下的本地端口配置文件；组包入口不声明它。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：内部设计说明，入口见 `docs/README.md`。
-- `src/McpServerRuntime/`：前端启动器和 MCP server 本体共享的运行态协调模块，维护运行态入口文件；
-  后端插件不引用它。
-- `src/Frontend/`：前端插件项目，入口 DLL 默认部署到 `Plugins/`，当前只负责确保 MCP server 进程启动。
-- `src/McpServer/`：游戏外 MCP Streamable HTTP server，当前负责常驻 HTTP 入口、鉴权和自身入口注册。
+- `src/McpServerRuntime/`：前端启动器和 MCP server 本体共享的运行态协调模块，维护 MCP server 外部入口文件。
+- `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、endpoint manifest 和状态检测消息。
+- `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责确保 MCP server 进程启动并发布前端 IPC endpoint。
+- `src/Backend/`：后端插件项目，入口 DLL 部署到 `Plugins/Backend/`，负责发布后端 IPC endpoint。
+- `src/McpServer/`：游戏外 MCP Streamable HTTP server，负责常驻 HTTP 入口、鉴权、自身入口注册和状态检测工具。
 
 ## 同步清单
 
@@ -50,3 +53,5 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - 非 shared 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
 - 运行态入口文件字段、运行目录解析或 MCP 启动方式变化时，同步更新 [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md)
   和 `src/McpServerRuntime/README.md`。
+- 内部 IPC 契约、endpoint manifest 或状态工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`
+  和 [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md) 中拥有对应边界的位置。

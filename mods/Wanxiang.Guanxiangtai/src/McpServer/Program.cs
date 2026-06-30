@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
+using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Guanxiangtai.McpServer;
 
@@ -21,6 +22,7 @@ string runtimeDirectory = GuanxiangtaiMcpPaths.GetRuntimeDirectory(ownerDirector
 
 _ = Directory.CreateDirectory(runtimeDirectory);
 McpServerEndpointRegistry.ConfigureRuntimeDirectory(runtimeDirectory);
+IpcEndpointRegistry.ConfigureForRuntimeDirectory(runtimeDirectory);
 
 using IDisposable? instanceLock = GuanxiangtaiMcpLocks.TryAcquireServerInstance(ownerDirectory);
 if (instanceLock is null)
@@ -87,10 +89,11 @@ _ = builder.Services
                 Version = GuanxiangtaiMcp.Version,
             };
             options.ServerInstructions =
-                "观象台是面向太吾绘卷 Mod 制作者的本机 MCP 服务入口。当前只提供连接、鉴权和生命周期基础，尚无可调用的游戏 tools；"
-                + "后续 tools 会由 MCP server 通过内部 IPC/bridge 访问游戏侧能力。";
+                "观象台是面向太吾绘卷 Mod 制作者的本机 MCP 服务入口。当前提供连接、鉴权、MCP server 生命周期协调和前后端插件状态检测；"
+                + "工具由 MCP server 通过内部 IPC/bridge 访问游戏侧能力。";
         })
     .WithHttpTransport(options => options.Stateless = true)
+    .WithTools<PluginTools>()
     .AddAuthorizationFilters();
 
 await using WebApplication app = builder.Build();

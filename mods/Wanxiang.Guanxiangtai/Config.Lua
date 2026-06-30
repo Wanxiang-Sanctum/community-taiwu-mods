@@ -9,8 +9,14 @@ return {
 
 启用后，游戏前端会确保包内 MCP server 进程启动。该进程使用可见终端窗口，提供本机 Streamable HTTP MCP 入口，不随游戏进程退出而关闭，也可以单独启动。
 
-当前版本只提供 MCP server 启动、鉴权和入口定位，尚未提供可调用的游戏 tools。后续动态代码执行、游戏启停和调试能力会通过 MCP server 暴露，再由 server 内部路由到游戏侧能力。]=],
+当前版本提供 MCP server 启动、鉴权、入口定位，以及前后端插件状态检测工具。后续动态代码执行、游戏启停和调试能力会通过 MCP server 暴露，再由 server 内部路由到游戏侧能力。]=],
+  Dependencies = {
+    [1] = 3747731025,
+  },
+  BackendPlugins = {
+    "Backend/Wanxiang.Guanxiangtai.Backend.dll",
+  },
   FrontendPlugins = {
-    "Wanxiang.Guanxiangtai.Frontend.dll",
+    "Frontend/Wanxiang.Guanxiangtai.Frontend.dll",
   },
 }

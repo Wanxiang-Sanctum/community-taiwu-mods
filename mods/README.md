@@ -18,7 +18,7 @@ Mod 共同遵守的组包、插件入口、引用和部署规则。
 | 目录                     | 角色                                                                                                                                                 | 使用说明                          | 维护入口                               |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------- |
 | `Wanxiang.Fabujiashen/`  | 运行时赋予太吾“法不加身”规则：免疫内伤、心神和新增战斗状态，拦截新增毒素，并跳过战斗中涉及太吾的功法触发效果；普通外伤、功法和真气基础数值流程保留。 | `Wanxiang.Fabujiashen/README.md`  | `Wanxiang.Fabujiashen/DEVELOPMENT.md`  |
-| `Wanxiang.Guanxiangtai/` | 面向太吾 Mod 制作者的本机 MCP 服务；当前只提供 MCP server 启动入口、鉴权和入口定位基础。                                                             | `Wanxiang.Guanxiangtai/README.md` | `Wanxiang.Guanxiangtai/DEVELOPMENT.md` |
+| `Wanxiang.Guanxiangtai/` | 面向太吾 Mod 制作者的本机 MCP 服务；当前提供 MCP server 启动入口、鉴权、入口定位和前后端插件状态检测。                                               | `Wanxiang.Guanxiangtai/README.md` | `Wanxiang.Guanxiangtai/DEVELOPMENT.md` |
 | `Wanxiang.Prelude/`      | 提供共享运行时和插件依赖加载规则的前置 Mod。                                                                                                         | `Wanxiang.Prelude/README.md`      | `Wanxiang.Prelude/DEVELOPMENT.md`      |
 | `Wanxiang.Xiangshu/`     | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code。   | `Wanxiang.Xiangshu/README.md`     | `Wanxiang.Xiangshu/DEVELOPMENT.md`     |
 

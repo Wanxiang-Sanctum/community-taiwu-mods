@@ -8,6 +8,18 @@
         "resolved": "2.3.0",
         "contentHash": "DjktTgctwxUMhMkWKrRECer3LR1lHzanCOlE4mpinAiY8SfWJq4DG/QitP5h1A+WBjyWHzQSOG+204i3VpO1FA=="
       },
+      "MessagePack": {
+        "type": "Direct",
+        "requested": "[3.1.4, )",
+        "resolved": "3.1.4",
+        "contentHash": "BH0wlHWmVoZpbAPyyt2Awbq30C+ZsS3eHSkYdnyUAbqVJ22fAJDzn2xTieBeoT5QlcBzp61vHcv878YJGfi3mg==",
+        "dependencies": {
+          "MessagePack.Annotations": "3.1.4",
+          "MessagePackAnalyzer": "3.1.4",
+          "Microsoft.NET.StringTools": "17.11.4",
+          "System.Collections.Immutable": "8.0.0"
+        }
+      },
       "Roslynator.Analyzers": {
         "type": "Direct",
         "requested": "[4.15.0, )",
@@ -19,6 +31,39 @@
         "requested": "[4.15.0, )",
         "resolved": "4.15.0",
         "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
+      },
+      "Taiwu.ModKit.Dependencies.MessagePipe": {
+        "type": "Direct",
+        "requested": "[1.8.2-unity2022.3.62f2, )",
+        "resolved": "1.8.2-unity2022.3.62f2",
+        "contentHash": "fl1DBu1NMg5PQRId8ot4PQtLWS46D572vLf8TcP4z18qQqCgwGYI+dtIw8/bjepjU0azusl4h8t7z/BGlQTSBw=="
+      },
+      "Taiwu.ModKit.Dependencies.MessagePipe.Interprocess": {
+        "type": "Direct",
+        "requested": "[1.8.2-unity2022.3.62f2, )",
+        "resolved": "1.8.2-unity2022.3.62f2",
+        "contentHash": "qPovbNC9wU+0V0g90gJ2wpn5R1pSYbp+D1p5CmDhcguBaWcZps1x3lSr3gdb63GffWH+nfCWag0wsYqwfq4SIQ==",
+        "dependencies": {
+          "MessagePack": "[3.1.4]"
+        }
+      },
+      "Taiwu.ModKit.Dependencies.MessagePipe.VContainer": {
+        "type": "Direct",
+        "requested": "[1.8.2-unity2022.3.62f2, )",
+        "resolved": "1.8.2-unity2022.3.62f2",
+        "contentHash": "kA6BPOE1DLxtmqF58aAXH0WNvsLxsUPmO+Ma9SEkIGqIomP+z/+AaxURun/e7Ka+Yz3pgOgbOA5pBe9dfnL3rQ=="
+      },
+      "Taiwu.ModKit.Dependencies.UniTask": {
+        "type": "Direct",
+        "requested": "[2.5.11-unity2022.3.62f2, )",
+        "resolved": "2.5.11-unity2022.3.62f2",
+        "contentHash": "glLg14zfb9eG4YFmxdRenmRKvgxIpHyBHmLjw+XVxgB4CgJz27KOiaMuB6pL3sbnUT5GVYKW1WYYVXOKMISO/Q=="
+      },
+      "Taiwu.ModKit.Dependencies.VContainer": {
+        "type": "Direct",
+        "requested": "[1.18.0-unity2022.3.62f2, )",
+        "resolved": "1.18.0-unity2022.3.62f2",
+        "contentHash": "LRqPC6q3zeBB6gwTJ74oVhFfZHgoWtmy96ejjR8rzR8S5YGQ21v/eTp31kzyNq2pgqn9tZ2l+Bu6dniDf7SYOA=="
       },
       "Taiwu.ModKit.References.Frontend": {
         "type": "Direct",
@@ -36,6 +81,62 @@
         "requested": "[1.0.44, )",
         "resolved": "1.0.44",
         "contentHash": "D2dUC5vL5fdNJaEW+cV/bLYOgsT6ETZTEX39L4puMiGBzEG5Y3jWri+Gyd3bgNBY9dJKUpP2ts8dq/KOwrYj+w=="
+      },
+      "MessagePack.Annotations": {
+        "type": "Transitive",
+        "resolved": "3.1.4",
+        "contentHash": "aVWrDAkCdqxwQsz/q0ldPh2EFn48M99YUzE9OvZjMq2RNLKz4o2z88iGFvSvbMqOWRweRvKPHBJZe22PRqzslQ=="
+      },
+      "MessagePackAnalyzer": {
+        "type": "Transitive",
+        "resolved": "3.1.4",
+        "contentHash": "CTaSsN/liJ7MhLCAB7Z4ZLBNuVGCq9lt2BT/cbrc9vzGv89yK3CqIA+z9T19a11eQYl9etZHL6MQJgCqECRVpg=="
+      },
+      "Microsoft.NET.StringTools": {
+        "type": "Transitive",
+        "resolved": "17.11.4",
+        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA==",
+        "dependencies": {
+          "System.Memory": "4.5.5",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "System.Buffers": {
+        "type": "Transitive",
+        "resolved": "4.5.1",
+        "contentHash": "Rw7ijyl1qqRS0YQD/WycNst8hUUMgrMH4FCn1nNm27M4VxchZ1js3fVjQaANHO5f3sN4isvP4a+Met9Y4YomAg=="
+      },
+      "System.Collections.Immutable": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "AurL6Y5BA1WotzlEvVaIDpqzpIPvYnnldxru8oXJU2yFxFUy3+pNXjXd1ymO+RA0rq0+590Q8gaz2l3Sr7fmqg==",
+        "dependencies": {
+          "System.Memory": "4.5.5",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "System.Memory": {
+        "type": "Transitive",
+        "resolved": "4.5.5",
+        "contentHash": "XIWiDvKPXaTveaB7HVganDlOCRoj03l+jrwNvcge/t8vhGYKvqV+dMv6G4SAX2NoNmN0wZfVPTAlFwZcZvVOUw==",
+        "dependencies": {
+          "System.Buffers": "4.5.1",
+          "System.Numerics.Vectors": "4.4.0",
+          "System.Runtime.CompilerServices.Unsafe": "4.5.3"
+        }
+      },
+      "System.Numerics.Vectors": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "UiLzLW+Lw6HLed1Hcg+8jSRttrbuXv7DANVj0DkL9g6EnnzbL75EB7EWsw5uRbhxd/4YdG8li5XizGWepmG3PQ=="
+      },
+      "System.Runtime.CompilerServices.Unsafe": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
+      },
+      "wanxiang.guanxiangtai.ipc": {
+        "type": "Project"
       },
       "wanxiang.guanxiangtai.mcpserverruntime": {
         "type": "Project"

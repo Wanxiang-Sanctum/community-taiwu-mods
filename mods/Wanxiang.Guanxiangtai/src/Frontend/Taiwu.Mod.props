@@ -1,9 +1,11 @@
 <Project>
   <PropertyGroup>
     <TaiwuModSide>Frontend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Frontend</TaiwuModPluginSubdirectory>
   </PropertyGroup>
 
   <ItemGroup>
+    <TaiwuModCopyDependency Include="Wanxiang.Guanxiangtai.Ipc.dll" />
     <TaiwuModMergeDependency
       Include="Wanxiang.Guanxiangtai.McpServerRuntime.dll"
     />
