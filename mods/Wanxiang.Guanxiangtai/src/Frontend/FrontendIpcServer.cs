@@ -12,7 +12,7 @@ using Wanxiang.Guanxiangtai.Scripting;
 
 namespace Wanxiang.Guanxiangtai.Frontend;
 
-internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptReferences) : IDisposable
+internal sealed class FrontendIpcServer(string pluginDirectory) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -30,6 +30,8 @@ internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptRefe
             return _endpoint!;
         }
 
+        DynamicScriptReferenceOptions scriptReferenceOptions =
+            CreateScriptReferenceOptions(pluginDirectory);
         Exception? lastException = null;
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
@@ -38,7 +40,7 @@ internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptRefe
 
             try
             {
-                return StartOnPort(port);
+                return StartOnPort(port, scriptReferenceOptions);
             }
             catch (SocketException ex)
             {
@@ -68,10 +70,12 @@ internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptRefe
         _containerScope = null;
     }
 
-    private IpcEndpoint StartOnPort(int port)
+    private IpcEndpoint StartOnPort(
+        int port,
+        DynamicScriptReferenceOptions scriptReferenceOptions)
     {
         ContainerBuilder builder = new();
-        ConfigureContainer(builder, port);
+        ConfigureContainer(builder, port, scriptReferenceOptions);
         IObjectResolver container = builder.Build();
         bool started = false;
 
@@ -101,7 +105,17 @@ internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptRefe
         }
     }
 
-    private void ConfigureContainer(IContainerBuilder builder, int port)
+    private static DynamicScriptReferenceOptions CreateScriptReferenceOptions(string pluginDirectory)
+    {
+        return FrontendScriptReferences.CreateOptions(
+            pluginDirectory,
+            typeof(GuanxiangtaiScriptGlobals));
+    }
+
+    private static void ConfigureContainer(
+        IContainerBuilder builder,
+        int port,
+        DynamicScriptReferenceOptions scriptReferenceOptions)
     {
         MessagePipeOptions options = builder.RegisterMessagePipe(
             options =>
@@ -113,7 +127,7 @@ internal sealed class FrontendIpcServer(DynamicScriptReferenceOptions scriptRefe
             new GuanxiangtaiScriptRunner(
                 new ScriptRunnerOptions(
                     IpcRuntime.FrontendEndpointRole,
-                    references: scriptReferences),
+                    references: scriptReferenceOptions),
                 new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,

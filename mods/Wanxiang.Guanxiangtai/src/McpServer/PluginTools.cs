@@ -53,7 +53,7 @@ internal sealed class PluginTools
             + "with public static Execute or ExecuteAsync "
             + "taking Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals. "
             + "The host supplies the Wanxiang.Guanxiangtai scripting contract reference. "
-            + "Frontend hosts also supply explicitly enabled frontend capability references such as UniTask. "
+            + "Frontend script hosts include UniTask as a compilation reference. "
             + "Scripts still declare required using directives themselves. "
             + "The entry return value is serialized to JSON.")]
         string script,
