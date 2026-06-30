@@ -56,5 +56,5 @@ Workshop `FileId` 加入相枢 Mod 的 `Dependencies`，确保万象引先于相
 - `src/Backend/`：后端插件项目，负责供 MCP sidecar 调用的后端 IPC、后端侧脚本执行入口，以及安装 shared 物品嫁接
   后端服务。
 - `src/Ipc/`：MCP sidecar 调用前端、后端插件时共享的 MessagePipe 请求/响应契约与 endpoint 辅助库。
-- `src/Scripting/`：前后端复用的受信 C# 脚本编译与执行器。
+- `src/Scripting/`：前后端复用的相枢脚本入口适配层，声明入口契约并复用 shared 动态脚本运行核心。
 - `src/McpServer/`：游戏外 MCP sidecar。

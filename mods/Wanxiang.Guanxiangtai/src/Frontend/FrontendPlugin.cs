@@ -1,4 +1,5 @@
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Taiwu.Logging;
@@ -12,6 +13,9 @@ namespace Wanxiang.Guanxiangtai.Frontend;
 [PluginConfig("Wanxiang.Guanxiangtai.Frontend", "WanxiangSanctum", "0.1.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
+    private const string PluginDirectoryName = "Frontend";
+    private const string PluginsDirectoryName = "Plugins";
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag(GuanxiangtaiMcp.ModId);
 
     private FrontendIpcServer? _ipcServer;
@@ -47,7 +51,10 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
             IpcEndpointRegistry.ConfigureForModDirectory(modDirectory);
 
-            _ipcServer = new FrontendIpcServer();
+            string pluginDirectory = GetPluginDirectory(modDirectory);
+            _ipcServer = new FrontendIpcServer(
+                pluginDirectory,
+                FrontendScriptReferencePaths.GetAdditionalAssemblyReferencePaths(pluginDirectory));
             _ = _ipcServer.Start();
             Log.Info("frontend IPC ready");
         }
@@ -57,5 +64,13 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             _ipcServer = null;
             Log.Error(ex, "frontend IPC failed to start");
         }
+    }
+
+    private static string GetPluginDirectory(string modDirectory)
+    {
+        return Path.Combine(
+            modDirectory,
+            PluginsDirectoryName,
+            PluginDirectoryName);
     }
 }

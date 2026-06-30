@@ -271,7 +271,7 @@ internal static class RunScriptToolJson
         return JsonSerializer.Serialize(
             response,
             typeof(Response),
-            XiangshuMcpJsonContext.Default);
+            RunScriptToolJsonContext.Default);
     }
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
@@ -330,4 +330,4 @@ internal static class RunScriptToolJson
     JsonSerializerDefaults.Web,
     WriteIndented = true)]
 [JsonSerializable(typeof(RunScriptToolJson.Response))]
-internal sealed partial class XiangshuMcpJsonContext : JsonSerializerContext;
+internal sealed partial class RunScriptToolJsonContext : JsonSerializerContext;

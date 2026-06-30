@@ -1,16 +1,20 @@
 using System.Reflection;
 
-namespace Wanxiang.Xiangshu.Scripting;
+namespace Wanxiang.Taiwu.DynamicScripting;
 
 internal sealed class AssemblyResolutionScope : IDisposable
 {
     private readonly List<string> _referenceDirectories;
+    private readonly List<string> _assemblyReferencePaths;
     private readonly ResolveEventHandler _handler;
     private bool _disposed;
 
-    public AssemblyResolutionScope(List<string> referenceDirectories)
+    public AssemblyResolutionScope(
+        IEnumerable<string> referenceDirectories,
+        IEnumerable<string> assemblyReferencePaths)
     {
-        _referenceDirectories = referenceDirectories;
+        _referenceDirectories = [.. referenceDirectories];
+        _assemblyReferencePaths = [.. assemblyReferencePaths];
         _handler = ResolveAssembly;
         AppDomain.CurrentDomain.AssemblyResolve += _handler;
     }
@@ -74,16 +78,55 @@ internal sealed class AssemblyResolutionScope : IDisposable
             return null;
         }
 
+        string? explicitReferencePath = FindExplicitReferenceAssemblyPath(requestedName);
+        if (explicitReferencePath is not null)
+        {
+            return explicitReferencePath;
+        }
+
         string fileName = requestedName.Name + ".dll";
         foreach (string referenceDirectory in _referenceDirectories)
         {
             string candidatePath = Path.Combine(referenceDirectory, fileName);
-            if (File.Exists(candidatePath))
+            if (File.Exists(candidatePath) && AssemblyIdentityMatches(candidatePath, requestedName))
             {
                 return candidatePath;
             }
         }
 
         return null;
+    }
+
+    private string? FindExplicitReferenceAssemblyPath(AssemblyName requestedName)
+    {
+        foreach (string referencePath in _assemblyReferencePaths)
+        {
+            if (File.Exists(referencePath) && AssemblyIdentityMatches(referencePath, requestedName))
+            {
+                return referencePath;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool AssemblyIdentityMatches(string path, AssemblyName expectedName)
+    {
+        try
+        {
+            AssemblyName candidateName = AssemblyName.GetAssemblyName(path);
+            return string.Equals(
+                    candidateName.FullName,
+                    expectedName.FullName,
+                    StringComparison.OrdinalIgnoreCase)
+                || AssemblyName.ReferenceMatchesDefinition(expectedName, candidateName);
+        }
+        catch (Exception ex) when (ex is ArgumentException
+            or BadImageFormatException
+            or IOException
+            or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 }

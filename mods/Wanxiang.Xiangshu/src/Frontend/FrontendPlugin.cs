@@ -11,7 +11,7 @@ using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.Mcp;
-using Wanxiang.Xiangshu.Frontend.ScriptHost;
+using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -142,7 +142,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _ipcServer = new FrontendIpcServer(
             currentChatSessionBinding,
             pluginDirectory,
-            FrontendScriptReferences.GetAdditionalAssemblyReferencePaths(pluginDirectory));
+            FrontendScriptReferencePaths.GetAdditionalAssemblyReferencePaths(pluginDirectory));
         _ = _ipcServer.Start();
         Log.Info("frontend IPC ready");
     }

@@ -8,7 +8,13 @@
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
     <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.DynamicScripting.Backend/Wanxiang.Taiwu.DynamicScripting.Backend.csproj"
+    />
+    <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Scripting/Wanxiang.Guanxiangtai.Scripting.csproj"
     />
   </ItemGroup>
 

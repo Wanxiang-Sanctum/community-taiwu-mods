@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <TaiwuModCopyDependency Include="Wanxiang.Guanxiangtai.Ipc.dll" />
+    <TaiwuModMergeDependency Include="Wanxiang.Guanxiangtai.Scripting.dll" />
     <TaiwuModMergeDependency
       Include="Wanxiang.Guanxiangtai.McpServerRuntime.dll"
     />

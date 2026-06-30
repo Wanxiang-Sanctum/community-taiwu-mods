@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <TaiwuModCompatibilityProfile>GameRuntime</TaiwuModCompatibilityProfile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.DynamicScripting/Wanxiang.Taiwu.DynamicScripting.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Shared"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

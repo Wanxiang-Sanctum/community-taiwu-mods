@@ -2,12 +2,21 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using FrameWork.ModSystem;
 using GameData.Domains.Mod;
-using Wanxiang.Xiangshu.Ipc;
 
-namespace Wanxiang.Xiangshu.Frontend.ScriptHost;
+namespace Wanxiang.Taiwu.DynamicScripting.Frontend;
 
-internal static class FrontendScriptReferences
+/// <summary>
+/// Resolves frontend-only assembly reference paths for dynamic script compilation.
+/// </summary>
+public static class FrontendScriptReferencePaths
 {
+    private const string PluginsDirectoryName = "Plugins";
+
+    /// <summary>
+    /// Gets additional frontend assembly reference paths needed by common script entry code.
+    /// </summary>
+    /// <param name="pluginDirectory">The current frontend plugin deployment directory.</param>
+    /// <returns>Additional assembly reference paths.</returns>
     public static IReadOnlyList<string> GetAdditionalAssemblyReferencePaths(string pluginDirectory)
     {
         return TryResolveAssemblyReferencePath(
@@ -33,7 +42,7 @@ internal static class FrontendScriptReferences
 
             string modPluginDirectory = Path.Combine(
                 modInfo.DirectoryName,
-                XiangshuRuntimePaths.PluginsDirectoryName);
+                PluginsDirectoryName);
             foreach (string frontendPlugin in modInfo.FrontendPlugins)
             {
                 if (string.IsNullOrWhiteSpace(frontendPlugin))

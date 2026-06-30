@@ -8,13 +8,8 @@
     <ProjectReference
       Include="$(TaiwuModsModsDir)Wanxiang.Xiangshu/src/Ipc/Wanxiang.Xiangshu.Ipc.csproj"
     />
-  </ItemGroup>
-
-  <!-- Wanxiang.Prelude provides the Roslyn runtime DLLs for both frontend and backend. -->
-  <ItemGroup>
-    <PackageReference
-      Include="Microsoft.CodeAnalysis.CSharp"
-      ExcludeAssets="runtime"
+    <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.DynamicScripting/Wanxiang.Taiwu.DynamicScripting.csproj"
     />
   </ItemGroup>
 

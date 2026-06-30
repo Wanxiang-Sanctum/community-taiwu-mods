@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
+using Wanxiang.Taiwu.DynamicScripting;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -10,7 +11,7 @@ namespace Wanxiang.Xiangshu.Backend;
 
 internal sealed class BackendIpcServer(
     string pluginDirectory,
-    IScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
+    IDynamicScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -125,12 +126,12 @@ internal sealed class BackendIpcServer(
     private static void RegisterIpcScriptHandler(
         IServiceCollection services,
         string pluginDirectory,
-        IScriptEntryDispatcher scriptEntryDispatcher)
+        IDynamicScriptEntryDispatcher scriptEntryDispatcher)
     {
         _ = services
             .AddSingleton(
                 new XiangshuScriptRunner(
-                    new ScriptHostOptions(
+                    new ScriptRunnerOptions(
                         IpcRuntime.BackendEndpointRole,
                         referenceDirectories: [pluginDirectory]),
                     scriptEntryDispatcher))

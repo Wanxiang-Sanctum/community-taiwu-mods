@@ -1,11 +1,11 @@
 namespace Wanxiang.Xiangshu.Scripting;
 
 public sealed class XiangshuScriptGlobals(
-    string targetSide,
+    string side,
     IReadOnlyDictionary<string, string> arguments,
     CancellationToken cancellationToken)
 {
-    public string Side { get; } = targetSide;
+    public string Side { get; } = side;
 
     public IReadOnlyDictionary<string, string> Arguments { get; } = arguments;
 

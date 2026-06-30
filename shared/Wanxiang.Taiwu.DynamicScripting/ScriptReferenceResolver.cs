@@ -2,19 +2,28 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 
-namespace Wanxiang.Xiangshu.Scripting;
+namespace Wanxiang.Taiwu.DynamicScripting;
 
-internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDirectories)
+internal sealed class ScriptReferenceResolver
 {
     private const string TrustedPlatformAssembliesKey = "TRUSTED_PLATFORM_ASSEMBLIES";
 
-    private readonly List<string> _referenceDirectories = NormalizeReferenceDirectories(referenceDirectories);
-    private readonly List<string> _assemblyReferencePaths = [];
+    private readonly List<string> _referenceDirectories;
+    private readonly List<string> _assemblyReferencePaths;
 
-    public ScriptReferenceResolver(ScriptHostOptions hostOptions)
-        : this((hostOptions ?? throw new ArgumentNullException(nameof(hostOptions))).ReferenceDirectories)
+    public ScriptReferenceResolver(DynamicScriptReferenceOptions referenceOptions)
     {
-        _assemblyReferencePaths.AddRange(hostOptions.AssemblyReferencePaths);
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(referenceOptions);
+#else
+        if (referenceOptions is null)
+        {
+            throw new ArgumentNullException(nameof(referenceOptions));
+        }
+#endif
+
+        _referenceDirectories = [.. referenceOptions.ReferenceDirectories];
+        _assemblyReferencePaths = [.. referenceOptions.AssemblyReferencePaths];
     }
 
     public CompilationReferences CollectReferences(
@@ -83,7 +92,9 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
 
     public AssemblyResolutionScope CreateAssemblyResolutionScope()
     {
-        return new AssemblyResolutionScope(_referenceDirectories);
+        return new AssemblyResolutionScope(
+            _referenceDirectories,
+            _assemblyReferencePaths);
     }
 
     private void AddExplicitAssemblyReferences(
@@ -247,7 +258,7 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         foreach (string referenceDirectory in _referenceDirectories)
         {
             string candidatePath = Path.Combine(referenceDirectory, fileName);
-            if (File.Exists(candidatePath))
+            if (File.Exists(candidatePath) && AssemblyIdentityMatches(candidatePath, assemblyName))
             {
                 referencePath = candidatePath;
                 return true;
@@ -257,32 +268,24 @@ internal sealed class ScriptReferenceResolver(IEnumerable<string>? referenceDire
         return false;
     }
 
-    private static List<string> NormalizeReferenceDirectories(
-        IEnumerable<string>? referenceDirectories)
+    private static bool AssemblyIdentityMatches(string path, AssemblyName expectedName)
     {
-        if (referenceDirectories is null)
+        try
         {
-            return [];
+            AssemblyName candidateName = AssemblyName.GetAssemblyName(path);
+            return string.Equals(
+                    candidateName.FullName,
+                    expectedName.FullName,
+                    StringComparison.OrdinalIgnoreCase)
+                || AssemblyName.ReferenceMatchesDefinition(expectedName, candidateName);
         }
-
-        List<string> normalizedDirectories = [];
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string referenceDirectory in referenceDirectories)
+        catch (Exception ex) when (ex is ArgumentException
+            or BadImageFormatException
+            or IOException
+            or UnauthorizedAccessException)
         {
-            if (string.IsNullOrWhiteSpace(referenceDirectory))
-            {
-                continue;
-            }
-
-            string normalizedDirectory = Path.GetFullPath(
-                Environment.ExpandEnvironmentVariables(referenceDirectory.Trim()));
-            if (seen.Add(normalizedDirectory))
-            {
-                normalizedDirectories.Add(normalizedDirectory);
-            }
+            return false;
         }
-
-        return normalizedDirectories;
     }
 
     private static string[] EnumerateReferenceDirectoryAssemblies(string referenceDirectory)

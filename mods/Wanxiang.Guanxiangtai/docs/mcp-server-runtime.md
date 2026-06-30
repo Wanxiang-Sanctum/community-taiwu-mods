@@ -118,12 +118,15 @@ MCP server 启动后持有按 Mod 目录派生的命名 mutex。已有 live serv
 .guanxiangtai-runtime/ipc-endpoints.json
 ```
 
-这个文件只服务 MCP server 内部路由，不是 MCP client 配置文件，也不是 agent 可连接入口。当前唯一使用它的工具是
-`guanxiangtai_status`：MCP server 分别向前端和后端 endpoint 发送状态请求；每侧返回 `kind` 判别的结构化结果：
-`available` 或 `unavailable(reason)`。
+这个文件只服务 MCP server 内部路由，不是 MCP client 配置文件，也不是 agent 可连接入口。当前工具使用方式包括：
+
+- `guanxiangtai_status`：MCP server 分别向前端和后端 endpoint 发送状态请求；每侧返回 `kind` 判别的结构化结果：
+  `available` 或 `unavailable(reason)`。
+- `guanxiangtai_run_csharp_script`：MCP server 按 `targetSide` 选择前端或后端 endpoint，发送受信 C# 脚本执行请求，并把
+  `entryThread` 转发给目标侧。
 
 状态工具不报告 MCP server 自身可用性；能返回工具结果已经说明 MCP transport、鉴权和工具调用链路可用。状态工具也不报告
 OS 进程存活性，避免把 manifest 或 PID 观察误包装成游戏侧可用事实。
 
-运行态入口文件和 IPC manifest 不保存权限决策、脚本内容、调试会话、agent 消息、玩家可见文本或游戏进程 IPC 地址。那些内容应由
-MCP server 内部 IPC 协议、工具协议和运行数据目录的专属文件维护。
+运行态入口文件和 IPC manifest 不保存权限决策、脚本内容、调试会话、agent 消息、玩家可见文本或游戏进程 IPC 地址。需要传递或
+持久化这些内容时，由拥有对应语义的 IPC 协议、工具协议或运行数据文件维护。

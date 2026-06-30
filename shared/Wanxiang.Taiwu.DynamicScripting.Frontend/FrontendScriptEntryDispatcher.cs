@@ -1,24 +1,31 @@
 using Cysharp.Threading.Tasks;
-using Wanxiang.Xiangshu.Ipc;
-using Wanxiang.Xiangshu.Scripting;
 
-namespace Wanxiang.Xiangshu.Frontend.ScriptHost;
+namespace Wanxiang.Taiwu.DynamicScripting.Frontend;
 
-internal sealed class FrontendScriptEntryDispatcher : IScriptEntryDispatcher
+/// <summary>
+/// Dispatches dynamic script entry calls to the current frontend thread or Unity main thread.
+/// </summary>
+public sealed class FrontendScriptEntryDispatcher : IDynamicScriptEntryDispatcher
 {
+    /// <inheritdoc />
     public async Task<object?> InvokeAsync(
         Func<object?> invokeEntry,
-        IpcScriptEntryThread entryThread,
+        DynamicScriptEntryThread entryThread,
         CancellationToken cancellationToken)
     {
+        if (invokeEntry is null)
+        {
+            throw new ArgumentNullException(nameof(invokeEntry));
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
 
         switch (entryThread)
         {
-            case IpcScriptEntryThread.Current:
+            case DynamicScriptEntryThread.Current:
                 return invokeEntry();
 
-            case IpcScriptEntryThread.MainThread:
+            case DynamicScriptEntryThread.MainThread:
                 await UniTask.SwitchToMainThread(cancellationToken);
                 return invokeEntry();
 

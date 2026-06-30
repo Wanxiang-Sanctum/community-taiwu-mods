@@ -5,11 +5,15 @@ using MessagePipe;
 using MessagePipe.Interprocess;
 using MessagePipe.Interprocess.Workers;
 using VContainer;
+using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Guanxiangtai.Ipc;
+using Wanxiang.Guanxiangtai.Scripting;
 
 namespace Wanxiang.Guanxiangtai.Frontend;
 
-internal sealed class FrontendIpcServer : IDisposable
+internal sealed class FrontendIpcServer(
+    string pluginDirectory,
+    IEnumerable<string>? additionalAssemblyReferencePaths) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -98,7 +102,7 @@ internal sealed class FrontendIpcServer : IDisposable
         }
     }
 
-    private static void ConfigureContainer(IContainerBuilder builder, int port)
+    private void ConfigureContainer(IContainerBuilder builder, int port)
     {
         MessagePipeOptions options = builder.RegisterMessagePipe(
             options =>
@@ -106,6 +110,18 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.InstanceLifetime = InstanceLifetime.Singleton;
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
+        _ = builder.RegisterInstance(
+            new GuanxiangtaiScriptRunner(
+                new ScriptRunnerOptions(
+                    IpcRuntime.FrontendEndpointRole,
+                    referenceDirectories: [pluginDirectory],
+                    assemblyReferencePaths: additionalAssemblyReferencePaths),
+                new FrontendScriptEntryDispatcher()));
+        _ = builder.RegisterAsyncRequestHandler<
+            IpcRunScriptRequest,
+            IpcRunScriptResponse,
+            FrontendExecuteScriptHandler>(
+            options);
         _ = builder.RegisterAsyncRequestHandler<
             IpcStatusRequest,
             IpcStatusResponse,
@@ -123,6 +139,10 @@ internal sealed class FrontendIpcServer : IDisposable
                 options.MessagePackSerializerOptions = IpcMessagePack.Options;
             });
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            IpcRunScriptRequest,
+            IpcRunScriptResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcStatusRequest,
             IpcStatusResponse>(
             tcpOptions);
@@ -134,6 +154,21 @@ internal sealed class FrontendIpcServer : IDisposable
         {
             throw new ObjectDisposedException(nameof(FrontendIpcServer));
         }
+    }
+}
+
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "MessagePipe constructs request handlers through DI and reflection.")]
+internal sealed class FrontendExecuteScriptHandler(GuanxiangtaiScriptRunner scriptRunner)
+    : IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>
+{
+    public async UniTask<IpcRunScriptResponse> InvokeAsync(
+        IpcRunScriptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await scriptRunner.ExecuteAsync(request, cancellationToken);
     }
 }
 

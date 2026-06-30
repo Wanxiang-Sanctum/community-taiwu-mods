@@ -11,5 +11,6 @@ endpoint、安装 shared 物品嫁接后端创建与观察服务，并把 endpoi
 组件。
 
 启动时，后端从游戏 Mod 管理接口取得相枢 Mod 目录，并把 `Plugins/Backend` 作为本侧插件部署目录传给共享
-脚本运行器。`entryThread = mainThread` 的入口调用排入 GameData 主循环。共享脚本编译和临时程序集依赖解析规则归
-`src/Scripting/`；后端负责本侧 endpoint 和后端 API 边界。
+脚本运行器。`entryThread = mainThread` 的入口分派复用 `shared/Wanxiang.Taiwu.DynamicScripting.Backend`，
+排入 GameData 主循环。入口契约和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared
+动态脚本运行核心；后端负责本侧 endpoint 和后端 API 边界。

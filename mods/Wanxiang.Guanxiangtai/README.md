@@ -3,7 +3,8 @@
 观象台把一个本机 HTTP MCP server 随太吾 Mod 分发。游戏前端会确保该 server 进程启动；维护者也可以手动运行包内可执行文件。
 server 使用可见终端窗口运行，游戏退出不会自动关闭。
 
-当前版本提供 MCP server 启动、鉴权、入口定位和前后端插件状态检测工具。agent 只连接 MCP server，由 server 在内部路由到游戏侧能力。
+当前版本提供 MCP server 启动、鉴权、HTTP 入口登记、前后端插件状态检测和受信 C# 脚本执行工具。agent 只连接 MCP server，
+由 server 在内部路由到游戏侧能力。
 
 ## 适合谁
 
@@ -65,11 +66,14 @@ token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 
 
 ## MCP 工具
 
-当前提供一个只读工具：
+当前提供这些工具：
 
 - `guanxiangtai_status`：检测 MCP server 是否能通过内部 IPC 向观象台前端和后端插件分别完成状态请求。返回体只报告
   `frontend`、`backend` 两侧的判别联合：`available` 或 `unavailable(reason)`，不包含 MCP server 自身可用性，
   也不暴露内部 IPC 地址。
+- `guanxiangtai_run_csharp_script`：在观象台前端或后端插件进程内执行受信 C# 编译单元。脚本入口是
+  `public static GuanxiangtaiScript.Execute` 或 `ExecuteAsync`，参数为
+  `Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals`。工具返回入口未调用、入口返回值或入口异常的结构化 JSON。
 
 ## 运行态文件
 
@@ -87,7 +91,8 @@ token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 
 
 - 观象台是本机 MCP 服务，不设置远程服务器。
 - 运行态文件只记录 MCP server 入口、进程信息和内部 IPC 路由，不记录 token、agent 会话、玩家对话或游戏进程 IPC 地址。
-- 当前状态检测工具只确认 MCP server 能否通过内部 IPC 得到前端、后端插件响应；它不把 OS 进程存活性包装成工具结果。
-- 涉及动态代码执行、游戏启停或调试能力时，agent 仍只连接 MCP server，由 server 内部路由到游戏侧能力。这些能力不会提供沙箱，启用前应只连接受信任的本机 MCP 客户端。
+- 状态检测工具只确认 MCP server 能否通过内部 IPC 得到前端、后端插件响应；它不把 OS 进程存活性包装成工具结果。
+- C# 脚本工具在目标插件进程内完全信任运行，不提供沙箱。启用前应只连接受信任的本机 MCP 客户端。
+- 涉及游戏启停或调试能力时，agent 仍只连接 MCP server，由 server 内部路由到游戏侧能力。
 
 源码维护入口见 [DEVELOPMENT.md](DEVELOPMENT.md)。

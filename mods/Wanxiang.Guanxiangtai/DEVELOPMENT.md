@@ -41,10 +41,12 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：内部设计说明，入口见 `docs/README.md`。
 - `src/McpServerRuntime/`：前端启动器和 MCP server 本体共享的运行态协调模块，维护 MCP server 外部入口文件。
-- `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、endpoint manifest 和状态检测消息。
-- `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责确保 MCP server 进程启动并发布前端 IPC endpoint。
-- `src/Backend/`：后端插件项目，入口 DLL 部署到 `Plugins/Backend/`，负责发布后端 IPC endpoint。
-- `src/McpServer/`：游戏外 MCP Streamable HTTP server，负责常驻 HTTP 入口、鉴权、自身入口注册和状态检测工具。
+- `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、endpoint manifest、状态检测和脚本执行消息。
+- `src/Scripting/`：观象台脚本入口适配层，声明 `GuanxiangtaiScript` 契约，并复用 shared 动态脚本运行核心。
+- `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责确保 MCP server 进程启动、发布前端 IPC endpoint，
+  并承接前端侧脚本执行。
+- `src/Backend/`：后端插件项目，入口 DLL 部署到 `Plugins/Backend/`，负责发布后端 IPC endpoint，并承接后端侧脚本执行。
+- `src/McpServer/`：游戏外 MCP Streamable HTTP server，负责常驻 HTTP 入口、鉴权、自身入口注册、状态检测和脚本执行工具。
 
 ## 同步清单
 
@@ -53,5 +55,5 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - 非 shared 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
 - 运行态入口文件字段、运行目录解析或 MCP 启动方式变化时，同步更新 [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md)
   和 `src/McpServerRuntime/README.md`。
-- 内部 IPC 契约、endpoint manifest 或状态工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`
+- 内部 IPC 契约、endpoint manifest、状态工具或脚本工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`
   和 [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md) 中拥有对应边界的位置。

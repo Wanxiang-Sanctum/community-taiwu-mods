@@ -1,6 +1,7 @@
 using GameData.Domains;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Guanxiangtai.Ipc;
+using Wanxiang.Taiwu.DynamicScripting.Backend;
 using Wanxiang.Taiwu.Logging;
 
 namespace Wanxiang.Guanxiangtai.Backend;
@@ -12,9 +13,13 @@ namespace Wanxiang.Guanxiangtai.Backend;
 [PluginConfig("Wanxiang.Guanxiangtai.Backend", "WanxiangSanctum", "0.1.0")]
 public sealed class BackendPlugin : TaiwuRemakePlugin
 {
+    private const string PluginDirectoryName = "Backend";
+    private const string PluginsDirectoryName = "Plugins";
+
     private static readonly TaiwuLogger Log = TaiwuLogger.ForTag("Wanxiang.Guanxiangtai");
 
     private BackendIpcServer? _ipcServer;
+    private BackendScriptEntryDispatcher? _scriptEntryDispatcher;
 
     public override void Initialize()
     {
@@ -25,6 +30,8 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
     {
         _ipcServer?.Dispose();
         _ipcServer = null;
+        _scriptEntryDispatcher?.Dispose();
+        _scriptEntryDispatcher = null;
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -41,7 +48,10 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
                 DomainManager.Mod.GetModDirectory(ModIdStr));
             IpcEndpointRegistry.ConfigureForModDirectory(modDirectory);
 
-            _ipcServer = new BackendIpcServer();
+            _scriptEntryDispatcher ??= new BackendScriptEntryDispatcher();
+            _ipcServer = new BackendIpcServer(
+                GetPluginDirectory(modDirectory),
+                _scriptEntryDispatcher);
             _ = _ipcServer.Start();
             Log.Info("backend IPC ready");
         }
@@ -51,5 +61,13 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
             _ipcServer = null;
             Log.Error(ex, "backend IPC failed to start");
         }
+    }
+
+    private static string GetPluginDirectory(string modDirectory)
+    {
+        return Path.Combine(
+            modDirectory,
+            PluginsDirectoryName,
+            PluginDirectoryName);
     }
 }

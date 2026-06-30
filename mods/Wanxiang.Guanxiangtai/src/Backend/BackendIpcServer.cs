@@ -4,10 +4,14 @@ using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Wanxiang.Guanxiangtai.Ipc;
+using Wanxiang.Guanxiangtai.Scripting;
+using Wanxiang.Taiwu.DynamicScripting;
 
 namespace Wanxiang.Guanxiangtai.Backend;
 
-internal sealed class BackendIpcServer : IDisposable
+internal sealed class BackendIpcServer(
+    string pluginDirectory,
+    IDynamicScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -74,6 +78,10 @@ internal sealed class BackendIpcServer : IDisposable
                 options.RequestHandlerLifetime = InstanceLifetime.Singleton;
             });
         RegisterStatusHandler(services);
+        RegisterIpcScriptHandler(
+            services,
+            pluginDirectory,
+            scriptEntryDispatcher);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
             port,
@@ -129,6 +137,29 @@ internal sealed class BackendIpcServer : IDisposable
             typeof(BackendStatusHandler));
     }
 
+    private static void RegisterIpcScriptHandler(
+        IServiceCollection services,
+        string pluginDirectory,
+        IDynamicScriptEntryDispatcher scriptEntryDispatcher)
+    {
+        _ = services
+            .AddSingleton(
+                new GuanxiangtaiScriptRunner(
+                    new ScriptRunnerOptions(
+                        IpcRuntime.BackendEndpointRole,
+                        referenceDirectories: [pluginDirectory]),
+                    scriptEntryDispatcher))
+            .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
+            .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(
+                provider => new AsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>(
+                    provider.GetRequiredService<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>>(),
+                    provider.GetRequiredService<FilterAttachedAsyncRequestHandlerFactory>()));
+        AsyncRequestHandlerRegistory.Add(
+            typeof(IpcRunScriptRequest),
+            typeof(IpcRunScriptResponse),
+            typeof(BackendExecuteScriptHandler));
+    }
+
     private void ThrowIfDisposed()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -146,5 +177,20 @@ internal sealed class BackendStatusHandler : IAsyncRequestHandler<IpcStatusReque
         CancellationToken cancellationToken = default)
     {
         return new ValueTask<IpcStatusResponse>(new IpcStatusResponse());
+    }
+}
+
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "MessagePipe constructs request handlers through DI and reflection.")]
+internal sealed class BackendExecuteScriptHandler(GuanxiangtaiScriptRunner scriptRunner)
+    : IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>
+{
+    public async ValueTask<IpcRunScriptResponse> InvokeAsync(
+        IpcRunScriptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await scriptRunner.ExecuteAsync(request, cancellationToken);
     }
 }

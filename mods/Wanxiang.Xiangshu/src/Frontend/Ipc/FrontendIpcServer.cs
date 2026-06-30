@@ -8,7 +8,7 @@ using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.PlayerView;
-using Wanxiang.Xiangshu.Frontend.ScriptHost;
+using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -119,7 +119,7 @@ internal sealed class FrontendIpcServer(
         _ = builder.RegisterInstance(currentChatSessionBinding);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
-                new ScriptHostOptions(
+                new ScriptRunnerOptions(
                     IpcRuntime.FrontendEndpointRole,
                     referenceDirectories: [pluginDirectory],
                     assemblyReferencePaths: additionalAssemblyReferencePaths),

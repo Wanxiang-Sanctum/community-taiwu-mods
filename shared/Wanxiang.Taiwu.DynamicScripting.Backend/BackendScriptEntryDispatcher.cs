@@ -1,18 +1,22 @@
 using System.Diagnostics.CodeAnalysis;
 using GameData.Common;
 using GameData.GameDataBridge;
-using Wanxiang.Xiangshu.Ipc;
-using Wanxiang.Xiangshu.Scripting;
 
-namespace Wanxiang.Xiangshu.Backend;
+namespace Wanxiang.Taiwu.DynamicScripting.Backend;
 
-internal sealed class BackendScriptEntryDispatcher : IScriptEntryDispatcher, IDisposable
+/// <summary>
+/// Dispatches dynamic script entry calls to the current backend thread or GameData main loop.
+/// </summary>
+public sealed class BackendScriptEntryDispatcher : IDynamicScriptEntryDispatcher, IDisposable
 {
     private readonly object _syncRoot = new();
     private readonly Queue<PendingEntryInvocation> _pendingInvocations = new();
 
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BackendScriptEntryDispatcher"/> class.
+    /// </summary>
     public BackendScriptEntryDispatcher()
     {
         if (!IsOnBackendMainThread())
@@ -24,17 +28,19 @@ internal sealed class BackendScriptEntryDispatcher : IScriptEntryDispatcher, IDi
         GameDataBridge.StartNextFrame(DrainPendingInvocations);
     }
 
+    /// <inheritdoc />
     public Task<object?> InvokeAsync(
         Func<object?> invokeEntry,
-        IpcScriptEntryThread entryThread,
+        DynamicScriptEntryThread entryThread,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(invokeEntry);
         cancellationToken.ThrowIfCancellationRequested();
 
         return entryThread switch
         {
-            IpcScriptEntryThread.Current => Task.FromResult(invokeEntry()),
-            IpcScriptEntryThread.MainThread => InvokeOnMainThreadAsync(invokeEntry, cancellationToken),
+            DynamicScriptEntryThread.Current => Task.FromResult(invokeEntry()),
+            DynamicScriptEntryThread.MainThread => InvokeOnMainThreadAsync(invokeEntry, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(entryThread),
                 entryThread,
@@ -42,6 +48,7 @@ internal sealed class BackendScriptEntryDispatcher : IScriptEntryDispatcher, IDi
         };
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         Queue<PendingEntryInvocation> pendingInvocations;
