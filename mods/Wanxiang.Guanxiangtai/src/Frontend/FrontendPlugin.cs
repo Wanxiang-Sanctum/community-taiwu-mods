@@ -1,3 +1,4 @@
+using FrameWork.ModSystem;
 using TaiwuModdingLib.Core.Plugin;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
@@ -32,10 +33,16 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         _ipcServer = null;
     }
 
-    private static string GetModDirectory()
+    private string GetModDirectory()
     {
-        return Path.GetFullPath(
-            global::ModManager.GetModInfo(GuanxiangtaiMcp.ModId).DirectoryName);
+        ModInfoWithDisplayData? modInfo = global::ModManager.GetModInfo(ModIdStr);
+        if (modInfo is null || string.IsNullOrWhiteSpace(modInfo.DirectoryName))
+        {
+            throw new InvalidOperationException(
+                $"Mod directory could not be resolved for mod id '{ModIdStr}'.");
+        }
+
+        return Path.GetFullPath(modInfo.DirectoryName);
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
