@@ -148,12 +148,13 @@ McpServerLog.Configuration(
         : "missing; using a random free loopback port");
 McpServerLog.Token(
     logger,
+    settings.BearerTokenSource,
     GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
 McpServerLog.EndpointFile(
     logger,
     McpServerEndpointRegistry.EndpointFilePath);
 McpServerLog.IndependentProcess(logger);
-await WriteAccessInstructionsAsync(address);
+await WriteAccessInstructionsAsync(address, settings);
 
 await app.WaitForShutdownAsync();
 
@@ -173,7 +174,9 @@ static async Task WriteExistingEndpointAndExitAsync()
             System.Globalization.CultureInfo.InvariantCulture,
             $"Wanxiang.Guanxiangtai MCP server is already running at http://{endpoint.Host}:{endpoint.Port}{endpoint.Path}"));
     await Console.Out.WriteLineAsync(
-        "Bearer token environment variable: " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
+        "Use the bearer token shown in the already-running MCP server console, or the value of "
+        + GuanxiangtaiMcp.BearerTokenEnvironmentVariable
+        + " if that server was started with the environment variable.");
 }
 
 static Uri GetListeningAddress(WebApplication app)
@@ -227,7 +230,9 @@ static bool IsLocalHttpHost(string host)
         || (IPAddress.TryParse(host, out IPAddress? address) && IPAddress.IsLoopback(address));
 }
 
-static async Task WriteAccessInstructionsAsync(Uri address)
+static async Task WriteAccessInstructionsAsync(
+    Uri address,
+    McpServerSettings settings)
 {
     await Console.Out.WriteLineAsync();
     await Console.Out.WriteLineAsync("MCP URL:");
@@ -235,8 +240,21 @@ static async Task WriteAccessInstructionsAsync(Uri address)
         string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
             $"  http://{GuanxiangtaiMcp.LoopbackHost}:{address.Port}{GuanxiangtaiMcp.HttpPath}"));
-    await Console.Out.WriteLineAsync("Bearer token environment variable:");
-    await Console.Out.WriteLineAsync("  " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
+    await Console.Out.WriteLineAsync("Bearer token source:");
+
+    if (settings.BearerTokenSource == McpBearerTokenSource.Generated)
+    {
+        await Console.Out.WriteLineAsync(
+            "  generated because " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable + " is not set or empty");
+        await Console.Out.WriteLineAsync("Bearer token:");
+        await Console.Out.WriteLineAsync("  " + settings.BearerToken);
+        return;
+    }
+
+    await Console.Out.WriteLineAsync(
+        "  environment variable " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
+    await Console.Out.WriteLineAsync("Bearer token:");
+    await Console.Out.WriteLineAsync("  use the value from that environment variable");
 }
 
 static bool IsConfigurationException(Exception exception)
@@ -339,8 +357,9 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1005,
         Level = LogLevel.Information,
-        Message = "Bearer token environment variable: {EnvironmentVariable}")]
+        Message = "Bearer token source: {Source}; environment variable: {EnvironmentVariable}")]
     public static partial void Token(
         ILogger logger,
+        McpBearerTokenSource source,
         string environmentVariable);
 }

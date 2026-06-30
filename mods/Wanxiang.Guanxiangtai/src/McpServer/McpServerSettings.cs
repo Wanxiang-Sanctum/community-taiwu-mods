@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 
@@ -7,18 +8,22 @@ internal sealed class McpServerSettings
 {
     private const int MinimumBearerTokenLength = 16;
 
+    private const int GeneratedBearerTokenByteCount = 32;
+
     private const string LocalConfigurationFileName = "Guanxiangtai.Local.json";
 
     private McpServerSettings(
         string configurationPath,
         bool configurationFileExists,
         int port,
-        string bearerToken)
+        string bearerToken,
+        McpBearerTokenSource bearerTokenSource)
     {
         ConfigurationPath = configurationPath;
         ConfigurationFileExists = configurationFileExists;
         Port = port;
         BearerToken = bearerToken;
+        BearerTokenSource = bearerTokenSource;
     }
 
     public string ConfigurationPath { get; }
@@ -28,6 +33,8 @@ internal sealed class McpServerSettings
     public int Port { get; }
 
     public string BearerToken { get; }
+
+    public McpBearerTokenSource BearerTokenSource { get; }
 
     public static string GetLocalConfigurationPath(string ownerDirectory)
     {
@@ -55,24 +62,24 @@ internal sealed class McpServerSettings
                 $"{LocalConfigurationFileName}: mcpServer.port must be between 0 and 65535.");
         }
 
-        string bearerToken = ReadBearerToken();
+        (string bearerToken, McpBearerTokenSource bearerTokenSource) = ReadBearerToken();
 
         return new McpServerSettings(
             configurationPath,
             File.Exists(configurationPath),
             port,
-            bearerToken);
+            bearerToken,
+            bearerTokenSource);
     }
 
-    private static string ReadBearerToken()
+    private static (string Token, McpBearerTokenSource Source) ReadBearerToken()
     {
         string? token = Environment.GetEnvironmentVariable(
             GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new InvalidDataException(
-                $"{GuanxiangtaiMcp.BearerTokenEnvironmentVariable} environment variable is required for Wanxiang.Guanxiangtai MCP authorization.");
+            return (GenerateBearerToken(), McpBearerTokenSource.Generated);
         }
 
         string normalizedToken = token.Trim();
@@ -83,6 +90,22 @@ internal sealed class McpServerSettings
                 $"{GuanxiangtaiMcp.BearerTokenEnvironmentVariable} environment variable must contain at least {MinimumBearerTokenLength.ToString(System.Globalization.CultureInfo.InvariantCulture)} characters.");
         }
 
-        return normalizedToken;
+        return (normalizedToken, McpBearerTokenSource.Environment);
     }
+
+    private static string GenerateBearerToken()
+    {
+        byte[] tokenBytes = RandomNumberGenerator.GetBytes(GeneratedBearerTokenByteCount);
+
+        return Convert.ToBase64String(tokenBytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+}
+
+internal enum McpBearerTokenSource
+{
+    Environment = 0,
+    Generated = 1,
 }

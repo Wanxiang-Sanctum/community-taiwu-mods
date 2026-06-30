@@ -37,13 +37,15 @@ MCP 客户端、项目工作区和 agent 指令由使用者自己维护。
 
 这个文件不会被观象台打包，也不会随 Mod 默认分发。`port` 为 `0` 或文件缺失时，继续使用随机空闲端口。
 
-MCP 请求必须使用 bearer token。token 只从 MCP server 进程环境变量读取，环境变量名固定为：
+MCP 请求必须使用 bearer token。需要固定 token 时，在 MCP server 进程环境变量中设置：
 
 ```text
 WANXIANG_GUANXIANGTAI_MCP_TOKEN
 ```
 
 该值至少需要 16 个字符。由游戏拉起 server 时，它继承游戏进程环境；手动启动时，它继承当前终端环境。
+如果这个环境变量缺失或为空，server 会在启动时生成一串随机 token，并打印在可见终端窗口中。随机 token
+不会被持久化，重启后会变化，也不会写入本地配置或运行态入口文件。
 
 MCP 客户端请求 `/mcp` 时必须带：
 
@@ -55,14 +57,15 @@ Authorization: Bearer <token>
 
 观象台不做系统级自动注册，也不写入某个默认 agent 工作区。标准接入方式是在 MCP client 中手动注册 HTTP server：
 
-1. 设置 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`。
+1. 可选：设置 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`，让 server 使用稳定 token；不设置时使用 server 窗口打印的随机 token。
 2. 启动游戏，或手动启动 MCP server 可执行文件。
 3. 从 server 窗口、固定端口配置或运行态入口文件确定 URL。
 4. 在 MCP client 中注册 `http://127.0.0.1:<port>/mcp`，并让客户端使用同一个 bearer token。
 
-MCP 客户端运行在能访问宿主本机服务的容器或其它网络命名空间内时，只替换 host；端口仍来自窗口输出、显式配置或运行态入口文件，
-token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 下可使用 `http://host.docker.internal:<port>/mcp`，同时把
-`WANXIANG_GUANXIANGTAI_MCP_TOKEN` 传入容器内 agent。
+MCP 客户端运行在能访问宿主本机服务的容器或其它网络命名空间内时，只替换 host；端口仍来自窗口输出、显式配置或运行态入口文件。
+容器内 MCP client 仍要使用同一串 token：如果 server 使用环境变量 token，把 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`
+传入容器内 agent；如果 server 使用随机 token，把窗口打印的 token 配置给容器内 MCP client。例如 Docker Desktop 下可使用
+`http://host.docker.internal:<port>/mcp`。
 
 ## MCP 工具
 

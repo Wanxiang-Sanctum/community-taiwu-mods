@@ -8,9 +8,10 @@
 ## 本模块负责
 
 - 监听宿主侧 loopback 上的 Streamable HTTP `/mcp`。
-- 从 `WANXIANG_GUANXIANGTAI_MCP_TOKEN` 读取 bearer token，并通过 ASP.NET Core 鉴权管线保护 `/mcp`。
+- 使用 bearer token 保护 `/mcp`：优先读取 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`；环境变量缺失或为空时生成随机 token；
+  通过 ASP.NET Core 鉴权管线校验请求。
 - 读取 Mod 目录下可选的 `Guanxiangtai.Local.json`，只接受 `mcpServer.port` 作为端口覆盖。
-- 在运行目录登记自身 HTTP 入口，并在可见终端窗口打印 URL 和 token 环境变量名。
+- 在运行目录登记自身 HTTP 入口，并在可见终端窗口打印 URL、token 来源和生成的随机 token 值。
 - 持有按 Mod 目录派生的单实例锁，避免重复启动多个 server。
 - 提供 `guanxiangtai_status` 只读工具，分别检测前端和后端插件是否能通过内部 IPC 响应状态请求。
 - 提供 `guanxiangtai_launch_taiwu`、`guanxiangtai_stop_taiwu`、`guanxiangtai_restart_taiwu` 生命周期开发工具。它们以完整太吾运行时为对象；
