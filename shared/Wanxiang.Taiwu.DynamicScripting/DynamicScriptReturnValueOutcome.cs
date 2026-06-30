@@ -1,14 +1,14 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Represents a script entry method that returned successfully.
+/// 表示已成功返回的脚本入口方法。
 /// </summary>
-/// <param name="returnValueJson">The JSON-encoded return value.</param>
+/// <param name="returnValueJson">JSON 编码后的返回值。</param>
 public sealed class DynamicScriptReturnValueOutcome(
     string returnValueJson) : DynamicScriptInvocationOutcome
 {
     /// <summary>
-    /// Gets the JSON-encoded return value.
+    /// 获取 JSON 编码后的返回值。
     /// </summary>
     public string ReturnValueJson { get; } =
         returnValueJson ?? throw new ArgumentNullException(nameof(returnValueJson));

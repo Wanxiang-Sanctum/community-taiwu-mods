@@ -8,7 +8,7 @@ using Newtonsoft.Json.Serialization;
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Compiles and invokes trusted C# scripts inside the current plugin process.
+/// 在当前插件进程内编译并调用受信 C# 脚本。
 /// </summary>
 public sealed class DynamicScriptRunner
 {
@@ -29,11 +29,11 @@ public sealed class DynamicScriptRunner
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DynamicScriptRunner"/> class.
+    /// 初始化 <see cref="DynamicScriptRunner"/> 类的新实例。
     /// </summary>
-    /// <param name="contract">The mod-specific script entry contract.</param>
-    /// <param name="referenceOptions">The explicit assembly reference inputs.</param>
-    /// <param name="entryDispatcher">An optional dispatcher for host thread selection.</param>
+    /// <param name="contract">Mod 专用脚本入口契约。</param>
+    /// <param name="referenceOptions">显式程序集引用输入。</param>
+    /// <param name="entryDispatcher">用于选择宿主线程的可选分派器。</param>
     public DynamicScriptRunner(
         DynamicScriptEntryContract contract,
         DynamicScriptReferenceOptions referenceOptions,
@@ -60,15 +60,15 @@ public sealed class DynamicScriptRunner
     }
 
     /// <summary>
-    /// Compiles the requested script, invokes its entry method when possible, and returns invocation facts.
+    /// 编译请求的脚本，在可行时调用其入口方法，并返回调用事实。
     /// </summary>
-    /// <param name="request">The script execution request.</param>
-    /// <param name="globals">The caller-owned globals object passed to the script entry method.</param>
-    /// <param name="cancellationToken">The cancellation token for the compile and invocation operation.</param>
-    /// <returns>The script run result.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="request"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="globals"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="globals"/> does not satisfy the configured script contract.</exception>
+    /// <param name="request">脚本执行请求。</param>
+    /// <param name="globals">传给脚本入口方法、由调用方拥有的 globals 对象。</param>
+    /// <param name="cancellationToken">编译和调用操作使用的取消令牌。</param>
+    /// <returns>脚本运行结果。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="request"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="globals"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="ArgumentException"><paramref name="globals"/> 不满足已配置的脚本契约。</exception>
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",

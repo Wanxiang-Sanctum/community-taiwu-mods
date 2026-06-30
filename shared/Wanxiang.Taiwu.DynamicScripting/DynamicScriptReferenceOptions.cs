@@ -1,15 +1,15 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Describes explicit assembly reference inputs for dynamic script compilation.
+/// 描述动态脚本编译所需的显式程序集引用输入。
 /// </summary>
-/// <param name="assemblyReferencePaths">Specific assembly files to add as compilation and runtime references.</param>
-/// <exception cref="ArgumentException"><paramref name="assemblyReferencePaths"/> contains a null or whitespace path.</exception>
+/// <param name="assemblyReferencePaths">要作为编译和运行时引用加入的具体程序集文件。</param>
+/// <exception cref="ArgumentException"><paramref name="assemblyReferencePaths"/> 包含 null 或空白路径。</exception>
 public sealed class DynamicScriptReferenceOptions(
     IEnumerable<string>? assemblyReferencePaths = null)
 {
     /// <summary>
-    /// Gets specific assembly files to add as compilation and runtime references.
+    /// 获取要作为编译和运行时引用加入的具体程序集文件。
     /// </summary>
     public IReadOnlyList<string> AssemblyReferencePaths { get; } =
         NormalizePaths(

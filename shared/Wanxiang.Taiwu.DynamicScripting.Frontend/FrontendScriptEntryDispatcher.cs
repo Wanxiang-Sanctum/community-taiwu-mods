@@ -3,7 +3,7 @@ using Cysharp.Threading.Tasks;
 namespace Wanxiang.Taiwu.DynamicScripting.Frontend;
 
 /// <summary>
-/// Dispatches dynamic script entry calls to the current frontend thread or Unity main thread.
+/// 将动态脚本入口调用分派到当前前端线程或 Unity 主线程。
 /// </summary>
 public sealed class FrontendScriptEntryDispatcher : IDynamicScriptEntryDispatcher
 {

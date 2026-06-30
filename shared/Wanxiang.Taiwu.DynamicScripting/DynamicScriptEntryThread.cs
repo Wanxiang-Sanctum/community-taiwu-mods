@@ -1,17 +1,17 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Selects the host thread used to invoke the compiled script entry method.
+/// 选择用于调用已编译脚本入口方法的宿主线程。
 /// </summary>
 public enum DynamicScriptEntryThread
 {
     /// <summary>
-    /// Invoke the entry method on the current caller thread.
+    /// 在当前调用方线程上调用入口方法。
     /// </summary>
     Current = 0,
 
     /// <summary>
-    /// Invoke the entry method on the host's main thread.
+    /// 在宿主主线程上调用入口方法。
     /// </summary>
     MainThread = 1,
 }

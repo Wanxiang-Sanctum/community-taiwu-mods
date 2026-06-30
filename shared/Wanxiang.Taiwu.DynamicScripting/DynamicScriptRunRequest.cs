@@ -1,21 +1,21 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Describes one dynamic script execution request.
+/// 描述一次动态脚本执行请求。
 /// </summary>
-/// <param name="script">The complete C# compilation unit to compile and execute.</param>
-/// <param name="entryThread">The host thread used to invoke the entry method.</param>
+/// <param name="script">要编译并执行的完整 C# 编译单元。</param>
+/// <param name="entryThread">用于调用入口方法的宿主线程。</param>
 public sealed class DynamicScriptRunRequest(
     string script,
     DynamicScriptEntryThread entryThread = DynamicScriptEntryThread.Current)
 {
     /// <summary>
-    /// Gets the complete C# compilation unit to compile and execute.
+    /// 获取要编译并执行的完整 C# 编译单元。
     /// </summary>
     public string Script { get; } = script ?? throw new ArgumentNullException(nameof(script));
 
     /// <summary>
-    /// Gets the host thread used to invoke the entry method.
+    /// 获取用于调用入口方法的宿主线程。
     /// </summary>
     public DynamicScriptEntryThread EntryThread { get; } =
         ValidateEntryThread(entryThread);

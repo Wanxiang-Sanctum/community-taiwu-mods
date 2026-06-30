@@ -5,7 +5,7 @@ using GameData.GameDataBridge;
 namespace Wanxiang.Taiwu.DynamicScripting.Backend;
 
 /// <summary>
-/// Dispatches dynamic script entry calls to the current backend thread or GameData main loop.
+/// 将动态脚本入口调用分派到当前后端线程或 GameData 主循环。
 /// </summary>
 public sealed class BackendScriptEntryDispatcher : IDynamicScriptEntryDispatcher, IDisposable
 {
@@ -15,7 +15,7 @@ public sealed class BackendScriptEntryDispatcher : IDynamicScriptEntryDispatcher
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BackendScriptEntryDispatcher"/> class.
+    /// 初始化 <see cref="BackendScriptEntryDispatcher"/> 类的新实例。
     /// </summary>
     public BackendScriptEntryDispatcher()
     {

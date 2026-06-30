@@ -4,17 +4,17 @@ using System.Reflection;
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Resolves host-declared assemblies to metadata reference DLL paths.
+/// 将宿主声明的程序集解析为 metadata 引用 DLL 路径。
 /// </summary>
 public static class DynamicScriptAssemblyReferenceResolver
 {
     /// <summary>
-    /// Resolves the assembly that defines the supplied marker type to a metadata reference path.
+    /// 将定义给定标记类型的程序集解析为 metadata 引用路径。
     /// </summary>
-    /// <param name="markerType">A type defined by the assembly to reference.</param>
-    /// <returns>The resolved assembly reference path.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="markerType"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The assembly cannot be resolved to a metadata reference path.</exception>
+    /// <param name="markerType">由待引用程序集定义的类型。</param>
+    /// <returns>解析后的程序集引用路径。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="markerType"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="InvalidOperationException">无法将程序集解析为 metadata 引用路径。</exception>
     public static string ResolveRequiredAssemblyReferencePath(Type markerType)
     {
 #if NET6_0_OR_GREATER
@@ -30,12 +30,12 @@ public static class DynamicScriptAssemblyReferenceResolver
     }
 
     /// <summary>
-    /// Resolves the supplied assembly to a metadata reference path.
+    /// 将给定程序集解析为 metadata 引用路径。
     /// </summary>
-    /// <param name="assembly">The assembly to reference.</param>
-    /// <returns>The resolved assembly reference path.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The assembly cannot be resolved to a metadata reference path.</exception>
+    /// <param name="assembly">要引用的程序集。</param>
+    /// <returns>解析后的程序集引用路径。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="InvalidOperationException">无法将程序集解析为 metadata 引用路径。</exception>
     public static string ResolveRequiredAssemblyReferencePath(Assembly assembly)
     {
 #if NET6_0_OR_GREATER
@@ -59,14 +59,14 @@ public static class DynamicScriptAssemblyReferenceResolver
     }
 
     /// <summary>
-    /// Gets a normalized reference path after verifying that it matches the assembly that defines a marker type.
+    /// 校验引用路径匹配定义标记类型的程序集，并返回规范化后的引用路径。
     /// </summary>
-    /// <param name="markerType">A type defined by the assembly to reference.</param>
-    /// <param name="referencePath">The exact DLL file to reference.</param>
-    /// <returns>The normalized assembly reference path.</returns>
-    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="markerType"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the marker assembly.</exception>
+    /// <param name="markerType">由待引用程序集定义的类型。</param>
+    /// <param name="referencePath">要引用的确切 DLL 文件。</param>
+    /// <returns>规范化后的程序集引用路径。</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> 为 null 或空白字符串。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="markerType"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="InvalidOperationException">引用路径不存在，或与标记程序集不匹配。</exception>
     public static string GetVerifiedAssemblyReferencePath(
         Type markerType,
         string referencePath)
@@ -84,14 +84,14 @@ public static class DynamicScriptAssemblyReferenceResolver
     }
 
     /// <summary>
-    /// Gets a normalized reference path after verifying that it matches the supplied assembly.
+    /// 校验引用路径匹配给定程序集，并返回规范化后的引用路径。
     /// </summary>
-    /// <param name="assembly">The assembly to reference.</param>
-    /// <param name="referencePath">The exact DLL file to reference.</param>
-    /// <returns>The normalized assembly reference path.</returns>
-    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the assembly.</exception>
+    /// <param name="assembly">要引用的程序集。</param>
+    /// <param name="referencePath">要引用的确切 DLL 文件。</param>
+    /// <returns>规范化后的程序集引用路径。</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> 为 null 或空白字符串。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="InvalidOperationException">引用路径不存在，或与程序集不匹配。</exception>
     public static string GetVerifiedAssemblyReferencePath(
         Assembly assembly,
         string referencePath)
@@ -109,14 +109,14 @@ public static class DynamicScriptAssemblyReferenceResolver
     }
 
     /// <summary>
-    /// Gets a normalized reference path after verifying that it matches the supplied assembly identity.
+    /// 校验引用路径匹配给定程序集身份，并返回规范化后的引用路径。
     /// </summary>
-    /// <param name="assemblyName">The exact assembly identity to reference.</param>
-    /// <param name="referencePath">The exact DLL file to reference.</param>
-    /// <returns>The normalized assembly reference path.</returns>
-    /// <exception cref="ArgumentException"><paramref name="referencePath"/> is null or whitespace.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="assemblyName"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The reference path is missing or does not match the assembly identity.</exception>
+    /// <param name="assemblyName">要引用的确切程序集身份。</param>
+    /// <param name="referencePath">要引用的确切 DLL 文件。</param>
+    /// <returns>规范化后的程序集引用路径。</returns>
+    /// <exception cref="ArgumentException"><paramref name="referencePath"/> 为 null 或空白字符串。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="assemblyName"/> 为 <see langword="null"/>。</exception>
+    /// <exception cref="InvalidOperationException">引用路径不存在，或与程序集身份不匹配。</exception>
     public static string GetVerifiedAssemblyReferencePath(
         AssemblyName assemblyName,
         string referencePath)

@@ -1,22 +1,22 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Represents a script that did not reach its entry method.
+/// 表示未进入入口方法的脚本。
 /// </summary>
-/// <param name="reason">The reason invocation did not occur.</param>
-/// <param name="details">Optional diagnostics for the failure.</param>
+/// <param name="reason">未发生调用的原因。</param>
+/// <param name="details">可选失败诊断信息。</param>
 public sealed class DynamicScriptNotInvokedResult(
     string reason,
     DynamicScriptNotInvokedDetails? details = null) : DynamicScriptRunResult
 {
     /// <summary>
-    /// Gets the reason invocation did not occur.
+    /// 获取未发生调用的原因。
     /// </summary>
     public string Reason { get; } =
         reason ?? throw new ArgumentNullException(nameof(reason));
 
     /// <summary>
-    /// Gets optional diagnostics for the failure.
+    /// 获取可选失败诊断信息。
     /// </summary>
     public DynamicScriptNotInvokedDetails? Details { get; } = details;
 }

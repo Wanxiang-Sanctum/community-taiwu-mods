@@ -1,15 +1,15 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Represents the outcome of compiling and trying to invoke a dynamic script.
+/// 表示编译并尝试调用动态脚本后的结果。
 /// </summary>
 public abstract class DynamicScriptRunResult
 {
     /// <summary>
-    /// Creates an invoked response with a JSON-encoded return value.
+    /// 创建带有 JSON 编码返回值的已调用结果。
     /// </summary>
-    /// <param name="returnValueJson">The JSON-encoded return value.</param>
-    /// <returns>An invoked result.</returns>
+    /// <param name="returnValueJson">JSON 编码后的返回值。</param>
+    /// <returns>已调用结果。</returns>
     public static DynamicScriptRunResult InvokedWithReturnValue(string returnValueJson)
     {
         return new DynamicScriptInvokedResult(
@@ -17,11 +17,11 @@ public abstract class DynamicScriptRunResult
     }
 
     /// <summary>
-    /// Creates a response for a script whose entry method was not invoked.
+    /// 创建表示入口方法未被调用的脚本结果。
     /// </summary>
-    /// <param name="reason">The reason invocation did not occur.</param>
-    /// <param name="details">Optional diagnostics for the failure.</param>
-    /// <returns>A not-invoked result.</returns>
+    /// <param name="reason">未发生调用的原因。</param>
+    /// <param name="details">可选失败诊断信息。</param>
+    /// <returns>未调用结果。</returns>
     public static DynamicScriptRunResult NotInvoked(
         string reason,
         DynamicScriptNotInvokedDetails? details = null)
@@ -30,10 +30,10 @@ public abstract class DynamicScriptRunResult
     }
 
     /// <summary>
-    /// Creates an invoked response whose entry method threw or was canceled.
+    /// 创建表示入口方法抛出异常或已取消的已调用结果。
     /// </summary>
-    /// <param name="message">The exception or cancellation message.</param>
-    /// <returns>An invoked result.</returns>
+    /// <param name="message">异常或取消消息。</param>
+    /// <returns>已调用结果。</returns>
     public static DynamicScriptRunResult InvokedWithException(string message)
     {
         return new DynamicScriptInvokedResult(

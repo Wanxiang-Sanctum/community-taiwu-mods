@@ -1,14 +1,14 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Represents a script entry method that threw or was canceled.
+/// 表示已抛出异常或已取消的脚本入口方法。
 /// </summary>
-/// <param name="message">The exception or cancellation message.</param>
+/// <param name="message">异常或取消消息。</param>
 public sealed class DynamicScriptExceptionOutcome(
     string message) : DynamicScriptInvocationOutcome
 {
     /// <summary>
-    /// Gets the exception or cancellation message.
+    /// 获取异常或取消消息。
     /// </summary>
     public string Message { get; } =
         message ?? throw new ArgumentNullException(nameof(message));

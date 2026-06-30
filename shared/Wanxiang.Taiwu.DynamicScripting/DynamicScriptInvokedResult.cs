@@ -1,14 +1,14 @@
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Represents a script whose entry method was invoked.
+/// 表示入口方法已被调用的脚本。
 /// </summary>
-/// <param name="outcome">The entry method outcome.</param>
+/// <param name="outcome">入口方法结果。</param>
 public sealed class DynamicScriptInvokedResult(
     DynamicScriptInvocationOutcome outcome) : DynamicScriptRunResult
 {
     /// <summary>
-    /// Gets the entry method outcome.
+    /// 获取入口方法结果。
     /// </summary>
     public DynamicScriptInvocationOutcome Outcome { get; } =
         outcome ?? throw new ArgumentNullException(nameof(outcome));

@@ -3,10 +3,10 @@ using System.Collections.ObjectModel;
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// Contains diagnostics for a script that could not be compiled or referenced.
+/// 包含脚本无法编译或引用时的诊断信息。
 /// </summary>
-/// <param name="referenceDiagnostics">Reference resolution diagnostics.</param>
-/// <param name="compilationDiagnostics">Compilation diagnostics.</param>
+/// <param name="referenceDiagnostics">引用解析诊断信息。</param>
+/// <param name="compilationDiagnostics">编译诊断信息。</param>
 public sealed class DynamicScriptNotInvokedDetails(
     IReadOnlyList<string>? referenceDiagnostics,
     IReadOnlyList<string>? compilationDiagnostics)
@@ -15,13 +15,13 @@ public sealed class DynamicScriptNotInvokedDetails(
         new ReadOnlyCollection<string>([]);
 
     /// <summary>
-    /// Gets reference resolution diagnostics.
+    /// 获取引用解析诊断信息。
     /// </summary>
     public IReadOnlyList<string> ReferenceDiagnostics { get; } =
         NormalizeList(referenceDiagnostics);
 
     /// <summary>
-    /// Gets compilation diagnostics.
+    /// 获取编译诊断信息。
     /// </summary>
     public IReadOnlyList<string> CompilationDiagnostics { get; } =
         NormalizeList(compilationDiagnostics);
