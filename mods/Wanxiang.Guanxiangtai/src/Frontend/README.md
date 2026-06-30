@@ -5,7 +5,10 @@
 - 确保包内 MCP server 进程已启动。
 - 启动供 MCP server 调用的前端 MessagePipe IPC endpoint，并在 `.guanxiangtai-runtime/ipc-endpoints.json` 中登记
   role 为 `frontend` 的内部入口。
-- 承接前端侧状态检测和受信 C# 脚本执行请求。
+- 承接前端侧状态检测、游戏退出和受信 C# 脚本执行请求。
+
+游戏退出请求只服务 MCP server 的 `requestQuit` 停止策略。前端收到请求后切到 Unity 主线程，设置 `GameApp.ReadyToQuit` 并调用
+`GameApp.QuitGame()`；进程消失等待和强杀策略不归前端模块。
 
 `entryThread = mainThread` 的脚本入口会切到 Unity 主线程。Unity 主线程分派复用
 `shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。

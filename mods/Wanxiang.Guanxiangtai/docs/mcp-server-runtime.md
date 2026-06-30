@@ -118,15 +118,30 @@ MCP server 启动后持有按 Mod 目录派生的命名 mutex。已有 live serv
 .guanxiangtai-runtime/ipc-endpoints.json
 ```
 
-这个文件只服务 MCP server 内部路由，不是 MCP client 配置文件，也不是 agent 可连接入口。当前工具使用方式包括：
+这个文件只服务 MCP server 内部路由，不是 MCP client 配置文件，也不是 agent 可连接入口。当前 MCP 工具分为状态、生命周期和脚本三类：
 
 - `guanxiangtai_status`：MCP server 分别向前端和后端 endpoint 发送状态请求；每侧返回 `kind` 判别的结构化结果：
   `available` 或 `unavailable(reason)`。
+- `guanxiangtai_launch_taiwu`：MCP server 请求 Steam 打开 `steam://rungameid/838350`，随后等待观象台前端、后端 IPC 都可响应。
+  `launch.kind=launchRequested` 只表示 Steam URI 已交给宿主 shell；工具返回体的整体 `outcome` 和 `runtimeReady` 才描述观象台
+  运行时是否在内部等待窗口内 ready。如果内部启动等待到期，返回最后观察到的两侧可用性。
+- `guanxiangtai_stop_taiwu`：MCP server 按 `method` 停止太吾，默认 `force`。`force` 是 OS 级强杀：先杀本机太吾前端进程树，
+  再补杀路径匹配 `Backend\GameData.exe` 的遗留后端进程；`requestQuit` 是前端 IPC 请求：让前端插件在 Unity 主线程设置
+  `GameApp.ReadyToQuit` 并调用 `GameApp.QuitGame()`。两种方式都会等待太吾前端和匹配后端进程消失；如果 `requestQuit` 请求无法
+  被前端 IPC 接受，工具返回 `kind=requestQuitFailed`，不进入进程消失等待。
+- `guanxiangtai_restart_taiwu`：MCP server 先按 `stopMethod` 停止太吾；停止完成后才请求 Steam 拉起太吾，并等待观象台前端、后端
+  IPC 都可响应。返回体包含整体 `outcome`；如果停止没有完成，工具不会继续拉起。
 - `guanxiangtai_run_csharp_script`：MCP server 按 `targetSide` 选择前端或后端 endpoint，发送受信 C# 脚本执行请求，并把
   `entryThread` 转发给目标侧。
 
 状态工具不报告 MCP server 自身可用性；能返回工具结果已经说明 MCP transport、鉴权和工具调用链路可用。状态工具也不报告
 OS 进程存活性，避免把 manifest 或 PID 观察误包装成游戏侧可用事实。
+
+生命周期工具不把太吾前后端建模成可独立启动或停止的 side；太吾后端由前端启动，并接收前端传入的 Mod 列表和运行配置。因此
+`guanxiangtai_launch_taiwu` 和 `guanxiangtai_restart_taiwu` 的完成条件是观象台前端、后端 IPC 都可响应，而不是某一侧单独可用。
+
+生命周期工具使用固定的内部等待窗口，不暴露 `timeoutSeconds` 一类工具参数：启动/重启等待观象台运行时 ready 最多 5 分钟，停止等待太吾
+进程消失最多 30 秒，`requestQuit` 的前端 IPC 请求最多等待 5 秒被接受。外层 MCP host 或 agent 仍可用自己的工具调用超时取消等待。
 
 运行态入口文件和 IPC manifest 不保存权限决策、脚本内容、调试会话、agent 消息、玩家可见文本或游戏进程 IPC 地址。需要传递或
 持久化这些内容时，由拥有对应语义的 IPC 协议、工具协议或运行数据文件维护。

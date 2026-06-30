@@ -18,24 +18,36 @@ internal static class PluginIpcProxy
     private const string RoutingErrorReason = "routing_error";
     private const string TimeoutReason = "timeout";
     private const string UnreachableReason = "unreachable";
+    private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan StatusTimeout = TimeSpan.FromSeconds(1);
 
     public static async Task<string> GetStatusJsonAsync(CancellationToken cancellationToken)
     {
-        Task<StatusToolJson.SideStatus> frontendTask = GetSideStatusAsync(
-            IpcRuntime.FrontendEndpointRole,
-            cancellationToken);
-        Task<StatusToolJson.SideStatus> backendTask = GetSideStatusAsync(
-            IpcRuntime.BackendEndpointRole,
-            cancellationToken);
+        PluginRuntimeAvailability availability =
+            await GetRuntimeAvailabilityAsync(cancellationToken);
 
         StatusToolJson.Response response = new(
-            await frontendTask,
-            await backendTask);
+            ConvertSideAvailability(availability.Frontend),
+            ConvertSideAvailability(availability.Backend));
 
         return JsonSerializer.Serialize(
             response,
             StatusToolJsonContext.Default.Response);
+    }
+
+    public static async Task<PluginRuntimeAvailability> GetRuntimeAvailabilityAsync(
+        CancellationToken cancellationToken)
+    {
+        Task<PluginSideAvailability> frontendTask = GetSideAvailabilityAsync(
+            IpcRuntime.FrontendEndpointRole,
+            cancellationToken);
+        Task<PluginSideAvailability> backendTask = GetSideAvailabilityAsync(
+            IpcRuntime.BackendEndpointRole,
+            cancellationToken);
+
+        return new PluginRuntimeAvailability(
+            await frontendTask,
+            await backendTask);
     }
 
     public static async Task<string> RunCSharpScriptAsync(
@@ -61,7 +73,18 @@ internal static class PluginIpcProxy
         return FormatRunScriptToolResponse(response);
     }
 
-    private static async Task<StatusToolJson.SideStatus> GetSideStatusAsync(
+    public static async Task RequestGameQuitAsync(CancellationToken cancellationToken)
+    {
+        IpcEndpoint endpoint = GetRegisteredEndpointOrThrow(IpcRuntime.FrontendEndpointRole);
+
+        _ = await InvokeAsync<IpcGameQuitRequest, IpcGameQuitResponse>(
+            endpoint,
+            new IpcGameQuitRequest(),
+            cancellationToken,
+            CommandTimeout);
+    }
+
+    private static async Task<PluginSideAvailability> GetSideAvailabilityAsync(
         string role,
         CancellationToken cancellationToken)
     {
@@ -75,17 +98,17 @@ internal static class PluginIpcProxy
             or InvalidDataException
             or UnauthorizedAccessException)
         {
-            return CreateUnavailableStatus(RoutingErrorReason);
+            return CreateUnavailableAvailability(RoutingErrorReason);
         }
 
         if (endpoint is null)
         {
-            return CreateUnavailableStatus(NotRegisteredReason);
+            return CreateUnavailableAvailability(NotRegisteredReason);
         }
 
         if (!string.Equals(endpoint.Transport, IpcRuntime.TransportName, StringComparison.OrdinalIgnoreCase))
         {
-            return CreateUnavailableStatus(RoutingErrorReason);
+            return CreateUnavailableAvailability(RoutingErrorReason);
         }
 
         try
@@ -95,11 +118,11 @@ internal static class PluginIpcProxy
                 new IpcStatusRequest(),
                 cancellationToken,
                 StatusTimeout);
-            return new StatusToolJson.AvailableStatus();
+            return new PluginSideAvailability(true, null);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return CreateUnavailableStatus(TimeoutReason);
+            return CreateUnavailableAvailability(TimeoutReason);
         }
         catch (Exception ex) when (ex is ArgumentException
             or SocketException
@@ -108,13 +131,21 @@ internal static class PluginIpcProxy
             or MessagePackSerializationException
             or ObjectDisposedException)
         {
-            return CreateUnavailableStatus(UnreachableReason);
+            return CreateUnavailableAvailability(UnreachableReason);
         }
     }
 
-    private static StatusToolJson.UnavailableStatus CreateUnavailableStatus(string reason)
+    private static PluginSideAvailability CreateUnavailableAvailability(string reason)
     {
-        return new StatusToolJson.UnavailableStatus(reason);
+        return new PluginSideAvailability(false, reason);
+    }
+
+    private static StatusToolJson.SideStatus ConvertSideAvailability(
+        PluginSideAvailability availability)
+    {
+        return availability.Available
+            ? new StatusToolJson.AvailableStatus()
+            : new StatusToolJson.UnavailableStatus(availability.Reason ?? UnreachableReason);
     }
 
     private static IpcEndpoint GetRegisteredEndpointOrThrow(string role)

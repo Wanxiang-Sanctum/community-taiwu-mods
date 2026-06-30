@@ -10,6 +10,8 @@ MCP server 的 HTTP `/mcp`。
 - 前端和后端插件各自启动一个 `messagepipe-tcp` loopback endpoint，并登记到 `.guanxiangtai-runtime/ipc-endpoints.json`。
 - MCP server 读取 manifest 后，向对应 role 发送状态请求。
 - 目标侧只确认能完成状态请求；MCP server 不把 OS 进程存活性当作对外状态事实。
+- MCP server 可以向前端发送游戏退出请求，供 `guanxiangtai_stop_taiwu(method=requestQuit)` 使用；前端收到请求后在 Unity 主线程设置
+  `GameApp.ReadyToQuit` 并调用 `GameApp.QuitGame()`。该 IPC 契约只表示请求被前端处理，进程消失等待归 MCP server 生命周期工具。
 - MCP server 也可以向指定 role 发送受信 C# 脚本执行请求，包含 `script`、`arguments` 和 `entryThread` 字段。
 - 脚本响应使用嵌套 MessagePack 判别联合，区分入口未调用、入口返回值和入口异常。
 

@@ -13,6 +13,8 @@
 - 在运行目录登记自身 HTTP 入口，并在可见终端窗口打印 URL 和 token 环境变量名。
 - 持有按 Mod 目录派生的单实例锁，避免重复启动多个 server。
 - 提供 `guanxiangtai_status` 只读工具，分别检测前端和后端插件是否能通过内部 IPC 响应状态请求。
+- 提供 `guanxiangtai_launch_taiwu`、`guanxiangtai_stop_taiwu`、`guanxiangtai_restart_taiwu` 生命周期开发工具。它们以完整太吾运行时为对象；
+  启动和重启通过 Steam URI 拉起太吾并等待前后端 IPC ready，停止按 `force` 或 `requestQuit` 策略请求停止并等待太吾进程消失。
 - 提供 `guanxiangtai_run_csharp_script` 工具，把受信 C# 脚本请求转发到前端或后端 IPC endpoint。
 
 ## 外部边界
@@ -20,7 +22,11 @@
 - MCP client 配置由使用者自己的 MCP client 管理。
 - 默认 agent 工作区不是观象台 MCP server 的运行前提。
 - 前端和后端游戏进程只通过内部 IPC 被本 server 调用；MCP 工具返回体不暴露内部 IPC 地址。
+- 生命周期工具不提供前端/后端 side 参数，也不暴露等待时长参数；等待窗口由本模块内部策略固定。
 - token、agent 会话、脚本内容、调试会话和游戏进程 IPC 地址不写入本模块持久状态。
+
+生命周期工具中，Steam URI 启动请求、OS 进程观察、`force` 强杀和启动/停止等待策略归本模块；`requestQuit` 的跨进程消息归
+`src/Ipc/`，前端收到消息后的游戏退出动作归 `src/Frontend/`。
 
 脚本运行中，MCP server 负责把工具调用路由到目标侧 IPC endpoint，把 `entryThread` 写入 IPC 请求，并把内部的嵌套判别联合整理为
 Agent 可读 JSON：未调用入口时返回原因和可选诊断；已调用入口时再区分入口返回值和入口异常。实际线程切换由目标侧插件实现。

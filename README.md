@@ -12,7 +12,7 @@ Community Taiwu Mods 是 Wanxiang-Sanctum 维护的太吾绘卷 Mod 源码集合
 | Mod      | 适合谁                                                                                                                                                       | 继续阅读                                            |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
 | 法不加身 | 想让太吾获得只在运行时生效的“一力破万法”护身规则，免受内伤、心神、毒素、封穴破绽和战斗异状纠缠的玩家。                                                       | [法不加身说明](mods/Wanxiang.Fabujiashen/README.md) |
-| 观象台   | 维护太吾 Mod、准备用本机 MCP 服务接入太吾运行时的制作者；当前提供 MCP server 启动、鉴权、HTTP 入口登记、状态检测和受信 C# 脚本执行。                         | [观象台说明](mods/Wanxiang.Guanxiangtai/README.md)  |
+| 观象台   | 维护太吾 Mod、准备用本机 MCP 服务接入太吾运行时的制作者；当前提供 MCP server 启动、鉴权、HTTP 入口登记、太吾启停/重启、状态检测和受信 C# 脚本执行。              | [观象台说明](mods/Wanxiang.Guanxiangtai/README.md)  |
 | 相枢     | 把本地 CLI Agent 接入当前运行中的太吾绘卷，通过动态脚本尝试完成玩家提出的查找、判断和改动目标；当前支持 Codex CLI、Claude Code 和 CodeBuddy Code，仍在试行。 | [相枢说明](mods/Wanxiang.Xiangshu/README.md)        |
 | 万象引   | 订阅相枢或其它明确要求万象引的 Mod 时需要的前置依赖。它本身不提供单独玩法入口。                                                                              | [万象引说明](mods/Wanxiang.Prelude/README.md)       |
 

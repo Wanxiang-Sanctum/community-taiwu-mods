@@ -29,6 +29,57 @@ internal sealed class PluginTools
     }
 
     [McpServerTool(
+        Name = "guanxiangtai_launch_taiwu",
+        Destructive = false,
+        Idempotent = true,
+        ReadOnly = false)]
+    [Description(
+        "Requests Steam to launch The Scroll of Taiwu through steam://rungameid/838350. "
+        + "After issuing the launch request, waits until both Guanxiangtai frontend and backend IPC endpoints respond, "
+        + "or until the tool's internal startup wait expires.")]
+    public Task<string> LaunchTaiwuAsync(CancellationToken cancellationToken = default)
+    {
+        return TaiwuLifecycle.LaunchAsync(cancellationToken);
+    }
+
+    [McpServerTool(
+        Name = "guanxiangtai_stop_taiwu",
+        Destructive = true,
+        Idempotent = true,
+        ReadOnly = false)]
+    [Description(
+        "Stops The Scroll of Taiwu for development workflows using the selected method. "
+        + "method=force kills matched frontend process trees first, then kills leftover Backend/GameData.exe processes. "
+        + "method=requestQuit asks the live Guanxiangtai frontend plugin to set GameApp.ReadyToQuit and call GameApp.QuitGame. "
+        + "After requesting stop, waits until Taiwu frontend and matched backend processes are gone, "
+        + "or until the tool's internal stop wait expires.")]
+    public Task<string> StopTaiwuAsync(
+        [Description("Stop method: force for OS-level process kill, or requestQuit for a frontend IPC game quit request.")]
+        string method = "force",
+        CancellationToken cancellationToken = default)
+    {
+        return TaiwuLifecycle.StopAsync(method, cancellationToken);
+    }
+
+    [McpServerTool(
+        Name = "guanxiangtai_restart_taiwu",
+        Destructive = true,
+        Idempotent = false,
+        ReadOnly = false)]
+    [Description(
+        "Restarts The Scroll of Taiwu for development workflows using the selected stop method, "
+        + "then requesting Steam launch through steam://rungameid/838350. "
+        + "It launches only after stop completes, then waits until both Guanxiangtai frontend and backend IPC endpoints respond, "
+        + "or until the tool's internal startup wait expires.")]
+    public Task<string> RestartTaiwuAsync(
+        [Description("Stop method used before launch: force for OS-level process kill, or requestQuit for a frontend IPC game quit request.")]
+        string stopMethod = "force",
+        CancellationToken cancellationToken = default)
+    {
+        return TaiwuLifecycle.RestartAsync(stopMethod, cancellationToken);
+    }
+
+    [McpServerTool(
         Name = "guanxiangtai_run_csharp_script",
         Destructive = true,
         Idempotent = false,

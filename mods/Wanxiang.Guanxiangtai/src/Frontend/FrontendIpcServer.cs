@@ -137,6 +137,11 @@ internal sealed class FrontendIpcServer(string pluginDirectory) : IDisposable
             IpcStatusResponse,
             FrontendStatusHandler>(
             options);
+        _ = builder.RegisterAsyncRequestHandler<
+            IpcGameQuitRequest,
+            IpcGameQuitResponse,
+            FrontendGameQuitHandler>(
+            options);
 
         IMessagePipeBuilder messagePipeBuilder = builder.ToMessagePipeBuilder();
         MessagePipeInterprocessOptions tcpOptions = messagePipeBuilder.AddTcpInterprocess(
@@ -155,6 +160,10 @@ internal sealed class FrontendIpcServer(string pluginDirectory) : IDisposable
         _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
             IpcStatusRequest,
             IpcStatusResponse>(
+            tcpOptions);
+        _ = messagePipeBuilder.RegisterTcpRemoteRequestHandler<
+            IpcGameQuitRequest,
+            IpcGameQuitResponse>(
             tcpOptions);
     }
 
@@ -193,5 +202,23 @@ internal sealed class FrontendStatusHandler : IAsyncRequestHandler<IpcStatusRequ
         CancellationToken cancellationToken = default)
     {
         return UniTask.FromResult(new IpcStatusResponse());
+    }
+}
+
+[SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "MessagePipe constructs request handlers through DI and reflection.")]
+internal sealed class FrontendGameQuitHandler
+    : IAsyncRequestHandler<IpcGameQuitRequest, IpcGameQuitResponse>
+{
+    public async UniTask<IpcGameQuitResponse> InvokeAsync(
+        IpcGameQuitRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await UniTask.SwitchToMainThread(cancellationToken);
+        GameApp.ReadyToQuit = true;
+        GameApp.QuitGame();
+        return new IpcGameQuitResponse();
     }
 }

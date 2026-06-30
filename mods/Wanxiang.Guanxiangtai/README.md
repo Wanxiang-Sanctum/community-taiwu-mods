@@ -3,8 +3,8 @@
 观象台把一个本机 HTTP MCP server 随太吾 Mod 分发。游戏前端会确保该 server 进程启动；维护者也可以手动运行包内可执行文件。
 server 使用可见终端窗口运行，游戏退出不会自动关闭。
 
-当前版本提供 MCP server 启动、鉴权、HTTP 入口登记、前后端插件状态检测和受信 C# 脚本执行工具。agent 只连接 MCP server，
-由 server 在内部路由到游戏侧能力。
+当前版本提供 MCP server 启动、鉴权、HTTP 入口登记、太吾生命周期工具、前后端插件状态检测和受信 C# 脚本执行工具。生命周期工具以
+完整太吾运行时为对象；agent 只连接 MCP server，由 server 在内部路由到游戏侧能力。
 
 ## 适合谁
 
@@ -71,8 +71,18 @@ token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 
 - `guanxiangtai_status`：检测 MCP server 是否能通过内部 IPC 向观象台前端和后端插件分别完成状态请求。返回体只报告
   `frontend`、`backend` 两侧的判别联合：`available` 或 `unavailable(reason)`，不包含 MCP server 自身可用性，
   也不暴露内部 IPC 地址。
+- `guanxiangtai_launch_taiwu`：请求 Steam 通过 `steam://rungameid/838350` 拉起太吾绘卷，然后等待观象台前端、后端 IPC 都可响应。
+  返回体包含 `outcome`；如果内部启动等待到期，返回最后观察到的两侧可用性。
+- `guanxiangtai_stop_taiwu`：开发用停止工具。`method` 只接受 `force` 或 `requestQuit`，默认 `force`。`force` 通过 OS 进程结束太吾；
+  `requestQuit` 通过前端 IPC 请求游戏退出流程。两种方式都会等待太吾前端和匹配后端进程消失；如果 `requestQuit` 请求无法被前端
+  IPC 接受，工具返回请求失败，不进入进程消失等待。
+- `guanxiangtai_restart_taiwu`：开发用重启工具。先按 `stopMethod` 停止太吾；只有停止完成后才请求 Steam 拉起，并等待观象台前端、
+  后端 IPC 都可响应。返回体包含整体 `outcome`，默认 `stopMethod=force`。
 - `guanxiangtai_run_csharp_script`：在观象台前端或后端插件进程内执行受信 C# 编译单元。脚本入口契约由
   [脚本执行适配模块](src/Scripting/README.md#入口契约)维护。工具返回入口未调用、入口返回值或入口异常的结构化 JSON。
+
+生命周期工具是等待式开发工具，用来减少 agent 额外轮询；它们不提供前端/后端 side 选择，也不把等待时长暴露成工具参数。
+完整运行模型见 [MCP Server 运行模型](docs/mcp-server-runtime.md)。
 
 ## 运行态文件
 
@@ -91,6 +101,10 @@ token 仍来自 agent 进程自己的同名环境变量。例如 Docker Desktop 
 - 观象台是本机 MCP 服务，不设置远程服务器。
 - 运行态文件只记录 MCP server 入口、进程信息和内部 IPC 路由，不记录 token、agent 会话、玩家对话或游戏进程 IPC 地址。
 - 状态检测工具只确认 MCP server 能否通过内部 IPC 得到前端、后端插件响应；它不把 OS 进程存活性包装成工具结果。
+- 启动、停止和重启工具是 Mod 开发辅助能力，不提供存档保护或退出确认；`force` 是默认停止策略，会直接结束匹配的游戏进程。启用前应
+  只连接受信任的本机 MCP 客户端。生命周期工具使用固定的内部等待窗口：启动/重启等待观象台运行时 ready 最多 5 分钟，停止等待太吾
+  进程消失最多 30 秒；`requestQuit` 的前端 IPC 请求最多等待 5 秒被接受。这些等待窗口不是工具参数；外层 MCP host 或 agent
+  可以用自己的工具调用超时取消等待。
 - C# 脚本工具在目标插件进程内完全信任运行，不提供沙箱。启用前应只连接受信任的本机 MCP 客户端。
 - 涉及游戏启停或调试能力时，agent 仍只连接 MCP server，由 server 内部路由到游戏侧能力。
 
