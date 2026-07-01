@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <TaiwuModPackFile Include="Config.Lua" PackagePath="Config.Lua" />
+    <TaiwuModPackFile Include="Cover.png" PackagePath="Cover.png" />
     <TaiwuModPackProject
       Include="src/Frontend/Wanxiang.Guanxiangtai.Frontend.csproj"
     />

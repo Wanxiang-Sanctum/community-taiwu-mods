@@ -42,6 +42,8 @@ return {
 [h2]详细说明[/h2]
 [url=https://github.com/Wanxiang-Sanctum/community-taiwu-mods/tree/main/mods/Wanxiang.Guanxiangtai]https://github.com/Wanxiang-Sanctum/community-taiwu-mods/tree/main/mods/Wanxiang.Guanxiangtai[/url]
 ]=],
+  Cover = "Cover.png",
+  WorkshopCover = "Cover.png",
   TagList = {
     "Extensions",
   },
