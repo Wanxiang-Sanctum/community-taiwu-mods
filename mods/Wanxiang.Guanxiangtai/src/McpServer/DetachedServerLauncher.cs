@@ -50,25 +50,18 @@ internal static partial class DetachedServerLauncher
         using SafeKernelHandle explorerProcess = OpenCurrentSessionExplorerProcess();
         using SafeKernelHandle explorerToken = OpenExplorerToken(explorerProcess);
         IntPtr environmentBlock = CreateUserEnvironmentBlock(explorerToken);
-        IntPtr attributeList = IntPtr.Zero;
 
         try
         {
-            attributeList = CreateParentProcessAttributeList(explorerProcess);
+            using ProcessThreadAttributeList attributeList = CreateParentProcessAttributeList(explorerProcess);
             CreateServerProcess(
                 executablePath,
                 workingDirectory,
                 environmentBlock,
-                attributeList);
+                attributeList.Handle);
         }
         finally
         {
-            if (attributeList != IntPtr.Zero)
-            {
-                DeleteProcThreadAttributeList(attributeList);
-                Marshal.FreeHGlobal(attributeList);
-            }
-
             if (environmentBlock != IntPtr.Zero)
             {
                 _ = DestroyEnvironmentBlock(environmentBlock);
@@ -159,7 +152,7 @@ internal static partial class DetachedServerLauncher
         return environmentBlock;
     }
 
-    private static IntPtr CreateParentProcessAttributeList(SafeKernelHandle parentProcessHandle)
+    private static ProcessThreadAttributeList CreateParentProcessAttributeList(SafeKernelHandle parentProcessHandle)
     {
         UIntPtr attributeListSize = UIntPtr.Zero;
         _ = InitializeProcThreadAttributeList(
@@ -173,6 +166,7 @@ internal static partial class DetachedServerLauncher
         }
 
         IntPtr attributeList = Marshal.AllocHGlobal(checked((nint)attributeListSize.ToUInt64()));
+        IntPtr parentProcessHandleValue = IntPtr.Zero;
         bool attributeListInitialized = false;
 
         try
@@ -187,12 +181,14 @@ internal static partial class DetachedServerLauncher
             }
 
             attributeListInitialized = true;
-            IntPtr parentProcessHandleValue = parentProcessHandle.DangerousGetHandle();
+            // The attribute value buffer must live until the attribute list is destroyed.
+            parentProcessHandleValue = Marshal.AllocHGlobal(IntPtr.Size);
+            Marshal.WriteIntPtr(parentProcessHandleValue, parentProcessHandle.DangerousGetHandle());
             if (!UpdateProcThreadAttribute(
                     attributeList,
                     0,
                     (IntPtr)ProcThreadAttributeParentProcess,
-                    ref parentProcessHandleValue,
+                    parentProcessHandleValue,
                     (UIntPtr)IntPtr.Size,
                     IntPtr.Zero,
                     IntPtr.Zero))
@@ -200,7 +196,7 @@ internal static partial class DetachedServerLauncher
                 throw LastWin32Exception("无法设置 Explorer 父进程属性。");
             }
 
-            return attributeList;
+            return new ProcessThreadAttributeList(attributeList, parentProcessHandleValue);
         }
         catch
         {
@@ -210,6 +206,11 @@ internal static partial class DetachedServerLauncher
             }
 
             Marshal.FreeHGlobal(attributeList);
+            if (parentProcessHandleValue != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(parentProcessHandleValue);
+            }
+
             throw;
         }
     }
@@ -339,10 +340,43 @@ internal static partial class DetachedServerLauncher
         IntPtr attributeList,
         int flags,
         IntPtr attribute,
-        ref IntPtr value,
+        IntPtr value,
         UIntPtr size,
         IntPtr previousValue,
         IntPtr returnSize);
+
+    private sealed class ProcessThreadAttributeList : IDisposable
+    {
+        private IntPtr _parentProcessHandleValue;
+
+        internal ProcessThreadAttributeList(
+            IntPtr attributeList,
+            IntPtr parentProcessHandleValue)
+        {
+            Handle = attributeList;
+            _parentProcessHandleValue = parentProcessHandleValue;
+        }
+
+        internal IntPtr Handle { get; private set; }
+
+        public void Dispose()
+        {
+            IntPtr attributeList = Handle;
+            Handle = IntPtr.Zero;
+            if (attributeList != IntPtr.Zero)
+            {
+                DeleteProcThreadAttributeList(attributeList);
+                Marshal.FreeHGlobal(attributeList);
+            }
+
+            IntPtr parentProcessHandleValue = _parentProcessHandleValue;
+            _parentProcessHandleValue = IntPtr.Zero;
+            if (parentProcessHandleValue != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(parentProcessHandleValue);
+            }
+        }
+    }
 
     private sealed class SafeKernelHandle : SafeHandle
     {

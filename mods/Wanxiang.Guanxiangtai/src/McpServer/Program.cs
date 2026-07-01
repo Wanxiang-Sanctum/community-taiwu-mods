@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,6 +17,8 @@ using ModelContextProtocol.Protocol;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Guanxiangtai.McpServer;
+
+Console.OutputEncoding = Encoding.UTF8;
 
 if (args.Length == 1
     && string.Equals(

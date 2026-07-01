@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Taiwu.Logging;
 
@@ -72,6 +73,8 @@ internal static class McpServerLauncher
                 WindowStyle = ProcessWindowStyle.Hidden,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
+                StandardErrorEncoding = Encoding.UTF8,
+                StandardOutputEncoding = Encoding.UTF8,
             };
             startInfo.ArgumentList.Add(GuanxiangtaiMcp.DetachedLaunchArgument);
 
