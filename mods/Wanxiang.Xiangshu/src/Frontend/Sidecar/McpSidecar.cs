@@ -32,7 +32,7 @@ internal sealed class McpSidecar(
         if (!File.Exists(executablePath))
         {
             throw new FileNotFoundException(
-                "Wanxiang.Xiangshu MCP server executable was not found.",
+                "未找到相枢 MCP server 可执行文件。",
                 executablePath);
         }
 
@@ -60,7 +60,7 @@ internal sealed class McpSidecar(
         {
             if (!process.Start())
             {
-                throw new InvalidOperationException("Failed to start Wanxiang.Xiangshu MCP server process.");
+                throw new InvalidOperationException("相枢 MCP server 进程启动失败。");
             }
 
             _process = process;

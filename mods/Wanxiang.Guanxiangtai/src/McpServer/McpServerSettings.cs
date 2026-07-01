@@ -42,7 +42,7 @@ internal sealed class McpServerSettings
 
         if (string.IsNullOrWhiteSpace(ownerDirectory))
         {
-            throw new ArgumentException("Runtime owner directory is required.", nameof(ownerDirectory));
+            throw new ArgumentException("运行态归属目录不能为空。", nameof(ownerDirectory));
         }
 
         return Path.Combine(
@@ -59,7 +59,7 @@ internal sealed class McpServerSettings
         if (port is < 0 or > 65535)
         {
             throw new InvalidDataException(
-                $"{LocalConfigurationFileName}: mcpServer.port must be between 0 and 65535.");
+                $"{LocalConfigurationFileName}: mcpServer.port 必须在 0 到 65535 之间。");
         }
 
         (string bearerToken, McpBearerTokenSource bearerTokenSource) = ReadBearerToken();
@@ -87,7 +87,7 @@ internal sealed class McpServerSettings
         if (normalizedToken.Length < MinimumBearerTokenLength)
         {
             throw new InvalidDataException(
-                $"{GuanxiangtaiMcp.BearerTokenEnvironmentVariable} environment variable must contain at least {MinimumBearerTokenLength.ToString(System.Globalization.CultureInfo.InvariantCulture)} characters.");
+                $"{GuanxiangtaiMcp.BearerTokenEnvironmentVariable} 环境变量至少需要 {MinimumBearerTokenLength.ToString(System.Globalization.CultureInfo.InvariantCulture)} 个字符。");
         }
 
         return (normalizedToken, McpBearerTokenSource.Environment);

@@ -85,12 +85,14 @@ _ = builder.Services
             options.ServerInfo = new Implementation
             {
                 Name = "wanxiang.guanxiangtai",
-                Title = GuanxiangtaiMcp.DisplayName,
+                Title = "Guanxiangtai",
                 Version = GuanxiangtaiMcp.Version,
             };
             options.ServerInstructions =
-                "观象台是面向太吾绘卷 Mod 制作者的本机 MCP 服务入口。当前提供 HTTP MCP 入口、鉴权、MCP server 生命周期协调、前后端插件状态检测和受信 C# 脚本执行；"
-                + "工具由 MCP server 转到当前游戏运行时的前端或后端插件能力。";
+                "wanxiang.guanxiangtai is a local MCP entry point for The Scroll of Taiwu mod makers. "
+                + "It provides HTTP MCP access, bearer-token authorization, MCP server lifecycle coordination, "
+                + "frontend/backend plugin status checks, Taiwu launch/stop/restart tools, and trusted C# script execution. "
+                + "Tool calls are routed through this MCP server to the currently running game's frontend or backend plugin capabilities.";
         })
     .WithHttpTransport(options => options.Stateless = true)
     .WithTools<PluginTools>(McpToolJson.SerializerOptions)
@@ -145,7 +147,7 @@ McpServerLog.Configuration(
     logger,
     settings.ConfigurationFileExists
         ? settings.ConfigurationPath
-        : "missing; using a random free loopback port");
+        : "未找到；使用随机空闲 loopback 端口");
 McpServerLog.Token(
     logger,
     settings.BearerTokenSource,
@@ -165,18 +167,18 @@ static async Task WriteExistingEndpointAndExitAsync()
 
     if (endpoint is null)
     {
-        await Console.Error.WriteLineAsync("Wanxiang.Guanxiangtai MCP server is already starting.");
+        await Console.Error.WriteLineAsync("观象台 MCP server 正在启动中。");
         return;
     }
 
     await Console.Out.WriteLineAsync(
         string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"Wanxiang.Guanxiangtai MCP server is already running at http://{endpoint.Host}:{endpoint.Port}{endpoint.Path}"));
+            $"观象台 MCP server 已在 http://{endpoint.Host}:{endpoint.Port}{endpoint.Path} 运行。"));
     await Console.Out.WriteLineAsync(
-        "Use the bearer token shown in the already-running MCP server console, or the value of "
+        "请使用已运行 server 控制台显示的 bearer token；如果它通过环境变量启动，请使用 "
         + GuanxiangtaiMcp.BearerTokenEnvironmentVariable
-        + " if that server was started with the environment variable.");
+        + " 的值。");
 }
 
 static Uri GetListeningAddress(WebApplication app)
@@ -235,26 +237,26 @@ static async Task WriteAccessInstructionsAsync(
     McpServerSettings settings)
 {
     await Console.Out.WriteLineAsync();
-    await Console.Out.WriteLineAsync("MCP URL:");
+    await Console.Out.WriteLineAsync("MCP 地址：");
     await Console.Out.WriteLineAsync(
         string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
             $"  http://{GuanxiangtaiMcp.LoopbackHost}:{address.Port}{GuanxiangtaiMcp.HttpPath}"));
-    await Console.Out.WriteLineAsync("Bearer token source:");
+    await Console.Out.WriteLineAsync("Bearer token 来源：");
 
     if (settings.BearerTokenSource == McpBearerTokenSource.Generated)
     {
         await Console.Out.WriteLineAsync(
-            "  generated because " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable + " is not set or empty");
-        await Console.Out.WriteLineAsync("Bearer token:");
+            "  未设置或留空 " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable + "，已生成随机 token");
+        await Console.Out.WriteLineAsync("Bearer token：");
         await Console.Out.WriteLineAsync("  " + settings.BearerToken);
         return;
     }
 
     await Console.Out.WriteLineAsync(
-        "  environment variable " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
-    await Console.Out.WriteLineAsync("Bearer token:");
-    await Console.Out.WriteLineAsync("  use the value from that environment variable");
+        "  环境变量 " + GuanxiangtaiMcp.BearerTokenEnvironmentVariable);
+    await Console.Out.WriteLineAsync("Bearer token：");
+    await Console.Out.WriteLineAsync("  使用该环境变量的值");
 }
 
 static bool IsConfigurationException(Exception exception)
@@ -306,7 +308,7 @@ static string GetCurrentExecutablePath()
         return modulePath;
     }
 
-    throw new InvalidOperationException("Current MCP server executable path is unavailable.");
+    throw new InvalidOperationException("无法取得当前 MCP server 可执行文件路径。");
 }
 
 internal static partial class McpServerLog
@@ -314,7 +316,7 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1000,
         Level = LogLevel.Information,
-        Message = "Wanxiang.Guanxiangtai MCP server is listening at http://{Host}:{Port}{Path}")]
+        Message = "观象台 MCP server 正在监听 http://{Host}:{Port}{Path}")]
     public static partial void Listening(
         ILogger logger,
         string host,
@@ -324,7 +326,7 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1001,
         Level = LogLevel.Information,
-        Message = "Runtime endpoint file: {EndpointFilePath}")]
+        Message = "运行态入口文件：{EndpointFilePath}")]
     public static partial void EndpointFile(
         ILogger logger,
         string endpointFilePath);
@@ -332,13 +334,13 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1002,
         Level = LogLevel.Information,
-        Message = "This MCP server process is independent from the game process. Close this console to stop it.")]
+        Message = "此 MCP server 进程独立于游戏进程；关闭这个控制台即可停止它。")]
     public static partial void IndependentProcess(ILogger logger);
 
     [LoggerMessage(
         EventId = 1003,
         Level = LogLevel.Error,
-        Message = "Wanxiang.Guanxiangtai MCP server could not listen at http://{Host}:{Port}{Path}. Close the process using that port and start this server again.")]
+        Message = "观象台 MCP server 无法监听 http://{Host}:{Port}{Path}。请关闭占用该端口的进程后重新启动 server。")]
     public static partial void ListenerUnavailable(
         ILogger logger,
         Exception exception,
@@ -349,7 +351,7 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1004,
         Level = LogLevel.Information,
-        Message = "Local configuration: {Configuration}")]
+        Message = "本地配置：{Configuration}")]
     public static partial void Configuration(
         ILogger logger,
         string configuration);
@@ -357,7 +359,7 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1005,
         Level = LogLevel.Information,
-        Message = "Bearer token source: {Source}; environment variable: {EnvironmentVariable}")]
+        Message = "Bearer token 来源：{Source}；环境变量：{EnvironmentVariable}")]
     public static partial void Token(
         ILogger logger,
         McpBearerTokenSource source,

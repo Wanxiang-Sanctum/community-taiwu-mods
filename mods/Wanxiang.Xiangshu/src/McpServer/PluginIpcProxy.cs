@@ -102,7 +102,7 @@ internal static class PluginIpcProxy
                         provider.GetRequiredService<MessagePipeDiagnosticsInfo>(),
                         provider.GetRequiredService<MessagePipeOptions>()),
                     provider.GetRequiredService<FilterAttachedAsyncMessageHandlerFactory>()))
-            .AddSingleton<TcpWorker>(
+            .AddSingleton(
                 provider => new TcpWorker(
                     provider,
                     provider.GetRequiredService<MessagePipeInterprocessTcpOptions>(),

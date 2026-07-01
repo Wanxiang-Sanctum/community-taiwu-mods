@@ -30,7 +30,7 @@ internal static class McpServerLauncher
             if (McpServerEndpointRegistry.TryGetLiveEndpoint() is { } endpoint)
             {
                 log.Info(
-                    "MCP server already running",
+                    "MCP server 已在运行",
                     new
                     {
                         endpoint.Host,
@@ -47,7 +47,7 @@ internal static class McpServerLauncher
             if (!File.Exists(executablePath))
             {
                 log.Warning(
-                    "MCP server executable was not found",
+                    "未找到 MCP server 可执行文件",
                     new
                     {
                         executablePath,
@@ -65,7 +65,7 @@ internal static class McpServerLauncher
 
             using Process? process = Process.Start(startInfo);
             log.Info(
-                "MCP server process started",
+                "MCP server 进程已启动",
                 new
                 {
                     executablePath,
@@ -74,7 +74,7 @@ internal static class McpServerLauncher
         }
         catch (Exception ex)
         {
-            log.Error(ex, "MCP server process failed to start");
+            log.Error(ex, "MCP server 进程启动失败");
         }
     }
 

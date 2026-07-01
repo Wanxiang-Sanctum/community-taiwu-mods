@@ -111,12 +111,12 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             settings.ModDirectory,
             settings.WorkingDirectory,
             IpcEndpointRegistry.ManifestPath,
-            _mcpBearerToken ?? throw new InvalidOperationException("MCP bearer token is not initialized."));
+            _mcpBearerToken ?? throw new InvalidOperationException("MCP bearer token 尚未初始化。"));
 
         try
         {
             _mcpSidecar.Start();
-            Log.Info("MCP sidecar started");
+            Log.Info("MCP sidecar 已启动");
         }
         catch (Exception ex) when (ex is FileNotFoundException
             or Win32Exception
@@ -126,7 +126,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             _mcpSidecar.Dispose();
             _mcpSidecar = null;
-            Log.Error(ex, "MCP sidecar failed to start");
+            Log.Error(ex, "MCP sidecar 启动失败");
         }
     }
 
