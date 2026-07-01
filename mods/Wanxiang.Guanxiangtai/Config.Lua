@@ -1,7 +1,7 @@
 return {
   Title = "观象台：Mod 制作者的 MCP 入口",
-  Source = 0,
-  FileId = 0,
+  Source = 1,
+  FileId = 3755613381,
   Version = "0.1.0",
   GameVersion = "1.0.44",
   Author = "Wanxiang Sanctum",
