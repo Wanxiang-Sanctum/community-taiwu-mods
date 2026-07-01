@@ -18,22 +18,20 @@ internal static class TaiwuLifecycle
     }
 
     public static async Task<string> StopAsync(
-        string method,
+        McpTaiwuStopMethod method,
         CancellationToken cancellationToken)
     {
-        TaiwuStopMethod stopMethod = ParseStopMethod(method);
         TaiwuLifecycleToolJson.Response result =
-            await StopCoreAsync(stopMethod, cancellationToken);
+            await StopCoreAsync(method, cancellationToken);
         return TaiwuLifecycleToolJson.Serialize(result);
     }
 
     public static async Task<string> RestartAsync(
-        string stopMethod,
+        McpTaiwuStopMethod stopMethod,
         CancellationToken cancellationToken)
     {
-        TaiwuStopMethod parsedStopMethod = ParseStopMethod(stopMethod);
         TaiwuLifecycleToolJson.Response stopResult =
-            await StopCoreAsync(parsedStopMethod, cancellationToken);
+            await StopCoreAsync(stopMethod, cancellationToken);
 
         TaiwuLifecycleToolJson.Response launchResult;
         string outcome;
@@ -56,13 +54,13 @@ internal static class TaiwuLifecycle
     }
 
     private static async Task<TaiwuLifecycleToolJson.Response> StopCoreAsync(
-        TaiwuStopMethod method,
+        McpTaiwuStopMethod method,
         CancellationToken cancellationToken)
     {
         return method switch
         {
-            TaiwuStopMethod.Force => await TaiwuProcesses.ForceStopAsync(cancellationToken),
-            TaiwuStopMethod.RequestQuit => await RequestQuitAsync(cancellationToken),
+            McpTaiwuStopMethod.Force => await TaiwuProcesses.ForceStopAsync(cancellationToken),
+            McpTaiwuStopMethod.RequestQuit => await RequestQuitAsync(cancellationToken),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(method),
                 method,
@@ -172,32 +170,4 @@ internal static class TaiwuLifecycle
         };
     }
 
-    private static TaiwuStopMethod ParseStopMethod(string method)
-    {
-        if (string.IsNullOrWhiteSpace(method))
-        {
-            throw new McpException("method must be either 'force' or 'requestQuit'.");
-        }
-
-        string trimmedMethod = method.Trim();
-
-        if (string.Equals(trimmedMethod, "force", StringComparison.OrdinalIgnoreCase))
-        {
-            return TaiwuStopMethod.Force;
-        }
-
-        if (string.Equals(trimmedMethod, "requestQuit", StringComparison.OrdinalIgnoreCase))
-        {
-            return TaiwuStopMethod.RequestQuit;
-        }
-
-        throw new McpException("method must be either 'force' or 'requestQuit'.");
-    }
-
-    private enum TaiwuStopMethod
-    {
-        Force = 0,
-
-        RequestQuit = 1,
-    }
 }

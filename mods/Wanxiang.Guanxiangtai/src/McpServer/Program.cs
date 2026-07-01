@@ -93,7 +93,7 @@ _ = builder.Services
                 + "工具由 MCP server 通过内部 IPC/bridge 访问游戏侧能力。";
         })
     .WithHttpTransport(options => options.Stateless = true)
-    .WithTools<PluginTools>()
+    .WithTools<PluginTools>(McpToolJson.SerializerOptions)
     .AddAuthorizationFilters();
 
 await using WebApplication app = builder.Build();

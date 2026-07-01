@@ -3,4 +3,11 @@
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <RootNamespace>Wanxiang.Guanxiangtai.Scripting</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Shared"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
 </Project>

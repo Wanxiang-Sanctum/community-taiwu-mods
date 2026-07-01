@@ -168,7 +168,7 @@ Agent 把这些文件作为 Agent 工作区配置读取。如果用户把 `Agent
 
 - `<Wanxiang.Xiangshu Mod directory>/LocalSettings.json`
 
-当前支持 `agent.env` 对象。它是普通 JSON object；读取到的字符串键值只注入 CLI Agent 子进程，用于代理地址或 CLI
+当前支持 `agent.env` 对象。它是普通 JSON 对象；读取到的字符串键值只注入 CLI Agent 子进程，用于代理地址或 CLI
 私有开关等本地配置，不注入游戏进程或 MCP sidecar，也不写入诊断日志。非字符串值会被视为配置格式错误。
 
 太吾 Mod 用户配置和 `LocalSettings.json` 都属于启动参数。运行时继续使用本次启动时加载的值；重启游戏后，
@@ -279,7 +279,7 @@ CLI Agent
 
 模块边界按所有权划分：
 
-- `src/Ipc/` 定义跨进程请求/响应 contract，包括脚本源码、参数、入口调用线程和运行事实响应：
+- `src/Ipc/` 定义跨进程请求/响应 contract，包括 `script`、`arguments` JSON 对象、`entryThread` 和运行事实响应：
   `notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。
 - `src/McpServer/` 拥有 MCP 工具语义：选择目标 endpoint、转发 IPC 请求，并把内部响应整理成 Agent 可读
   JSON。
@@ -323,8 +323,8 @@ MCP 工具形态：
 xiangshu_run_csharp_script(
   targetSide,
   script,
-  entryThread,
-  argumentsJson
+  arguments,
+  entryThread
 )
 ```
 
@@ -332,15 +332,15 @@ xiangshu_run_csharp_script(
 
 - `targetSide`：目标插件侧，取 `frontend` 或 `backend`。
 - `script`：完整 C# 编译单元。
+- `arguments`：必填 JSON 对象，转为 `XiangshuScriptGlobals.Arguments`；没有参数时也传 `{}`。脚本按 `JObject` 读取属性、数组和值。
 - `entryThread`：可选入口调用线程，取 `current` 或 `mainThread`；默认 `current`。
-- `argumentsJson`：可选 JSON object，转为 `XiangshuScriptGlobals.Arguments`。
 
 脚本通道传递完整 C# 编译单元。脚本必须声明满足入口契约的入口类型；其余 `using`、辅助类型和返回结构由脚本自己组织。
 入口契约由 `src/Scripting/README.md` 维护。入口契约不满足时，运行器返回 `notInvoked(reason, details?)`，
 不把它归类为 MCP 或 IPC 转发失败。
 
-MCP server 只把 `entryThread` 写入 IPC 请求并转发；`mainThread` 的实际切换由目标侧插件负责。访问 Unity 对象、前端 UI、
-后端 `DomainManager` 数据域或其它线程敏感的游戏运行态时使用 `mainThread`。
+MCP server 把 `arguments` JSON 对象和 `entryThread` 写入 IPC 请求并转发；`mainThread` 的实际切换由目标侧插件负责。
+访问 Unity 对象、前端 UI、后端 `DomainManager` 数据域或其它线程敏感的游戏运行态时使用 `mainThread`。
 
 ## MCP 驱动的中间答复
 

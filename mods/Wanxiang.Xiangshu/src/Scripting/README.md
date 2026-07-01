@@ -64,6 +64,9 @@ public static 方法，参数必须是 `Wanxiang.Xiangshu.Scripting.XiangshuScri
 `Task<T>` 都会解析为入口返回值；推荐需要异步时让入口返回 `Task<object?>`。UniTask 适合作为入口内部
 await 的前端 API；脚本入口的宿主异步契约仍是 `Task` 或 `Task<T>`。
 
+`globals.Arguments` 是工具参数 `arguments` 传入的 JSON 对象，类型为 `Newtonsoft.Json.Linq.JObject`；没有参数时为
+`{}`。脚本按 `JObject` 读取属性、数组和值。
+
 入口返回值会整理为缩进的 camelCase JSON。需要返回游戏运行时对象时，脚本应先转成稳定字段对象，而不是直接
 暴露运行时类型。
 

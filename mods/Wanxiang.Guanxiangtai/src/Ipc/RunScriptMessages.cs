@@ -1,4 +1,11 @@
 using System.Collections.ObjectModel;
+#if NET10_0_OR_GREATER
+using System.Text;
+using System.Text.Json;
+#else
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+#endif
 using MessagePack;
 
 namespace Wanxiang.Guanxiangtai.Ipc;
@@ -6,23 +13,15 @@ namespace Wanxiang.Guanxiangtai.Ipc;
 [MessagePackObject]
 public sealed class IpcRunScriptRequest(
     string script,
-    IReadOnlyDictionary<string, string>? arguments,
+    string argumentsObjectJson,
     IpcScriptEntryThread entryThread = IpcScriptEntryThread.Current)
 {
-    private static readonly IReadOnlyDictionary<string, string> EmptyArguments =
-        new ReadOnlyDictionary<string, string>(
-            new Dictionary<string, string>(StringComparer.Ordinal));
-
     [Key(0)]
     public string Script { get; } =
         script ?? throw new ArgumentNullException(nameof(script));
 
     [Key(1)]
-    public IReadOnlyDictionary<string, string> Arguments { get; } =
-        arguments is { Count: > 0 }
-            ? new ReadOnlyDictionary<string, string>(
-                new Dictionary<string, string>(arguments, StringComparer.Ordinal))
-            : EmptyArguments;
+    public string ArgumentsObjectJson { get; } = NormalizeArgumentsObjectJson(argumentsObjectJson);
 
     [Key(2)]
     public IpcScriptEntryThread EntryThread { get; } =
@@ -39,6 +38,52 @@ public sealed class IpcRunScriptRequest(
                 entryThread,
                 "Unsupported script entry thread.");
     }
+
+    private static string NormalizeArgumentsObjectJson(string argumentsObjectJson)
+    {
+        if (string.IsNullOrWhiteSpace(argumentsObjectJson))
+        {
+            throw new ArgumentException(
+                "Script arguments must be a JSON object.",
+                nameof(argumentsObjectJson));
+        }
+
+        try
+        {
+#if NET10_0_OR_GREATER
+            using JsonDocument document = JsonDocument.Parse(argumentsObjectJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new ArgumentException(
+                    "Script arguments must be a JSON object.",
+                    nameof(argumentsObjectJson));
+            }
+
+            return WriteNormalizedJson(document.RootElement);
+#else
+            return JObject.Parse(argumentsObjectJson).ToString(Formatting.None);
+#endif
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException(
+                "Script arguments must be a valid JSON object.",
+                nameof(argumentsObjectJson),
+                ex);
+        }
+    }
+
+#if NET10_0_OR_GREATER
+    private static string WriteNormalizedJson(JsonElement element)
+    {
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
+
+        element.WriteTo(writer);
+        writer.Flush();
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+#endif
 }
 
 public enum IpcScriptEntryThread

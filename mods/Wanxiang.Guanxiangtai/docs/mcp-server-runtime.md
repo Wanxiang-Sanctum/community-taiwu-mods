@@ -134,7 +134,7 @@ MCP server 启动后持有按 Mod 目录派生的命名 mutex。已有 live serv
 - `guanxiangtai_restart_taiwu`：MCP server 先按 `stopMethod` 停止太吾；停止完成后才请求 Steam 拉起太吾，并等待观象台前端、后端
   IPC 都可响应。返回体包含整体 `outcome`；如果停止没有完成，工具不会继续拉起。
 - `guanxiangtai_run_csharp_script`：MCP server 按 `targetSide` 选择前端或后端 endpoint，发送受信 C# 脚本执行请求，并把
-  `entryThread` 转发给目标侧。
+  `arguments` JSON 对象和 `entryThread` 转发给目标侧。
 
 状态工具不报告 MCP server 自身可用性；能返回工具结果已经说明 MCP transport、鉴权和工具调用链路可用。状态工具也不报告
 OS 进程存活性，避免把 manifest 或 PID 观察误包装成游戏侧可用事实。

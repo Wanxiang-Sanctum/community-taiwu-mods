@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MessagePack;
@@ -51,22 +52,21 @@ internal static class PluginIpcProxy
     }
 
     public static async Task<string> RunCSharpScriptAsync(
-        string targetSide,
+        McpPluginSide targetSide,
         string script,
-        string entryThread,
-        string argumentsJson,
+        IReadOnlyDictionary<string, JsonElement> arguments,
+        McpScriptEntryThread entryThread,
         CancellationToken cancellationToken)
     {
-        string normalizedTargetSide = NormalizeTargetSide(targetSide);
-        IpcScriptEntryThread parsedEntryThread =
-            ParseEntryThread(entryThread);
+        string normalizedTargetSide = targetSide.ToIpcRole();
+        IpcScriptEntryThread parsedEntryThread = entryThread.ToIpcEntryThread();
         IpcEndpoint endpoint = GetRegisteredEndpointOrThrow(normalizedTargetSide);
 
         IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
             new IpcRunScriptRequest(
                 script,
-                ParseArgumentsJson(argumentsJson),
+                SerializeArgumentsObjectJson(arguments),
                 parsedEntryThread),
             cancellationToken);
 
@@ -255,79 +255,27 @@ internal static class PluginIpcProxy
         }
     }
 
-    private static string NormalizeTargetSide(string targetSide)
+    private static string SerializeArgumentsObjectJson(
+        IReadOnlyDictionary<string, JsonElement>? arguments)
     {
-        if (string.IsNullOrWhiteSpace(targetSide))
+        if (arguments is null)
         {
-            throw new McpException("targetSide must be either 'frontend' or 'backend'.");
+            throw new McpException("arguments must be a JSON object. Use {} when no arguments are needed.");
         }
 
-        string trimmedTargetSide = targetSide.Trim();
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
 
-        if (string.Equals(trimmedTargetSide, IpcRuntime.FrontendEndpointRole, StringComparison.OrdinalIgnoreCase))
+        writer.WriteStartObject();
+        foreach ((string name, JsonElement value) in arguments)
         {
-            return IpcRuntime.FrontendEndpointRole;
+            writer.WritePropertyName(name);
+            value.WriteTo(writer);
         }
 
-        if (string.Equals(trimmedTargetSide, IpcRuntime.BackendEndpointRole, StringComparison.OrdinalIgnoreCase))
-        {
-            return IpcRuntime.BackendEndpointRole;
-        }
-
-        throw new McpException("targetSide must be either 'frontend' or 'backend'.");
-    }
-
-    private static IpcScriptEntryThread ParseEntryThread(string entryThread)
-    {
-        if (string.IsNullOrWhiteSpace(entryThread))
-        {
-            throw new McpException("entryThread must be either 'current' or 'mainThread'.");
-        }
-
-        string trimmedEntryThread = entryThread.Trim();
-
-        if (string.Equals(trimmedEntryThread, "current", StringComparison.OrdinalIgnoreCase))
-        {
-            return IpcScriptEntryThread.Current;
-        }
-
-        if (string.Equals(trimmedEntryThread, "mainThread", StringComparison.OrdinalIgnoreCase))
-        {
-            return IpcScriptEntryThread.MainThread;
-        }
-
-        throw new McpException("entryThread must be either 'current' or 'mainThread'.");
-    }
-
-    private static Dictionary<string, string> ParseArgumentsJson(string argumentsJson)
-    {
-        if (string.IsNullOrWhiteSpace(argumentsJson))
-        {
-            return [];
-        }
-
-        try
-        {
-            using JsonDocument document = JsonDocument.Parse(argumentsJson);
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                throw new McpException("argumentsJson must be a JSON object.");
-            }
-
-            Dictionary<string, string> arguments = new(StringComparer.Ordinal);
-            foreach (JsonProperty property in document.RootElement.EnumerateObject())
-            {
-                arguments[property.Name] = property.Value.ValueKind == JsonValueKind.String
-                    ? property.Value.GetString() ?? string.Empty
-                    : property.Value.GetRawText();
-            }
-
-            return arguments;
-        }
-        catch (JsonException ex)
-        {
-            throw new McpException("argumentsJson must be a valid JSON object.", ex);
-        }
+        writer.WriteEndObject();
+        writer.Flush();
+        return Encoding.UTF8.GetString(stream.ToArray());
     }
 
     private static string FormatRunScriptToolResponse(IpcRunScriptResponse response)

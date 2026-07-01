@@ -13,6 +13,21 @@
         "requested": "[4.15.0, )",
         "resolved": "4.15.0",
         "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
+      },
+      "Taiwu.ModKit.References.Shared": {
+        "type": "Direct",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "x/PhL7trh0lL1+vMlFUwM/+q3aBOai1nJ2AR3OlhasuDThc7sxe9cVG5vDYojZoap3G1AJWsw/tO78VnPKydFA==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[1.0.44]"
+        }
+      },
+      "Taiwu.ModKit.References.Plugin": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "D2dUC5vL5fdNJaEW+cV/bLYOgsT6ETZTEX39L4puMiGBzEG5Y3jWri+Gyd3bgNBY9dJKUpP2ts8dq/KOwrYj+w=="
       }
     },
     "net8.0": {
@@ -27,6 +42,21 @@
         "requested": "[4.15.0, )",
         "resolved": "4.15.0",
         "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
+      },
+      "Taiwu.ModKit.References.Shared": {
+        "type": "Direct",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "x/PhL7trh0lL1+vMlFUwM/+q3aBOai1nJ2AR3OlhasuDThc7sxe9cVG5vDYojZoap3G1AJWsw/tO78VnPKydFA==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[1.0.44]"
+        }
+      },
+      "Taiwu.ModKit.References.Plugin": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "D2dUC5vL5fdNJaEW+cV/bLYOgsT6ETZTEX39L4puMiGBzEG5Y3jWri+Gyd3bgNBY9dJKUpP2ts8dq/KOwrYj+w=="
       }
     }
   }

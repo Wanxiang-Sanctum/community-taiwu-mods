@@ -55,7 +55,8 @@ builder.WebHost.ConfigureKestrel(
 _ = builder.Services
     .AddMcpServer()
     .WithHttpTransport(options => options.Stateless = true)
-    .WithTools<Wanxiang.Xiangshu.McpServer.PluginTools>();
+    .WithTools<Wanxiang.Xiangshu.McpServer.PluginTools>(
+        Wanxiang.Xiangshu.McpServer.McpToolJson.SerializerOptions);
 
 MsLogger? logger = null;
 

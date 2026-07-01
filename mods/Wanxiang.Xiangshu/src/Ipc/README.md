@@ -7,8 +7,9 @@
 职责：
 
 - 定义 sidecar 到目标插件端的 MessagePipe 请求/响应 DTO；调用端与处理器注册处使用同一对类型。
-- 定义受信脚本执行请求的 `script`、`arguments`、`entryThread` 字段，以及脚本运行响应的嵌套 MessagePack
-  判别联合：`notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。
+- 定义受信脚本执行请求的 `script`、`arguments` JSON 对象、`entryThread` 语义字段，以及脚本运行响应的嵌套
+  MessagePack 判别联合：`notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。IPC DTO 以对象根的规范化
+  JSON 文本承载 `arguments`，不把它变成脚本可见的字符串参数。
 - 定义玩家前端视图截图请求和 PNG 响应；这里只承载跨进程协议，截图语义归前端 `PlayerView/`。
 - 维护前端、后端和 MCP server 的 endpoint manifest 注册与发现；manifest 用 endpoint `role` 区分进程角色。
 - 定义 MCP sidecar、前端和 CLI 适配器共享的 transport、path、header 和环境变量名称；请求门禁由

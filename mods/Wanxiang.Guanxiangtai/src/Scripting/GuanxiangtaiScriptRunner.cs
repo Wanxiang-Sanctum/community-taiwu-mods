@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Taiwu.DynamicScripting;
 
@@ -59,7 +60,7 @@ public sealed class GuanxiangtaiScriptRunner
         }
 #endif
         GuanxiangtaiScriptGlobals globals = CreateGlobals(
-            request.Arguments,
+            request.ArgumentsObjectJson,
             cancellationToken);
 
         DynamicScriptRunResult result = await _runner.ExecuteAsync(
@@ -73,12 +74,12 @@ public sealed class GuanxiangtaiScriptRunner
     }
 
     private GuanxiangtaiScriptGlobals CreateGlobals(
-        IReadOnlyDictionary<string, string> arguments,
+        string argumentsObjectJson,
         CancellationToken cancellationToken)
     {
         return new GuanxiangtaiScriptGlobals(
             _options.Side,
-            arguments,
+            JObject.Parse(argumentsObjectJson),
             cancellationToken);
     }
 

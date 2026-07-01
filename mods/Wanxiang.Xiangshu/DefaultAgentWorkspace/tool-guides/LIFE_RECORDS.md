@@ -34,7 +34,7 @@
 - `Config.LifeRecord`：解释经历模板、分类、描述和可见性要求；配置项的局部形态只服务当前解释目标。
 - 前端显示辅助只在需要复核游戏如何渲染经历文本时使用；普通问答不需要复刻前端富文本。
 
-调用脚本时选 `targetSide = "backend"`、`entryThread = "mainThread"`。只需要当前太吾经历时不传角色标识；
+调用脚本时选 `targetSide = "backend"`、`entryThread = "mainThread"`。只需要当前太吾经历时，`arguments` 传 `{}`；
 查询指定角色时从当前输入、玩家可见 UI、角色搜索结果或其它已确认上下文取得角色标识后再传入。
 
 ## 按角色读经历

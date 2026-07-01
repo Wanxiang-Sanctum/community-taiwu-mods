@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using ModelContextProtocol.Server;
 
 namespace Wanxiang.Guanxiangtai.McpServer;
@@ -21,8 +22,9 @@ internal sealed class PluginTools
         Idempotent = true,
         ReadOnly = true)]
     [Description(
-        "Reports whether the Wanxiang.Guanxiangtai frontend and backend plugins can answer internal status IPC requests. "
-        + "The result describes only those game-side IPC checks; it does not describe MCP server availability or expose internal endpoint addresses.")]
+        "Checks whether the Wanxiang.Guanxiangtai frontend and backend plugins can answer internal status IPC requests. "
+        + "Returns JSON with frontend/backend status kind=available or kind=unavailable(reason). "
+        + "It does not report MCP server availability or expose internal IPC addresses.")]
     public Task<string> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         return PluginIpcProxy.GetStatusJsonAsync(cancellationToken);
@@ -34,9 +36,9 @@ internal sealed class PluginTools
         Idempotent = true,
         ReadOnly = false)]
     [Description(
-        "Requests Steam to launch The Scroll of Taiwu through steam://rungameid/838350. "
-        + "After issuing the launch request, waits until both Guanxiangtai frontend and backend IPC endpoints respond, "
-        + "or until the tool's internal startup wait expires.")]
+        "Requests Steam to launch The Scroll of Taiwu through steam://rungameid/838350, then waits for both "
+        + "Guanxiangtai frontend and backend IPC endpoints to respond or for the internal startup wait to expire. "
+        + "Returns JSON with launch request facts and runtimeReady frontend/backend readiness.")]
     public Task<string> LaunchTaiwuAsync(CancellationToken cancellationToken = default)
     {
         return TaiwuLifecycle.LaunchAsync(cancellationToken);
@@ -48,14 +50,12 @@ internal sealed class PluginTools
         Idempotent = true,
         ReadOnly = false)]
     [Description(
-        "Stops The Scroll of Taiwu for development workflows using the selected method. "
-        + "method=force kills matched frontend process trees first, then kills leftover Backend/GameData.exe processes. "
-        + "method=requestQuit asks the live Guanxiangtai frontend plugin to set GameApp.ReadyToQuit and call GameApp.QuitGame. "
-        + "After requesting stop, waits until Taiwu frontend and matched backend processes are gone, "
-        + "or until the tool's internal stop wait expires.")]
+        "Stops The Scroll of Taiwu for development workflows, then waits until Taiwu frontend and matched backend "
+        + "processes are gone or the internal stop wait expires. "
+        + "Returns JSON with stop attempt facts and process exit readiness.")]
     public Task<string> StopTaiwuAsync(
-        [Description("Stop method: force for OS-level process kill, or requestQuit for a frontend IPC game quit request.")]
-        string method = "force",
+        [Description("Stop strategy.")]
+        McpTaiwuStopMethod method = McpTaiwuStopMethod.Force,
         CancellationToken cancellationToken = default)
     {
         return TaiwuLifecycle.StopAsync(method, cancellationToken);
@@ -67,13 +67,13 @@ internal sealed class PluginTools
         Idempotent = false,
         ReadOnly = false)]
     [Description(
-        "Restarts The Scroll of Taiwu for development workflows using the selected stop method, "
-        + "then requesting Steam launch through steam://rungameid/838350. "
-        + "It launches only after stop completes, then waits until both Guanxiangtai frontend and backend IPC endpoints respond, "
-        + "or until the tool's internal startup wait expires.")]
+        "Restarts The Scroll of Taiwu for development workflows. It stops Taiwu with the selected strategy, launches "
+        + "through steam://rungameid/838350 only after stop completes, then waits for both Guanxiangtai IPC endpoints "
+        + "to respond or for the internal startup wait to expire. "
+        + "Returns JSON with stop and launch attempt facts.")]
     public Task<string> RestartTaiwuAsync(
-        [Description("Stop method used before launch: force for OS-level process kill, or requestQuit for a frontend IPC game quit request.")]
-        string stopMethod = "force",
+        [Description("Stop strategy used before launch.")]
+        McpTaiwuStopMethod stopMethod = McpTaiwuStopMethod.Force,
         CancellationToken cancellationToken = default)
     {
         return TaiwuLifecycle.RestartAsync(stopMethod, cancellationToken);
@@ -86,43 +86,33 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Executes a fully trusted C# compilation unit inside the live Wanxiang.Guanxiangtai frontend or backend plugin process. "
-        + "Use it when current game/mod state affects the answer, or when the user's goal requires plugin APIs for inspection, "
-        + "verification, or action. Do not use it for static knowledge or tasks that do not require live game/mod state. "
-        + "Before mutation, read current state and narrow the target, effect, and verification path from the user's wording "
-        + "and workspace guidance. "
-        + "The tool returns JSON describing invocation facts: notInvoked(reason, details?), invoked(returnValue(value)), "
-        + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
+        + "Use it only for live game/mod inspection, verification, or action through plugin APIs. "
+        + "Returns JSON with kind=notInvoked(reason, details?) or kind=invoked(outcome), where outcome.kind is "
+        + "returnValue(value) or exception(message).")]
     public Task<string> RunCSharpScriptAsync(
         [Description(
-            "Target plugin side: frontend for UI and frontend runtime state; "
-            + "backend for backend plugin state and backend-side game APIs. If the side is uncertain, avoid mutation "
-            + "until a minimal read-only script confirms where the needed state lives.")]
-        string targetSide,
+            "Target plugin process. Use frontend for UI and frontend runtime state; use backend for backend plugin state "
+            + "and backend-side game APIs.")]
+        McpPluginSide targetSide,
         [Description(
-            "Complete C# compilation unit, not a snippet. Include using directives and define exactly one "
-            + "public static non-generic class whose full name is Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScript "
-            + "with public static Execute or ExecuteAsync "
-            + "taking Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals. "
-            + "The host supplies the Wanxiang.Guanxiangtai scripting contract reference. "
-            + "Frontend script hosts include UniTask as a compilation reference. "
-            + "Scripts still declare required using directives themselves. "
-            + "The entry return value is serialized to JSON.")]
+            "Complete C# compilation unit. It must define the public static entry type "
+            + "Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScript with exactly one public static Execute or ExecuteAsync "
+            + "method that takes Wanxiang.Guanxiangtai.Scripting.GuanxiangtaiScriptGlobals. "
+            + "Declare required using directives explicitly; the entry return value is serialized as JSON.")]
         string script,
         [Description(
-            "Thread used to invoke the script entry: current keeps the IPC handler thread; "
-            + "mainThread invokes the entry on the target side's game main thread. Use mainThread for Unity UI/object access "
-            + "or backend game-domain state access.")]
-        string entryThread = "current",
+            "Required JSON object passed through globals.Arguments. Use an empty object when no arguments are needed.")]
+        Dictionary<string, JsonElement> arguments,
         [Description(
-            "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
-        string argumentsJson = "{}",
+            "Thread used to invoke the script entry. Use mainThread for Unity UI/object access or backend game-domain state access.")]
+        McpScriptEntryThread entryThread = McpScriptEntryThread.Current,
         CancellationToken cancellationToken = default)
     {
         return PluginIpcProxy.RunCSharpScriptAsync(
             targetSide,
             script,
+            arguments,
             entryThread,
-            argumentsJson,
             cancellationToken);
     }
 }
