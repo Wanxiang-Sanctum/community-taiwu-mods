@@ -27,7 +27,7 @@ internal sealed class PluginTools
         "Publishes a brief player-visible Xiangshu message in the current in-game chat while the turn is still running. "
         + "The call succeeds only while the frontend has an active chat dispatch accepting intermediate replies. "
         + "Use it for multi-step or long-running work, or for an early acknowledgement before the final reply. "
-        + "Content must already be player-facing Xiangshu text and must not expose implementation details.")]
+        + "Content must already be ready to show to the player in the Xiangshu chat.")]
     public Task<string> SendIntermediateReplyAsync(
         [Description("Brief player-visible Xiangshu text.")]
         string content,

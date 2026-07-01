@@ -161,20 +161,20 @@ internal static class PluginIpcProxy
             or UnauthorizedAccessException)
         {
             throw new McpException(
-                $"Wanxiang.Guanxiangtai {role} IPC endpoint registry could not be read.",
+                $"Wanxiang.Guanxiangtai {role} plugin connection information could not be read.",
                 ex);
         }
 
         if (endpoint is null)
         {
             throw new McpException(
-                $"No registered Wanxiang.Guanxiangtai {role} IPC endpoint was found. Start the game mod first.");
+                $"No live Wanxiang.Guanxiangtai {role} plugin connection was found. Start the game mod first.");
         }
 
         if (!string.Equals(endpoint.Transport, IpcRuntime.TransportName, StringComparison.OrdinalIgnoreCase))
         {
             throw new McpException(
-                $"Registered Wanxiang.Guanxiangtai {role} IPC endpoint uses unsupported transport '{endpoint.Transport}'.");
+                $"Registered Wanxiang.Guanxiangtai {role} plugin connection uses an unsupported connection type.");
         }
 
         return endpoint;

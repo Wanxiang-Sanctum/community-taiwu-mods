@@ -18,7 +18,7 @@ internal enum McpPluginSide
 internal enum McpScriptEntryThread
 {
     [JsonStringEnumMemberName("current")]
-    [Description("Invoke the script entry on the IPC handler thread.")]
+    [Description("Invoke the script entry on the target plugin's request handling thread.")]
     Current = 0,
 
     [JsonStringEnumMemberName("mainThread")]

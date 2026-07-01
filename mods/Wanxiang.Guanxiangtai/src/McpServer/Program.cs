@@ -90,7 +90,7 @@ _ = builder.Services
             };
             options.ServerInstructions =
                 "观象台是面向太吾绘卷 Mod 制作者的本机 MCP 服务入口。当前提供 HTTP MCP 入口、鉴权、MCP server 生命周期协调、前后端插件状态检测和受信 C# 脚本执行；"
-                + "工具由 MCP server 通过内部 IPC/bridge 访问游戏侧能力。";
+                + "工具由 MCP server 转到当前游戏运行时的前端或后端插件能力。";
         })
     .WithHttpTransport(options => options.Stateless = true)
     .WithTools<PluginTools>(McpToolJson.SerializerOptions)

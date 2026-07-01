@@ -20,7 +20,7 @@ internal static class PluginIpcProxy
         IpcEndpoint endpoint =
             IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendEndpointRole)
             ?? throw new McpException(
-                "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
+                "No live Wanxiang.Xiangshu frontend plugin connection was found. Start the game mod first.");
 
         _ = await InvokeAsync<IpcIntermediateReplyRequest, IpcNoContentResponse>(
             endpoint,
@@ -42,7 +42,7 @@ internal static class PluginIpcProxy
         IpcEndpoint endpoint =
             IpcEndpointRegistry.TryGetLiveEndpoint(normalizedTargetSide)
             ?? throw new McpException(
-                $"No live Wanxiang.Xiangshu {normalizedTargetSide} IPC endpoint was found. Start the game mod first.");
+                $"No live Wanxiang.Xiangshu {normalizedTargetSide} plugin connection was found. Start the game mod first.");
 
         IpcRunScriptResponse response = await InvokeAsync<IpcRunScriptRequest, IpcRunScriptResponse>(
             endpoint,
@@ -60,7 +60,7 @@ internal static class PluginIpcProxy
         IpcEndpoint endpoint =
             IpcEndpointRegistry.TryGetLiveEndpoint(IpcRuntime.FrontendEndpointRole)
             ?? throw new McpException(
-                "No live Wanxiang.Xiangshu frontend IPC endpoint was found. Start the game mod first.");
+                "No live Wanxiang.Xiangshu frontend plugin connection was found. Start the game mod first.");
 
         return InvokeAsync<IpcCapturePlayerViewRequest, IpcCapturePlayerViewResponse>(
             endpoint,

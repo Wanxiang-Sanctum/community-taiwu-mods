@@ -22,9 +22,9 @@ internal sealed class PluginTools
         Idempotent = true,
         ReadOnly = true)]
     [Description(
-        "Checks whether the Wanxiang.Guanxiangtai frontend and backend plugins can answer internal status IPC requests. "
+        "Checks whether the Wanxiang.Guanxiangtai frontend and backend plugins are reachable through the live game runtime. "
         + "Returns JSON with frontend/backend status kind=available or kind=unavailable(reason). "
-        + "It does not report MCP server availability or expose internal IPC addresses.")]
+        + "A successful tool call already confirms MCP server transport and authorization.")]
     public Task<string> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         return PluginIpcProxy.GetStatusJsonAsync(cancellationToken);
@@ -37,7 +37,7 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Requests Steam to launch The Scroll of Taiwu through steam://rungameid/838350, then waits for both "
-        + "Guanxiangtai frontend and backend IPC endpoints to respond or for the internal startup wait to expire. "
+        + "Guanxiangtai frontend and backend plugins to become reachable or for the fixed startup wait to expire. "
         + "Returns JSON with launch request facts and runtimeReady frontend/backend readiness.")]
     public Task<string> LaunchTaiwuAsync(CancellationToken cancellationToken = default)
     {
@@ -51,7 +51,7 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Stops The Scroll of Taiwu for development workflows, then waits until Taiwu frontend and matched backend "
-        + "processes are gone or the internal stop wait expires. "
+        + "processes are gone or the fixed stop wait expires. "
         + "Returns JSON with stop attempt facts and process exit readiness.")]
     public Task<string> StopTaiwuAsync(
         [Description("Stop strategy.")]
@@ -68,8 +68,8 @@ internal sealed class PluginTools
         ReadOnly = false)]
     [Description(
         "Restarts The Scroll of Taiwu for development workflows. It stops Taiwu with the selected strategy, launches "
-        + "through steam://rungameid/838350 only after stop completes, then waits for both Guanxiangtai IPC endpoints "
-        + "to respond or for the internal startup wait to expire. "
+        + "through steam://rungameid/838350 only after stop completes, then waits for both Guanxiangtai plugins "
+        + "to become reachable or for the fixed startup wait to expire. "
         + "Returns JSON with stop and launch attempt facts.")]
     public Task<string> RestartTaiwuAsync(
         [Description("Stop strategy used before launch.")]
