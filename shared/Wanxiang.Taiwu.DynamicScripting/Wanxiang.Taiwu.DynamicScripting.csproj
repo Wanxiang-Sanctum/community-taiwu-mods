@@ -9,6 +9,7 @@
     <PackageReference
       Include="Microsoft.CodeAnalysis.CSharp"
       ExcludeAssets="runtime"
+      VersionOverride="$(RoslynGameRuntimeVersion)"
     />
   </ItemGroup>
 
