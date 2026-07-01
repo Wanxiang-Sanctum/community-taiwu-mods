@@ -14,5 +14,5 @@ public static class IpcMessagePack
                 BuiltinResolver.Instance));
 }
 
-[global::MessagePack.GeneratedMessagePackResolverAttribute]
+[GeneratedMessagePackResolver]
 internal sealed partial class IpcMessagePackResolver;

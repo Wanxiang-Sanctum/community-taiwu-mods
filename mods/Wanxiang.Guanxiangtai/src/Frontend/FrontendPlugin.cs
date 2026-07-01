@@ -35,7 +35,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
     private string GetModDirectory()
     {
-        ModInfoWithDisplayData? modInfo = global::ModManager.GetModInfo(ModIdStr);
+        ModInfoWithDisplayData? modInfo = ModManager.GetModInfo(ModIdStr);
         if (modInfo is null || string.IsNullOrWhiteSpace(modInfo.DirectoryName))
         {
             throw new InvalidOperationException(

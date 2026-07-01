@@ -381,7 +381,7 @@ internal sealed class GraftHostSync : IDisposable
     private static async UniTask<IReadOnlyList<ItemKey>> GetMedicineBowlsAsync(int taiwuCharId)
     {
         short itemSubType = ItemTemplateHelper.GetItemSubType(
-            GameData.Domains.Item.ItemType.CraftTool,
+            ItemType.CraftTool,
             CraftTool.DefKey.Medicine0);
         List<ItemDisplayData> inventoryItems = await TaiwuAsyncCall.InvokeAsync<List<ItemDisplayData>>(
             callback => CharacterDomainMethod.AsyncCall.GetInventoryItems(
@@ -424,7 +424,7 @@ internal sealed class GraftHostSync : IDisposable
     private static bool IsMedicineBowl(ItemKey key)
     {
         return key.IsValid()
-            && key.ItemType == GameData.Domains.Item.ItemType.CraftTool
+            && key.ItemType == ItemType.CraftTool
             && key.TemplateId == CraftTool.DefKey.Medicine0;
     }
 
@@ -438,7 +438,7 @@ internal sealed class GraftHostSync : IDisposable
     private static GraftHostTemplate CreateBowlHostTemplate()
     {
         return new GraftHostTemplate(
-            GameData.Domains.Item.ItemType.CraftTool,
+            ItemType.CraftTool,
             CraftTool.DefKey.Medicine0);
     }
 

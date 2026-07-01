@@ -260,8 +260,8 @@ internal static class AgentCliJson
             [NotNullWhen(true)]
             out string? reply)
         {
-            return AgentCliJson.TryExtractChatReply(StructuredOutput, out reply)
-                || AgentCliJson.TryExtractChatReply(Result ?? string.Empty, out reply);
+            return TryExtractChatReply(StructuredOutput, out reply)
+                || TryExtractChatReply(Result ?? string.Empty, out reply);
         }
     }
 

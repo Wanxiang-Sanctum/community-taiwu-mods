@@ -48,14 +48,14 @@ internal static class ScriptReferences
 
     private static ModInfoWithDisplayData GetEnabledPreludeModInfo()
     {
-        foreach (ModId modId in global::ModManager.EnabledMods)
+        foreach (ModId modId in ModManager.EnabledMods)
         {
             if (modId.FileId != PreludeFileId)
             {
                 continue;
             }
 
-            ModInfoWithDisplayData? modInfo = global::ModManager.GetModInfo(modId);
+            ModInfoWithDisplayData? modInfo = ModManager.GetModInfo(modId);
             if (modInfo is null || string.IsNullOrWhiteSpace(modInfo.DirectoryName))
             {
                 continue;

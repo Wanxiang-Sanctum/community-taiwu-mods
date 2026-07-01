@@ -29,7 +29,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
     private string GetPluginDirectory(string side)
     {
         string modDirectory = Path.GetFullPath(
-            global::ModManager.GetModInfo(ModIdStr).DirectoryName);
+            ModManager.GetModInfo(ModIdStr).DirectoryName);
         string pluginRootDirectory = Path.Combine(modDirectory, "Plugins");
         return string.IsNullOrEmpty(side)
             ? pluginRootDirectory
