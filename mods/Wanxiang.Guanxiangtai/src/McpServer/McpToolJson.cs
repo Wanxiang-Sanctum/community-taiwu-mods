@@ -12,6 +12,7 @@ internal static class McpToolJson
     private static JsonSerializerOptions CreateSerializerOptions()
     {
         JsonSerializerOptions options = new(McpJsonUtilities.DefaultOptions);
+        options.TypeInfoResolverChain.Insert(0, McpToolJsonContext.Default);
         options.Converters.Insert(
             0,
             new JsonStringEnumConverter<McpScriptEntryThread>(allowIntegerValues: false));
@@ -24,3 +25,9 @@ internal static class McpToolJson
         return options;
     }
 }
+
+[JsonSerializable(typeof(Dictionary<string, JsonElement>))]
+[JsonSerializable(typeof(McpPluginSide))]
+[JsonSerializable(typeof(McpScriptEntryThread))]
+[JsonSerializable(typeof(McpTaiwuStopMethod))]
+internal sealed partial class McpToolJsonContext : JsonSerializerContext;
