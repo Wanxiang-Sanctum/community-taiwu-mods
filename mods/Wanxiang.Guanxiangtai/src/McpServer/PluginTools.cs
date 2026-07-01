@@ -85,13 +85,13 @@ internal sealed class PluginTools
         Idempotent = false,
         ReadOnly = false)]
     [Description(
-        "Executes a fully trusted C# compilation unit inside the live Wanxiang.Guanxiangtai frontend or backend plugin process. "
-        + "Use it only for live game/mod inspection, verification, or action through plugin APIs. "
+        "Executes a fully trusted C# compilation unit inside the live game frontend or backend process through Guanxiangtai. "
+        + "Use it only for live game/mod inspection, verification, or action through game/mod APIs. "
         + "Returns JSON with kind=notInvoked(reason, details?) or kind=invoked(outcome), where outcome.kind is "
         + "returnValue(value) or exception(message).")]
     public Task<string> RunCSharpScriptAsync(
         [Description(
-            "Target plugin process. Use frontend for UI and frontend runtime state; use backend for backend plugin state "
+            "Target game side. Use frontend for UI and frontend runtime state; use backend for backend runtime state "
             + "and backend-side game APIs.")]
         McpPluginSide targetSide,
         [Description(

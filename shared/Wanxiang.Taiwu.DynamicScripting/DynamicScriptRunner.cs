@@ -8,7 +8,7 @@ using Newtonsoft.Json.Serialization;
 namespace Wanxiang.Taiwu.DynamicScripting;
 
 /// <summary>
-/// 在当前插件进程内编译并调用受信 C# 脚本。
+/// 在当前宿主进程内编译并调用受信 C# 脚本。
 /// </summary>
 public sealed class DynamicScriptRunner
 {

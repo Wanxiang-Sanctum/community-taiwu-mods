@@ -17,7 +17,7 @@
 后端插件不是这个模块的调用方。后端插件只参与 `src/Ipc/` 定义的 MCP server 内部游戏 IPC 契约，不读取或发布 MCP server 外部入口文件，
 也不知道 agent 如何连接 MCP server。
 
-运行态入口文件只记录仍有进程存活的 MCP server，包括进程 id、可执行路径和 HTTP 入口地址。它不定义 MCP 工具，不承载 agent 工作区，
-也不保存 token、工具语义、脚本协议、调试协议或游戏进程 IPC 地址。前后端插件的内部 IPC endpoint manifest 由 `src/Ipc/` 维护。
+运行态入口文件只记录仍有进程存活的 MCP server，包括进程 id、可执行路径和 HTTP 入口地址。它不定义 MCP 工具或脚本协议，
+也不保存 token。前后端插件的内部 IPC endpoint manifest 由 `src/Ipc/` 维护。
 
 完整运行模型见 [../../docs/mcp-server-runtime.md](../../docs/mcp-server-runtime.md)。

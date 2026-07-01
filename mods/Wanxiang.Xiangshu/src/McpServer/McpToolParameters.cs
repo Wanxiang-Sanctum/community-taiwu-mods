@@ -7,18 +7,18 @@ namespace Wanxiang.Xiangshu.McpServer;
 internal enum McpPluginSide
 {
     [JsonStringEnumMemberName("frontend")]
-    [Description("The frontend plugin process: Unity UI, chat window, frontend runtime state, and frontend-only APIs.")]
+    [Description("The game frontend process hosting the Xiangshu frontend plugin: Unity UI, chat window, frontend runtime state, and frontend-only APIs.")]
     Frontend = 0,
 
     [JsonStringEnumMemberName("backend")]
-    [Description("The backend plugin process: backend plugin state and backend-side game APIs.")]
+    [Description("The game backend process hosting the Xiangshu backend plugin: backend runtime state and backend-side game APIs.")]
     Backend = 1,
 }
 
 internal enum McpScriptEntryThread
 {
     [JsonStringEnumMemberName("current")]
-    [Description("Invoke the script entry on the target plugin's request handling thread.")]
+    [Description("Invoke the script entry on the target side's request handling thread.")]
     Current = 0,
 
     [JsonStringEnumMemberName("mainThread")]
@@ -34,7 +34,7 @@ internal static class McpToolParameterConversions
         {
             McpPluginSide.Frontend => IpcRuntime.FrontendEndpointRole,
             McpPluginSide.Backend => IpcRuntime.BackendEndpointRole,
-            _ => throw new ArgumentOutOfRangeException(nameof(side), side, "Unsupported plugin side."),
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, "Unsupported game side."),
         };
     }
 
