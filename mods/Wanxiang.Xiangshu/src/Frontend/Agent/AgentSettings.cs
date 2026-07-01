@@ -97,7 +97,7 @@ internal sealed class AgentSettings
 
     private static string GetModDirectory(string modIdStr)
     {
-        return Path.GetFullPath(global::ModManager.GetModInfo(modIdStr).DirectoryName);
+        return Path.GetFullPath(ModManager.GetModInfo(modIdStr).DirectoryName);
     }
 
     private static bool TryGetSetting(
@@ -105,7 +105,7 @@ internal sealed class AgentSettings
         string key,
         ref int value)
     {
-        return global::ModManager.GetSetting(modIdStr, key, ref value);
+        return ModManager.GetSetting(modIdStr, key, ref value);
     }
 
     private static bool TryGetSetting(
@@ -113,6 +113,6 @@ internal sealed class AgentSettings
         string key,
         ref string value)
     {
-        return global::ModManager.GetSetting(modIdStr, key, ref value);
+        return ModManager.GetSetting(modIdStr, key, ref value);
     }
 }

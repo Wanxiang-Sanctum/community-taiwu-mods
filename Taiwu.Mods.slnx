@@ -7,6 +7,27 @@
       Path="mods/Wanxiang.Fabujiashen/src/Frontend/Wanxiang.Fabujiashen.Frontend.csproj"
     />
     <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/McpServerRuntime/Wanxiang.Guanxiangtai.McpServerRuntime.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Backend/Wanxiang.Guanxiangtai.Backend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Frontend/Wanxiang.Guanxiangtai.Frontend.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/McpServer/Wanxiang.Guanxiangtai.McpServer.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Scripting.Contracts/Wanxiang.Guanxiangtai.Scripting.Contracts.csproj"
+    />
+    <Project
+      Path="mods/Wanxiang.Guanxiangtai/src/Scripting/Wanxiang.Guanxiangtai.Scripting.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Prelude/src/Backend/Wanxiang.Prelude.Backend.csproj"
     />
     <Project
@@ -28,12 +49,24 @@
       Path="mods/Wanxiang.Xiangshu/src/McpServer/Wanxiang.Xiangshu.McpServer.csproj"
     />
     <Project
+      Path="mods/Wanxiang.Xiangshu/src/Scripting.Contracts/Wanxiang.Xiangshu.Scripting.Contracts.csproj"
+    />
+    <Project
       Path="mods/Wanxiang.Xiangshu/src/Scripting/Wanxiang.Xiangshu.Scripting.csproj"
     />
   </Folder>
   <Folder Name="/shared/">
     <Project
       Path="shared/Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.DynamicScripting/Wanxiang.Taiwu.DynamicScripting.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.DynamicScripting.Frontend/Wanxiang.Taiwu.DynamicScripting.Frontend.csproj"
+    />
+    <Project
+      Path="shared/Wanxiang.Taiwu.DynamicScripting.Backend/Wanxiang.Taiwu.DynamicScripting.Backend.csproj"
     />
     <Project
       Path="shared/Wanxiang.Taiwu.AsyncInterop/Wanxiang.Taiwu.AsyncInterop.csproj"

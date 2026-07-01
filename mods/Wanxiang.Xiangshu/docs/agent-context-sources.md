@@ -25,7 +25,7 @@
 身份关系、语气浓淡、失败说明、剧透边界或玩家可见表达需要更细判断的回合。资料来源索引由本文维护。
 
 `DefaultAgentWorkspace/tool-guides/` 中的运行工具指引服务运行中的 Agent。玩家视图观察边界、脚本入口、
-结果形态和工具边界以相枢 Mod 源码里的玩家视图工具、脚本执行器和工具声明为依据；游戏知识检索入口以太吾游戏配置、
+结果形态和工具边界以相枢 Mod 源码里的玩家视图工具、脚本入口适配层和工具声明为依据；游戏知识检索入口以太吾游戏配置、
 本地化、百晓册、显示辅助和游戏侧 namespace、类型、方法为依据；GM 与调试入口以游戏前端 GM 面板、命令行、
 本地化、事件配置和事件脚本观察结果为依据。默认 Agent 工作区记录能帮助运行 Agent 选入口、定目标侧、
 理解游戏领域事实归属，并减少无目标反射探索；它可以保留少量参考片段来固定稳定入口层级和接续关系，
@@ -73,14 +73,14 @@ Agent 视角的说法。
 | 相枢等级与世界状态映射                           | `game/src/Backend/GameData.Shared/GameData.Domains.World/SharedMethods.cs`                                                                                                                                                                                                                                                                                                                                                                                        | `xiangshuProgress / 2` 与世界状态选择。                                                     |
 | 剑冢状态枚举                                     | `game/src/Backend/GameData.Shared/GameData.Domains.World/SwordTombStatus.cs`                                                                                                                                                                                                                                                                                                                                                                                      | 未完成、第一阶段击败、第二阶段击败。                                                        |
 | 神剑碎片增加相枢侵蚀、剑冢倒计时、侵蚀上限       | `game/src/Backend/GameData.Shared/GlobalConfig.cs`                                                                                                                                                                                                                                                                                                                                                                                                                | 机制说明中的数值依据。                                                                      |
-| 游戏主要命名空间路由                             | `game/src/Backend/Backend.slnx`、`game/src/The Scroll Of Taiwu_Data/The Scroll Of Taiwu_Data.slnx`                                                                                                                                                                                                                                                                                                                                                                | `GAME_KNOWLEDGE.md` 和脚本技能中的目标侧、命名空间和反射范围地图。                          |
+| 游戏主要命名空间路由                             | `game/src/Backend/Backend.slnx`、`game/src/The Scroll Of Taiwu_Data/The Scroll Of Taiwu_Data.slnx`                                                                                                                                                                                                                                                                                                                                                                | `GAME_KNOWLEDGE.md` 的命名空间和反射范围地图，以及低层 helper 技能的辅助定位边界。          |
 | GM 面板、命令行、命令类型、分组、启用路径和热键  | `game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/UI_GMWindow.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GM/`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GMFunc.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/GameApp.cs`、`game/src/The Scroll Of Taiwu_Data/Managed/Assembly-CSharp/CommonCommandKit.cs`、`game/text/The Scroll Of Taiwu_Data/StreamingAssets/Language_CN/ui_language.txt.yml` | `GM_COMMANDS.md` 的 GM 面板/命令行、本地化、启用路径和执行边界。                            |
 | 事件里的隐藏 GM 风格选项                         | `game/src/Event/EventLib/`、`game/text/Event/EventLanguages/`、`game/event-scripts/Event/EventScript/`                                                                                                                                                                                                                                                                                                                                                            | `GM_COMMANDS.md` 的事件 GM 选项检索路线；目标事件、选项和脚本结构按关键词或事件组重新检索。 |
 
 ## 更新流程
 
 1. 静态世界观先按太吾游戏文本、配置和游戏侧源码事实检索相关关键词；组织内部维护者可在 `taiwu-modkit`
-   仓库的 `game/text` 和 `game/src` 快照路径中检索。运行工具指引先核对相枢 Mod 源码中的脚本执行器和工具声明，再按需要查
+   仓库的 `game/text` 和 `game/src` 快照路径中检索。运行工具指引先核对相枢 Mod 源码中的脚本入口适配层和工具声明，再按需要查
    游戏观察快照。
 2. 判断新增内容属于当前任务工作记录、Agent 侧本地经验、基础角色契约、扩展人设校准、基础世界观、相枢深入资料、
    运行工具指引，还是属于本文的来源说明。
@@ -133,7 +133,7 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   内部游戏镜像承载。
 - 稳定高频入口的少量参考片段归入对应领域指引；片段应能减少入口层级试错，并说明可接续关系。
   面向单次目标的完整读取、处理和输出流水线留在当前脚本或本地工作记录中。
-- Agent 技能触发、脚本草拟纪律或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
+- Agent 技能触发、低层脚本 helper 策略或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
   `.claude/skills/*/SKILL.md`；同名技能默认保持内容一致。
 - 当前任务计划、待验证事实、临时脚本思路和本地经验归入 `AgentWorkingDirectory/.xiangshu-notes/`；这个
   目录不随默认包创建，也不作为默认 Agent 工作区发布资料。

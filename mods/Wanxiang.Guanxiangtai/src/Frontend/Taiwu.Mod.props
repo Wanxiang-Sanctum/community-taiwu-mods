@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModSide>Frontend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Frontend</TaiwuModPluginSubdirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TaiwuModCopyDependency Include="Wanxiang.Guanxiangtai.Ipc.dll" />
+    <TaiwuModCopyDependency
+      Include="Wanxiang.Guanxiangtai.Scripting.Contracts.dll"
+    />
+    <TaiwuModMergeDependency Include="Wanxiang.Guanxiangtai.Scripting.dll" />
+    <TaiwuModMergeDependency
+      Include="Wanxiang.Guanxiangtai.McpServerRuntime.dll"
+    />
+  </ItemGroup>
+</Project>

@@ -22,10 +22,10 @@
 界面状态、可见消息或专门运行数据承担。正常热键触发、聊天窗口显隐、手动重置、玩家主动中断和每个投递轮次的
 CLI 成功回复由界面状态或可见消息体现。
 
-日志上下文只保留排障所需的稳定事实。正常边界日志只记录模块状态和少量低基数字段，例如适配器类型。进程
-id、端口、绝对运行路径、manifest 路径、单次事件日志路径、耗时、消息数量、会话 id 和 MCP bearer token 由
-运行数据、当前进程状态或运行期内存承担。玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr、MCP
-bearer token 原文和外部 Agent 会话 id 原文留在各自所属边界。
+日志上下文只保留排障所需的稳定事实。启动边界可以记录 endpoint、进程 id、端口、manifest 路径、事件日志路径和
+插件目录；Agent 投递失败边界可以记录前端投递会话 id、会话代次、上下文消息数量、CLI 会话模式、失败原因和退出码。
+玩家输入、相枢回复、受信脚本源码、完整 stdout/stderr、MCP bearer token 原文、外部 Agent 会话 id 原文和
+本地 Agent 环境变量值留在各自所属边界。
 
 按运行边界分级：
 
@@ -35,14 +35,14 @@ bearer token 原文和外部 Agent 会话 id 原文留在各自所属边界。
   会话快照清理失败或异步 UI 任务异常。
 
 CLI 调用失败时，游戏日志可以记录适配器、CLI 会话模式（`new` 或 `resumed`）、失败原因、退出码（如有）和
-截断后的 stderr 片段。外部 Agent 会话 id 只用于恢复 CLI 会话；需要区分首次调用和恢复调用时，只记录
+脱敏后截断的 stderr 摘要。外部 Agent 会话 id 只用于恢复 CLI 会话；需要区分首次调用和恢复调用时，只记录
 `new` 或 `resumed`。设置缺失等边界只记录判断该事件所需的最小上下文。
 
 ## MCP sidecar 事件日志
 
 MCP sidecar 事件日志用于确认独立进程是否完成启动、注册 endpoint、跟随父进程退出、正常停止或异常失败。
-MCP 工具调用统计和 endpoint manifest 内容由各自运行数据承载。事件消息保持紧凑；需要查看当前 endpoint 时，
-以 `.xiangshu-runtime/ipc-endpoints.json` 为准。
+成功 MCP 请求不单独写入事件日志；工具结果由当前请求返回，轮询和心跳由调用方状态承载，endpoint manifest 由运行
+数据承载。事件消息保持紧凑；需要查看当前 endpoint 时，以 `.xiangshu-runtime/ipc-endpoints.json` 为准。
 
 MCP bearer token 只存在于前端、sidecar 和 CLI 子进程的本次运行环境或临时协议文件中。日志可以记录 sidecar
 启动失败或请求被拒绝的边界事实，但不记录 token 值。

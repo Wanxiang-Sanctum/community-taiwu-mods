@@ -21,7 +21,7 @@ internal sealed class McpSidecar(
         ?? throw new ArgumentNullException(nameof(bearerToken));
     private bool _disposed;
 
-    public void Start()
+    public McpSidecarStartResult Start()
     {
         ThrowIfDisposed();
 
@@ -32,7 +32,7 @@ internal sealed class McpSidecar(
         if (!File.Exists(executablePath))
         {
             throw new FileNotFoundException(
-                "Wanxiang.Xiangshu MCP server executable was not found.",
+                "未找到相枢 MCP server 可执行文件。",
                 executablePath);
         }
 
@@ -60,10 +60,15 @@ internal sealed class McpSidecar(
         {
             if (!process.Start())
             {
-                throw new InvalidOperationException("Failed to start Wanxiang.Xiangshu MCP server process.");
+                throw new InvalidOperationException("相枢 MCP server 进程启动失败。");
             }
 
             _process = process;
+            return new McpSidecarStartResult(
+                process.Id,
+                executablePath,
+                eventLogPath,
+                manifestPath);
         }
         catch
         {
@@ -122,4 +127,19 @@ internal sealed class McpSidecar(
             throw new ObjectDisposedException(nameof(McpSidecar));
         }
     }
+}
+
+internal sealed class McpSidecarStartResult(
+    int processId,
+    string executablePath,
+    string eventLogPath,
+    string manifestPath)
+{
+    public int ProcessId { get; } = processId;
+
+    public string ExecutablePath { get; } = executablePath;
+
+    public string EventLogPath { get; } = eventLogPath;
+
+    public string ManifestPath { get; } = manifestPath;
 }

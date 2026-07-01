@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="../Wanxiang.Taiwu.DynamicScripting/Wanxiang.Taiwu.DynamicScripting.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Backend"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

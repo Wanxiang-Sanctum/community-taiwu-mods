@@ -241,7 +241,7 @@ Runtime scripts follow the compilation-unit entry contract in `tool-guides/RUNTI
 
 For frontend UI, Unity objects, EventSystem state, selected controls, coordinates, and visible verification scripts, call `xiangshu_run_csharp_script` with `entryThread: "mainThread"`. Handle later awaited or callback work as a separate threading decision owned by that API.
 
-Use `globals.Arguments` for coordinates, text, target paths, and mode flags. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
+Pass coordinates, text, target paths, and mode flags through the tool's required `arguments` object, then read them from `globals.Arguments`. Return compact structured data. Do not return image bytes or large base64 payloads through script JSON.
 
 If low-level reflection or private game members become necessary, combine this skill with `bepinex-runtime-scripting`, but keep the frontend operation goal primary.
 

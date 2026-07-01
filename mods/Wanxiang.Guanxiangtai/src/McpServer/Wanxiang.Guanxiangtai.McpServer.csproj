@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeFrameworkVersion>10.0.9</RuntimeFrameworkVersion>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <CETCompat>false</CETCompat>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+    <TaiwuModPublishPackagePath
+    >Processes/Wanxiang.Guanxiangtai.McpServer</TaiwuModPublishPackagePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/Ipc/Wanxiang.Guanxiangtai.Ipc.csproj"
+    />
+    <ProjectReference
+      Include="$(TaiwuModsModsDir)Wanxiang.Guanxiangtai/src/McpServerRuntime/Wanxiang.Guanxiangtai.McpServerRuntime.csproj"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" />
+    <PackageReference Include="MessagePipe" />
+    <PackageReference Include="MessagePipe.Interprocess" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+
+  <Import
+    Project="$(TaiwuModsModsDir)Taiwu.Mod.PublishDirectory.Pack.targets"
+  />
+</Project>

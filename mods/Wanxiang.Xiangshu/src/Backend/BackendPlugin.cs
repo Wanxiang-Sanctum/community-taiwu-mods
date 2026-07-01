@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using GameData.Domains;
 using TaiwuModdingLib.Core.Plugin;
+using Wanxiang.Taiwu.DynamicScripting.Backend;
 using Wanxiang.Taiwu.ItemGrafts.Backend;
 using Wanxiang.Taiwu.Logging;
 using Wanxiang.Xiangshu.Ipc;
@@ -31,14 +32,14 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "backend plugin initialization failed");
+            Log.Error(ex, "后端插件初始化失败");
             throw;
         }
     }
 
     public override void OnModSettingUpdate()
     {
-        Log.Info("backend settings updated; restart the game to apply Wanxiang.Xiangshu runtime settings.");
+        Log.Info("后端设置已更新；重启游戏后相枢运行设置生效。");
     }
 
     public override void Dispose()
@@ -63,8 +64,19 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
         _ipcServer = new BackendIpcServer(
             XiangshuRuntimePaths.GetPluginDirectory(modDirectory, PluginDirectoryName),
             _scriptEntryDispatcher);
-        _ = _ipcServer.Start();
-        Log.Info("backend IPC ready");
+        IpcEndpoint endpoint = _ipcServer.Start();
+        Log.Info(
+            "后端 IPC 已就绪",
+            new
+            {
+                endpoint.Role,
+                endpoint.Transport,
+                endpoint.Host,
+                endpoint.Port,
+                endpoint.ProcessId,
+                manifestPath = IpcEndpointRegistry.ManifestPath,
+                workingDirectory,
+            });
     }
 
     private string ReadAgentWorkingDirectory(string modDirectory)

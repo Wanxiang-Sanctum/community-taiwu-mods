@@ -7,8 +7,9 @@
 职责：
 
 - 定义 sidecar 到目标插件端的 MessagePipe 请求/响应 DTO；调用端与处理器注册处使用同一对类型。
-- 定义受信脚本执行请求的 `script`、`arguments`、`entryThread` 字段，以及脚本运行响应的嵌套 MessagePack
-  判别联合：`notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。
+- 定义受信脚本执行请求的 `script`、`arguments` JSON 对象、`entryThread` 语义字段，以及脚本运行响应的嵌套
+  MessagePack 判别联合：`notInvoked(reason, details?)` 或 `invoked(returnValue | exception)`。IPC DTO 以对象根的规范化
+  JSON 文本承载 `arguments`，不把它变成脚本可见的字符串参数。
 - 定义玩家前端视图截图请求和 PNG 响应；这里只承载跨进程协议，截图语义归前端 `PlayerView/`。
 - 维护前端、后端和 MCP server 的 endpoint manifest 注册与发现；manifest 用 endpoint `role` 区分进程角色。
 - 定义 MCP sidecar、前端和 CLI 适配器共享的 transport、path、header 和环境变量名称；请求门禁由
@@ -30,7 +31,7 @@
 - 跨进程语义归本模块；前端、后端和 MCP 模块只实现本侧处理器或调用端。
 
 这个模块描述跨进程协议和共享基础设施。前端 UI、后端游戏逻辑、MCP 工具语义和本地 Agent 调用由对应
-运行模块实现；脚本能访问哪些游戏 API 也由目标侧插件进程决定。
+运行模块实现；脚本能访问哪些游戏 API 也由目标侧游戏进程决定。
 
-脚本执行本身归前端或后端 endpoint。工具意图和玩家目标判断归 MCP 调用方或 Agent 指引；入口契约与共享编译规则归
-`src/Scripting/`，目标侧可见 API 和额外引用发现归对应插件宿主。
+脚本执行本身归前端或后端 endpoint。工具意图和玩家目标判断归 MCP 调用方或 Agent 指引；入口契约和 Mod 侧响应映射归
+`src/Scripting/`，实际编译、入口调用和通用运行事实归 shared 动态脚本运行核心，目标侧可见 API 和显式引用配置归对应插件宿主。

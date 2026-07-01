@@ -10,6 +10,9 @@
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.Logging/Wanxiang.Taiwu.Logging.csproj"
     />
     <ProjectReference
+      Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.DynamicScripting.Backend/Wanxiang.Taiwu.DynamicScripting.Backend.csproj"
+    />
+    <ProjectReference
       Include="$(TaiwuModsSharedDir)Wanxiang.Taiwu.ItemGrafts.Backend/Wanxiang.Taiwu.ItemGrafts.Backend.csproj"
     />
     <ProjectReference

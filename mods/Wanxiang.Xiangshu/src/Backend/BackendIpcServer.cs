@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using MessagePipe;
 using MessagePipe.Interprocess.Workers;
 using Microsoft.Extensions.DependencyInjection;
+using Wanxiang.Taiwu.DynamicScripting;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -10,7 +11,7 @@ namespace Wanxiang.Xiangshu.Backend;
 
 internal sealed class BackendIpcServer(
     string pluginDirectory,
-    IScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
+    IDynamicScriptEntryDispatcher scriptEntryDispatcher) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -28,6 +29,8 @@ internal sealed class BackendIpcServer(
             return _endpoint!;
         }
 
+        DynamicScriptReferenceOptions scriptReferenceOptions =
+            CreateScriptReferenceOptions(pluginDirectory);
         Exception? lastException = null;
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
@@ -36,7 +39,7 @@ internal sealed class BackendIpcServer(
 
             try
             {
-                return StartOnPort(port);
+                return StartOnPort(port, scriptReferenceOptions);
             }
             catch (SocketException ex)
             {
@@ -66,7 +69,9 @@ internal sealed class BackendIpcServer(
         _provider = null;
     }
 
-    private IpcEndpoint StartOnPort(int port)
+    private IpcEndpoint StartOnPort(
+        int port,
+        DynamicScriptReferenceOptions scriptReferenceOptions)
     {
         ServiceCollection services = new();
         IMessagePipeBuilder messagePipeBuilder = services.AddMessagePipe(
@@ -78,7 +83,7 @@ internal sealed class BackendIpcServer(
             });
         RegisterIpcScriptHandler(
             services,
-            pluginDirectory,
+            scriptReferenceOptions,
             scriptEntryDispatcher);
         _ = messagePipeBuilder.AddTcpInterprocess(
             IpcRuntime.LoopbackHost,
@@ -124,15 +129,15 @@ internal sealed class BackendIpcServer(
 
     private static void RegisterIpcScriptHandler(
         IServiceCollection services,
-        string pluginDirectory,
-        IScriptEntryDispatcher scriptEntryDispatcher)
+        DynamicScriptReferenceOptions scriptReferenceOptions,
+        IDynamicScriptEntryDispatcher scriptEntryDispatcher)
     {
         _ = services
             .AddSingleton(
                 new XiangshuScriptRunner(
-                    new ScriptHostOptions(
+                    new ScriptRunnerOptions(
                         IpcRuntime.BackendEndpointRole,
-                        referenceDirectories: [pluginDirectory]),
+                        references: scriptReferenceOptions),
                     scriptEntryDispatcher))
             .AddSingleton<IAsyncRequestHandlerCore<IpcRunScriptRequest, IpcRunScriptResponse>, BackendExecuteScriptHandler>()
             .AddSingleton<IAsyncRequestHandler<IpcRunScriptRequest, IpcRunScriptResponse>>(
@@ -143,6 +148,14 @@ internal sealed class BackendIpcServer(
             typeof(IpcRunScriptRequest),
             typeof(IpcRunScriptResponse),
             typeof(BackendExecuteScriptHandler));
+    }
+
+    private static DynamicScriptReferenceOptions CreateScriptReferenceOptions(string pluginDirectory)
+    {
+        return new DynamicScriptReferenceOptions(
+        [
+            ScriptReferencePaths.GetContractReferencePath(pluginDirectory),
+        ]);
     }
 
     private void ThrowIfDisposed()

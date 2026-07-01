@@ -11,7 +11,6 @@ using Wanxiang.Xiangshu.Frontend.HotKeys;
 using Wanxiang.Xiangshu.Frontend.Ipc;
 using Wanxiang.Xiangshu.Frontend.ItemGrafts;
 using Wanxiang.Xiangshu.Frontend.Mcp;
-using Wanxiang.Xiangshu.Frontend.ScriptHost;
 using Wanxiang.Xiangshu.Frontend.Sidecar;
 using Wanxiang.Xiangshu.Ipc;
 
@@ -64,7 +63,7 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
             StartMcpSidecar(CurrentAgentSettings);
             Log.Info(
-                "frontend plugin initialized",
+                "前端插件已初始化",
                 new
                 {
                     adapter = CurrentAgentSettings.Adapter,
@@ -72,14 +71,14 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "frontend plugin initialization failed");
+            Log.Error(ex, "前端插件初始化失败");
             throw;
         }
     }
 
     public override void OnModSettingUpdate()
     {
-        Log.Info("frontend settings updated; restart the game to apply Wanxiang.Xiangshu runtime settings.");
+        Log.Info("前端设置已更新；重启游戏后相枢运行设置生效。");
     }
 
     public override void Dispose()
@@ -112,12 +111,20 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             settings.ModDirectory,
             settings.WorkingDirectory,
             IpcEndpointRegistry.ManifestPath,
-            _mcpBearerToken ?? throw new InvalidOperationException("MCP bearer token is not initialized."));
+            _mcpBearerToken ?? throw new InvalidOperationException("MCP bearer token 尚未初始化。"));
 
         try
         {
-            _mcpSidecar.Start();
-            Log.Info("MCP sidecar started");
+            McpSidecarStartResult startResult = _mcpSidecar.Start();
+            Log.Info(
+                "MCP sidecar 已启动",
+                new
+                {
+                    processId = startResult.ProcessId,
+                    executablePath = startResult.ExecutablePath,
+                    eventLogPath = startResult.EventLogPath,
+                    manifestPath = startResult.ManifestPath,
+                });
         }
         catch (Exception ex) when (ex is FileNotFoundException
             or Win32Exception
@@ -127,7 +134,14 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
         {
             _mcpSidecar.Dispose();
             _mcpSidecar = null;
-            Log.Error(ex, "MCP sidecar failed to start");
+            Log.Error(
+                ex,
+                "MCP sidecar 启动失败",
+                new
+                {
+                    adapter = settings.Adapter,
+                    workingDirectory = settings.WorkingDirectory,
+                });
         }
     }
 
@@ -141,10 +155,20 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
             PluginDirectoryName);
         _ipcServer = new FrontendIpcServer(
             currentChatSessionBinding,
-            pluginDirectory,
-            FrontendScriptReferences.GetAdditionalAssemblyReferencePaths(pluginDirectory));
-        _ = _ipcServer.Start();
-        Log.Info("frontend IPC ready");
+            pluginDirectory);
+        IpcEndpoint endpoint = _ipcServer.Start();
+        Log.Info(
+            "前端 IPC 已就绪",
+            new
+            {
+                endpoint.Role,
+                endpoint.Transport,
+                endpoint.Host,
+                endpoint.Port,
+                endpoint.ProcessId,
+                manifestPath = IpcEndpointRegistry.ManifestPath,
+                pluginDirectory,
+            });
     }
 
     private void InstallChatHotkey()

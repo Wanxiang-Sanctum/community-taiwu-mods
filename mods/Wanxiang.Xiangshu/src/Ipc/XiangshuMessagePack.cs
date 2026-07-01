@@ -14,5 +14,5 @@ public static class XiangshuMessagePack
                 BuiltinResolver.Instance));
 }
 
-[global::MessagePack.GeneratedMessagePackResolverAttribute]
+[GeneratedMessagePackResolver]
 internal sealed partial class XiangshuIpcMessagePackResolver;

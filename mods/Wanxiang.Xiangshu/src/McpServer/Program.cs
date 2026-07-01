@@ -19,21 +19,21 @@ using MsLogger = Microsoft.Extensions.Logging.ILogger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 int parentProcessId = int.Parse(
-    builder.Configuration["parent-pid"] ?? throw new InvalidOperationException("--parent-pid is required."),
+    builder.Configuration["parent-pid"] ?? throw new InvalidOperationException("--parent-pid 是必需参数。"),
     CultureInfo.InvariantCulture);
 string logFilePath = builder.Configuration["log-file"]
     ?? Path.Combine(AppContext.BaseDirectory, "Wanxiang.Xiangshu.McpServer.log");
 string manifestFilePath = builder.Configuration["manifest-file"]
-    ?? throw new InvalidOperationException("--manifest-file is required.");
+    ?? throw new InvalidOperationException("--manifest-file 是必需参数。");
 string bearerToken = Environment.GetEnvironmentVariable(IpcRuntime.McpBearerTokenEnvironmentVariable)
     ?? throw new InvalidOperationException(
-        IpcRuntime.McpBearerTokenEnvironmentVariable + " environment variable is required.");
+        IpcRuntime.McpBearerTokenEnvironmentVariable + " 环境变量是必需的。");
 string? logDirectory = Path.GetDirectoryName(logFilePath);
 
 if (string.IsNullOrWhiteSpace(bearerToken))
 {
     throw new InvalidOperationException(
-        IpcRuntime.McpBearerTokenEnvironmentVariable + " environment variable cannot be empty.");
+        IpcRuntime.McpBearerTokenEnvironmentVariable + " 环境变量不能为空。");
 }
 
 if (!string.IsNullOrEmpty(logDirectory))
@@ -48,6 +48,7 @@ Serilog.Core.Logger fileLogger = CreateFileLogger(logFilePath);
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(fileLogger, dispose: false);
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("ModelContextProtocol", LogLevel.Warning);
 
 builder.WebHost.ConfigureKestrel(
     options => options.Listen(IPAddress.Loopback, port: 0));
@@ -55,7 +56,8 @@ builder.WebHost.ConfigureKestrel(
 _ = builder.Services
     .AddMcpServer()
     .WithHttpTransport(options => options.Stateless = true)
-    .WithTools<Wanxiang.Xiangshu.McpServer.PluginTools>();
+    .WithTools<Wanxiang.Xiangshu.McpServer.PluginTools>(
+        Wanxiang.Xiangshu.McpServer.McpToolJson.SerializerOptions);
 
 MsLogger? logger = null;
 
@@ -65,7 +67,10 @@ try
     logger = app.Services
         .GetRequiredService<ILoggerFactory>()
         .CreateLogger("Wanxiang.Xiangshu.McpServer");
-    McpServerLog.Starting(logger);
+    McpServerLog.Starting(
+        logger,
+        parentProcessId,
+        manifestFilePath);
     _ = app.Use(
         (context, next) => AuthorizeMcpRequestAsync(
             context,
@@ -88,7 +93,13 @@ try
     };
 
     using IpcEndpointRegistration registration = IpcEndpointRegistry.Register(endpoint);
-    McpServerLog.EndpointRegistered(logger);
+    McpServerLog.EndpointRegistered(
+        logger,
+        endpoint.Host,
+        endpoint.Port,
+        endpoint.Path,
+        manifestFilePath,
+        Environment.ProcessId);
 
     IHostApplicationLifetime lifetime = app.Lifetime;
     Task parentWatchTask = StopWhenParentExitsAsync(
@@ -107,7 +118,7 @@ catch (Exception ex)
     {
         fileLogger.Fatal(
             ex,
-            "MCP server failed before the host logger was available.");
+            "MCP server 在宿主日志器可用前失败。");
     }
     else
     {
@@ -147,7 +158,7 @@ static async Task StopWhenParentExitsAsync(
         return;
     }
 
-    McpServerLog.ParentExited(logger);
+    McpServerLog.ParentExited(logger, parentProcessId);
     lifetime.StopApplication();
 }
 
@@ -278,31 +289,42 @@ internal static partial class McpServerLog
     [LoggerMessage(
         EventId = 1000,
         Level = LogLevel.Information,
-        Message = "Starting MCP server.")]
-    public static partial void Starting(MsLogger logger);
+        Message = "正在启动 MCP server；父进程：{ParentProcessId}；manifest：{ManifestFilePath}")]
+    public static partial void Starting(
+        MsLogger logger,
+        int parentProcessId,
+        string manifestFilePath);
 
     [LoggerMessage(
         EventId = 1001,
         Level = LogLevel.Information,
-        Message = "MCP endpoint registered.")]
-    public static partial void EndpointRegistered(MsLogger logger);
+        Message = "MCP endpoint 已登记：http://{Host}:{Port}{Path}；manifest：{ManifestFilePath}；进程：{ProcessId}")]
+    public static partial void EndpointRegistered(
+        MsLogger logger,
+        string host,
+        int port,
+        string path,
+        string manifestFilePath,
+        int processId);
 
     [LoggerMessage(
         EventId = 1002,
         Level = LogLevel.Information,
-        Message = "Parent process exited; stopping MCP server.")]
-    public static partial void ParentExited(MsLogger logger);
+        Message = "父进程 {ParentProcessId} 已退出，正在停止 MCP server。")]
+    public static partial void ParentExited(
+        MsLogger logger,
+        int parentProcessId);
 
     [LoggerMessage(
         EventId = 1003,
         Level = LogLevel.Information,
-        Message = "MCP server stopped.")]
+        Message = "MCP server 已停止。")]
     public static partial void Stopped(MsLogger logger);
 
     [LoggerMessage(
         EventId = 1004,
         Level = LogLevel.Critical,
-        Message = "MCP server failed.")]
+        Message = "MCP server 运行失败。")]
     public static partial void Failed(
         MsLogger logger,
         Exception exception);

@@ -8,7 +8,8 @@ using MessagePipe.Interprocess.Workers;
 using VContainer;
 using Wanxiang.Xiangshu.Frontend.Chat;
 using Wanxiang.Xiangshu.Frontend.PlayerView;
-using Wanxiang.Xiangshu.Frontend.ScriptHost;
+using Wanxiang.Taiwu.DynamicScripting;
+using Wanxiang.Taiwu.DynamicScripting.Frontend;
 using Wanxiang.Xiangshu.Ipc;
 using Wanxiang.Xiangshu.Scripting;
 
@@ -16,8 +17,7 @@ namespace Wanxiang.Xiangshu.Frontend.Ipc;
 
 internal sealed class FrontendIpcServer(
     CurrentChatSessionBinding currentChatSessionBinding,
-    string pluginDirectory,
-    IEnumerable<string>? additionalAssemblyReferencePaths) : IDisposable
+    string pluginDirectory) : IDisposable
 {
     private const int MaxStartAttempts = 8;
 
@@ -35,6 +35,8 @@ internal sealed class FrontendIpcServer(
             return _endpoint!;
         }
 
+        DynamicScriptReferenceOptions scriptReferenceOptions =
+            CreateScriptReferenceOptions(pluginDirectory);
         Exception? lastException = null;
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
@@ -43,7 +45,7 @@ internal sealed class FrontendIpcServer(
 
             try
             {
-                return StartOnPort(port);
+                return StartOnPort(port, scriptReferenceOptions);
             }
             catch (SocketException ex)
             {
@@ -73,10 +75,12 @@ internal sealed class FrontendIpcServer(
         _containerScope = null;
     }
 
-    private IpcEndpoint StartOnPort(int port)
+    private IpcEndpoint StartOnPort(
+        int port,
+        DynamicScriptReferenceOptions scriptReferenceOptions)
     {
         ContainerBuilder builder = new();
-        ConfigureContainer(builder, port);
+        ConfigureContainer(builder, port, scriptReferenceOptions);
         IObjectResolver container = builder.Build();
         bool started = false;
 
@@ -108,7 +112,15 @@ internal sealed class FrontendIpcServer(
         }
     }
 
-    private void ConfigureContainer(IContainerBuilder builder, int port)
+    private static DynamicScriptReferenceOptions CreateScriptReferenceOptions(string pluginDirectory)
+    {
+        return ScriptReferences.Create(pluginDirectory);
+    }
+
+    private void ConfigureContainer(
+        IContainerBuilder builder,
+        int port,
+        DynamicScriptReferenceOptions scriptReferenceOptions)
     {
         MessagePipeOptions options = builder.RegisterMessagePipe(
             options =>
@@ -119,10 +131,9 @@ internal sealed class FrontendIpcServer(
         _ = builder.RegisterInstance(currentChatSessionBinding);
         _ = builder.RegisterInstance(
             new XiangshuScriptRunner(
-                new ScriptHostOptions(
+                new ScriptRunnerOptions(
                     IpcRuntime.FrontendEndpointRole,
-                    referenceDirectories: [pluginDirectory],
-                    assemblyReferencePaths: additionalAssemblyReferencePaths),
+                    references: scriptReferenceOptions),
                 new FrontendScriptEntryDispatcher()));
         _ = builder.RegisterAsyncRequestHandler<
             IpcRunScriptRequest,

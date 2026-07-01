@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <TaiwuModSide>Backend</TaiwuModSide>
+    <TaiwuModPluginSubdirectory>Backend</TaiwuModPluginSubdirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TaiwuModCopyDependency Include="Wanxiang.Guanxiangtai.Ipc.dll" />
+    <TaiwuModCopyDependency
+      Include="Wanxiang.Guanxiangtai.Scripting.Contracts.dll"
+    />
+    <TaiwuModMergeDependency Include="Wanxiang.Guanxiangtai.Scripting.dll" />
+  </ItemGroup>
+</Project>

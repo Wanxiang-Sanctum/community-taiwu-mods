@@ -1,14 +1,21 @@
 <Project>
   <PropertyGroup>
     <DprintCommand>aqua exec -- dprint</DprintCommand>
+    <DotnetFormatSolution>Taiwu.Mods.slnx</DotnetFormatSolution>
   </PropertyGroup>
 
   <Target Name="Check">
     <Exec Command="$(DprintCommand) check" />
+    <Exec
+      Command="dotnet format $(DotnetFormatSolution) --no-restore --verbosity quiet --verify-no-changes"
+    />
   </Target>
 
   <Target Name="Format">
     <Exec Command="$(DprintCommand) fmt" />
+    <Exec
+      Command="dotnet format $(DotnetFormatSolution) --no-restore --verbosity quiet"
+    />
   </Target>
 
   <Target Name="InstallTools">

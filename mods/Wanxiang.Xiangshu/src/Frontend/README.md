@@ -18,7 +18,6 @@
 - `Mcp/`：运行期 MCP bearer token 的生成和 header 表达；供 `Sidecar/` 与 `Agent/Cli/` 注入子进程，不持久化，
   也不进入 endpoint manifest。
 - `PlayerView/`：玩家可见前端视图的观察边界；截图由这里捕获，聊天窗口排除由 `Chat/` 提供。
-- `ScriptHost/`：前端侧脚本宿主适配；维护入口主线程分派，以及按运行时类型和游戏前端插件加载目录解析额外程序集引用。
 - `Settings/`：相枢 Mod 本地设置文件读取，负责前端初始化时加载 `LocalSettings.json`。
 - `Sidecar/`：MCP server 进程生命周期，并把 sidecar 事件日志定向到
   `.xiangshu-runtime/Diagnostics/McpServer/`。
@@ -56,8 +55,13 @@
 运行时启动流程统一重建；设置修改后由游戏重启生效。
 
 前端侧脚本运行需要本侧插件部署目录。`FrontendPlugin.cs` 从相枢 Mod 目录派生 `Plugins/Frontend` 并
-注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求，前端侧入口分派和额外程序集引用解析归 `ScriptHost/`。
-`entryThread = mainThread` 的入口调用切换到 Unity 主线程。共享脚本编译和临时程序集依赖解析规则仍归 `src/Scripting/`。
+注入 `Ipc/` endpoint；`Ipc/` 只承接跨进程请求。前端侧入口分派复用
+`shared/Wanxiang.Taiwu.DynamicScripting.Frontend`。`entryThread = mainThread` 的入口调用切换到 Unity 主线程。
+脚本引用选项由 `Ipc/` 创建：脚本契约 DLL 路径来自 `src/Scripting/`，前端额外加入 `Wanxiang.Prelude`
+运行时提供的 UniTask 编译引用。
+
+入口契约、契约 DLL 引用路径和 Mod 侧响应映射归 `src/Scripting/`，通用编译和临时程序集依赖解析归 shared
+动态脚本运行核心。
 
 前端日志调用直接使用 `shared/Wanxiang.Taiwu.Logging`。这个 shared 项目是前后端插件共同的日志适配层；
 事件选择和字段取舍归 `docs/logging.md`。物品嫁接模型来自 `shared/Wanxiang.Taiwu.ItemGrafts.Contracts`、

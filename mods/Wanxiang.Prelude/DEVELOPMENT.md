@@ -12,6 +12,9 @@
 固定包版本，并声明实际部署动作。需要调整 Unity/UPM 依赖包内容时，先改该内部仓库的工具配置；需要调整本 Mod 携带哪些
 运行时 DLL 时，再修改本目录下的项目文件和 `Taiwu.Mod.props`。
 
+Roslyn C# 编译组件属于万象引当前携带的运行时。前后端入口项目用 `VersionOverride="$(RoslynGameRuntimeVersion)"`
+选择游戏进程可用版本；这个约束只属于携带 Roslyn 的入口项目，不由 `GameRuntime` 项目自动继承。
+
 实现细节集中在 `src/PluginLoading/`；玩家 README 不列出补丁点和解析器内部流程。
 
 ## 依赖方使用

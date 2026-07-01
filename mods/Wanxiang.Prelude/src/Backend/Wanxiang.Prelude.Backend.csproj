@@ -11,7 +11,10 @@
     <PackageReference Include="MessagePack" />
     <PackageReference Include="MessagePipe" />
     <PackageReference Include="MessagePipe.Interprocess" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference
+      Include="Microsoft.CodeAnalysis.CSharp"
+      VersionOverride="$(RoslynGameRuntimeVersion)"
+    />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference
       Include="Taiwu.ModKit.References.Backend"

@@ -185,6 +185,18 @@
       "wanxiang.taiwu.asyncinterop": {
         "type": "Project"
       },
+      "wanxiang.taiwu.dynamicscripting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "[4.13.0, )"
+        }
+      },
+      "wanxiang.taiwu.dynamicscripting.frontend": {
+        "type": "Project",
+        "dependencies": {
+          "Wanxiang.Taiwu.DynamicScripting": "[1.0.0, )"
+        }
+      },
       "wanxiang.taiwu.instantnotifications": {
         "type": "Project"
       },
@@ -212,9 +224,13 @@
       "wanxiang.xiangshu.scripting": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.CodeAnalysis.CSharp": "[4.13.0, )",
-          "Wanxiang.Xiangshu.Ipc": "[1.0.0, )"
+          "Wanxiang.Taiwu.DynamicScripting": "[1.0.0, )",
+          "Wanxiang.Xiangshu.Ipc": "[1.0.0, )",
+          "Wanxiang.Xiangshu.Scripting.Contracts": "[1.0.0, )"
         }
+      },
+      "wanxiang.xiangshu.scripting.contracts": {
+        "type": "Project"
       },
       "Microsoft.CodeAnalysis.CSharp": {
         "type": "CentralTransitive",

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using ModelContextProtocol.Server;
 using ModelContextProtocol.Protocol;
 using Wanxiang.Xiangshu.Ipc;
@@ -26,7 +27,7 @@ internal sealed class PluginTools
         "Publishes a brief player-visible Xiangshu message in the current in-game chat while the turn is still running. "
         + "The call succeeds only while the frontend has an active chat dispatch accepting intermediate replies. "
         + "Use it for multi-step or long-running work, or for an early acknowledgement before the final reply. "
-        + "Content must already be player-facing Xiangshu text and must not expose implementation details.")]
+        + "Content must already be ready to show to the player in the Xiangshu chat.")]
     public Task<string> SendIntermediateReplyAsync(
         [Description("Brief player-visible Xiangshu text.")]
         string content,
@@ -43,42 +44,34 @@ internal sealed class PluginTools
         Idempotent = false,
         ReadOnly = false)]
     [Description(
-        "Executes a fully trusted C# compilation unit inside the live Wanxiang.Xiangshu frontend or backend plugin process. "
-        + "Use it when current game/mod state affects the answer, or when the player's goal requires plugin APIs for inspection, "
-        + "verification, or action. Select it according to the player's goal and workspace guidance. "
-        + "Do not use it for ordinary conversation or static knowledge. "
-        + "Before mutation, read current state and narrow the target, effect, and verification path from the player's wording "
-        + "and workspace guidance. "
-        + "The tool returns JSON describing invocation facts: notInvoked(reason, details?), invoked(returnValue(value)), "
-        + "or invoked(exception(message)). Judge whether the script met your intent from that outcome.")]
+        "Executes a fully trusted C# compilation unit inside the live game frontend or backend process through Xiangshu. "
+        + "Use it only for live game/mod inspection, verification, or action through game/mod APIs. "
+        + "Returns JSON with kind=notInvoked(reason, details?) or kind=invoked(outcome), where outcome.kind is "
+        + "returnValue(value) or exception(message).")]
     public Task<string> RunCSharpScriptAsync(
         [Description(
-            "Target plugin side: frontend for UI, chat window, and frontend runtime state; "
-            + "backend for backend plugin state and backend-side game APIs. If the side is uncertain, avoid mutation "
-            + "until a minimal read-only script confirms where the needed state lives.")]
-        string targetSide,
+            "Target game side. Use frontend for UI, chat window, and frontend runtime state; use backend for "
+            + "backend runtime state and backend-side game APIs.")]
+        McpPluginSide targetSide,
         [Description(
-            "Complete C# compilation unit, not a snippet. Include using directives and define exactly one "
-            + "public static non-generic XiangshuScript class with public static Execute or ExecuteAsync "
-            + "taking Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals. "
-            + "The host supplies the Wanxiang.Xiangshu.Scripting reference. "
-            + "The entry return value is serialized to JSON.")]
+            "Complete C# compilation unit. It must define the public static entry type "
+            + "Wanxiang.Xiangshu.Scripting.XiangshuScript with exactly one public static Execute or ExecuteAsync "
+            + "method that takes Wanxiang.Xiangshu.Scripting.XiangshuScriptGlobals. "
+            + "Declare required using directives explicitly; the entry return value is serialized as JSON.")]
         string script,
         [Description(
-            "Thread used to invoke the script entry: current keeps the IPC handler thread; "
-            + "mainThread invokes the entry on the target side's game main thread. Use mainThread for Unity UI/object access "
-            + "or backend game-domain state access.")]
-        string entryThread = "current",
+            "Required JSON object passed through globals.Arguments. Use an empty object when no arguments are needed.")]
+        Dictionary<string, JsonElement> arguments,
         [Description(
-            "Optional JSON object passed through globals.Arguments. String values stay strings; other values become compact JSON strings.")]
-        string argumentsJson = "{}",
+            "Thread used to invoke the script entry. Use mainThread for Unity UI/object access or backend game-domain state access.")]
+        McpScriptEntryThread entryThread = McpScriptEntryThread.Current,
         CancellationToken cancellationToken = default)
     {
         return PluginIpcProxy.RunCSharpScriptAsync(
             targetSide,
             script,
+            arguments,
             entryThread,
-            argumentsJson,
             cancellationToken);
     }
 
@@ -89,8 +82,7 @@ internal sealed class PluginTools
         ReadOnly = true)]
     [Description(
         "Captures the current full-screen, native-resolution player-visible Unity frontend view as PNG image content. "
-        + "Use it whenever the player's goal depends on visible screen facts, screen-coordinate targeting, UI inspection, "
-        + "or visual verification. "
+        + "Use it for visible screen facts, screen-coordinate targeting evidence, UI inspection, or visual verification. "
         + "The capture excludes the Xiangshu chat window without changing its visible state or input focus.")]
     public async Task<CallToolResult> CapturePlayerViewAsync(CancellationToken cancellationToken = default)
     {

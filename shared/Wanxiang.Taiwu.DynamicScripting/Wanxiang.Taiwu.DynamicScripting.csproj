@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <TaiwuModCompatibilityProfile>GameRuntime</TaiwuModCompatibilityProfile>
+  </PropertyGroup>
+
+  <!-- Wanxiang.Prelude provides the Roslyn runtime DLLs for game-process plugins. -->
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.CodeAnalysis.CSharp"
+      ExcludeAssets="runtime"
+      VersionOverride="$(RoslynGameRuntimeVersion)"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Include="Taiwu.ModKit.References.Shared"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
+</Project>

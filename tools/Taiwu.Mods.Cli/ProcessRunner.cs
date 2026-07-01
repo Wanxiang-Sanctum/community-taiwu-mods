@@ -48,7 +48,7 @@ internal static class ProcessRunner
         string workingDirectory,
         IReadOnlyCollection<string> arguments)
     {
-        return global::CliWrap.Cli.Wrap(fileName)
+        return CliWrap.Cli.Wrap(fileName)
             .WithWorkingDirectory(workingDirectory)
             .WithArguments(arguments)
             .WithValidation(CommandResultValidation.None);

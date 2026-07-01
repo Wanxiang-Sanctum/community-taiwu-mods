@@ -123,7 +123,7 @@ internal static class InventoryItemMenuPatch
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            GLog.TagError("ItemGrafts", ex);
+            GLog.TagError("Wanxiang.Taiwu.ItemGrafts", ex);
         }
     }
 }
@@ -235,7 +235,7 @@ internal static class MakingTooltipPatch
     }
 }
 
-[HarmonyPatch(typeof(global::GameMessageUtils), nameof(global::GameMessageUtils.RenderItemKeys))]
+[HarmonyPatch(typeof(GameMessageUtils), nameof(GameMessageUtils.RenderItemKeys))]
 internal static class MessageItemKeysPatch
 {
     public static void Prefix(
@@ -258,8 +258,8 @@ internal static class MessageItemKeysPatch
 }
 
 [HarmonyPatch(
-    typeof(global::GameMessageUtils),
-    nameof(global::GameMessageUtils.RenderItemKey),
+    typeof(GameMessageUtils),
+    nameof(GameMessageUtils.RenderItemKey),
     typeof(int),
     typeof(TransferableRecordDataBase),
     typeof(bool))]

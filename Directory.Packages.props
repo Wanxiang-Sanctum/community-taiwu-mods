@@ -2,10 +2,11 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <MessagePipeVersion>1.8.2</MessagePipeVersion>
-    <!-- GameRuntime projects run inside Taiwu's Unity/Mono processes. Their
-         MessagePipe 1.8.2 and MessagePack 3.1.x stack pins
-         System.Collections.Immutable to 8.x, while Roslyn 5.x requires 9.x.
-         Raise this only after that stack no longer pins Immutable 8.x. -->
+    <!-- Projects that carry Roslyn into Taiwu's game processes currently need
+         this lower version: their MessagePipe 1.8.2 and MessagePack 3.1.x
+         stack pins System.Collections.Immutable to 8.x, while Roslyn 5.x
+         requires 9.x. Apply this with VersionOverride at each Roslyn carrier,
+         not as a blanket GameRuntime rule. -->
     <RoslynGameRuntimeVersion>4.13.0</RoslynGameRuntimeVersion>
     <RoslynatorVersion>4.15.0</RoslynatorVersion>
     <TaiwuGameUnityVersion>2022.3.62f2</TaiwuGameUnityVersion>

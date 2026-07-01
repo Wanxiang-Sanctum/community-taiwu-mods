@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net8.0": {
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "E8fu71Y+vzhniJKy1K13Rzwm8Vjcj7CDFBpflqncKUZfc3SzuF0kMBiyMmgXNPkjWTdE3Z+30HlGgYjHONZY/Q=="
+      },
+      "Roslynator.Formatting.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ=="
+      },
+      "Taiwu.ModKit.References.Backend": {
+        "type": "Direct",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "QXziMIz5w6OLZFUgZHEENIJ1a9choKbeewYDHReAV8o+LQ4o3h+7qXnRcIBRIgU8b50x4nO2ffKIAYx2moMjgQ==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[1.0.44]",
+          "Taiwu.ModKit.References.Shared": "[1.0.44]"
+        }
+      },
+      "Microsoft.CodeAnalysis.Analyzers": {
+        "type": "Transitive",
+        "resolved": "3.11.0",
+        "contentHash": "v/EW3UE8/lbEYHoC2Qq7AR/DnmvpgdtAMndfQNmpuIMx/Mto8L5JnuCfdBYtgvalQOtfNCnxFejxuRrryvUTsg=="
+      },
+      "Microsoft.CodeAnalysis.Common": {
+        "type": "Transitive",
+        "resolved": "4.13.0",
+        "contentHash": "T8nRl4mAUY4mhdYM4U2ra2vP2EL+ol8Yqwo0gwC/V55vmlXq9NxdIkZJynTpTL1uX/jHijJ90AeOEx4lf7OwzQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "System.Collections.Immutable": "8.0.0",
+          "System.Reflection.Metadata": "8.0.0"
+        }
+      },
+      "System.Collections.Immutable": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "AurL6Y5BA1WotzlEvVaIDpqzpIPvYnnldxru8oXJU2yFxFUy3+pNXjXd1ymO+RA0rq0+590Q8gaz2l3Sr7fmqg=="
+      },
+      "System.Reflection.Metadata": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "ptvgrFh7PvWI8bcVqG5rsA/weWM09EnthFHR5SCnS6IN+P4mj6rE1lBDC4U8HL9/57htKAqy4KQ3bBj84cfYyQ==",
+        "dependencies": {
+          "System.Collections.Immutable": "8.0.0"
+        }
+      },
+      "wanxiang.taiwu.dynamicscripting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "[4.13.0, )"
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp": {
+        "type": "CentralTransitive",
+        "requested": "[5.3.0, )",
+        "resolved": "4.13.0",
+        "contentHash": "BsH7Vijbj9IL7Fj4k/ysZSVyLGFqr75wmdFGwCKWJvSjnA1xwPaQ3hkB2BQdHOt5CpEYA6Q0I6Oo5sDTDHqHsg==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "[4.13.0]",
+          "System.Collections.Immutable": "8.0.0",
+          "System.Reflection.Metadata": "8.0.0"
+        }
+      },
+      "Taiwu.ModKit.References.Plugin": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "D2dUC5vL5fdNJaEW+cV/bLYOgsT6ETZTEX39L4puMiGBzEG5Y3jWri+Gyd3bgNBY9dJKUpP2ts8dq/KOwrYj+w=="
+      },
+      "Taiwu.ModKit.References.Shared": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.44, )",
+        "resolved": "1.0.44",
+        "contentHash": "x/PhL7trh0lL1+vMlFUwM/+q3aBOai1nJ2AR3OlhasuDThc7sxe9cVG5vDYojZoap3G1AJWsw/tO78VnPKydFA==",
+        "dependencies": {
+          "Taiwu.ModKit.References.Plugin": "[1.0.44]"
+        }
+      }
+    }
+  }
+}
