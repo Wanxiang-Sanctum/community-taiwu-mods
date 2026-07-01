@@ -6,6 +6,8 @@
     <RuntimeFrameworkVersion>10.0.9</RuntimeFrameworkVersion>
     <SelfContained>true</SelfContained>
     <PublishTrimmed>true</PublishTrimmed>
+    <!-- Required by LibraryImport source-generated Win32 interop in DetachedServerLauncher. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <CETCompat>false</CETCompat>

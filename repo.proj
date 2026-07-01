@@ -7,15 +7,13 @@
   <Target Name="Check">
     <Exec Command="$(DprintCommand) check" />
     <Exec
-      Command="dotnet format $(DotnetFormatSolution) --no-restore --verbosity quiet --verify-no-changes"
+      Command="dotnet format $(DotnetFormatSolution) --verbosity quiet --verify-no-changes"
     />
   </Target>
 
   <Target Name="Format">
     <Exec Command="$(DprintCommand) fmt" />
-    <Exec
-      Command="dotnet format $(DotnetFormatSolution) --no-restore --verbosity quiet"
-    />
+    <Exec Command="dotnet format $(DotnetFormatSolution) --verbosity quiet" />
   </Target>
 
   <Target Name="InstallTools">

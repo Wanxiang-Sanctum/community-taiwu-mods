@@ -1,5 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Taiwu.Logging;
 
@@ -7,6 +9,10 @@ namespace Wanxiang.Guanxiangtai.Frontend;
 
 internal static class McpServerLauncher
 {
+    private const int DetachedLaunchRequestExitTimeoutMilliseconds = 5000;
+
+    private const int MaxCapturedProcessOutputLength = 4096;
+
     private const string ProcessesDirectoryName = "Processes";
 
     private const string McpServerBundleName = "Wanxiang.Guanxiangtai.McpServer";
@@ -62,24 +68,82 @@ internal static class McpServerLauncher
             {
                 FileName = executablePath,
                 WorkingDirectory = bundleDirectory,
-                UseShellExecute = true,
-                WindowStyle = ProcessWindowStyle.Normal,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                StandardErrorEncoding = Encoding.UTF8,
+                StandardOutputEncoding = Encoding.UTF8,
             };
+            startInfo.ArgumentList.Add(GuanxiangtaiMcp.DetachedLaunchArgument);
 
             using Process? process = Process.Start(startInfo);
+
+            if (process is null)
+            {
+                log.Warning(
+                    "MCP server 脱离启动请求未创建进程",
+                    new
+                    {
+                        executablePath,
+                        runtimeDirectory,
+                        endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
+                    });
+                return;
+            }
+
+            if (!process.WaitForExit(DetachedLaunchRequestExitTimeoutMilliseconds))
+            {
+                string requestProcessTermination = TryTerminateRequestProcess(process);
+                log.Warning(
+                    "MCP server 脱离启动请求进程未按预期退出",
+                    new
+                    {
+                        executablePath,
+                        processId = process.Id,
+                        requestProcessTermination,
+                        runtimeDirectory,
+                        endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
+                    });
+                return;
+            }
+
+            string? standardOutput = NormalizeProcessOutput(process.StandardOutput.ReadToEnd());
+            string? standardError = NormalizeProcessOutput(process.StandardError.ReadToEnd());
+
+            if (process.ExitCode != 0)
+            {
+                log.Error(
+                    "MCP server 脱离启动请求失败",
+                    new
+                    {
+                        executablePath,
+                        processId = process.Id,
+                        process.ExitCode,
+                        standardOutput,
+                        standardError,
+                        runtimeDirectory,
+                        endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
+                    });
+                return;
+            }
+
             log.Info(
-                "MCP server 进程已启动",
+                "MCP server 脱离启动请求已提交",
                 new
                 {
                     executablePath,
-                    processId = process?.Id,
+                    processId = process.Id,
+                    standardOutput,
+                    standardError,
                     runtimeDirectory,
                     endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
                 });
         }
         catch (Exception ex)
         {
-            log.Error(ex, "MCP server 进程启动失败");
+            log.Error(ex, "MCP server 脱离启动请求失败");
         }
     }
 
@@ -89,5 +153,39 @@ internal static class McpServerLauncher
             Path.GetFullPath(modDirectory),
             ProcessesDirectoryName,
             McpServerBundleName);
+    }
+
+    private static string? NormalizeProcessOutput(string output)
+    {
+        string trimmed = output.Trim();
+
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+
+        return trimmed.Length <= MaxCapturedProcessOutputLength
+            ? trimmed
+            : trimmed[..MaxCapturedProcessOutputLength] + "\n[truncated]";
+    }
+
+    private static string TryTerminateRequestProcess(Process process)
+    {
+        try
+        {
+            if (process.HasExited)
+            {
+                return "alreadyExited";
+            }
+
+            process.Kill();
+            return "killRequested";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException
+            or NotSupportedException
+            or Win32Exception)
+        {
+            return "killFailed:" + ex.GetType().Name;
+        }
     }
 }

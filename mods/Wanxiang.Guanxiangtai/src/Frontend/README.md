@@ -2,7 +2,7 @@
 
 `src/Frontend/` 是观象台前端插件入口。它负责这些事：
 
-- 确保包内 MCP server 进程已启动。
+- 检查 MCP server 运行态入口；没有 live server 时，只启动 MCP server 的 `--launch-detached` 请求进程，不直接创建常驻 server。
 - 启动供 MCP server 调用的前端 MessagePipe IPC endpoint，并在 `.guanxiangtai-runtime/ipc-endpoints.json` 中登记
   role 为 `frontend` 的内部入口。
 - 承接前端侧状态检测、游戏退出和受信 C# 脚本执行请求。
