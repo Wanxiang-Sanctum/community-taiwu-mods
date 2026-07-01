@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -15,6 +16,30 @@ using ModelContextProtocol.Protocol;
 using Wanxiang.Guanxiangtai.Ipc;
 using Wanxiang.Guanxiangtai.McpServerRuntime;
 using Wanxiang.Guanxiangtai.McpServer;
+
+if (args.Length == 1
+    && string.Equals(
+        args[0],
+        GuanxiangtaiMcp.DetachedLaunchArgument,
+        StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        string currentExecutablePath = GetCurrentExecutablePath();
+        string currentExecutableDirectory = Path.GetDirectoryName(currentExecutablePath)
+            ?? throw new InvalidOperationException("无法取得当前 MCP server 可执行文件目录。");
+        DetachedServerLauncher.Launch(
+            currentExecutablePath,
+            currentExecutableDirectory);
+    }
+    catch (Exception ex) when (IsDetachedLaunchException(ex))
+    {
+        await Console.Error.WriteLineAsync(FormatDetachedLaunchException(ex));
+        Environment.ExitCode = 1;
+    }
+
+    return;
+}
 
 string? modDirectory = ResolveModDirectory(AppContext.BaseDirectory);
 string ownerDirectory = modDirectory ?? AppContext.BaseDirectory;
@@ -269,6 +294,23 @@ static bool IsConfigurationException(Exception exception)
         or InvalidOperationException
         or NotSupportedException
         or UnauthorizedAccessException;
+}
+
+static bool IsDetachedLaunchException(Exception exception)
+{
+    return exception is ArgumentException
+        or InvalidOperationException
+        or PlatformNotSupportedException
+        or Win32Exception;
+}
+
+static string FormatDetachedLaunchException(Exception exception)
+{
+    return exception is Win32Exception win32Exception
+        ? string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{win32Exception.Message} (Win32 error {win32Exception.NativeErrorCode})")
+        : exception.Message;
 }
 
 [SuppressMessage(

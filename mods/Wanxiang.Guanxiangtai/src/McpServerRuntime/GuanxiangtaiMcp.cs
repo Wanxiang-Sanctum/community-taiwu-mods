@@ -10,6 +10,8 @@ public static class GuanxiangtaiMcp
 
     public const string BearerTokenEnvironmentVariable = "WANXIANG_GUANXIANGTAI_MCP_TOKEN";
 
+    public const string DetachedLaunchArgument = "--launch-detached";
+
     public const string LoopbackHost = "127.0.0.1";
 
     public const string HttpPath = "/mcp";

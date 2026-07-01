@@ -13,7 +13,7 @@ internal static class TaiwuLifecycle
     public static async Task<string> LaunchAsync(CancellationToken cancellationToken)
     {
         TaiwuLifecycleToolJson.Response result =
-            await LaunchCoreAsync(cancellationToken);
+            await LaunchAndWaitAsync(cancellationToken);
         return TaiwuLifecycleToolJson.Serialize(result);
     }
 
@@ -22,7 +22,7 @@ internal static class TaiwuLifecycle
         CancellationToken cancellationToken)
     {
         TaiwuLifecycleToolJson.Response result =
-            await StopCoreAsync(method, cancellationToken);
+            await StopByMethodAsync(method, cancellationToken);
         return TaiwuLifecycleToolJson.Serialize(result);
     }
 
@@ -31,13 +31,13 @@ internal static class TaiwuLifecycle
         CancellationToken cancellationToken)
     {
         TaiwuLifecycleToolJson.Response stopResult =
-            await StopCoreAsync(stopMethod, cancellationToken);
+            await StopByMethodAsync(stopMethod, cancellationToken);
 
         TaiwuLifecycleToolJson.Response launchResult;
         string outcome;
         if (IsStopComplete(stopResult))
         {
-            launchResult = await LaunchCoreAsync(cancellationToken);
+            launchResult = await LaunchAndWaitAsync(cancellationToken);
             outcome = GetLaunchOutcome(launchResult);
         }
         else
@@ -53,7 +53,7 @@ internal static class TaiwuLifecycle
                 launchResult));
     }
 
-    private static async Task<TaiwuLifecycleToolJson.Response> StopCoreAsync(
+    private static async Task<TaiwuLifecycleToolJson.Response> StopByMethodAsync(
         McpTaiwuStopMethod method,
         CancellationToken cancellationToken)
     {
@@ -68,7 +68,7 @@ internal static class TaiwuLifecycle
         };
     }
 
-    private static async Task<TaiwuLifecycleToolJson.Response> LaunchCoreAsync(
+    private static async Task<TaiwuLifecycleToolJson.Response> LaunchAndWaitAsync(
         CancellationToken cancellationToken)
     {
         TaiwuLifecycleToolJson.LaunchResult launchRequest = RequestSteamLaunch();

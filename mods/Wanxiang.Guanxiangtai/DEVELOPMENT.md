@@ -22,6 +22,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 
 `pack-mod` 会运行 `Taiwu.Mod.Pack.proj`，把它声明的内容组装到仓库根目录的 `artifacts/mods/Wanxiang.Guanxiangtai/`。
 当前包内容包括 `Config.Lua`、前端和后端插件入口，以及 `Processes/Wanxiang.Guanxiangtai.McpServer/` 下的 MCP server 发布目录。
+脱离启动是 MCP server 可执行文件的内部自举入口，不新增独立 launcher 发布目录。
 
 ## 组包边界
 
@@ -41,21 +42,22 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：内部设计说明，入口见 `docs/README.md`。
 - `src/McpServerRuntime/`：前端启动器和 MCP server 本体共享的运行态协调模块，维护 MCP server 外部入口文件。
-- `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、endpoint manifest、状态检测、游戏退出和脚本执行消息。
+- `src/Ipc/`：MCP server 到前端、后端插件的内部 MessagePipe IPC 契约、内部 IPC 入口文件、状态检测、游戏退出和脚本执行消息。
 - `src/Scripting.Contracts/`：观象台脚本可见的窄契约程序集，承载脚本入口参数等稳定脚本契约。
 - `src/Scripting/`：观象台脚本入口适配层，声明入口类型约定、运行器适配和响应映射，并复用 shared 动态脚本运行核心。
-- `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责确保 MCP server 进程启动、发布前端 IPC endpoint，
+- `src/Frontend/`：前端插件项目，入口 DLL 部署到 `Plugins/Frontend/`，负责检查 MCP server 入口并按需提交脱离启动请求、发布前端 IPC endpoint，
   并承接前端侧游戏退出和脚本执行。
 - `src/Backend/`：后端插件项目，入口 DLL 部署到 `Plugins/Backend/`，负责发布后端 IPC endpoint，并承接后端侧脚本执行。
-- `src/McpServer/`：游戏外 MCP Streamable HTTP server，负责常驻 HTTP 入口、鉴权、自身入口注册、太吾生命周期、状态检测和脚本执行工具。
+- `src/McpServer/`：游戏外 MCP Streamable HTTP server，负责脱离启动自举、常驻 HTTP 入口、鉴权、自身入口注册、太吾生命周期、
+  状态检测和脚本执行工具。
 
 ## 同步清单
 
 - 公开配置或面向使用者的说明变化时，同步更新 [README.md](README.md)。
 - 包内容变化时，同步更新 `Taiwu.Mod.Pack.proj`、项目文件或项目旁 `Taiwu.Mod.props` 中拥有该声明的位置。
 - 非 shared 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
-- 运行态入口文件字段、运行目录解析、MCP server 启动方式、连接鉴权、token 来源、可见控制台提示或请求日志过滤变化时，同步更新
+- 运行态入口文件字段、运行目录解析、MCP server 启动方式、脱离启动参数、连接鉴权、token 来源、可见控制台提示或请求日志过滤变化时，同步更新
   [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md) 和对应拥有该边界的模块 README；涉及运行态协调常量或入口登记时，同步更新
   `src/McpServerRuntime/README.md`。
-- 内部 IPC 契约、endpoint manifest、生命周期工具、状态工具或脚本工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`
+- 内部 IPC 契约、内部 IPC 入口文件、生命周期工具、状态工具或脚本工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`
   和 [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md) 中拥有对应边界的位置。

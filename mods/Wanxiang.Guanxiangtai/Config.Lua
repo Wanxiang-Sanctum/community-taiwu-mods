@@ -14,14 +14,14 @@ return {
 
 [h2]工作方式[/h2]
 [list]
-[*]游戏前端会确保 MCP server 进程启动；也可以手动运行包内可执行文件。
+[*]游戏前端会按需自动拉起独立 MCP server；也可以手动运行包内可执行文件。
 [*]agent 只连接 MCP server；server 再把请求转给前端或后端插件。
 [*]需要稳定入口时，可用 Mod 目录下的 Guanxiangtai.Local.json 定制 MCP server 端口。
 [*]脚本按 agent 当前目标动态执行，结果回到 agent，用于继续分析、修改或验证。
 [/list]
 
 [h2]连接[/h2]
-启动后从 server 窗口、固定端口配置或 .guanxiangtai-runtime/ 读取地址；在 MCP client 中注册 http://127.0.0.1:<port>/mcp，并使用同一个 bearer token。
+启动后从 server 控制台窗口、固定端口配置或 .guanxiangtai-runtime/ 读取地址；在 MCP client 中注册 http://127.0.0.1:<port>/mcp，并使用同一个 bearer token。
 
 固定端口配置写在 Mod 目录下的 Guanxiangtai.Local.json；文件缺失或 port 为 0 时使用随机空闲端口。
 

@@ -1,17 +1,19 @@
 # MCP Server 模块结构
 
-`src/McpServer/` 是观象台的游戏外 MCP server 进程。它负责 HTTP MCP transport、鉴权、可见控制台输出和自身入口登记。
-游戏前端插件会确保它启动；维护者也可以手动单独启动。正常启动不需要参数。
+`src/McpServer/` 是观象台的游戏外 MCP server 进程。它负责脱离启动自举、HTTP MCP transport、鉴权、可见控制台输出和自身入口登记。
+游戏前端插件会调用 `--launch-detached` 自举模式提交启动请求；维护者也可以手动单独启动。手动启动不需要参数。
 
 MCP server 是 agent 的唯一可连接入口；需要游戏能力时，本模块再把工具请求转给当前游戏运行时里的前端或后端插件。
 
 ## 本模块负责
 
 - 监听宿主侧 loopback 上的 Streamable HTTP `/mcp`。
-- 使用 bearer token 保护 `/mcp`：优先读取 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`；环境变量缺失或为空时生成随机 token；
-  通过 ASP.NET Core 鉴权管线校验请求。
+- 使用 bearer token 保护 `/mcp`：优先读取常驻 server 自身进程环境里的 `WANXIANG_GUANXIANGTAI_MCP_TOKEN`；
+  环境变量缺失或为空时生成随机 token；通过 ASP.NET Core 鉴权管线校验请求。
 - 读取 Mod 目录下可选的 `Guanxiangtai.Local.json`，只接受 `mcpServer.port` 作为端口覆盖。
-- 在运行目录登记自身 HTTP 入口，并在可见终端窗口打印 URL、token 来源和生成的随机 token 值；成功请求、轮询和心跳不作为
+- 提供 `--launch-detached` 自举模式；该短命入口以当前桌面会话的 Explorer 为父进程创建不带参数的常驻 server
+  实例后退出，避免常驻 server 留在太吾游戏进程树内。
+- 在运行目录登记自身 HTTP 入口，并在可见控制台窗口打印 URL、token 来源和生成的随机 token 值；成功请求、轮询和心跳不作为
   控制台提示。
 - 持有按 Mod 目录派生的单实例锁，避免重复启动多个 server。
 - 提供 `guanxiangtai_status` 只读工具，分别检测前端和后端插件是否可响应。
