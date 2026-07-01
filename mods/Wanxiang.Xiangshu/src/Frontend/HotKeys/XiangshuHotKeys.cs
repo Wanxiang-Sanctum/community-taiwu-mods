@@ -30,7 +30,7 @@ internal static class XiangshuHotKeys
         if (commandId is null)
         {
             Log.Error(
-                "cannot register chat hotkey in MapCommandKit because no command id is available",
+                "MapCommandKit 没有可用命令 id，聊天热键注册失败",
                 new
                 {
                     preferredCommandId = PreferredToggleChatCommandId,
@@ -41,7 +41,7 @@ internal static class XiangshuHotKeys
         if (commandId != PreferredToggleChatCommandId)
         {
             Log.Warning(
-                "preferred chat hotkey command id is already used; registering with fallback command id",
+                "首选聊天热键命令 id 已被占用，已使用备用命令 id 注册",
                 new
                 {
                     preferredCommandId = PreferredToggleChatCommandId,

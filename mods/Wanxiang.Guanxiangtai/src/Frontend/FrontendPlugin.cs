@@ -59,14 +59,24 @@ public sealed class FrontendPlugin : TaiwuRemakePlugin
 
             string pluginDirectory = GetPluginDirectory(modDirectory);
             _ipcServer = new FrontendIpcServer(pluginDirectory);
-            _ = _ipcServer.Start();
-            Log.Info("frontend IPC ready");
+            IpcEndpoint endpoint = _ipcServer.Start();
+            Log.Info(
+                "前端 IPC 已就绪",
+                new
+                {
+                    endpoint.Role,
+                    endpoint.Transport,
+                    endpoint.Host,
+                    endpoint.Port,
+                    manifestPath = IpcEndpointRegistry.ManifestPath,
+                    pluginDirectory,
+                });
         }
         catch (Exception ex)
         {
             _ipcServer?.Dispose();
             _ipcServer = null;
-            Log.Error(ex, "frontend IPC failed to start");
+            Log.Error(ex, "前端 IPC 启动失败");
         }
     }
 

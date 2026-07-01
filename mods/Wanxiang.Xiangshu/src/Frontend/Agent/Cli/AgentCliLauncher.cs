@@ -49,7 +49,7 @@ internal sealed class AgentCliLauncher(
         {
             cancellation.Dispose();
             throw new InvalidOperationException(
-                busyMessage ?? "Wanxiang.Xiangshu agent invocation is already running.");
+                busyMessage ?? "相枢 Agent 调用已在运行。");
         }
 
         try
@@ -77,7 +77,7 @@ internal sealed class AgentCliLauncher(
                         + result.ExitCode.ToString(CultureInfo.InvariantCulture)
                         + ".",
                     exitCode: result.ExitCode,
-                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
+                    stderrExcerpt: CreateRedactedStderrExcerpt(result.Stderr, settings));
             }
 
             if (adapter.HasExplicitErrorResult(result))
@@ -86,7 +86,7 @@ internal sealed class AgentCliLauncher(
                     reason: "agent-error-result",
                     message: "The configured agent CLI returned an error result.",
                     exitCode: null,
-                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
+                    stderrExcerpt: CreateRedactedStderrExcerpt(result.Stderr, settings));
             }
 
             string? agentSessionId = adapter.ExtractAgentSessionId(result);
@@ -97,7 +97,7 @@ internal sealed class AgentCliLauncher(
                     reason: "missing-agent-session-id",
                     message: "The configured agent CLI did not return a resumable session id.",
                     exitCode: null,
-                    stderrExcerpt: CreateStderrExcerpt(result.Stderr));
+                    stderrExcerpt: CreateRedactedStderrExcerpt(result.Stderr, settings));
             }
 
             string assistantMessageContent;
@@ -302,7 +302,7 @@ internal sealed class AgentCliLauncher(
 
             if (_activeInvocationCancellation is not null || _process?.HasExited == false)
             {
-                busyMessage = "Wanxiang.Xiangshu agent invocation is already running.";
+                busyMessage = "相枢 Agent 调用已在运行。";
                 return false;
             }
 
@@ -394,7 +394,9 @@ internal sealed class AgentCliLauncher(
             endpoint.Path);
     }
 
-    private static string? CreateStderrExcerpt(string value)
+    private string? CreateRedactedStderrExcerpt(
+        string value,
+        AgentSettings settings)
     {
         string trimmed = value.Trim();
         if (trimmed.Length == 0)
@@ -402,7 +404,29 @@ internal sealed class AgentCliLauncher(
             return null;
         }
 
-        return trimmed.Length <= MaxLogExcerptLength ? trimmed : trimmed[..MaxLogExcerptLength];
+        string redacted = RedactKnownSecret(
+            trimmed,
+            _mcpBearerToken.Value,
+            "[redacted-mcp-bearer-token]");
+        foreach (AgentEnvironmentVariable variable in settings.EnvironmentVariables)
+        {
+            redacted = RedactKnownSecret(
+                redacted,
+                variable.Value,
+                "[redacted-agent-env-value]");
+        }
+
+        return redacted.Length <= MaxLogExcerptLength ? redacted : redacted[..MaxLogExcerptLength];
+    }
+
+    private static string RedactKnownSecret(
+        string value,
+        string secret,
+        string replacement)
+    {
+        return string.IsNullOrWhiteSpace(secret)
+            ? value
+            : value.Replace(secret, replacement, StringComparison.Ordinal);
     }
 
     private static void TryKillProcess(
@@ -422,7 +446,7 @@ internal sealed class AgentCliLauncher(
                 if (!process.WaitForExit((int)ProcessExitTimeout.TotalMilliseconds))
                 {
                     Log.Warning(
-                        "agent CLI process stayed alive after kill",
+                        "Agent CLI 进程结束请求后仍未退出",
                         new
                         {
                             reason,

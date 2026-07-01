@@ -27,6 +27,7 @@ internal sealed class CurrentWorldChatSession(
     private AgentChatSession? _session;
     private uint? _worldId;
     private bool _disposed;
+    private bool _loggedNoActiveWorld;
 
     public CurrentChatSessionBinding IpcBinding { get; } = new();
 
@@ -89,9 +90,11 @@ internal sealed class CurrentWorldChatSession(
     {
         if (!TryGetActiveWorldId(out uint worldId))
         {
-            Log.Warning("chat session unavailable because no active game world is loaded");
+            LogNoActiveWorldOnce();
             return false;
         }
+
+        _loggedNoActiveWorld = false;
 
         if (_session is not null && _worldId == worldId)
         {
@@ -117,13 +120,29 @@ internal sealed class CurrentWorldChatSession(
         _window.BindSession(session);
 
         Log.Info(
-            "chat session bound to active world",
+            "聊天会话已绑定当前太吾世界",
             new
             {
                 worldId = FormatWorldId(worldId),
             });
 
         return true;
+    }
+
+    private void LogNoActiveWorldOnce()
+    {
+        if (_loggedNoActiveWorld)
+        {
+            return;
+        }
+
+        _loggedNoActiveWorld = true;
+        Log.Info(
+            "未载入活动太吾世界，聊天会话暂不可用",
+            new
+            {
+                gameState = GetCurrentGameStateName(),
+            });
     }
 
     private void ClearCore(bool hideWindow)
@@ -175,6 +194,12 @@ internal sealed class CurrentWorldChatSession(
 
         worldId = SingletonObject.getInstance<BasicGameData>().WorldId;
         return true;
+    }
+
+    private static string GetCurrentGameStateName()
+    {
+        return GameApp.Instance?.GetCurrentGameStateName().ToString()
+            ?? "(游戏应用不可用)";
     }
 
     private static string FormatWorldId(uint worldId)

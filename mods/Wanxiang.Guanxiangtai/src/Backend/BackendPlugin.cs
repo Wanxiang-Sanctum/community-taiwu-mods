@@ -52,14 +52,24 @@ public sealed class BackendPlugin : TaiwuRemakePlugin
             _ipcServer = new BackendIpcServer(
                 GetPluginDirectory(modDirectory),
                 _scriptEntryDispatcher);
-            _ = _ipcServer.Start();
-            Log.Info("backend IPC ready");
+            IpcEndpoint endpoint = _ipcServer.Start();
+            Log.Info(
+                "后端 IPC 已就绪",
+                new
+                {
+                    endpoint.Role,
+                    endpoint.Transport,
+                    endpoint.Host,
+                    endpoint.Port,
+                    manifestPath = IpcEndpointRegistry.ManifestPath,
+                    modDirectory,
+                });
         }
         catch (Exception ex)
         {
             _ipcServer?.Dispose();
             _ipcServer = null;
-            Log.Error(ex, "backend IPC failed to start");
+            Log.Error(ex, "后端 IPC 启动失败");
         }
     }
 

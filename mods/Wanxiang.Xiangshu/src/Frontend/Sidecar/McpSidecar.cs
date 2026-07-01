@@ -21,7 +21,7 @@ internal sealed class McpSidecar(
         ?? throw new ArgumentNullException(nameof(bearerToken));
     private bool _disposed;
 
-    public void Start()
+    public McpSidecarStartResult Start()
     {
         ThrowIfDisposed();
 
@@ -64,6 +64,11 @@ internal sealed class McpSidecar(
             }
 
             _process = process;
+            return new McpSidecarStartResult(
+                process.Id,
+                executablePath,
+                eventLogPath,
+                manifestPath);
         }
         catch
         {
@@ -122,4 +127,19 @@ internal sealed class McpSidecar(
             throw new ObjectDisposedException(nameof(McpSidecar));
         }
     }
+}
+
+internal sealed class McpSidecarStartResult(
+    int processId,
+    string executablePath,
+    string eventLogPath,
+    string manifestPath)
+{
+    public int ProcessId { get; } = processId;
+
+    public string ExecutablePath { get; } = executablePath;
+
+    public string EventLogPath { get; } = eventLogPath;
+
+    public string ManifestPath { get; } = manifestPath;
 }

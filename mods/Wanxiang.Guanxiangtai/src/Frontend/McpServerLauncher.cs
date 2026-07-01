@@ -37,6 +37,8 @@ internal static class McpServerLauncher
                         endpoint.Port,
                         endpoint.Path,
                         endpoint.ProcessId,
+                        runtimeDirectory,
+                        endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
                     });
                 return;
             }
@@ -51,6 +53,7 @@ internal static class McpServerLauncher
                     new
                     {
                         executablePath,
+                        runtimeDirectory,
                     });
                 return;
             }
@@ -70,6 +73,8 @@ internal static class McpServerLauncher
                 {
                     executablePath,
                     processId = process?.Id,
+                    runtimeDirectory,
+                    endpointFilePath = McpServerEndpointRegistry.EndpointFilePath,
                 });
         }
         catch (Exception ex)

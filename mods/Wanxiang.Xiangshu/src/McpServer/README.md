@@ -14,7 +14,8 @@ MCP 工具承担三类路由：把 C# 脚本请求转发到前端或后端 IPC e
 会话，以及把玩家视图截图工具转发到前端 `PlayerView/` 边界并返回 MCP image content。endpoint 可用性在
 工具调用时检查。
 
-事件日志只确认 sidecar 启动、endpoint 注册、父进程退出、停止和失败。MCP 工具调用统计和 bearer token 不进入事件日志。
+事件日志只确认 sidecar 启动、endpoint 注册、父进程退出、停止和失败。成功 MCP 请求、轮询、心跳、MCP 工具调用统计和
+bearer token 不进入事件日志。
 
 脚本运行中，MCP server 负责把 MCP 工具调用路由到目标侧 IPC endpoint，把 `arguments` JSON 对象和
 `entryThread` 写入 IPC 请求，并把内部的嵌套判别联合整理为 Agent 可读 JSON：未调用入口时返回原因和可选诊断；

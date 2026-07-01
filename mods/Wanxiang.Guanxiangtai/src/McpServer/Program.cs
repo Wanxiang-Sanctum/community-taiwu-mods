@@ -59,6 +59,7 @@ builder.Logging.AddSimpleConsole(
         options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
     });
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("ModelContextProtocol", LogLevel.Warning);
 
 builder.WebHost.ConfigureKestrel(
     options => options.Listen(IPAddress.Loopback, settings.Port));

@@ -145,6 +145,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
     private Vector2 _panelDragStartPointer;
     private Vector2 _panelDragStartOffset;
     private bool _panelDragActive;
+    private string? _lastUiAttachFailureReason;
 
     public bool IsVisible { get; private set; }
 
@@ -1073,32 +1074,44 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         if (uiManager is null)
         {
-            Log.Warning("chat window cannot build because UIManager is unavailable");
-
-            return false;
+            return LogUiAttachFailure("ui-manager-unavailable");
         }
 
         RectTransform layer = uiManager.GetLayer(UILayer.LayerVeryTop);
 
         if (layer is null)
         {
-            Log.Warning("chat window cannot build because Taiwu top UI layer is unavailable");
-
-            return false;
+            return LogUiAttachFailure("top-ui-layer-unavailable");
         }
 
         Camera uiCamera = uiManager.UiCamera;
 
         if (uiCamera is null)
         {
-            Log.Warning("chat window cannot build because UIManager has no UI camera");
-
-            return false;
+            return LogUiAttachFailure("ui-camera-unavailable");
         }
 
+        _lastUiAttachFailureReason = null;
         AttachToGameUiLayer(layer);
         ConfigureRootCanvas(uiCamera, layer);
         return true;
+    }
+
+    private bool LogUiAttachFailure(string reason)
+    {
+        if (string.Equals(_lastUiAttachFailureReason, reason, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        _lastUiAttachFailureReason = reason;
+        Log.Warning(
+            "太吾 UI 不可用，聊天窗口暂不能创建",
+            new
+            {
+                reason,
+            });
+        return false;
     }
 
     private void AttachToGameUiLayer(RectTransform layer)
@@ -1343,7 +1356,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
         inputField.Select();
         inputField.ActivateInputField();
         RefocusInputNextFrameAsync(WindowLifetimeToken).Forget(
-            static ex => Log.Error(ex, "chat input refocus failed"));
+            static ex => Log.Error(ex, "聊天输入框重新聚焦失败"));
     }
 
     private async UniTask RefocusInputNextFrameAsync(CancellationToken cancellationToken)
@@ -1419,7 +1432,7 @@ internal sealed class XiangshuChatWindow : MonoBehaviour
 
         _scrollToBottomScheduled = true;
         ScrollToBottomNextFrameAsync(WindowLifetimeToken).Forget(
-            static ex => Log.Error(ex, "chat scroll-to-bottom failed"));
+            static ex => Log.Error(ex, "聊天窗口滚动到底部失败"));
     }
 
     private async UniTask ScrollToBottomNextFrameAsync(CancellationToken cancellationToken)

@@ -49,6 +49,17 @@ public sealed class TaiwuLogger
     }
 
     /// <summary>
+    /// 写入包含异常详情的警告级日志消息。
+    /// </summary>
+    /// <param name="exception">要写入结构化日志上下文的异常。</param>
+    /// <param name="message">消息文本。</param>
+    /// <param name="context">可选结构化上下文，必须能序列化为 JSON 对象。</param>
+    public void Warning(Exception exception, string message, object? context = null)
+    {
+        Write(LogLevel.Warning, exception, message, context);
+    }
+
+    /// <summary>
     /// 写入错误级日志消息。
     /// </summary>
     /// <param name="message">消息文本。</param>

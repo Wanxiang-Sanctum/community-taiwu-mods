@@ -281,7 +281,14 @@ internal sealed class GraftHostSync : IDisposable
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            Log.Error(ex, "failed to sync Xiangshu item graft");
+            Log.Error(
+                ex,
+                "相枢寄身物同步失败",
+                new
+                {
+                    taiwuCharId,
+                    syncGeneration,
+                });
         }
         finally
         {
@@ -333,14 +340,7 @@ internal sealed class GraftHostSync : IDisposable
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            Log.Warning(
-                "failed to dispose Xiangshu item graft session",
-                new
-                {
-                    exceptionType = ex.GetType().FullName,
-                    exceptionMessage = ex.Message,
-                    exception = ex.ToString(),
-                });
+            Log.Warning(ex, "相枢寄身物会话释放失败");
         }
     }
 

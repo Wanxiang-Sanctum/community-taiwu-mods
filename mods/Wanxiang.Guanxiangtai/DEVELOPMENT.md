@@ -54,7 +54,7 @@ dotnet run --project tools/Taiwu.Mods.Cli -- pack-mod --name Wanxiang.Guanxiangt
 - 公开配置或面向使用者的说明变化时，同步更新 [README.md](README.md)。
 - 包内容变化时，同步更新 `Taiwu.Mod.Pack.proj`、项目文件或项目旁 `Taiwu.Mod.props` 中拥有该声明的位置。
 - 非 shared 依赖合并、复制或 Publicizer 设置变化时，同步更新对应项目的 `Taiwu.Mod.props`。
-- 运行态入口文件字段、运行目录解析、MCP server 启动方式、连接鉴权或 token 来源变化时，同步更新
+- 运行态入口文件字段、运行目录解析、MCP server 启动方式、连接鉴权、token 来源、可见控制台提示或请求日志过滤变化时，同步更新
   [docs/mcp-server-runtime.md](docs/mcp-server-runtime.md) 和对应拥有该边界的模块 README；涉及运行态协调常量或入口登记时，同步更新
   `src/McpServerRuntime/README.md`。
 - 内部 IPC 契约、endpoint manifest、生命周期工具、状态工具或脚本工具语义变化时，同步更新 `src/Ipc/README.md`、`src/McpServer/README.md`

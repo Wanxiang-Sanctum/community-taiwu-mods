@@ -65,7 +65,7 @@ internal sealed class AgentChatSession : IDisposable
             && !string.Equals(restoredState.Adapter, _adapterKey, StringComparison.OrdinalIgnoreCase))
         {
             Log.Info(
-                "chat session reset because agent adapter changed",
+                "本地 Agent 适配器已变化，聊天会话已重置",
                 new
                 {
                     restoredAdapterKey = restoredState.Adapter,
@@ -363,7 +363,7 @@ internal sealed class AgentChatSession : IDisposable
         }
 
         ProcessDispatchesAsync(_cancellation.Token).Forget(
-            static ex => Log.Error(ex, "chat session processing failed"));
+            static ex => Log.Error(ex, "聊天会话处理失败"));
     }
 
     private async UniTask ProcessDispatchesAsync(CancellationToken cancellationToken)
@@ -413,7 +413,7 @@ internal sealed class AgentChatSession : IDisposable
                         }
 
                         Log.Warning(
-                            "chat agent invocation skipped because settings are unavailable",
+                            "Agent 设置不可用，已跳过本轮聊天投递",
                             CreateLogContext());
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -461,7 +461,7 @@ internal sealed class AgentChatSession : IDisposable
                 {
                     Log.Error(
                         ex,
-                        "chat agent invocation failed",
+                        "本地 Agent 调用失败",
                         CreateFailureLogContext(dispatch, ex));
 
                     _ = IsResetRequiredFailure(ex)
@@ -486,6 +486,8 @@ internal sealed class AgentChatSession : IDisposable
         return new
         {
             adapter = _adapterKey,
+            sessionId = _sessionId,
+            agentSessionMode = GetAgentSessionMode(_agentSessionId),
         };
     }
 
@@ -498,7 +500,10 @@ internal sealed class AgentChatSession : IDisposable
             return new
             {
                 adapter = _adapterKey,
+                sessionId = _sessionId,
+                sessionGeneration = dispatch.SessionGeneration,
                 agentSessionMode = GetAgentSessionMode(dispatch),
+                contextMessageCount = dispatch.Turn.ContextMessages.Count,
                 cliFailureReason = cliFailure.Reason,
                 cliExitCode = cliFailure.ExitCode,
                 cliStderrExcerpt = cliFailure.StderrExcerpt,
@@ -508,12 +513,21 @@ internal sealed class AgentChatSession : IDisposable
         return new
         {
             adapter = _adapterKey,
+            sessionId = _sessionId,
+            sessionGeneration = dispatch.SessionGeneration,
+            agentSessionMode = GetAgentSessionMode(dispatch),
+            contextMessageCount = dispatch.Turn.ContextMessages.Count,
         };
     }
 
     private static string GetAgentSessionMode(TurnDispatch dispatch)
     {
-        return string.IsNullOrWhiteSpace(dispatch.Turn.AgentSessionId)
+        return GetAgentSessionMode(dispatch.Turn.AgentSessionId);
+    }
+
+    private static string GetAgentSessionMode(string? agentSessionId)
+    {
+        return string.IsNullOrWhiteSpace(agentSessionId)
             ? "new"
             : "resumed";
     }
@@ -881,7 +895,7 @@ internal sealed class AgentChatSession : IDisposable
             or UnauthorizedAccessException
             or InvalidOperationException)
         {
-            Log.Error(ex, "chat session snapshot delete failed after player reset");
+            Log.Error(ex, "玩家重置后删除聊天会话快照失败");
         }
     }
 
