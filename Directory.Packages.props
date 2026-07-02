@@ -10,7 +10,7 @@
     <RoslynGameRuntimeVersion>4.13.0</RoslynGameRuntimeVersion>
     <RoslynatorVersion>4.15.0</RoslynatorVersion>
     <TaiwuGameUnityVersion>2022.3.62f2</TaiwuGameUnityVersion>
-    <TaiwuModKitReferencesVersion>1.0.44</TaiwuModKitReferencesVersion>
+    <TaiwuModKitReferencesVersion>1.0.46</TaiwuModKitReferencesVersion>
   </PropertyGroup>
 
   <ItemGroup>
