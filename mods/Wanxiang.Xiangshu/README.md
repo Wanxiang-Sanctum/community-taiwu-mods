@@ -3,7 +3,7 @@
 相枢把本地 CLI Agent 接入当前运行中的太吾绘卷。你在游戏里提出愿望、问题或命令，Agent 会按目标动态执行脚本，
 尝试完成与游戏内容有关的查找、判断或改动；结果由相枢带回游戏内对话。
 
-目前适配 Codex CLI、Claude Code 和 CodeBuddy Code。
+目前适配 Codex CLI 和 CodeBuddy Code。
 
 ## 游戏内入口
 
@@ -18,7 +18,7 @@
 
 太吾 Mod 用户配置提供三个字段：
 
-- `AgentAdapter`：选择相枢要调用的本地 CLI Agent。
+- `AgentCliAdapter`：选择相枢要调用的本地 CLI Agent。
 - `AgentCliPath`：本地 Agent CLI 的命令名或可执行文件路径；留空时使用当前 Agent 的默认命令。
 - `AgentWorkingDirectory`：本地 Agent 使用的 Agent 工作区目录；相对路径会解析到相枢 Mod 目录下，默认是
   `DefaultAgentWorkspace`。

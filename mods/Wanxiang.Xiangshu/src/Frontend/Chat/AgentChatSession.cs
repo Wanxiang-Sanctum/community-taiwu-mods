@@ -946,7 +946,7 @@ internal sealed class AgentChatSession : IDisposable
 
     private static string GetAdapterKey(AgentAdapter adapter)
     {
-        return AgentAdapterNames.GetKey(adapter);
+        return AgentAdapterCatalog.GetKey(adapter);
     }
 
     private static string NormalizeMessageContent(string? value)

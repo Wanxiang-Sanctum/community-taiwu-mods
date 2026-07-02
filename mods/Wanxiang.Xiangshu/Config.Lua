@@ -9,7 +9,7 @@ return {
 [h2]先看是否适合[/h2]
 相枢把本地 CLI Agent 接入当前运行中的太吾绘卷。你在游戏里提出愿望、问题或命令，Agent 会按目标动态执行脚本，尝试完成与游戏内容有关的查找、判断或改动；结果由相枢带回游戏内对话。
 
-目前适配 Codex CLI、Claude Code 和 CodeBuddy Code。
+目前适配 Codex CLI 和 CodeBuddy Code。
 
 [hr][/hr]
 
@@ -50,12 +50,11 @@ return {
   DefaultSettings = {
     {
       SettingType = "Dropdown",
-      Key = "AgentAdapter",
+      Key = "AgentCliAdapter",
       DisplayName = "本地 Agent",
       Description = "选择相枢要调用的本地 Agent。",
       Options = {
         "Codex CLI",
-        "Claude Code",
         "CodeBuddy Code",
       },
       DefaultValue = 0,

@@ -47,8 +47,8 @@ Workshop `FileId` 加入相枢 Mod 的 `Dependencies`，确保万象引先于相
 
 - `Config.Lua`：游戏读取的 Mod 配置。
 - `DefaultAgentWorkspace/`：默认本地 Agent 工作区内容；其中 `AGENTS.md` 放基础相枢身份、口吻、玩家可见边界和读取路由，
-  `CLAUDE.md` 转发到同一入口，`persona/` 放更细的人设校准，`lore/` 放按需读取的世界观资料，`tool-guides/` 放玩家
-  视图观察、脚本执行边界、事件、经历、GM 调试入口、领域上下文和游戏知识检索指引，并保留对应 CLI Agent 可发现的技能目录。
+  `persona/` 放更细的人设校准，`lore/` 放按需读取的世界观资料，`tool-guides/` 放玩家视图观察、脚本执行边界、事件、
+  经历、GM 调试入口、领域上下文和游戏知识检索指引，并保留对应 CLI Agent 可发现的技能目录。
 - `Taiwu.Mod.Pack.proj`：最终可部署目录的组包声明。
 - `docs/`：对话链路、CLI 适配器、日志策略和默认 Agent 工作区来源等内部设计说明；入口见 `docs/README.md`。
 - `src/Frontend/`：前端插件项目，负责游戏内对话入口、太吾行囊中的相枢寄身策略及其非持久运行态、本地 Agent 投递、前端 IPC 和

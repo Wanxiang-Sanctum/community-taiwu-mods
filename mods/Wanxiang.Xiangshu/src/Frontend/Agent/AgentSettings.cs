@@ -7,7 +7,7 @@ internal sealed class AgentSettings
 {
     public const string DefaultWorkingDirectoryName = XiangshuRuntimePaths.DefaultAgentWorkingDirectoryName;
 
-    private const string AgentAdapterKey = "AgentAdapter";
+    private const string AgentCliAdapterKey = "AgentCliAdapter";
 
     private const string AgentCliPathKey = "AgentCliPath";
 
@@ -58,9 +58,9 @@ internal sealed class AgentSettings
     private static AgentAdapter ReadAgentAdapter(string modIdStr)
     {
         int value = 0;
-        _ = TryGetSetting(modIdStr, AgentAdapterKey, ref value);
+        _ = TryGetSetting(modIdStr, AgentCliAdapterKey, ref value);
 
-        return AgentAdapterNames.FromSettingValueOrDefault(value);
+        return AgentAdapterCatalog.FromSettingValueOrDefault(value);
     }
 
     private static string ReadCommandPath(
@@ -92,7 +92,7 @@ internal sealed class AgentSettings
 
     private static string GetDefaultCommandName(AgentAdapter adapter)
     {
-        return AgentAdapterNames.GetDefaultCommandName(adapter);
+        return AgentAdapterCatalog.GetDefaultCommandName(adapter);
     }
 
     private static string GetModDirectory(string modIdStr)

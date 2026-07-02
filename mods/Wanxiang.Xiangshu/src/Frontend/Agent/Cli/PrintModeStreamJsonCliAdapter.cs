@@ -54,6 +54,4 @@ internal abstract class PrintModeStreamJsonCliAdapter : IAgentCliAdapter
     }
 }
 
-internal sealed class ClaudeCliAdapter : PrintModeStreamJsonCliAdapter;
-
 internal sealed class CodeBuddyCliAdapter : PrintModeStreamJsonCliAdapter;

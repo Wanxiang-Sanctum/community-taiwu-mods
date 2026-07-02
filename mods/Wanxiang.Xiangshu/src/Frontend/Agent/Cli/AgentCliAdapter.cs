@@ -48,18 +48,32 @@ internal sealed class AgentCliInvocation(
 
 internal static class AgentCliAdapters
 {
-    private static readonly IAgentCliAdapter CodexAdapter = new CodexCliAdapter();
-    private static readonly IAgentCliAdapter ClaudeAdapter = new ClaudeCliAdapter();
-    private static readonly IAgentCliAdapter CodeBuddyAdapter = new CodeBuddyCliAdapter();
+    private static readonly Dictionary<AgentAdapter, IAgentCliAdapter> Adapters = CreateAdapters();
 
     public static IAgentCliAdapter Get(AgentAdapter adapter)
     {
-        return adapter switch
+        return Adapters.TryGetValue(adapter, out IAgentCliAdapter? cliAdapter)
+            ? cliAdapter
+            : throw new ArgumentOutOfRangeException(nameof(adapter), adapter, null);
+    }
+
+    private static Dictionary<AgentAdapter, IAgentCliAdapter> CreateAdapters()
+    {
+        Dictionary<AgentAdapter, IAgentCliAdapter> adapters = new()
         {
-            AgentAdapter.Codex => CodexAdapter,
-            AgentAdapter.Claude => ClaudeAdapter,
-            AgentAdapter.CodeBuddy => CodeBuddyAdapter,
-            _ => throw new ArgumentOutOfRangeException(nameof(adapter), adapter, null),
+            [AgentAdapter.Codex] = new CodexCliAdapter(),
+            [AgentAdapter.CodeBuddy] = new CodeBuddyCliAdapter(),
         };
+
+        foreach (AgentAdapterDefinition definition in AgentAdapterCatalog.All)
+        {
+            if (!adapters.ContainsKey(definition.Adapter))
+            {
+                throw new InvalidOperationException(
+                    "No CLI adapter is registered for " + definition.Key + ".");
+            }
+        }
+
+        return adapters;
     }
 }

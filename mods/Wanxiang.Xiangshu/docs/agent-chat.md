@@ -149,11 +149,11 @@ Agent 把这些文件作为 Agent 工作区配置读取。如果用户把 `Agent
 
 太吾 Mod 用户配置提供这些字段：
 
-- `AgentAdapter`：选择本地 CLI Agent 适配器；当前内置清单见 `agent-cli-adapters.md`。
+- `AgentCliAdapter`：选择本地 CLI Agent 适配器；当前内置清单见 `agent-cli-adapters.md`。
 - `AgentCliPath`：本地 Agent CLI 的命令名或可执行文件路径；留空时使用当前 Agent 的默认命令。
 - `AgentWorkingDirectory`：本地 Agent 使用的 Agent 工作区目录，默认 `DefaultAgentWorkspace`。
 
-默认命令按 `AgentAdapter` 决定。切换 Agent 类型时沿用同一个路径字段；对应 CLI 不在 PATH 或需要固定绝对
+默认命令按 `AgentCliAdapter` 决定。切换 Agent 类型时沿用同一个路径字段；对应 CLI 不在 PATH 或需要固定绝对
 路径时填写 `AgentCliPath`。当前默认命令映射见 `agent-cli-adapters.md`。
 
 `AgentWorkingDirectory` 使用相对路径时，插件会把它解析到相枢 Mod 目录下并创建目录。因此默认值

@@ -36,9 +36,9 @@
 或组织内部游戏观察快照中。随默认 Agent 工作区发布的初始运行经验应沉淀为工具指引、读取路由、领域上下文、参考片段
 或稳定资产；`.xiangshu-notes/` 只记录本地 Agent 运行后产生的草稿和本地经验。
 
-`DefaultAgentWorkspace/.agents/skills/` 与 `DefaultAgentWorkspace/.claude/skills/` 服务不同 CLI Agent 的技能发现；
-当前适配器到入口文件、技能目录的对应关系由 `agent-cli-adapters.md` 维护。当前同名技能内容保持一致；需要调整
-技能触发或执行规则时，同时更新两份副本，除非某个 CLI 的发现机制或工具能力确实需要分叉。
+`DefaultAgentWorkspace/.agents/skills/` 服务支持该目录发现机制的 CLI Agent。当前适配器到入口文件、技能目录的
+对应关系由 `agent-cli-adapters.md` 维护；需要为新 CLI 增加独立发现目录时，先确认它不能复用既有入口，再把新目录
+纳入本文的稳定资产和放置规则。
 
 默认 Agent 工作区文件会被 CLI Agent 持续读取，作为 Agent 工作区配置；组包后的同名目录以随包内容作为完整输入。写这些文件时，措辞应说明
 事实归属；需要描述运行时事实时，按所有权选择更明确的锚点：
@@ -95,8 +95,8 @@ Agent 视角的说法。
 ## 维护边界
 
 `DefaultAgentWorkspace/` 面向源码维护；组包后的同名目录面向运行中的本地 Agent。包内的
-`AGENTS.md`、`CLAUDE.md`、`persona/`、`lore/`、`tool-guides/`、`.agents/skills/` 和 `.claude/skills/` 是
-稳定默认资产。`AGENTS.md` 承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
+`AGENTS.md`、`persona/`、`lore/`、`tool-guides/` 和 `.agents/skills/` 是稳定默认资产。`AGENTS.md`
+承担基础角色契约、答复边界和读取路由；其它目录按需补充更细的
 人设、世界观、工具和技能资料。源码维护规则归本文和 `docs/README.md` 索引的其它维护文档。
 
 Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目录可以不存在，不放入默认包内容；它
@@ -133,8 +133,7 @@ Agent 侧工作记录使用 `AgentWorkingDirectory/.xiangshu-notes/`。这个目
   内部游戏镜像承载。
 - 稳定高频入口的少量参考片段归入对应领域指引；片段应能减少入口层级试错，并说明可接续关系。
   面向单次目标的完整读取、处理和输出流水线留在当前脚本或本地工作记录中。
-- Agent 技能触发、低层脚本 helper 策略或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md` 和
-  `.claude/skills/*/SKILL.md`；同名技能默认保持内容一致。
+- Agent 技能触发、低层脚本 helper 策略或 Unity 前端操作策略归入对应 `.agents/skills/*/SKILL.md`。
 - 当前任务计划、待验证事实、临时脚本思路和本地经验归入 `AgentWorkingDirectory/.xiangshu-notes/`；这个
   目录不随默认包创建，也不作为默认 Agent 工作区发布资料。
 
